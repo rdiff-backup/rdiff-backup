@@ -30,7 +30,7 @@ Note that you should not write to the mirror directory except with rdiff-backup.
 Many of the increments are stored as reverse diffs, so if you delete or modify a file, you may lose the ability to restore previous versions of that file.
 
 Finally, this man page is intended more as a precise description of the behavior and syntax of rdiff-backup.
-New users may want to check out the examples file included in the rdiff-backup distribution.
+New users may want to check out the *examples* file included in the rdiff-backup distribution.
 
 The rdiff-backup commands knows four types of parameters
 
@@ -65,7 +65,7 @@ _chars_ is a string of characters fit to be used in regexp square brackets (e.g.
 +
 *CAUTION:* do NOT change the chars to quote within the same repository!
 Actually, you only need to set this parameter when creating a new backup repository.
-Do also NOT quote any character used by rdiff-backup  in rdiff-backup-data (any of 'a-z0-9._-')!
+Do also NOT quote any character used by rdiff-backup in *rdiff-backup-data* (any of '[.code]``a-z0-9._-``')!
 
 --current-time _currenttime_::
 This option is useful mainly for testing.
@@ -232,8 +232,9 @@ See <<time-formats,TIME FORMATS>> for details.
 == COMPRESSION OPTIONS
 
 --compression, --no-compression::
-Disable the default gzip compression of most of the `.snapshot` and `.diff` increment files stored in the rdiff-backup-data directory.
+Enable or disable the default gzip compression of most of the `.snapshot` and `.diff` increment files stored in the *rdiff-backup-data* directory.
 A backup volume can contain compressed and uncompressed increments, so using this option inconsistently is fine.
+Default is to compress all files, except those excluded as noted below.
 
 --not-compressed-regexp _regexp_::
 Do not compress increments based on files whose filenames match regexp.
@@ -334,7 +335,7 @@ The default is to include other filesystems.
 == STATISTICS OPTIONS
 
 --file-statistics, --no-file-statistics::
-Enable/disable writing to the '[.code]``file_statistics``' file in the rdiff-backup-data directory.
+Enable/disable writing to the '[.code]``file_statistics``' file in the *rdiff-backup-data* directory.
 rdiff-backup will run slightly quicker and take up a bit less space.
 Default is to write the statistics file(s).
 +
@@ -385,13 +386,13 @@ One way to do this is to run:
 
  rdiff-backup restore --at 3D /usr.backup/local /usr/local.old
 
-where above the "3D" means 3 days (for other ways to specify the time, see the <<time-formats,TIME FORMATS>> section).
+here above the '[.code]``3D``' means 3 days (for other ways to specify the time, see the <<time-formats,TIME FORMATS>> section).
 The '[.code]``/usr.backup/local``' directory was selected, because that is the directory containing the current version of '[.code]``usr/local``'.
 
 Note that the parameter of *--at* always specifies an exact time.
-(So "3D" refers to the moment 72 hours before the present).
+(So '[.code]``3D``' refers to the moment 72 hours before the present).
 If there was no backup made at that time, rdiff-backup restores the state recorded for the previous backup.
-For instance, in the above case, if "3D" is used, and there are only backups from 2 days and 4 days ago, '[.code]``/usr/local``' as it was 4 days ago will be restored.
+For instance, in the above case, if '[.code]``3D``' is used, and there are only backups from 2 days and 4 days ago, '[.code]``/usr/local``' as it was 4 days ago will be restored.
 
 The second way to restore files involves finding the corresponding increment file.
 It would be in the '[.code]``/backup/rdiff-backup-data/increments/usr``' directory, and its name would be something like '[.code]``local.2002-11-09T12:43:53-04:00.dir``' where the time indicates it is from 3 days ago.
@@ -412,19 +413,19 @@ If you are not sure exactly which version of a file you need, it is probably eas
 rdiff-backup uses time strings in two places.
 
 Firstly, all of the increment files rdiff-backup creates will have the time in their filenames in the w3 datetime format as described in a w3 note at https://www.w3.org/TR/NOTE-datetime.
-Basically they look like "2001-07-15T04:09:38-07:00", which is basically "\{Year}-\{Month}-\{Day}T\{Hours}:\{Minutes}:\{Seconds}\{Timezone}", the time zone being 7 hours _behind_ UTC in this example (hence the minus).
+Basically they look like '[.code]``2001-07-15T04:09:38-07:00``', which is basically "\{Year}-\{Month}-\{Day}T\{Hours}:\{Minutes}:\{Seconds}\{Timezone}", the time zone being 7 hours _behind_ UTC in this example (hence the minus).
 
 Secondly, the *--at*, *--changed-since*, *--older-than* options take a time string, which can be given in any of several formats:
 
-. the string "now" (refers to the current time)
-. a sequences of digits, like "123456890" (indicating the time in seconds after the epoch)
-. A string like "2002-01-25T07:00:00+02:00" in datetime format
+. the string '[.code]``now``' (refers to the current time)
+. a sequences of digits, like '[.code]``123456890``' (indicating the time in seconds after the epoch)
+. A string like '[.code]``2002-01-25T07:00:00+02:00``' in datetime format
 . An interval, which is a number followed by one of the characters s, m, h, D, W, M, or Y (indicating seconds, minutes, hours, days, weeks, months, or years respectively), or a series of such pairs.
 In this case the string refers to the time that preceded the current time by the length of the interval.
-For instance, "1h78m" indicates the time that was one hour and 78 minutes ago.
+For instance, '[.code]``1h78m"``' indicates the time that was one hour and 78 minutes ago.
 The calendar here is unsophisticated: a month is always 30 days, a year is always 365 days, and a day is always 86400 seconds.
 . A date format of the form "YYYY/MM/DD", "YYYY-MM-DD", "MM/DD/YYYY", or "MM-DD-YYYY", which indicates midnight on the day in question, relative to the current timezone settings.
-For instance, "2002/3/5", "03-05-2002", and "2002-3-05" all mean March 5th, 2002 (needless to say that starting with the year is less confusing for non-Americans).
+For instance, '[.code]``2002/3/5``', '[.code]``03-05-2002``', and '[.code]``2002-3-05``' all mean March 5th, 2002 (needless to say that starting with the year is less confusing for non-Americans).
 . A backup session specification which is a non-negative integer followed by '[.code]``B``'.
 For instance, '[.code]``0B``' specifies the time of the current mirror, and '[.code]``3B``' specifies the time of the 3rd newest increment.
 
@@ -461,7 +462,7 @@ For example, if you have rdiff-backup 2.1.5 and 2.2.1 installed in virtual envir
  ssh -C {h} /usr/local/lib/rdiff-backup-{vx}.{vy} --server
 
 The client will then use the correct version of rdiff-backup based on its own version '[.code]``x.y.z``'.
-You'll find more explanations in the *migration.md* file in the documentation.
+You'll find more explanations in the *migration* file in the documentation.
 
 And finally, to include a literal '[.code]``%``' in the string specified by *--remote-schema*, quote it with another '[.code]``%``', as in '[.code]``%%``' (this is due to the compatibility with the deprecated host placeholder '[.code]``%s``', which you shouldn't use anymore).
 
@@ -476,7 +477,7 @@ For more information, see the web page, the wiki, and the entries for those opti
 rdiff-backup has a number of file selection options.
 When rdiff-backup is run, it searches through the given source directory and backs up all the files matching the specified options.
 This selection system may appear complicated, but it is supposed to be flexible and easy-to-use.
-If you just want to learn the basics, first look at the selection examples in the examples.html file included in the package, or on the web at https://rdiff-backup.net/docs/examples.html.
+If you just want to learn the basics, first look at the selection examples in the *examples* file included in the package, or on the web at https://rdiff-backup.net/docs/examples.html.
 
 rdiff-backup's selection system was originally inspired by *rsync*(1), but there are many differences.
 For instance, trailing backslashes have no special significance.
@@ -646,7 +647,7 @@ See <<user-group-options,USER GROUP OPTIONS>> for a list and description of rela
 [[files]]
 == FILES
 
-_any-config-file_:: you can create a file with one option/action/sub-option per line and use it on the command line with an ampersand prefix like _\@any-config-file_ and its content will be interpreted as if given on the command line.
+_any-config-file_:: you can create a file with one option/action/sub-option per line and use it on the command line with an at sign prefix like _@any-config-file_ and its content will be interpreted as if given on the command line.
 +
 For example, creating a file '[.code]``mybackup``' with following content:
 +
