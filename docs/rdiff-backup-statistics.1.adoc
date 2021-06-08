@@ -1,0 +1,86 @@
+= RDIFF-BACKUP-STATISTICS(1)
+:doctype: manpage
+:docdate: {revdate}
+:man source: rdiff-backup-statistics
+:man version: {revnumber}
+:man manual: Rdiff-Backup-Statistics Manual {revnumber}
+
+== NAME
+
+rdiff-backup-statistics - summarize rdiff-backup statistics files
+
+== SYNOPSIS
+
+*rdiff-backup-statistics* [*--begin-time* _time_] [*--end-time* _time_] [*--minimum-ratio* _ratio_] [*--null-separator*] [*--quiet*] [*-h*|*--help*] [*-V*|*--version*] _repository_
+
+== DESCRIPTION
+*rdiff-backup-statistics*
+reads the matching statistics files in a backup repository made by
+*rdiff-backup*
+and prints some summary statistics to the screen.  It does not alter
+the repository in any way.
+
+The required argument is the pathname of the root of an rdiff-backup
+repository.  For instance, if you ran '[.code]``rdiff-backup in out``',
+you could later run '[.code]``rdiff-backup-statistics out``'.
+
+The output has two parts.  The first is simply an average of the all
+matching session_statistics files.  The meaning of these fields is
+explained in the FAQ included in the package, and also at
+https://rdiff-backup.net/docs/FAQ.html#statistics .
+
+The second section lists some particularly significant files
+(including directories).  These files are either contain a lot of
+data, take up increment space, or contain a lot of changed files.  All
+the files that are above the minimum ratio (default 5%) will be
+listed.
+
+If a file or directory is listed, its contributions are subtracted
+from its parent.  That is why the percentage listed after a directory
+can be larger than the percentage of its parent.  Without this, the
+root directory would always be the largest, and the output would be
+boring.
+
+== OPTIONS
+
+--begin-time _time_::
+Do not read statistics files older than _time_.
+By default, all statistics files will be read.
+_time_ should be in the same format taken by *--restore-as-of*.  (See
+*TIME FORMATS* in the rdiff-backup man page for details.)
+
+--end-time _time_::
+Like *--begin-time* but exclude statistics files later than _time_.
+
+-h, --help::
+Output a short usage description and exit.
+
+--minimum-ratio _ratio_::
+Print all directories contributing more than the given ratio to the
+total.  The default value is .05, or 5 percent.
+
+--null-separator::
+Specify that the lines of the file_statistics file are separated by
+nulls ('\0').  The default is to assume that newlines separate.  Use
+this switch if rdiff-backup was run with the *--null-separator* when
+making the given repository.
+
+--quiet::
+Suppress printing of the '```Processing statistics from session...```'
+output lines.
+
+-V, --version::
+Output full path to command and version then exit.
+
+== BUGS
+When aggregating multiple statistics files, some directories above
+(but close to) the minimum ratio may not be displayed.  For this
+reason, you may want to set the minimum-ratio lower than need.
+
+== AUTHOR
+Ben Escoto link:mailto:ben@emerose.org[ben@emerose.org],
+based on original script by Dean Gaudet.
+
+== SEE ALSO
+*rdiff-backup*(1), *python*(1).
+The rdiff-backup web page is at https://rdiff-backup.net/ .
