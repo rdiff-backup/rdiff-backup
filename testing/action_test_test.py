@@ -1,9 +1,5 @@
-import os
-import subprocess
 import unittest
-import yaml
 import commontest as comtst
-from rdiff_backup import Globals
 
 
 class ActionTestTest(unittest.TestCase):
