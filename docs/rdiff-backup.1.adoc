@@ -331,7 +331,7 @@ The default is to include other filesystems.
 
 --min-file-size _sizeinbytes_:: Exclude files that are smaller than the given size in bytes.
 
-[[satistics-options]]
+[[statistics-options]]
 == STATISTICS OPTIONS
 
 --file-statistics, --no-file-statistics::
