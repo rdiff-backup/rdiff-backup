@@ -136,6 +136,47 @@ def rdiff_backup(source_local,
     return ret_val
 
 
+def rdiff_backup_action(source_local, dest_local,
+                        src_dir, dest_dir,
+                        generic_opts, action, specific_opts,
+                        std_input=None):
+    """
+    Run rdiff-backup with the given action and options, faking remote locations
+
+    source_local and dest_local are boolean values.  If either is
+    false, then rdiff-backup will be run pretending that src_dir and
+    dest_dir, respectively, are remote.  The server process will be
+    run in directories remote1 and remote2 respectively.
+
+    src_dir and dest_dir are the source and destination
+    (mirror) directories.
+
+    generic_opts and specific_opts are added before/after the action.
+
+    The std_input parameter is optional and used to provide the call to
+    rdiff-backup with pre-defined input.
+    """
+    if src_dir and not source_local:
+        src_dir = (b"cd %s; %s --server::%s" %
+                   (abs_remote1_dir, RBBin, src_dir))
+    if dest_dir and not dest_local:
+        dest_dir = (b"cd %s; %s --server::%s" %
+                    (abs_remote2_dir, RBBin, dest_dir))
+
+    if not (source_local and dest_local):
+        generic_opts = list(generic_opts) + [b"--remote-schema", b"{h}"]
+
+    cmdargs = [RBBin] + list(generic_opts) + [action] + list(specific_opts)
+
+    if src_dir:
+        cmdargs.append(src_dir)
+    if dest_dir:
+        cmdargs.append(dest_dir)
+    print("Executing: ", cmdargs)
+    ret_val = os_system(cmdargs, input=std_input, universal_newlines=False)
+    return ret_val
+
+
 def _get_locations(src_local, dest_local, src_dir, dest_dir):
     """
     Return a tuple of remote or local source and destination locations
