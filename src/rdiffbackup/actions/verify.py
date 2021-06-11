@@ -51,7 +51,7 @@ class VerifyAction(actions.BaseAction):
         conn_value = super().connect()
         if conn_value:
             self.source = repository.Repo(
-                self.connected_locations[0], self.log, self.values.force,
+                self.connected_locations[0], self.values.force,
                 must_be_writable=False, must_exist=True, can_be_sub_path=True
             )
         return conn_value

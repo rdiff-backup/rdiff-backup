@@ -108,8 +108,8 @@ class _DefinedMap(_Map):
                 continue
             comps = line.split(':')
             if not len(comps) == 2:
-                log.Log.FatalError("Error parsing mapping file, bad line: "
-                                   + line)
+                log.Log.FatalError("Failed parsing user/group mapping file, "
+                                   "bad line {bl}".format(bl=line))
             old, new = comps
 
             try:
@@ -148,8 +148,8 @@ class _DefinedMap(_Map):
             try:
                 return self.name2id(id_or_name)
             except KeyError:
-                log.Log.FatalError("Cannot get id for user or group name "
-                                   + id_or_name)
+                log.Log.FatalError("Cannot get id for user or group "
+                                   "name {ug}".format(ug=id_or_name))
 
 
 class _NumericalMap:

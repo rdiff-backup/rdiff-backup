@@ -59,11 +59,11 @@ class RestoreAction(actions.BaseAction):
         conn_value = super().connect()
         if conn_value:
             self.source = repository.Repo(
-                self.connected_locations[0], self.log, self.values.force,
+                self.connected_locations[0], self.values.force,
                 must_be_writable=False, must_exist=True, can_be_sub_path=True
             )
             self.target = directory.WriteDir(self.connected_locations[1],
-                                             self.log, self.values.force,
+                                             self.values.force,
                                              self.values.create_full_path)
         return conn_value
 
@@ -77,15 +77,15 @@ class RestoreAction(actions.BaseAction):
         # fit together
         if self.source.restore_type == "inc":
             if self.values.at:
-                self.log("You can't give an increment file and a time to restore "
-                         "at the same time.", self.log.ERROR)
+                log.Log("You can't give an increment file and a time to "
+                        "restore at the same time.", log.ERROR)
                 return_code |= 1
             elif not self.values.increment:
                 self.values.increment = True
         elif self.source.restore_type in ("base", "subdir"):
             if self.values.increment:
-                self.log("You can't use the --increment option and _not_ "
-                         "give an increment file", self.log.ERROR)
+                log.Log("You can't use the --increment option and _not_ "
+                        "give an increment file", log.ERROR)
                 return_code |= 1
             elif not self.values.at:
                 self.values.at = "now"
@@ -117,18 +117,19 @@ class RestoreAction(actions.BaseAction):
             self.target.base_dir.conn.fs_abilities.restore_set_globals(
                 self.target.base_dir)
         except OSError as exc:
-            self.log("Could not begin restore due to\n{exc}".format(exc=exc),
-                     self.log.ERROR)
+            log.Log("Could not begin restore due to exception '{ex}'".format(
+                ex=exc), log.ERROR)
             return 1
         self.source.init_quoting(self.values.chars_to_quote)
         self._init_user_group_mapping(self.target.base_dir.conn)
-        if self.log.verbosity > 0:
+        if log.Log.verbosity > 0:
             try:  # the source repository could be read-only
-                self.log.open_logfile(
+                log.Log.open_logfile(
                     self.source.data_dir.append("restore.log"))
             except (log.LoggerError, Security.Violation) as exc:
-                self.log("Unable to open logfile due to '{exc}'".format(
-                    exc=exc), self.log.WARNING)
+                log.Log(
+                    "Unable to open logfile due to exception '{ex}'".format(
+                        ex=exc), log.WARNING)
 
         # we need now to identify the actual time of restore
         self.inc_rpath = self.source.data_dir.append_path(
@@ -141,8 +142,8 @@ class RestoreAction(actions.BaseAction):
         elif self.values.increment:
             self.action_time = self.source.orig_path.getinctime()
         else:  # this should have been catched in the check method
-            self.log("This shouldn't happen but neither restore time nor "
-                     "an increment have been identified so far", self.log.ERROR)
+            log.Log("This shouldn't happen but neither restore time nor "
+                    "an increment have been identified so far", log.ERROR)
             return 1
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
@@ -160,21 +161,21 @@ class RestoreAction(actions.BaseAction):
         # the regress in the run section, we also do the check here...
         if self.source.needs_regress():
             # source could be read-only, so we don't try to regress it
-            self.log("Previous backup to {rp} seems to have failed. "
-                     "Use rdiff-backup to 'regress' first the failed backup, "
-                     "then try again to restore".format(
-                         rp=self.source.base_dir), self.log.ERROR)
+            log.Log("Previous backup to {rp} seems to have failed. "
+                    "Use rdiff-backup to 'regress' first the failed backup, "
+                    "then try again to restore".format(
+                        rp=self.source.base_dir), log.ERROR)
             return 1
         try:
             restore.Restore(
                 self.source.base_dir.new_index(self.source.restore_index),
                 self.inc_rpath, self.target.base_dir, self.action_time)
         except OSError as exc:
-            self.log("Could not complete restore due to '{exc}'".format(
-                exc=exc), self.log.ERROR)
+            log.Log("Could not complete restore due to exception '{ex}'".format(
+                ex=exc), log.ERROR)
             return 1
         else:
-            self.log("Restore successfully finished", self.log.INFO)
+            log.Log("Restore successfully finished", log.INFO)
             return 0
 
 

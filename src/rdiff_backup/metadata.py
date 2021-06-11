@@ -105,9 +105,10 @@ class FlatExtractor:
             except (ParsingError, ValueError) as e:
                 if self.at_end:
                     break  # Ignore whitespace/bad records at end
-                log.Log(
-                    "Error parsing flat file: %s [%s(%s)]" %
-                    (e, type(self), self.fileobj.fileobj.name), 2)
+                log.Log("Error parsing flat file {ff} of type {ty} due to "
+                        "exception '{ex}', metadata record ignored".format(
+                            ex=e, ty=type(self),
+                            ff=self.fileobj.fileobj.name), log.WARNING)
 
     def _iterate_records(self):
         """Yield all text records in order"""
@@ -131,7 +132,9 @@ class FlatExtractor:
             try:
                 obj = self._record_to_object(self.buf[:next_pos])
             except (ParsingError, ValueError) as e:
-                log.Log("Error parsing metadata file: %s" % (e, ), 2)
+                log.Log("Error parsing metadata file at given index {gi} due "
+                        "to exception '{ex}'".format(ex=e, gi=index),
+                        log.WARNING)
             else:
                 if obj.index[:len(index)] != index:
                     break
@@ -256,7 +259,8 @@ class RorpExtractor(FlatExtractor):
             elif field == "AlternateIncrementName":
                 data_dict['incname'] = data
             else:
-                log.Log("Unknown field in line '%s %s'" % (field, data), 2)
+                log.Log("Unknown field in line field/data '{uf}/{ud}'".format(
+                    uf=field, ud=data), log.WARNING)
         return rpath.RORPath(index, data_dict)
 
 
@@ -295,7 +299,7 @@ class FlatFile:
                 compress = 1
             else:
                 log.Log.FatalError(
-                    "Checking the path '{rp}' went wrong.".format(rp=rp_base))
+                    "Checking the path '{pa}' went wrong.".format(pa=rp_base))
         if mode == 'r' or mode == 'rb':
             self.rp = rp_base
             self.fileobj = self.rp.open("rb", compress)
@@ -314,8 +318,8 @@ class FlatFile:
                 self.fileobj = self.rp.open("wb", compress=compress)
         else:
             log.Log.FatalError(
-                "File opening mode '{omode}' should have been one of "
-                "r, rb, w or wb.".format(omode=mode))
+                "File opening mode '{om}' should have been one of "
+                "r, rb, w or wb".format(om=mode))
 
     def write_object(self, object):
         """Convert one object to record and write to file"""
@@ -484,29 +488,28 @@ class Manager:
         """Return combined metadata iter with ea/acl info if necessary"""
         cur_iter = self.get_meta_at_time(time, restrict_index)
         if not cur_iter:
-            log.Log(
-                "Warning, could not find mirror_metadata file.\n"
-                "Metadata will be read from filesystem instead.", 2)
+            log.Log("Could not find mirror_metadata file. "
+                    "Metadata will be read from filesystem instead",
+                    log.WARNING)
             return None
 
         if Globals.acls_active:
             acl_iter = self._get_acls_at_time(time, restrict_index)
             if not acl_iter:
-                log.Log("Warning: Access Control List file not found", 2)
+                log.Log("Access Control List file not found", log.WARNING)
                 acl_iter = iter([])
             cur_iter = eas_acls.join_acl_iter(cur_iter, acl_iter)
         if Globals.eas_active:
             ea_iter = self._get_eas_at_time(time, restrict_index)
             if not ea_iter:
-                log.Log("Warning: Extended Attributes file not found", 2)
+                log.Log("Extended Attributes file not found", log.WARNING)
                 ea_iter = iter([])
             cur_iter = eas_acls.join_ea_iter(cur_iter, ea_iter)
         if Globals.win_acls_active:
             wacl_iter = self._get_win_acls_at_time(time, restrict_index)
             if not wacl_iter:
-                log.Log(
-                    "Warning: Windows Access Control List file not"
-                    " found.", 2)
+                log.Log("Windows Access Control List file not found",
+                        log.WARNING)
                 wacl_iter = iter([])
             cur_iter = win_acls.join_wacl_iter(cur_iter, wacl_iter)
 
@@ -656,19 +659,19 @@ class PatchDiffMan(Manager):
         for (time, rp) in sortlist:
             if time in unique_set:
                 if Globals.allow_duplicate_timestamps:
-                    log.Log("Warning: metadata file '{rp}' has a duplicate "
+                    log.Log("Metadata file '{mf}' has a duplicate "
                             "timestamp date, you might not be able to "
                             "recover files on or earlier than this date. "
                             "Assuming you're in the process of cleaning up "
-                            "your repository.".format(rp=rp), 2)
+                            "your repository".format(mf=rp), log.WARNING)
                 else:
                     log.Log.FatalError(
-                        "Metadata file '{rp}' has a duplicate timestamp "
+                        "Metadata file '{mf}' has a duplicate timestamp "
                         "date, you might not be able to recover files on or "
                         "earlier than this date. "
                         "Check the man page on how to clean up your repository "
                         "using the '--allow-duplicate-timestamps' "
-                        "option.".format(rp=rp))
+                        "option".format(mf=rp))
             else:
                 unique_set.add(time)
 
@@ -701,7 +704,7 @@ class PatchDiffMan(Manager):
         newrp, oldrp = self._check_needs_diff()
         if not newrp:
             return
-        log.Log("Writing mirror_metadata diff", 6)
+        log.Log("Writing mirror_metadata diff", log.DEBUG)
 
         diff_writer = self._get_meta_writer(b'diff', oldrp.getinctime())
         new_iter = MetadataFile(newrp, 'r').get_objects()
@@ -729,16 +732,16 @@ class PatchDiffMan(Manager):
         if not inclist:
             return inclist
         assert inclist[-1].getinctime() == time, (
-            "The time of the last increment '{itime}' must be equal to "
-            "the given time '{time}'.".format(itime=inclist[-1].getinctime(),
-                                              time=time))
+            "The time of the last increment '{it}' must be equal to "
+            "the given time '{gt}'.".format(it=inclist[-1].getinctime(),
+                                            gt=time))
         for i in range(len(inclist) - 1, -1, -1):
             if inclist[i].getinctype() == b'snapshot':
                 return inclist[i:]
         else:
             log.Log.FatalError(
-                "Increments list '{ilist}' contains no snapshots".format(
-                    ilist=inclist))
+                "Increments list '{il}' contains no snapshots".format(
+                    il=inclist))
 
     def _iterate_patched_meta(self, meta_iter_list):
         """Return an iter of metadata rorps by combining the given iters
@@ -776,7 +779,7 @@ def quote_path(path_string):
             return b"\\\\"
         else:
             log.Log.FatalError(
-                "Bad char '{char}' shouldn't need quoting.".format(char=char))
+                "Bad char '{bc}' shouldn't need quoting".format(bc=char))
 
     return _chars_to_quote.sub(replacement_func, path_string)
 
@@ -791,7 +794,8 @@ def unquote_path(quoted_string):
             return b"\n"
         elif two_chars == b"\\\\":
             return b"\\"
-        log.Log("Warning, unknown quoted sequence %s found" % two_chars, 2)
+        log.Log("Warning, unknown quoted sequence {qs} found".format(
+            qs=two_chars), log.WARNING)
         return two_chars
 
     return re.sub(b"\\\\n|\\\\\\\\", replacement_func, quoted_string)
@@ -815,7 +819,8 @@ def _carbonfile2string(cfile):
     try:
         retvalparts.append('createDate:%d' % cfile['createDate'])
     except KeyError:
-        log.Log("Writing pre-1.1.6 style metadata, without creation date", 9)
+        log.Log("Writing pre-1.1.6 style metadata, without creation date",
+                log.DEBUG)
     return '|'.join(retvalparts)
 
 

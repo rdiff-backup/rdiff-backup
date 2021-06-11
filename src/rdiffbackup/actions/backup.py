@@ -24,8 +24,8 @@ A built-in rdiff-backup action plug-in to backup a source to a target directory.
 import time
 
 from rdiff_backup import (
-    log,
     backup,
+    log,
     Security,
     selection,
     SetConnections,
@@ -59,9 +59,9 @@ class BackupAction(actions.BaseAction):
         conn_value = super().connect()
         if conn_value:
             self.source = directory.ReadDir(self.connected_locations[0],
-                                            self.log, self.values.force)
+                                            self.values.force)
             self.target = repository.Repo(
-                self.connected_locations[1], self.log, self.values.force,
+                self.connected_locations[1], self.values.force,
                 must_be_writable=True, must_exist=False,
                 create_full_path=self.values.create_full_path
             )
@@ -104,19 +104,19 @@ class BackupAction(actions.BaseAction):
         self._init_user_group_mapping(self.target.base_dir.conn)
         previous_time = self.target.get_mirror_time()
         if previous_time >= Time.curtime:
-            self.log("The last backup is not in the past. Aborting.",
-                     self.log.ERROR)
+            log.Log("The last backup is not in the past. Aborting.",
+                    log.ERROR)
             return 1
-        if self.log.verbosity > 0:
+        if log.Log.verbosity > 0:
             try:  # the target repository must be writable
-                self.log.open_logfile(
+                log.Log.open_logfile(
                     self.target.data_dir.append("backup.log"))
             except (log.LoggerError, Security.Violation) as exc:
-                self.log("Unable to open logfile due to '{exc}'".format(
-                    exc=exc), self.log.ERROR)
+                log.Log("Unable to open logfile due to '{ex}'".format(
+                    ex=exc), log.ERROR)
                 return 1
         # TODO could we get rid of the error log?
-        self.errlog.open(Time.curtimestr, compress=self.values.compression)
+        log.ErrorLog.open(Time.curtimestr, compress=self.values.compression)
 
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
@@ -134,9 +134,9 @@ class BackupAction(actions.BaseAction):
                 return ret_code
         previous_time = self.target.get_mirror_time()
         if previous_time < 0 or previous_time >= Time.curtime:
-            self.log("Either there is more than one current_mirror or "
-                     "the last backup is not in the past. Aborting.",
-                     self.log.ERROR)
+            log.Log("Either there is more than one current_mirror or "
+                    "the last backup is not in the past. Aborting.",
+                    log.ERROR)
             return 1
         elif previous_time:
             Time.setprevtime(previous_time)
@@ -175,12 +175,12 @@ class BackupAction(actions.BaseAction):
         # if not Globals.select_mirror.Select(relative_rpout):
         #     return
 
-        self.log("The target directory '{trp}' may be contained in the "
-                 "source directory '{srp}'. "
-                 "This could cause an infinite recursion. "
-                 "You may need to use the --exclude option "
-                 "(which you might already have done).".format(
-                     trp=rpout, srp=rpin), self.log.WARNING)
+        log.Log("The target directory '{td}' may be contained in the "
+                "source directory '{sd}'. "
+                "This could cause an infinite recursion. "
+                "You may need to use the --exclude option "
+                "(which you might already have done).".format(
+                    td=rpout, sd=rpin), log.WARNING)
 
 
 def get_action_class():

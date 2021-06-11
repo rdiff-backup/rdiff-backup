@@ -29,7 +29,7 @@ import sys
 import tempfile
 import yaml
 from rdiff_backup import (
-    Globals, rpath, Security, SetConnections, Time
+    Globals, log, rpath, Security, SetConnections, Time
 )
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
@@ -354,16 +354,13 @@ class BaseAction:
             subparsers[sub_name].set_defaults(**{sub_dest: sub_name})
         return subparsers
 
-    def __init__(self, values, log=None, errlog=None):
+    def __init__(self, values):
         """
         Instantiate an action plug-in class.
 
         values is a Namespace as returned by argparse.
-        log is a log.Log object and errlog a log.ErrorLog object.
         """
         self.values = values
-        self.log = log
-        self.errlog = errlog
         if self.values.remote_schema:
             self.remote_schema = os.fsencode(self.values.remote_schema)
         else:
@@ -387,10 +384,10 @@ class BaseAction:
 
         Returns False to propagate potential exception, else True.
         """
-        self.log("Cleaning up", self.log.INFO)
+        log.Log("Cleaning up", log.INFO)
         if self.security != "server":
-            self.errlog.close()
-            self.log.close_logfile()
+            log.ErrorLog.close()
+            log.Log.close_logfile()
             SetConnections.CloseConnections()
 
         return False
@@ -416,18 +413,18 @@ class BaseAction:
         """
         return_code = 0
         if self.values.action != self.name:
-            self.log("Action '{act}' doesn't fit name of action class "
-                     "'{name}'.".format(act=self.values.action, name=self.name),
-                     self.log.ERROR)
+            log.Log("Action value '{av}' doesn't fit name of action class "
+                    "'{ac}'.".format(av=self.values.action, ac=self.name),
+                    log.ERROR)
             return_code |= 1
         if self.values.tempdir and not os.path.isdir(self.values.tempdir):
-            self.log("Temporary directory '{dir}' doesn't exist.".format(
-                     dir=self.values.tempdir), self.log.ERROR)
+            log.Log("Temporary directory '{td}' doesn't exist.".format(
+                    td=self.values.tempdir), log.ERROR)
             return_code |= 1
         if (self.security is None
                 and "locations" in self.values and self.values.locations):
-            self.log("Action '{act}' must have a security class to handle "
-                     "locations".format(act=self.name), self.log.ERROR)
+            log.Log("Action '{ac}' must have a security class to handle "
+                    "locations".format(ac=self.name), log.ERROR)
             return_code |= 1
         return return_code
 
@@ -479,8 +476,8 @@ class BaseAction:
         # if a connection is None, it's an error
         for conn, loc in zip(self.connected_locations, self.values.locations):
             if conn is None:
-                self.log("Location '{loc}' couldn't be connected.".format(
-                    loc=loc), self.log.ERROR)
+                log.Log("Location '{lo}' couldn't be connected.".format(
+                    lo=loc), log.ERROR)
                 return_code |= 1
 
         return return_code
@@ -530,9 +527,9 @@ class BaseAction:
             try:
                 return rp.get_string()
             except OSError as e:
-                self.log.FatalError(
-                    "Error '{err!s}' reading mapping file '{file}'".format(
-                        err=e, file=filename))
+                log.Log.FatalError(
+                    "Error '{er}' reading mapping file '{mf}'".format(
+                        er=e, mf=filename))
 
         user_mapping_string = get_string_from_file(
             self.values.user_mapping_file)
@@ -555,9 +552,8 @@ class BaseAction:
         try:
             return Time.genstrtotime(timestr, rp=ref_rp)
         except Time.TimeException as exc:
-            self.log("Time string '{tstr}' couldn't be parsed "
-                     "due to '{exc}'".format(tstr=timestr, exc=exc),
-                     self.log.ERROR)
+            log.Log("Time string '{ts}' couldn't be parsed "
+                    "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
             return None
 
 

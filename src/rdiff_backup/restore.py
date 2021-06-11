@@ -50,7 +50,8 @@ class MirrorStruct:
         if not cur_mirror_incs:
             log.Log.FatalError("Could not get time of current mirror")
         elif len(cur_mirror_incs) > 1:
-            log.Log("Warning, two different times for current mirror found", 2)
+            log.Log("Two different times for current mirror found",
+                    log.WARNING)
         return cur_mirror_incs[0].getinctime()
 
     @classmethod
@@ -110,9 +111,8 @@ class MirrorStruct:
         if not rorp_iter:
             if require_metadata:
                 log.Log.FatalError("Mirror metadata not found")
-            log.Log(
-                "Warning: Mirror metadata not found, "
-                "reading from directory", 2)
+            log.Log("Mirror metadata not found, reading from directory",
+                    log.WARNING)
             rorp_iter = cls._get_rorp_iter_from_rf(cls.root_rf)
 
         if cls._select:
@@ -261,7 +261,7 @@ class TargetStruct:
         """
         ITR = rorpiter.IterTreeReducer(PatchITRB, [target])
         for diff in rorpiter.FillInIter(diff_iter, target):
-            log.Log("Processing changed file {rp}".format(rp=diff), 5)
+            log.Log("Processing changed file {cf}".format(cf=diff), log.INFO)
             ITR(diff.index, diff)
         ITR.finish_processing()
         target.setdata()
@@ -295,9 +295,9 @@ class CachedRF:
             self._get_rf(index, mir_rorp), mir_rorp, self.root_rf.mirror_rp)
         if not rf:
             log.Log(
-                "Error: Unable to retrieve data for file %s!\nThe "
-                "cause is probably data loss from the backup repository." %
-                (index and "/".join(index) or '.', ), 2)
+                "Unable to retrieve data for file {fi}! The cause is "
+                "probably data loss from the backup repository".format(
+                    fi=(index and "/".join(index) or '.')), log.WARNING)
             return io.BytesIO()
         return rf.get_restore_fp()
 
@@ -446,7 +446,8 @@ class RestoreFile:
         def get_fp():
             current_fp = self._get_first_fp()
             for inc_diff in self.relevant_incs[1:]:
-                log.Log("Applying patch {rp}".format(rp=inc_diff), 7)
+                log.Log("Applying patch file {pf}".format(pf=inc_diff),
+                        log.DEBUG)
                 assert inc_diff.getinctype() == b'diff', (
                     "Path '{irp!r}' must be of type 'diff'.".format(
                         irp=inc_diff))
@@ -458,20 +459,20 @@ class RestoreFile:
             return current_fp
 
         def error_handler(exc):
-            log.Log(
-                "Error reading %s, substituting empty file." %
-                (self.mirror_rp.path, ), 2)
+            log.Log("Failed reading file {fi}, substituting empty file.".format(
+                fi=self.mirror_rp), log.WARNING)
             return io.BytesIO(b'')
 
         if not self.relevant_incs[-1].isreg():
-            log.Log("""Warning: Could not restore file {rp}!
+            log.Log("""Could not restore file {rf}!
 
 A regular file was indicated by the metadata, but could not be
-constructed from existing increments because last increment had type
-{ityp}.  Instead of the actual file's data, an empty length file will be
-created.  This error is probably caused by data loss in the
+constructed from existing increments because last increment had type {it}.
+Instead of the actual file's data, an empty length file will be created.
+This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""".format(
-                rp=self.mirror_rp, ityp=self.relevant_incs[-1].lstat()), 2)
+                rf=self.mirror_rp,
+                it=self.relevant_incs[-1].lstat()), log.WARNING)
             return io.BytesIO()
         return robust.check_common_error(error_handler, get_fp)
 
@@ -671,16 +672,16 @@ class PatchITRB(rorpiter.ITRBranch):
         if not diff_rorp.isreg():
             return
         if not diff_rorp.has_sha1():
-            log.Log("Hash for {rp} missing, cannot check".format(
-                rp=diff_rorp), 2)
+            log.Log("Hash for file {fi} missing, cannot check".format(
+                fi=diff_rorp), log.WARNING)
         elif copy_report.sha1_digest == diff_rorp.get_sha1():
-            log.Log("Hash {hsh} of {rp} verified".format(
-                hsh=diff_rorp.get_sha1(), rp=diff_rorp), 6)
+            log.Log("Hash {ha} of file {fi} verified".format(
+                ha=diff_rorp.get_sha1(), fi=diff_rorp), log.DEBUG)
         else:
-            log.Log("Warning: Hash {hsh} of {rp}\n"
-                    "doesn't match recorded hash {rhsh}!".format(
-                        hsh=copy_report.sha1_digest, rp=diff_rorp,
-                        rhsh=diff_rorp.get_sha1()), 2)
+            log.Log("Calculated hash {ch} of file {fi} "
+                    "doesn't match recorded hash {rh}".format(
+                        ch=copy_report.sha1_digest, fi=diff_rorp,
+                        rh=diff_rorp.get_sha1()), log.WARNING)
 
     def _prepare_dir(self, diff_rorp, base_rp):
         """Prepare base_rp to turn into a directory"""

@@ -283,16 +283,14 @@ class Select:
     def _parse_catch_error(self, exc):
         """Deal with selection error exc"""
         if isinstance(exc, FilePrefixError):
-            log.Log.FatalError("""Fatal Error: The file specification
-    '%s'
-cannot match any files in the base directory
-    '%s'
+            log.Log.FatalError("""The file specification '{fs}'
+cannot match any files in the base directory '{bd}'.
 Useful file specifications begin with the base directory or some
-pattern (such as '**') which matches the base directory.""" % (exc,
-                                                               self.prefix))
+pattern (such as '**') which matches the base directory""".format(
+                fs=exc, bd=self.prefix))
         elif isinstance(exc, GlobbingError):
-            log.Log.FatalError("Fatal Error while processing expression\n"
-                               "%s" % exc)
+            log.Log.FatalError("Fatal Error while processing expression "
+                               "'{ex}'".format(ex=exc))
         else:
             raise
 
@@ -300,11 +298,10 @@ pattern (such as '**') which matches the base directory.""" % (exc,
         """Exit with error if last selection function isn't an exclude"""
         if (self.selection_functions
                 and not self.selection_functions[-1].exclude):
-            log.Log.FatalError("""Last selection expression:
-    %s
+            log.Log.FatalError("""Last selection expression {se}
 only specifies that files be included.  Because the default is to
 include all files, the expression is redundant.  Exiting because this
-probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
+probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
     def _add_selection_func(self, sel_func, add_to_start=None):
         """Add another selection function at the end or beginning"""
@@ -323,10 +320,10 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         filelist_name is just a string used for logging.
 
         """
-        log.Log("Reading filelist %s" % filelist_name, 4)
+        log.Log("Reading filelist {fl}".format(fl=filelist_name), log.INFO)
         tuple_list, something_excluded = \
             self._filelist_read(filelist_fp, inc_default, filelist_name)
-        log.Log("Sorting filelist %s" % filelist_name, 4)
+        log.Log("Sorting filelist {fl}".format(fl=filelist_name), log.INFO)
         tuple_list.sort()
         i = [0]  # We have to put index in list because of stupid scoping rules
 
@@ -354,11 +351,12 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
             prefix_warnings[0] += 1
             if prefix_warnings[0] < 6:
                 log.Log(
-                    "Warning: file specification '%s' in filelist %s\n"
-                    "doesn't start with correct prefix %s.  Ignoring." %
-                    (exc, filelist_name, self.prefix), 2)
+                    "File specification '{fs}' in filelist {fl} "
+                    "doesn't start with correct prefix {cp}. Ignoring.".format(
+                        fs=exc, fl=filelist_name, cp=self.prefix), log.WARNING)
                 if prefix_warnings[0] == 5:
-                    log.Log("Future prefix errors will not be logged.", 2)
+                    log.Log("Future prefix errors will not be logged",
+                            log.WARNING)
 
         something_excluded, tuple_list = None, []
         separator = Globals.null_separator and b"\0" or b"\n"
@@ -375,7 +373,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
             if not tuple[1]:
                 something_excluded = 1
         if filelist_fp.close():
-            log.Log("Error closing filelist %s" % filelist_name, 2)
+            log.Log("Failed closing filelist {fl}".format(fl=filelist_name),
+                    log.WARNING)
         return (tuple_list, something_excluded)
 
     def _filelist_parse_line(self, line, include):
@@ -438,7 +437,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         See the man page on --[include/exclude]-globbing-filelist
 
         """
-        log.Log("Reading globbing filelist %s" % list_name, 4)
+        log.Log("Reading globbing filelist {gf}".format(gf=list_name), log.INFO)
         separator = Globals.null_separator and b"\0" or b"\n"
         for line in filelist_fp.read().split(separator):
             line = line.rstrip(b'\r')  # for Windows/DOS endings
@@ -474,7 +473,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         try:
             regexp = re.compile(os.fsencode(regexp_string))
         except re.error:
-            log.Log("Error compiling regular expression %s" % regexp_string, 1)
+            log.Log("Failed compiling regular expression {rx}".format(
+                rx=regexp_string), log.ERROR)
             raise
 
         def sel_func(rp):
@@ -557,7 +557,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         except ValueError:
             log.Log.FatalError(
                 "Max and min file size must be a positive integer "
-                "and not '{size}'.".format(size=sizestr))
+                "and not '{fs}'".format(fs=sizestr))
 
         def sel_func(rp):
             if not rp.isreg():

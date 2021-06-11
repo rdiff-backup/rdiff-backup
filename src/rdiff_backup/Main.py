@@ -67,14 +67,13 @@ def _main_run(arglist, security_override=False):
 
     # instantiate the action object from the dictionary, handing over the
     # parsed arguments
-    action = discovered_actions[parsed_args.action](parsed_args,
-                                                    log.Log, log.ErrorLog)
+    action = discovered_actions[parsed_args.action](parsed_args)
 
     # validate that everything looks good before really starting
     ret_val = action.pre_check()
     if ret_val != 0:
-        log.Log("Action {act} failed on {func}.".format(
-            act=parsed_args.action, func="pre_check"), log.Log.ERROR)
+        log.Log("Action {ac} failed on step {st}".format(
+            ac=parsed_args.action, st="pre_check"), log.ERROR)
         return ret_val
 
     # now start for real, conn_act and action are the same object
@@ -88,20 +87,20 @@ def _main_run(arglist, security_override=False):
 
         ret_val = conn_act.check()
         if ret_val != 0:
-            log.Log("Action {act} failed on {func}.".format(
-                act=parsed_args.action, func="check"), log.Log.ERROR)
+            log.Log("Action {ac} failed on step {st}".format(
+                ac=parsed_args.action, st="check"), log.ERROR)
             return ret_val
 
         ret_val = conn_act.setup()
         if ret_val != 0:
-            log.Log("Action {act} failed on {func}.".format(
-                act=parsed_args.action, func="setup"), log.Log.ERROR)
+            log.Log("Action {ac} failed on step {st}".format(
+                ac=parsed_args.action, st="setup"), log.ERROR)
             return ret_val
 
         ret_val = conn_act.run()
         if ret_val != 0:
-            log.Log("Action {act} failed on {func}.".format(
-                act=parsed_args.action, func="run"), log.Log.ERROR)
+            log.Log("Action {ac} failed on step {st}".format(
+                ac=parsed_args.action, st="run"), log.ERROR)
             return ret_val
 
     return ret_val
@@ -122,7 +121,7 @@ def backup_touch_curmirror_local(rpin, rpout):
     """
     mirrorrp = Globals.rbdir.append(b'.'.join(
         map(os.fsencode, (b"current_mirror", Time.curtimestr, "data"))))
-    log.Log("Writing mirror marker {rp}".format(rp=mirrorrp), 6)
+    log.Log("Writing mirror marker {mm}".format(mm=mirrorrp), log.DEBUG)
     try:
         pid = os.getpid()
     except BaseException:

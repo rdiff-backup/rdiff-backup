@@ -144,8 +144,8 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         index = new_rorp.index
     else:
         log.Log.FatalError(
-            "Neither old '{orp}' nor new path '{nrp}' is existing.".format(
-                orp=old_rorp, nrp=new_rorp))
+            "Neither old '{op}' nor new path '{np}' is existing".format(
+                op=old_rorp, np=new_rorp))
 
     alt_inc, inc_rp = find_inc_pair(index, mirror_rp, alt_mirror, alt_inc)
     update_rorp(new_rorp, alt_mirror, alt_inc)
@@ -169,8 +169,8 @@ def update_rf(rf, rorp, mirror_root):
 
     def update_incs(rf, inc_base):
         """Swap inclist in rf with those with base inc_base and return"""
-        log.Log("Restoring with increment base {inc} for file {rp}".format(
-            inc=_safe_str(inc_base), rp=rf), 6)
+        log.Log("Restoring with increment base {ib} for file {rp}".format(
+            ib=_safe_str(inc_base), rp=rf), log.DEBUG)
         rf.inc_rp = _get_long_rp(inc_base)
         rf.inc_list = _get_inclist(inc_base)
         rf.set_relevant_incs()
@@ -247,7 +247,7 @@ def _get_next_free_filename():
 
     def scan_next_free():
         """Return value of _free_name_counter by listing long filename dir"""
-        log.Log("Setting next free from long filenames dir", 5)
+        log.Log("Setting next free from long filenames dir", log.INFO)
         cur_high = 0
         for filename in _get_long_rp().listdir():
             try:

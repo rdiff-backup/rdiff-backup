@@ -74,8 +74,9 @@ class ExtendedAttributes:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
             if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
-                log.Log("Warning: listattr({rp}): {exc}".format(
-                    rp=rp, exc=exc), 4)
+                log.Log("Listing extended attributes of path {pa} produced "
+                        "exception '{ex}', ignored".format(pa=rp, ex=exc),
+                        log.INFO)
                 return
             raise
         for attr in attr_list:
@@ -111,8 +112,9 @@ class ExtendedAttributes:
                 # fail gracefully if can't call xattr.set
                 if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
                                  errno.ENOENT, errno.EINVAL):
-                    log.Log("Warning: unable to write xattr "
-                            "{xat} to {rp}".format(xat=name, rp=rp), 6)
+                    log.Log("Unable to write xattr {xa} to path {pa} "
+                            "due to exception '{ex}', ignoring".format(
+                                xa=name, pa=rp, ex=exc), log.INFO)
                     continue
                 else:
                     raise
@@ -142,12 +144,13 @@ class ExtendedAttributes:
                 except PermissionError:  # errno.EACCES
                     # SELinux attributes cannot be removed, and we don't want
                     # to bail out or be too noisy at low log levels.
-                    log.Log("Warning: unable to remove xattr "
-                            "{xat} from {rp}".format(xat=name, rp=rp), 7)
+                    log.Log("Not allowed to remove extended attribute "
+                            "{ea} from path {pa}".format(ea=name, pa=rp),
+                            log.DEBUG)
                     continue
                 except OSError as exc:
-                    # can happen because trusted.SGI_ACL_FILE is deleted together with
-                    # system.posix_acl_access on XFS file systems.
+                    # can happen because trusted.SGI_ACL_FILE is deleted
+                    # together with system.posix_acl_access on XFS file systems.
                     if exc.errno == errno.ENODATA:
                         continue
                     else:  # can be anything, just fail
@@ -155,8 +158,9 @@ class ExtendedAttributes:
         except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
             return  # if not supported, consider empty
         except FileNotFoundError as exc:
-            log.Log("Warning: unable to clear xattrs on {rp}: {exc}".format(
-                rp=rp, exc=exc), 3)
+            log.Log("Unable to clear extended attributes on path {pa} due to "
+                    "exception '{ex}', ignoring".format(pa=rp, ex=exc),
+                    log.NOTE)
             return
 
 
@@ -505,8 +509,9 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
         acl.applyto(rp.path)
     except OSError as exc:
         if exc.errno == errno.EOPNOTSUPP:
-            log.Log("Warning: unable to set ACL on {rp}: {exc}".format(
-                rp=rp, exc=exc), 4)
+            log.Log(
+                "Unable to set ACL on path {pa} due to exception '{ex}'".format(
+                    pa=rp, ex=exc), log.INFO)
             return
         else:
             raise
@@ -528,8 +533,9 @@ def get_acl_lists_from_rp(rp):
     try:
         acl = posix1e.ACL(file=rp.path)
     except (FileNotFoundError, UnicodeEncodeError) as exc:
-        log.Log("Warning: unable to read ACL from {rp}: {exc}".format(
-            rp=rp, exc=exc), 3)
+        log.Log(
+            "Unable to read ACL from path {pa} due to exception '{ex}'".format(
+                pa=rp, ex=exc), log.NOTE)
         acl = None
     except OSError as exc:
         if exc.errno == errno.EOPNOTSUPP:
@@ -540,8 +546,8 @@ def get_acl_lists_from_rp(rp):
         try:
             def_acl = posix1e.ACL(filedef=os.fsdecode(rp.path))
         except (FileNotFoundError, UnicodeEncodeError) as exc:
-            log.Log("Warning: unable to read default ACL from {rp}: "
-                    "{exc}".format(rp=rp, exc=exc), 3)
+            log.Log("Unable to read default ACL from path {pa} due to "
+                    "exception '{ex}'".format(pa=rp, ex=exc), log.NOTE)
             def_acl = None
         except OSError as exc:
             if exc.errno == errno.EOPNOTSUPP:
@@ -653,15 +659,13 @@ def _list_to_acl(entry_list, map_names=1):
         """Warn about acl with name getting dropped"""
         global dropped_acl_names
         if Globals.never_drop_acls:
-            log.Log.FatalError(
-                "--never-drop-acls specified but cannot map name\n"
-                "%s occurring inside an ACL." % (name, ))
+            log.Log.FatalError("--never-drop-acls specified but cannot map "
+                               "ACL name {an}".format(an=name))
         if name in dropped_acl_names:
             return
-        log.Log(
-            "Warning: name %s not found on system, dropping ACL entry.\n"
-            "Further ACL entries dropped with this name will not "
-            "trigger further warnings" % (name, ), 2)
+        log.Log("ACL name {an} not found on system, dropping entry. "
+                "Further ACL entries dropped with this name will not "
+                "trigger further warnings".format(an=name), log.WARNING)
         dropped_acl_names[name] = name
 
     acl = posix1e.ACL()
@@ -675,16 +679,16 @@ def _list_to_acl(entry_list, map_names=1):
                     id = user_group.acl_group_map(*owner_pair)
                 else:
                     raise ValueError(
-                        "Type '{tchar}' must be one of 'u' or 'g'.".format(
-                            tchar=typechar))
+                        "Type '{tc}' must be one of 'u' or 'g'.".format(
+                            tc=typechar))
                 if id is None:
                     warn_drop(owner_pair[1])
                     continue
             else:
                 assert owner_pair[0] is not None, (
-                    "First owner can't be None with type={tchar}, "
+                    "First owner can't be None with type={tc}, "
                     "owner pair={own}, perms={perms}".format(
-                        tchar=typechar, own=owner_pair, perms=perms))
+                        tc=typechar, own=owner_pair, perms=perms))
                 id = owner_pair[0]
 
         entry = posix1e.Entry(acl)

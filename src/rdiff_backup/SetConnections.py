@@ -28,8 +28,7 @@ import os
 import re
 import sys
 import subprocess
-from .log import Log
-from . import Globals, connection, rpath
+from . import Globals, connection, log, rpath
 
 # This is the schema that determines how rdiff-backup will open a
 # pipe to the remote system.  If the file is given as A::B, %s will
@@ -77,8 +76,8 @@ def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
 
     if remote_schema and not [x for x in desc_triples if x[0]]:
         # remote schema defined but no remote location found
-        Log("Remote schema option ignored - no remote file "
-            "descriptions.", 2)
+        log.Log("Remote schema option ignored - no remote file descriptions",
+                log.WARNING)
 
     # strip the error field from the triples to get pairs
     desc_pairs = [triple[:2] for triple in desc_triples]
@@ -127,38 +126,39 @@ def UpdateGlobal(setting_name, val):
 
 def BackupInitConnections(reading_conn, writing_conn):
     """Backup specific connection initialization"""
-    reading_conn.Globals.set("isbackup_reader", 1)
-    writing_conn.Globals.set("isbackup_writer", 1)
+    reading_conn.Globals.set("isbackup_reader", True)
+    writing_conn.Globals.set("isbackup_writer", True)
     UpdateGlobal("backup_reader", reading_conn)
     UpdateGlobal("backup_writer", writing_conn)
 
 
 def CloseConnections():
     """Close all connections.  Run by client"""
-    assert not Globals.server, "Connections can't be closed by server."
+    assert not Globals.server, "Connections can't be closed by server"
     for conn in Globals.connections:
         if conn:  # could be None, if the connection failed
             conn.quit()
     del Globals.connections[1:]  # Only leave local connection
     Globals.connection_dict = {0: Globals.local_connection}
-    Globals.backup_reader = Globals.isbackup_reader = \
-        Globals.backup_writer = Globals.isbackup_writer = None
+    Globals.backup_reader = Globals.backup_writer = None
+    Globals.isbackup_reader = Globals.isbackup_writer = False
 
 
 def TestConnections(rpaths):
     """Test connections, printing results.
     Returns 0 if all connections work, 1 if one or more failed,
     2 if the length of the list of connections isn't correct, most probably
-    because the user called rdiff-backup incorrectly."""
+    because the user called rdiff-backup incorrectly"""
     # the function doesn't use the log functions because it might not have
     # an error or log file to use.
     conn_len = len(Globals.connections)
     if conn_len == 1:
-        print("No remote connections specified, only local one available.")
+        log.Log("No remote connections specified, only local one available",
+                log.ERROR)
         return 2
     elif conn_len != len(rpaths) + 1:
-        print("All %d parameters must be remote of the form 'server::path'." %
-              len(rpaths))
+        print("All {pa} parameters must be remote of the form "
+              "'server::path'".format(pa=len(rpaths)), log.ERROR)
         return 2
 
     # we create a list of all test results, skipping the connection 0, which
@@ -226,12 +226,12 @@ def parse_location(file_desc):
     else:  # length of 2 is given
         if not concat_parts[0]:
             return (None, None,
-                    "No file host in '{desc}' starting with '::'".format(
-                        desc=file_desc))
+                    "No file host in location '{lo}' starting with '::'".format(
+                        lo=file_desc))
         elif not concat_parts[1]:
             return (None, None,
-                    "No file path in '{desc}' ending with '::'".format(
-                        desc=file_desc))
+                    "No file path in location '{lo}' ending with '::'".format(
+                        lo=file_desc))
         file_host = concat_parts[0]
         file_path = concat_parts[1]
 
@@ -257,7 +257,7 @@ def _fill_schema(host_info):
     Fills host_info and optionally the version into the schema and returns remote command.
     """
     assert isinstance(host_info, bytes), (
-        "host_info parameter must be bytes not {thi}.".format(
+        "host_info parameter must be bytes not {thi}".format(
             thi=type(host_info)))
     try:
         # for security reasons, we accept only specific format placeholders
@@ -277,8 +277,8 @@ def _fill_schema(host_info):
         else:  # compat200: accepts "%s" as host place-holder
             return __cmd_schema % host_info
     except (TypeError, KeyError):
-        Log.FatalError("Invalid remote schema:\n\n{schema}\n".format(
-            schema=_safe_str(__cmd_schema)))
+        log.Log.FatalError("Invalid remote schema: {rs}".format(
+            rs=_safe_str(__cmd_schema)))
 
 
 def _init_connection(remote_cmd):
@@ -293,7 +293,8 @@ def _init_connection(remote_cmd):
     if not remote_cmd:
         return Globals.local_connection
 
-    Log("Executing %s" % _safe_str(remote_cmd), 4)
+    log.Log("Executing remote command {rc}".format(rc=_safe_str(remote_cmd)),
+            log.INFO)
     try:
         # we need buffered read on SSH communications, hence using
         # default value for bufsize parameter
@@ -320,7 +321,7 @@ def _init_connection(remote_cmd):
 
     if not _validate_connection_version(conn, remote_cmd):
         return None
-    Log("Registering connection %d" % conn_number, 7)
+    log.Log("Registering connection {co}".format(co=conn_number), log.DEBUG)
     _init_connection_routing(conn, conn_number, remote_cmd)
     _init_connection_settings(conn)
     return conn
@@ -337,33 +338,29 @@ def _validate_connection_version(conn, remote_cmd):
     try:
         remote_version = conn.Globals.get('version')
     except connection.ConnectionError as exception:
-        Log("""%s
-
-Couldn't start up the remote connection by executing
-
-    %s
+        log.Log(
+            """Couldn't start up the remote connection by executing '{rc}'
+due to exception '{ex}'.
 
 Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
-version of rdiff-backup is quite different from the local version (%s).""" %
-            (exception, _safe_str(remote_cmd), Globals.version), 1)
+version of rdiff-backup is quite different from the local version ({lv})
+""".format(ex=exception, rc=_safe_str(remote_cmd), lv=Globals.version),
+            log.ERROR)
         return False
     except OverflowError:
-        Log(
+        log.Log(
             """Integer overflow while attempting to establish the
-remote connection by executing
-
-    %s
+remote connection by executing {rc}
 
 Please make sure that nothing is printed (e.g., by your login shell) when this
-command executes. Try running this command:
+command executes. Try running this command: {co}
 
-    %s
-
-which should only print out the text: rdiff-backup <version>""" %
-            (_safe_str(remote_cmd),
-             _safe_str(remote_cmd.replace(b"--server", b"--version"))), 1)
+which should only print out the text: rdiff-backup <version>""".format(
+                rc=_safe_str(remote_cmd),
+                co=_safe_str(remote_cmd.replace(b"--server", b"--version"))),
+            log.ERROR)
         return False
 
     try:
@@ -375,18 +372,17 @@ which should only print out the text: rdiff-backup <version>""" %
                 and (Globals.api_version["actual"]
                      or Globals.api_version["min"]) == 200):
             Globals.api_version["actual"] == 200
-            Log(
-                "Warning: remote version {rem_ver} doesn't know about API "
-                "versions but should be compatible with 200.".format(
-                    rem_ver=remote_version), 2)
+            log.Log("Remote version {rv} doesn't know about API "
+                    "versions but should be compatible with 200".format(
+                        rv=remote_version), log.NOTE)
             return True
         else:
-            Log(
-                "Fatal: remote version {rem_ver} isn't compatible with local "
-                "API version {api_ver}.".format(
-                    rem_ver=remote_version,
-                    api_ver=(Globals.api_version["actual"]
-                             or Globals.api_version["min"])), 1)
+            log.Log(
+                "Remote version {rv} isn't compatible with local "
+                "API version {av}".format(
+                    rv=remote_version,
+                    av=(Globals.api_version["actual"]
+                        or Globals.api_version["min"])), log.ERROR)
             return False
 
     # servers don't validate the API version, client does
@@ -398,16 +394,17 @@ which should only print out the text: rdiff-backup <version>""" %
     # if client and server have no common API version
     if (min(remote_api_version["max"], Globals.api_version["max"])
             < max(remote_api_version["min"], Globals.api_version["min"])):
-        Log("""Fatal: local and remote rdiff-backup have no common API version:
-Remote API version for {rem_ver} must be between {rem_min} and {rem_max}.
-Local API version for {loc_ver} must be between {loc_min} and {loc_max}.
-Please make sure you have compatible versions of rdiff-backup.""".format(
-            rem_ver=remote_version,
-            rem_min=remote_api_version["min"],
-            rem_max=remote_api_version["max"],
-            loc_ver=Globals.version,
-            loc_min=Globals.api_version["min"],
-            loc_max=Globals.api_version["max"]), 1)
+        log.Log(
+            """Local and remote rdiff-backup have no common API version:
+Remote API version for {rv} must be between min {ri} and max {ra}.
+Local API version for {lv} must be between min {li} and max {la}.
+Please make sure you have compatible versions of rdiff-backup""".format(
+                rv=remote_version,
+                ri=remote_api_version["min"],
+                ra=remote_api_version["max"],
+                lv=Globals.version,
+                li=Globals.api_version["min"],
+                la=Globals.api_version["max"]), log.ERROR)
         return False
     # is there an actual API version and does it fit the other side?
     if Globals.api_version["actual"]:
@@ -415,17 +412,20 @@ Please make sure you have compatible versions of rdiff-backup.""".format(
                 and Globals.api_version["actual"] <= remote_api_version["max"]):
             conn.Globals.set('api_version["actual"]',
                              Globals.api_version["actual"])
-            Log("API version agreed to be actual {api_ver} with {cmd}.".format(
-                api_ver=Globals.api_version["actual"], cmd=remote_cmd), 4)
+            log.Log("API version agreed to be actual {av} "
+                    "with command {co}".format(
+                        av=Globals.api_version["actual"], co=remote_cmd),
+                    log.INFO)
             return True
         else:  # the actual version doesn't fit the other side
-            Log("Fatal: remote rdiff-backup doesn't accept the API version "
-                "explicitly set locally to {api_ver}. "
-                "It should be between {rem_min} and {rem_max}. "
-                "Use '--api-version' to set another API version.".format(
-                    api_ver=Globals.api_version["actual"],
-                    rem_min=remote_api_version["min"],
-                    rem_max=remote_api_version["max"]), 1)
+            log.Log(
+                "Remote rdiff-backup doesn't accept the API version "
+                "explicitly set locally to {av}. "
+                "It should be between min {ri} and max {ra}. "
+                "Use '--api-version' to set another API version".format(
+                    av=Globals.api_version["actual"],
+                    ri=remote_api_version["min"],
+                    ra=remote_api_version["max"]), log.ERROR)
             return False
     else:
         # use the default local value but make make sure it's between min
@@ -435,8 +435,8 @@ Please make sure you have compatible versions of rdiff-backup.""".format(
                                      Globals.api_version["default"]))
         Globals.api_version["actual"] = actual_api_version
         conn.Globals.set('api_version["actual"]', actual_api_version)
-        Log("API version agreed to be {api_ver} with {cmd}.".format(
-            api_ver=actual_api_version, cmd=remote_cmd), 4)
+        log.Log("API version agreed to be {av} with command {co}".format(
+            av=actual_api_version, co=remote_cmd), log.INFO)
         return True
 
 
@@ -455,8 +455,8 @@ def _init_connection_routing(conn, conn_number, remote_cmd):
 
 def _init_connection_settings(conn):
     """Tell new conn about log settings and updated globals"""
-    conn.log.Log.setverbosity(Log.verbosity)
-    conn.log.Log.setterm_verbosity(Log.term_verbosity)
+    conn.log.Log.setverbosity(log.Log.verbosity)
+    conn.log.Log.setterm_verbosity(log.Log.term_verbosity)
     for setting_name in Globals.changed_settings:
         conn.Globals.set(setting_name, Globals.get(setting_name))
 

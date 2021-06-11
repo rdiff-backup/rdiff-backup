@@ -5,10 +5,10 @@ import sys
 import code
 import shutil
 import subprocess
-# Avoid circularities
-from rdiff_backup.log import Log
-from rdiff_backup import Globals, Hardlink, Security, SetConnections, Main, \
-    selection, rpath, eas_acls, rorpiter, hash
+from rdiff_backup import (
+    Globals, Hardlink, log, Main, rpath, eas_acls, rorpiter, hash,
+    Security, SetConnections, selection
+)
 from rdiffbackup import actions
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
@@ -349,39 +349,39 @@ def _hardlink_rorp_eq(src_rorp, dest_rorp):
     rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
     if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
         if not rorp_eq:
-            Log("Hardlink compare error with when no links exist", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("Hardlink compare error with when no links exist", 3)
+            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
     elif src_rorp.getnumlinks() > 1 and not Hardlink.is_linked(src_rorp):
         if rorp_eq:
-            Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
+            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
         hash.compute_sha1(dest_rorp)
         rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
         if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
             if rorp_eq:
-                Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+                log.Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
+                log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+                log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
                 return False
         elif not rorp_eq:
-            Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
+            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
     elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
         if rorp_eq:
-            Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
+            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
     elif not rorp_eq:
-        Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
-        Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-        Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+        log.Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
+        log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+        log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
         return False
     Hardlink.del_rorp(src_rorp)
     Hardlink.del_rorp(dest_rorp)
@@ -413,10 +413,10 @@ def _files_rorp_eq(src_rorp, dest_rorp,
                    compare_acls=False):
     """Combined eq func returns true if two files compare same"""
     if not src_rorp:
-        Log("Source rorp missing: %s" % str(dest_rorp), 3)
+        log.Log("Source rorp missing: %s" % str(dest_rorp), 3)
         return False
     if not dest_rorp:
-        Log("Dest rorp missing: %s" % str(src_rorp), 3)
+        log.Log("Dest rorp missing: %s" % str(src_rorp), 3)
         return False
     if not src_rorp._equal_verbose(dest_rorp,
                                    compare_ownership=compare_ownership):
@@ -424,12 +424,12 @@ def _files_rorp_eq(src_rorp, dest_rorp,
     if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
         return False
     if compare_eas and not _ea_compare_rps(src_rorp, dest_rorp):
-        Log(
+        log.Log(
             "Different EAs in files %s and %s" %
             (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
         return False
     if compare_acls and not _acl_compare_rps(src_rorp, dest_rorp):
-        Log(
+        log.Log(
             "Different ACLs in files %s and %s" %
             (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
         return False
@@ -476,7 +476,8 @@ def compare_recursive(src_rp, dest_rp,
 
     """
 
-    Log("Comparing {srp} and {drp}, hardlinks {chl}, "
+    log.Log(
+        "Comparing {srp} and {drp}, hardlinks {chl}, "
         "eas {cea}, acls {cacl}".format(
             srp=src_rp, drp=dest_rp, chl=compare_hardlinks,
             cea=compare_eas, cacl=compare_acls), 3)

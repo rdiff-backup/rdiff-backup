@@ -180,8 +180,8 @@ def _set_security_level(security_class, security_level, restrict_path,
             if restore_type is None:
                 # the error will be catched later more cleanly, so that the
                 # connections can be properly closed
-                log.Log("Invalid restore directory '{path}'".format(
-                    path=getpath(cp1)), log.Log.ERROR)
+                log.Log("Invalid restore directory '{rd}'".format(
+                    rd=getpath(cp1)), log.ERROR)
             rdir = base_dir.path
         else:  # cp2 is local but not cp1
             sec_level = "read-write"
@@ -214,7 +214,7 @@ def _set_allowed_requests(sec_class, sec_level):
         "VirtualFile.readfromid", "VirtualFile.closebyid", "Globals.get",
         "Globals.is_not_None", "Globals.get_dict_val",
         "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
-        "Log.log_to_file", "FilenameMapping.set_init_quote_vals_local",
+        "log.Log.log_to_file", "FilenameMapping.set_init_quote_vals_local",
         "FilenameMapping.set_init_quote_vals", "Time.setcurtime_local",
         "SetConnections.add_redirected_conn", "RedirectedRun",
         "sys.stdout.write", "robust.install_signal_handlers"
