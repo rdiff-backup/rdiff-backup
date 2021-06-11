@@ -85,10 +85,6 @@ They are meant mostly to test the deployment itself (use alpha versions to relea
 
 NOTE: the GitHub releases are created as draft, meaning that a maintainer must review them and publish them before they become visible.
 
-== Releases
-
-There is no prior release schedule -- they are made when deemed fit.
-
 == BUILD AND INSTALL
 
 === Pre-requisites
@@ -373,7 +369,9 @@ print s.getvalue()
 
 == RELEASING
 
-We use https://travis-ci.org[Travis CI] to release automatically, as setup in the link:../.travis.yml[Travis configuration file].
+There is no prior release schedule -- they are made when deemed fit.
+
+We use https://docs.github.com/en/actions[GitHub Actions] to release automatically, as setup in the link:../.github/workflows[GitHub Workflows].
 
 The following rules apply:
 
@@ -395,8 +393,8 @@ Given the above rules, a release cycle looks roughly as follows:
 . Make sure you have the latest master commits with `git checkout master && git pull --prune`.
 . Tag the last commit with `git tag vX.Y.ZbN` (beta) or `git tag vX.y.Z" (stable).
 . Push the tag to GitHub with `git push --tags`.
-. You won't see anything in GitHub at first and need to go directly to https://travis-ci.org/rdiff-backup/rdiff-backup/builds[Travis builds] to verify that the pipeline has started.
-. If everything goes well, you should see the https://github.com/rdiff-backup/rdiff-backup/releases[new draft release] with all assets (aka packages) attached to it after all jobs have finished in Travis.
+. You can go to https://github.com/rdiff-backup/rdiff-backup/actions[Actions] to verify that the pipeline has started.
+. If everything goes well, you should see the https://github.com/rdiff-backup/rdiff-backup/releases[new draft release] with all assets (aka packages) attached to it after all jobs have finished.
 . Give the release a title and description and save it to make it visible to everybody.
 . You'll get a notification e-mail telling you that rdiff-backup-admin has released a new version.
 . Use this e-mail to inform the link:rdiff-backup-users@nongnu.org[rdiff-backup users].
