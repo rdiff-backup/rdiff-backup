@@ -46,7 +46,7 @@ class ServerAction(actions.BaseAction):
 
     def __init__(self, values):
         super().__init__(values)
-        if self.values.debug:
+        if 'debug' in self.values and self.values.debug:
             self._set_breakpoint()
 
     def connect(self):
