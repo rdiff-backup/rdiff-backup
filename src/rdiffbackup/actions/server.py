@@ -25,7 +25,7 @@ import os
 import sys
 
 from rdiffbackup import actions
-from rdiff_backup import (connection, Security)
+from rdiff_backup import (connection, log, Security)
 
 
 class ServerAction(actions.BaseAction):
@@ -44,8 +44,8 @@ class ServerAction(actions.BaseAction):
             help="Allow for remote python debugging (rpdb) using netcat")
         return subparser
 
-    def __init__(self, values, log=None, errlog=None):  # TODO remove logs
-        super().__init__(values, log, errlog)
+    def __init__(self, values):
+        super().__init__(values)
         if self.values.debug:
             self._set_breakpoint()
 
@@ -86,8 +86,8 @@ class ServerAction(actions.BaseAction):
                 # connect to the default 127.0.0.1:4444
                 rpdb.set_trace()
         except ImportError:
-            self.log("Remote debugging impossible, please install rpdb",
-                     self.log.WARNING)
+            log.Log("Remote debugging impossible, please install rpdb",
+                    log.Log.WARNING)
 
 
 def get_action_class():
