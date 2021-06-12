@@ -282,12 +282,15 @@ setup(
             ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
             ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
             ("docs/rdiff-backup-old.1", "build/rdiff-backup-old.1"),
-            ("docs/rdiff-backup-statistics.1", "build/rdiff-backup-statistics.1"),
         ]},
         "build_exec": {"commands": [
-            ("pandoc --standalone --to man --variable date=\"{date}\" "
-             "--variable footer=\"Version {ver}\" {infile} -o {outfile}",
-             ("docs", "rdiff-backup.1.md"), ("build", "rdiff-backup.1"))
+            ("asciidoctor -b manpage -a revdate=\"{date}\" "
+             "-a revnumber=\"{ver}\" -o {outfile} {infile}",
+             ("docs", "rdiff-backup.1.adoc"), ("build", "rdiff-backup.1")),
+            ("asciidoctor -b manpage -a revdate=\"{date}\" "
+             "-a revnumber=\"{ver}\" -o {outfile} {infile}",
+             ("docs", "rdiff-backup-statistics.1.adoc"),
+             ("build", "rdiff-backup-statistics.1")),
         ]},
     },
     cmdclass={
