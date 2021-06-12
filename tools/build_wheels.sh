@@ -10,7 +10,8 @@ build_dir=${basedir}/build
 dist_dir=${basedir}/dist
 
 # Install a system package required by our library
-yum install -y librsync-devel asciidoctor
+yum install -y librsync-devel rubygems
+gem install asciidoctor
 
 # Compile wheels
 for PYBIN in $pybindirs; do
