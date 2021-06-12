@@ -3,7 +3,7 @@
 :docdate: {revdate}
 :man source: rdiff-backup
 :man version: {revnumber}
-:man manual: Rdiff-Backup Manual {revnumber}
+:man manual: Manual {revnumber}
 
 == NAME
 

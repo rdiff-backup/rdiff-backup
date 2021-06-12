@@ -21,7 +21,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     python3-all-dev \
     python3-pylibacl \
     python3-pyxattr \
-    pandoc
+    asciidoctor
 
 # Build dependencies specific for rdiff-backup development and testing
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
