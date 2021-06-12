@@ -89,5 +89,6 @@ class ServerAction(actions.BaseAction):
             self.log("Remote debugging impossible, please install rpdb",
                      self.log.WARNING)
 
+
 def get_action_class():
     return ServerAction
