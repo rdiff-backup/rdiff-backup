@@ -69,6 +69,9 @@ def _main_run(arglist, security_override=False):
     # parsed arguments
     action = discovered_actions[parsed_args.action](parsed_args)
 
+    log.Log("Runtime information =>{ri}<=".format(
+        ri=Globals.get_runtime_info(parsed=vars(parsed_args))), log.DEBUG)
+
     # validate that everything looks good before really starting
     ret_val = action.pre_check()
     if ret_val != 0:
