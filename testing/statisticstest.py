@@ -179,11 +179,11 @@ class IncStatTest(unittest.TestCase):
         self.assertEqual(s.IncrementFileSize, 0)
 
     def testStatistics(self):
-        """Test the writing of statistics
+        """
+        Test the writing of statistics
 
         The file sizes are approximate because the size of directories
         could change with different file systems...
-
         """
 
         def sorti(inclist):

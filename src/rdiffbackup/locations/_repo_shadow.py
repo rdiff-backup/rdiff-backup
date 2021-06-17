@@ -29,6 +29,8 @@ import io
 import os
 import re
 import tempfile
+import time
+import yaml
 from rdiff_backup import (
     C, Globals, hash, increment, iterfile, log,
     Rdiff, robust, rorpiter, rpath, selection, statistics, Time,
@@ -39,6 +41,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.locations.map import owners as map_owners
+from rdiffbackup.utils import psutil
 
 # ### COPIED FROM BACKUP ####
 
@@ -1048,6 +1051,105 @@ information in it.
         map_owners.init_users_mapping(users_map, preserve_num_ids)
         map_owners.init_groups_mapping(groups_map, preserve_num_ids)
 
+# ### LOCKING ####
+
+    # @API(RepoShadow.is_locked, 201)
+    @classmethod
+    def is_locked(cls, lockfile, force=False, remove=False):
+        """
+        Validate if the repository is locked or not by the file
+        'rdiff-backup-data/lock.yml'
+
+        Returns True if the file exists, else returns False
+        """
+        # we need to make sure we have the last state of the lock
+        lockfile.setdata()
+        if lockfile.lstat():
+            try:
+                lock_id = yaml.safe_load(lockfile.get_string())
+            except yaml.scanner.ScannerError:
+                lock_id = {}
+            if 'pid' in lock_id:
+                cmd = psutil.get_pid_name(lock_id['pid'])
+                if cmd and cmd == lock_id.get('cmd'):
+                    if force:
+                        log.Log("Repository is locked but forcing action "
+                                "nevertheless", log.WARNING)
+                        if remove:
+                            lockfile.delete()
+                        return False
+                    else:
+                        return True
+            # the lock is stale in some way
+            log.Log("Lockfile {lf} is stale and being ignored/removed".format(
+                lf=lockfile), log.WARNING)
+            lockfile.delete()
+        else:
+            return False
+
+    # @API(RepoShadow.lock, 201)
+    @classmethod
+    def lock(cls, lockfile, force=False):
+        """
+        Write a specific file 'rdiff-backup-data/lock.yml' to grab the lock,
+        and verify that no other process took the lock by comparing its
+        content.
+
+        Return True if the lock could be taken, False else.
+        """
+        pid = os.getpid()
+        cmd = psutil.get_pid_name(pid)
+        identifier = {
+            'timestamp': Globals.current_time_string,
+            'pid': pid,
+            'cmd': cmd,
+        }
+        if cls.is_locked(lockfile, force, remove=True):
+            log.Log("Repository is locked by file {lf}, another action is "
+                    "probably on-going. Either wait, remove the lock or "
+                    "use the --force option".format(lf=lockfile),
+                    log.ERROR)
+            return False
+        else:
+            try:
+                lockfile.write_string(yaml.safe_dump(identifier))
+                time.sleep(0.1)  # in case another concurring process runs
+                try:
+                    read_back = yaml.safe_load(lockfile.get_string())
+                except yaml.scanner.ScannerError:
+                    read_back = {}
+            except AssertionError:
+                return False
+            except OSError as exc:
+                log.Log("Couldn't create lock file '{lf}' due to "
+                        "exception '{ex}'".format(lf=lockfile, ex=exc),
+                        log.ERROR)
+                return False
+        # we now compare strings to make sure no other process "stole" the lock
+        if read_back == identifier:
+            return True
+        else:
+            log.Log("Lock was stolen by another process {op}".format(
+                op=read_back), log.ERROR)
+            return False
+
+    # @API(RepoShadow.unlock, 201)
+    @classmethod
+    def unlock(cls, lockfile):
+        """
+        Remove any lock existing.
+
+        We don't check for any content because we have the lock and should be
+        the only process running on this repository.
+        """
+        lockfile.setdata()
+        if lockfile.lstat():
+            lockfile.delete()
+        else:
+            log.Log("Something is strange, the lock file '{lf}' was created "
+                    "but it doesn't exist at removal time".format(
+                        lf=lockfile), log.WARNING)
+
 
 class _CacheCollatedPostProcess:
     """
@@ -1795,9 +1897,9 @@ class _RestoreFile:
         """
         incpairs = []
         for inc in self.inc_list:
-            time = inc.getinctime()
-            if time >= self._restore_time:
-                incpairs.append((time, inc))
+            inc_time = inc.getinctime()
+            if inc_time >= self._restore_time:
+                incpairs.append((inc_time, inc))
         incpairs.sort()
         return [pair[1] for pair in incpairs]
 
@@ -2160,12 +2262,12 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
             rf.regress_inc.delete()
 
     def _restore_orig_regfile(self, rf):
-        """Restore original regular file
+        """
+        Restore original regular file
 
         This is the trickiest case for avoiding information loss,
         because we don't want to delete the increment before the
         mirror is fully written.
-
         """
         assert rf.metadata_rorp.isreg(), (
             "Metadata path '{mp}' can only be regular file.".format(

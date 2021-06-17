@@ -128,8 +128,10 @@
 ** `.init_owners_mapping`
 ** `.initialize_restore`
 ** `.initialize_rf_cache`
+** `.is_locked`
 ** `.list_files_at_time`
 ** `.list_files_changed_since`
+** `.lock`
 ** `.needs_regress`
 ** `.patch`
 ** `.patch_and_increment`
@@ -139,6 +141,7 @@
 ** `.set_select`
 ** `.setup_paths`
 ** `.touch_current_mirror`
+** `.unlock`
 ** `.update_quoting`
 ** `.verify`
 
