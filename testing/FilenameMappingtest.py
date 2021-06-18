@@ -1,7 +1,7 @@
-import unittest
 import os
-from commontest import MakeOutputDir, abs_output_dir, abs_test_dir, old_test_dir, \
-    re_init_rpath_dir, rdiff_backup
+import time
+import unittest
+import commontest as ct
 from rdiff_backup import FilenameMapping, rpath, Globals
 
 
@@ -35,36 +35,58 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
-        MakeOutputDir()
-        outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        ct.MakeOutputDir()
+        outrp = rpath.RPath(Globals.local_connection, ct.abs_output_dir)
         inrp = rpath.RPath(Globals.local_connection,
-                           os.path.join(abs_test_dir, b"quotetest"))
-        re_init_rpath_dir(inrp)
+                           os.path.join(ct.abs_test_dir, b"quotetest"))
+        ct.re_init_rpath_dir(inrp)
         long_filename = b"A" * 200  # when quoted should cause overflow
         longrp = inrp.append(long_filename)
         longrp.touch()
         shortrp = inrp.append(b"B")
         shortrp.touch()
 
-        rdiff_backup(1,
-                     1,
-                     inrp.path,
-                     outrp.path,
-                     100000,
-                     extra_options=b"--override-chars-to-quote A")
+        ct.rdiff_backup(True, True,
+                        inrp.path, outrp.path,
+                        100000, extra_options=b"--override-chars-to-quote A")
 
         longrp_out = outrp.append(long_filename)
         self.assertFalse(longrp_out.lstat())
         shortrp_out = outrp.append('B')
         self.assertTrue(shortrp_out.lstat())
 
-        rdiff_backup(1, 1, os.path.join(old_test_dir, b"empty"), outrp.path,
-                     200000)
+        ct.rdiff_backup(True, True,
+                        os.path.join(ct.old_test_dir, b"empty"), outrp.path,
+                        200000)
         shortrp_out.setdata()
         self.assertFalse(shortrp_out.lstat())
-        rdiff_backup(1, 1, inrp.path, outrp.path, 300000)
+        ct.rdiff_backup(True, True, inrp.path, outrp.path, 300000)
         shortrp_out.setdata()
         self.assertTrue(shortrp_out.lstat())
+
+    def testReQuote(self):
+        inrp = rpath.RPath(Globals.local_connection,
+                           os.path.join(ct.abs_test_dir, b"requote"))
+        ct.re_init_rpath_dir(inrp)
+        inrp.append("ABC_XYZ.1").touch()
+        outrp = rpath.RPath(Globals.local_connection, ct.abs_output_dir)
+        ct.re_init_rpath_dir(outrp)
+        self.assertEqual(
+            ct.rdiff_backup_action(True, True, inrp.path, outrp.path,
+                                   ("--chars-to-quote", "A-C"),
+                                   b"backup", ()),
+            0)
+        time.sleep(1)
+        inrp.append("ABC_XYZ.2").touch()
+        # enforce a requote of the whole repository
+        self.assertEqual(
+            ct.rdiff_backup_action(True, True, inrp.path, outrp.path,
+                                   ("--chars-to-quote", "X-Z", "--force"),
+                                   b"backup", ()),
+            0)
+        # let's check that both files have been properly quoted or requoted
+        self.assertTrue(outrp.append("ABC_;088;089;090.1").lstat())
+        self.assertTrue(outrp.append("ABC_;088;089;090.2").lstat())
 
 
 if __name__ == "__main__":
