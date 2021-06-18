@@ -355,7 +355,10 @@ class FSAbilities:
             return None
 
         def test_triple(dir_rp, dirlist, filename):
-            """Return 1 if filename shows system case sensitive"""
+            """
+            Return 1 if filename shows that file system is case sensitive,
+            else 0
+            """
             # TODO move check + lstat to find_letter
             swapped = filename.swapcase()
             if swapped in dirlist:
@@ -371,9 +374,9 @@ class FSAbilities:
             log.Log(
                 "Could not determine case sensitivity of source directory {sd} "
                 "because we can't find any files with letters in them. "
-                "It will be treated as case sensitive, meaning only that "
-                "capital letters might be quoted in the target "
-                "repository".format(sd=rp), log.WARNING)
+                "It will be treated as case sensitive: unnecessary but "
+                "harmless quoting of capital letters might happen if the "
+                "target repository is case insensitive".format(sd=rp), log.NOTE)
             self.case_sensitive = 1
             return
 
@@ -683,6 +686,7 @@ class FSAbilities:
             if filename.endswith(b".") or filename.endswith(b" "):
                 self.escape_trailing_spaces = 0
                 return
+            # we test only periods and assume the same result for spaces
             period = filename + b'.'
             if period in dirlist:
                 self.escape_trailing_spaces = 0
@@ -699,8 +703,9 @@ class FSAbilities:
         log.Log("Could not determine if source directory {sd} permits "
                 "trailing spaces or periods in filenames because we can't "
                 "find any files with trailing dot/period. "
-                "It will be treated as permitting such files".format(sd=rp),
-                log.WARNING)
+                "It will be treated as permitting such files, but none will "
+                "exist if it doesn't, so it doesn't really matter and is "
+                "harmless".format(sd=rp), log.INFO)
         self.escape_trailing_spaces = 0
 
 
@@ -875,54 +880,67 @@ class BackupSetGlobals(SetGlobals):
         return b"".join(ctq)
 
     def _compare_ctq_file(self, rbdir, suggested_ctq, force):
-        """Compare ctq file with suggested result, return actual ctq"""
+        """
+        Compare chars_to_quote previous, enforced and suggested
+
+        If there was no previous_ctq
+
+        Returns a tuple made of the actual quoting and of a boolean telling if
+        a re-quoting is necessary.
+        """
         ctq_rp = rbdir.append(b"chars_to_quote")
-        if not ctq_rp.lstat():
+        if not ctq_rp.lstat():  # the chars_to_quote file doesn't exist
             if Globals.chars_to_quote is None:
                 actual_ctq = suggested_ctq
             else:
                 actual_ctq = Globals.chars_to_quote
+                log.Log("File system at '{fs}' suggested quoting '{sq}' but "
+                        "override quoting '{oq}' will be used. "
+                        "Assuming you know what you are doing".format(
+                            fs=ctq_rp, sq=suggested_ctq, oq=actual_ctq),
+                        log.NOTE)
             ctq_rp.write_bytes(actual_ctq)
-            return (actual_ctq, None)
+            return (actual_ctq, False)
+
+        previous_ctq = ctq_rp.get_bytes()
 
         if Globals.chars_to_quote is None:
-            actual_ctq = ctq_rp.get_bytes()
+            if suggested_ctq and suggested_ctq != previous_ctq:
+                # the file system has new specific requirements
+                actual_ctq = suggested_ctq
+            else:
+                actual_ctq = previous_ctq
+                if previous_ctq and not suggested_ctq:
+                    log.Log("File system at '{fs}' no longer needs quoting "
+                            "but we will retain for backwards "
+                            "compatibility".format(fs=ctq_rp), log.NOTE)
         else:
             actual_ctq = Globals.chars_to_quote  # Globals override
+            if actual_ctq != suggested_ctq:
+                log.Log("File system at '{fs}' suggested quoting '{sq}' but "
+                        "override quoting '{oq}' will be used. "
+                        "Assuming you know what you are doing".format(
+                            fs=ctq_rp, sq=suggested_ctq, oq=actual_ctq),
+                        log.NOTE)
 
-        if actual_ctq == suggested_ctq:
-            return (actual_ctq, None)
-        if suggested_ctq == b"":
-            log.Log("File system no longer needs quoting, "
-                    "but we will retain for backwards compatibility",
-                    log.WARNING)
-            return (actual_ctq, None)
-        if Globals.chars_to_quote is None:
-            if force:
-                log.Log("Migrating rdiff-backup repository from old "
-                        "quoting chars {oq} to new quoting chars {nq}".format(
-                            oq=actual_ctq, nq=suggested_ctq), log.WARNING)
-                ctq_rp.delete()
-                ctq_rp.write_bytes(suggested_ctq)
-                return (suggested_ctq, 1)
-            else:
-                log.Log.FatalError("""New quoting requirements!
-
-The quoting chars this session needs '{nq}' do not match
-the actual quotings '{aq}' listed in the repository settings file
-
-{sf}
-
-This may be caused when you copy an rdiff-backup repository from a
-normal file system onto a windows one that cannot support the same
-characters, or if you backup a case-sensitive file system onto a
-case-insensitive one that previously only had case-insensitive ones
-backed up onto it.
-
-By specifying the --force option, rdiff-backup will migrate the
-repository from the old quoting chars to the new ones.""".format(
-                    nq=suggested_ctq, aq=actual_ctq, sf=ctq_rp))
-        return (actual_ctq, None)  # Maintain Globals override
+        # the quoting didn't change so all is good
+        if actual_ctq == previous_ctq:
+            return (actual_ctq, False)
+        elif force:
+            log.Log("Migrating repository quoting '{rq}' from old quoting "
+                    "chars '{oq}' to new quoting chars '{nq}'".format(
+                        rq=ctq_rp, oq=previous_ctq, nq=actual_ctq), log.WARNING)
+            ctq_rp.delete()
+            ctq_rp.write_bytes(actual_ctq)
+            return (actual_ctq, True)
+        else:
+            log.Log.FatalError(
+                "The repository quoting '{rq}' would need to be migrated from "
+                "old quoting chars '{oq}' to new quoting chars '{nq}'. "
+                "This may mean that the repository has been moved between "
+                "different file systems. Use the --force option if you know "
+                "what you are doing".format(
+                    rq=ctq_rp, oq=previous_ctq, nq=actual_ctq))
 
 
 class RestoreSetGlobals(SetGlobals):

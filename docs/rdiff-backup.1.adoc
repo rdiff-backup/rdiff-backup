@@ -63,7 +63,7 @@ in case rdiff-backup doesn't recognize a case-insensitive file system, you need 
 _chars_ is a string of characters fit to be used in regexp square brackets (e.g.
 '[.code]``A-Z``' as in '[.code]``[A-Z]``').
 +
-*CAUTION:* do NOT change the chars to quote within the same repository!
+CAUTION: do NOT change the chars to quote within the same repository!
 Actually, you only need to set this parameter when creating a new backup repository.
 Do also NOT quote any character used by rdiff-backup in *rdiff-backup-data* (any of '[.code]``a-z0-9._-``')!
 
@@ -76,14 +76,14 @@ The argument is the number of seconds since the epoch.
 Authorize a more drastic modification of a directory than usual (for instance, when overwriting of a destination path, or when removing multiple sessions with *remove*).
 rdiff-backup will generally tell you if it needs this.
 +
-*CAUTION:* You can cause data loss if you mis-use this option.
+CAUTION: You can cause data loss if you mis-use this option.
 Furthermore, do NOT use this option when doing a restore, as it will DELETE files, unless you absolutely know what you are doing.
 
 --fsync, --no-fsync::
 This will enable/disable issuing fsync from rdiff-backup altogether.
 This option is designed to optimize performance on busy backup systems.
 +
-*CAUTION:* This may render your backup unusable in case of filesystem failure.
+CAUTION: This may render your backup unusable in case of filesystem failure.
 Default is hence for fsync to be enabled.
 
 --new, --no-new::
@@ -107,9 +107,9 @@ See the <<remote-operation,REMOTE OPERATION>> section for details.
 
 --restrict-path _dirpath_::
 Require that all file access be inside the given path.
-This switch, and *--restrict-mode*, are intended to be used with the *--server* switch to provide a bit more protection when doing automated remote backups.
+This switch, and *--restrict-mode*, are intended to be used with the *server* action to provide a bit more protection when doing automated remote backups.
 +
-*CAUTION:* Those options are _not_ intended as your only line of defense so please don't do something silly like allow public access to an rdiff-backup server run with *--restrict-mode read-only*.
+CAUTION: Those options are _not_ intended as your only line of defense so please don't do something silly like allow public access to an rdiff-backup server run with *--restrict-mode read-only*.
 
 --restrict-mode {*read-write*,*read-only*,*update-only*}:: restriction mode for the directory given by *--restrict-path*, either full access (aka read-write), read-only, or only to update incrementally an already existing back-up (default is *read-write*).
 
@@ -216,13 +216,19 @@ See <<time-formats,TIME FORMATS>> for details.
 the _source_ parameter is expected to be an increment within a
 back-up repository, to be restored into the given target directory.
 
-server:: Enter server mode (not to be invoked directly, but instead used by another rdiff-backup process on a remote computer).
+server [**--debug**]::
+Enter server mode (not to be invoked directly, but instead used by another rdiff-backup process on a remote computer).
+
+--debug;;
+Start the server in debug mode so that it stops on an early breakpoint and can be remotely debugged using https://github.com/tamentis/rpdb[rpdb].
+See the https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.adoc#debug-client-server-mode[developer's documentation] for details.
 
 test _remote_location_1_ [_remote_location_2_ ...]::
 Test for the presence of a compatible rdiff-backup server as specified in the following remote location argument(s) (of which the filename section will be ignored).
 See the <<remote-operation,REMOTE OPERATION>> section for details.
 
-verify *--at* _time_ _location_:: Check all the data in the repository at the given time by computing the SHA1 hash of all the regular files and comparing them with the hashes stored in the metadata file.
+verify [*--at* _time_] _location_::
+Check all the data in the repository at the given time by computing the SHA1 hash of all the regular files and comparing them with the hashes stored in the metadata file.
 
 --at _time_;;
 the time of the data which needs to be verified.
@@ -302,7 +308,7 @@ This is a best fit for an automatically generated list of files, else use globbi
 
 === Special files selection
 
-*NOTE:* All special files are included by default, so that including them explicitly isn't generally required.
+NOTE: All special files are included by default, so that including them explicitly isn't generally required.
 Exceptions are described.
 
 --include-device-files,--exclude-device-files::
@@ -482,7 +488,7 @@ If you just want to learn the basics, first look at the selection examples in th
 rdiff-backup's selection system was originally inspired by *rsync*(1), but there are many differences.
 For instance, trailing backslashes have no special significance.
 
-*IMPORTANT:* include and exclude patterns under Windows solely support slashes '[.code]``/``' as file separators, given that backslashes '[.code]``\``' have a special meaning in regex/glob patterns.
+IMPORTANT: include and exclude patterns under Windows solely support slashes '[.code]``/``' as file separators, given that backslashes '[.code]``\``' have a special meaning in regex/glob patterns.
 
 All the available file selection conditions are listed under <<selection-options,SELECTION OPTIONS>>.
 
@@ -681,7 +687,11 @@ The log files are not compressed and can become quite large if rdiff-backup is r
 [[environment]]
 == ENVIRONMENT
 
-*RDIFF_BACKUP_VERBOSITY*=_[0-9]_:: the default verbosity for log file and terminal, can be overwritten by the corresponding options *-v/--verbosity* and *--terminal-verbosity*.
+RDIFF_BACKUP_VERBOSITY=_[0-9]_:: the default verbosity for log file and terminal, can be overwritten by the corresponding options *-v/--verbosity* and *--terminal-verbosity*.
+
+RDIFF_BACKUP_DEBUG=[_address_][:__port__]::
+set a non-default listening address and/or port (default is `127.0.0.1:4444`) for  rpdb.
+Valid values are _address_, _address:port_ or _:port_.
 
 [[bugs]]
 == BUGS
