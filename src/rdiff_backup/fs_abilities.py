@@ -355,7 +355,10 @@ class FSAbilities:
             return None
 
         def test_triple(dir_rp, dirlist, filename):
-            """Return 1 if filename shows system case sensitive"""
+            """
+            Return 1 if filename shows that file system is case sensitive,
+            else 0
+            """
             # TODO move check + lstat to find_letter
             swapped = filename.swapcase()
             if swapped in dirlist:
@@ -371,9 +374,9 @@ class FSAbilities:
             log.Log(
                 "Could not determine case sensitivity of source directory {sd} "
                 "because we can't find any files with letters in them. "
-                "It will be treated as case sensitive, meaning only that "
-                "capital letters might be quoted in the target "
-                "repository".format(sd=rp), log.WARNING)
+                "It will be treated as case sensitive: unnecessary but "
+                "harmless quoting of capital letters might happen if the "
+                "target repository is case insensitive".format(sd=rp), log.NOTE)
             self.case_sensitive = 1
             return
 
@@ -683,6 +686,7 @@ class FSAbilities:
             if filename.endswith(b".") or filename.endswith(b" "):
                 self.escape_trailing_spaces = 0
                 return
+            # we test only periods and assume the same result for spaces
             period = filename + b'.'
             if period in dirlist:
                 self.escape_trailing_spaces = 0
@@ -699,8 +703,9 @@ class FSAbilities:
         log.Log("Could not determine if source directory {sd} permits "
                 "trailing spaces or periods in filenames because we can't "
                 "find any files with trailing dot/period. "
-                "It will be treated as permitting such files".format(sd=rp),
-                log.WARNING)
+                "It will be treated as permitting such files, but none will "
+                "exist if it doesn't, so it doesn't really matter and is "
+                "harmless".format(sd=rp), log.INFO)
         self.escape_trailing_spaces = 0
 
 
