@@ -30,7 +30,7 @@ from . import Globals
 
 LOGFILE_ENCODING = 'utf-8'
 
-# we need to define constants before the imports to avoid circular dependencies
+# we need to define constants
 ERROR = 1
 WARNING = 2
 NOTE = 3
