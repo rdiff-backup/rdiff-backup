@@ -1532,7 +1532,7 @@ def move(rpin, rpout):
 
 
 def copy(rpin, rpout, compress=0):
-    """Copy RPath rpin to rpout.  Works for symlinks, dirs, etc.
+    """Copy RPath or RORPath rpin to rpout.  Works for symlinks, dirs, etc.
 
     Returns close value of input for regular file, which can be used
     to pass hashes on.
