@@ -21,7 +21,7 @@
 import os
 import sys
 from rdiff_backup import (
-    C, Globals, log, restore, statistics, Time,
+    C, Globals, log, statistics, Time,
 )
 from rdiffbackup import arguments, actions_mgr, actions
 
@@ -139,7 +139,7 @@ def backup_remove_curmirror_local():
     assert Globals.rbdir.conn is Globals.local_connection, (
         "Function can only be called locally and not over '{conn}'.".format(
             conn=Globals.rbdir.conn))
-    curmir_incs = restore.get_inclist(Globals.rbdir.append(b"current_mirror"))
+    curmir_incs = Globals.rbdir.append(b"current_mirror").get_incfiles_list()
     assert len(curmir_incs) == 2, (
         "There must be two current mirrors not '{ilen}'.".format(
             ilen=len(curmir_incs)))

@@ -30,7 +30,6 @@ from rdiff_backup import (
     FilenameMapping,
     robust,
     rpath,
-    restore,
 )
 
 begin_time = None  # Parse statistics at or after this time...
@@ -116,7 +115,7 @@ class StatisticsRPaths:
 
     def get_sorted_inc_rps(self, prefix):
         """Return list of sorted rps with given prefix"""
-        incs = restore.get_inclist(self.rbdir.append(prefix))
+        incs = self.rbdir.append(prefix).get_incfiles_list()
         if begin_time:
             incs = filter(lambda i: i.getinctime() >= begin_time, incs)
         if end_time:

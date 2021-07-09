@@ -19,9 +19,7 @@
 """list, delete, and otherwise manage increments"""
 
 import os
-from . import (
-    FilenameMapping, Globals, log, restore, selection, statistics, Time
-)
+from . import Globals, log, selection, statistics, Time
 
 
 class ManageException(Exception):
@@ -54,16 +52,10 @@ def describe_incs_human(incs, mirror_time, mirrorrp):
     incpairs.sort()
 
     result = ["Found %d increments:" % len(incpairs)]
-    if Globals.chars_to_quote:
-        for time, inc in incpairs:
-            result.append("    %s   %s" % (
-                os.fsdecode(FilenameMapping.unquote(inc.dirsplit()[1])),
-                Time.timetopretty(time)))
-    else:
-        for time, inc in incpairs:
-            result.append("    %s   %s" % (
-                os.fsdecode(inc.dirsplit()[1]),
-                Time.timetopretty(time)))
+    for time, inc in incpairs:
+        result.append("    %s   %s" % (
+            os.fsdecode(inc.dirsplit()[1]),
+            Time.timetopretty(time)))
     result.append("Current mirror: %s" % Time.timetopretty(mirror_time))
     return "\n".join(result)
 
@@ -134,7 +126,7 @@ def list_increment_sizes(mirror_root, index):
     def get_inc_select():
         """Return iterator of increment rpaths"""
         inc_base = Globals.rbdir.append_path(b'increments', index)
-        for base_inc in restore.get_inclist(inc_base):
+        for base_inc in inc_base.get_incfiles_list():
             yield base_inc
         if inc_base.isdir():
             inc_select = selection.Select(inc_base).set_iter()
@@ -146,7 +138,7 @@ def list_increment_sizes(mirror_root, index):
         triples = []
 
         cur_mir_base = Globals.rbdir.append(b'current_mirror')
-        mirror_time = restore.get_inclist(cur_mir_base)[0].getinctime()
+        mirror_time = (cur_mir_base.get_incfiles_list())[0].getinctime()
         triples.append((mirror_time, mirror_total, mirror_total))
 
         inc_times = list(time_dict.keys())

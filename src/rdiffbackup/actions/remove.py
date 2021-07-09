@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import (log, manage, restore, Security, Time)
+from rdiff_backup import (log, manage, Security, Time)
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 
@@ -131,8 +131,7 @@ class RemoveAction(actions.BaseAction):
             return None
 
         times_in_secs = [
-            inc.getinctime() for inc in restore.get_inclist(
-                self.source.incs_dir)
+            inc.getinctime() for inc in self.source.incs_dir.get_incfiles_list()
         ]
         times_in_secs = [t for t in times_in_secs if t < action_time]
         if not times_in_secs:

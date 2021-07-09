@@ -6,7 +6,7 @@ import random
 import time
 from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin, \
     xcopytree
-from rdiff_backup import Globals, restore, rpath, Time
+from rdiff_backup import Globals, rpath, Time
 """Test consistency by killing rdiff-backup as it is backing up"""
 
 
@@ -178,7 +178,7 @@ class KillTest(ProcessFuncs):
 
         """
         rbdir = rp.append_path("rdiff-backup-data")
-        inclist = restore.get_inclist(rbdir.append("current_mirror"))
+        inclist = rbdir.append("current_mirror").get_incfiles_list()
         self.assertIn(
             len(inclist), (1, 2),
             "There must be 1 or 2 elements in '{paths_list}'.".format(

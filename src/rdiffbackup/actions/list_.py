@@ -137,7 +137,7 @@ class ListAction(actions.BaseAction):
 
     def _list_increments(self):
         """Print out a summary of the increments and their times"""
-        incs = restore.get_inclist(self.inc_rpath)
+        incs = self.inc_rpath.get_incfiles_list()
         mirror_time = restore.MirrorStruct.get_mirror_time()
         if self.values.parsable_output:
             print(manage.describe_incs_parsable(incs, mirror_time,

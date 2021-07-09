@@ -4,7 +4,7 @@ import time
 from commontest import abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir, \
     compare_recursive, BackupRestoreSeries, InternalBackup, InternalRestore, \
     MakeOutputDir, reset_hardlink_dicts, xcopytree
-from rdiff_backup import Globals, Hardlink, selection, rpath, restore, metadata
+from rdiff_backup import Globals, Hardlink, selection, rpath, metadata
 
 
 class HardlinkTest(unittest.TestCase):
@@ -208,7 +208,7 @@ class HardlinkTest(unittest.TestCase):
             Globals.local_connection,
             os.path.join(abs_output_dir, b"rdiff-backup-data",
                          b"mirror_metadata"))
-        incs = restore.get_inclist(meta_prefix)
+        incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
         hashes, link_counts = self.extract_metadata(metadata_rp)
@@ -229,7 +229,7 @@ class HardlinkTest(unittest.TestCase):
                          out_subdir.append("hardlink3").getinode())
 
         # validate that hashes and link counts are correctly saved in metadata
-        incs = restore.get_inclist(meta_prefix)
+        incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == b'snapshot':
             metadata_rp = incs[0]
@@ -307,7 +307,7 @@ class HardlinkTest(unittest.TestCase):
             Globals.local_connection,
             os.path.join(abs_output_dir, b"rdiff-backup-data",
                          b"mirror_metadata"))
-        incs = restore.get_inclist(meta_prefix)
+        incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
         hashes, link_counts = self.extract_metadata(metadata_rp)
@@ -326,7 +326,7 @@ class HardlinkTest(unittest.TestCase):
                          out_subdir.append("hardlink3").getinode())
 
         # validate that hashes and link counts are correctly saved in metadata
-        incs = restore.get_inclist(meta_prefix)
+        incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == b'snapshot':
             metadata_rp = incs[0]

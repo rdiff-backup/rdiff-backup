@@ -6,7 +6,7 @@ import sys
 import os
 from commontest import abs_test_dir, re_init_rpath_dir, Myrm, \
     abs_output_dir, rdiff_backup, abs_testing_dir, MakeOutputDir
-from rdiff_backup import hash, rpath, restore, metadata, Globals, Security, SetConnections
+from rdiff_backup import hash, rpath, metadata, Globals, Security, SetConnections
 
 
 class HashTest(unittest.TestCase):
@@ -99,14 +99,14 @@ class HashTest(unittest.TestCase):
             Globals.local_connection,
             os.path.join(abs_output_dir, b"rdiff-backup-data",
                          b"mirror_metadata"))
-        incs = restore.get_inclist(meta_prefix)
+        incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
         hashlist = self.extract_hashs(metadata_rp)
         self.assertEqual(hashlist, hashlist1)
 
         rdiff_backup(1, 1, in_rp2.path, abs_output_dir, 20000)
-        incs = restore.get_inclist(meta_prefix)
+        incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == 'snapshot':
             inc = incs[0]
