@@ -20,7 +20,7 @@
 
 import tempfile
 import io
-from . import rorpiter, FilenameMapping
+from rdiff_backup import rorpiter
 
 
 class RestoreError(Exception):
@@ -46,7 +46,8 @@ class MirrorStruct:
     @classmethod
     def get_mirror_time(cls):
         """Return time (in seconds) of latest mirror"""
-        cur_mirror_incs = get_inclist(Globals.rbdir.append(b"current_mirror"))
+        cur_mirror_incs = Globals.rbdir.append(
+            b"current_mirror").get_incfiles_list()
         if not cur_mirror_incs:
             log.Log.FatalError("Could not get time of current mirror")
         elif len(cur_mirror_incs) > 1:
@@ -69,9 +70,10 @@ class MirrorStruct:
             d = {cls._mirror_time: None}
         if not rp or not rp.index:
             rp = Globals.rbdir.append(b"increments")
-        for inc in get_inclist(rp):
+        for inc in rp.get_incfiles_list():
             d[inc.getinctime()] = None
-        for inc in get_inclist(Globals.rbdir.append(b"mirror_metadata")):
+        mirror_meta_rp = Globals.rbdir.append(b"mirror_metadata")
+        for inc in mirror_meta_rp.get_incfiles_list():
             d[inc.getinctime()] = None
         return_list = list(d.keys())
         return_list.sort()
@@ -80,7 +82,7 @@ class MirrorStruct:
     @classmethod
     def initialize_rf_cache(cls, mirror_base, inc_base):
         """Set cls.rf_cache to CachedRF object"""
-        inc_list = get_inclist(inc_base)
+        inc_list = inc_base.get_incfiles_list()
         rf = RestoreFile(mirror_base, inc_base, inc_list)
         cls.mirror_base, cls.inc_base = mirror_base, inc_base
         cls.root_rf = rf
@@ -838,26 +840,6 @@ def ListAtTime(mirror_rp, inc_rp, time):
     old_iter = MirrorStruct.get_mirror_rorp_iter()
     for rorp in old_iter:
         yield rorp
-
-
-def get_inclist(inc_rpath):
-    """Returns increments with given base"""
-    dirname, basename = inc_rpath.dirsplit()
-    if Globals.chars_to_quote:
-        basename = FilenameMapping.unquote(basename)
-    parent_dir = inc_rpath.__class__(inc_rpath.conn, dirname, ())
-    if not parent_dir.isdir():
-        return []  # inc directory not created yet
-
-    inc_list = []
-    for filename in parent_dir.listdir():
-        inc_info = rpath.get_incfile_info(filename)
-        if inc_info and inc_info[3] == basename:
-            inc = parent_dir.append(filename)
-            assert inc.isincfile(), (
-                "Path '{irp!r}' must be an increment file".format(irp=inc))
-            inc_list.append(inc)
-    return inc_list
 
 
 from . import (  # noqa: E402

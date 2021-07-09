@@ -403,7 +403,8 @@ def _iterate_raw_rfs(mirror_rp, inc_rp):
     change them back later because regress will do that for us.
 
     """
-    root_rf = RegressFile(mirror_rp, inc_rp, restore.get_inclist(inc_rp))
+    root_rf = RegressFile(mirror_rp, inc_rp,
+                          inc_rp.get_incfiles_list())
 
     def helper(rf):
         mirror_rp = rf.mirror_rp

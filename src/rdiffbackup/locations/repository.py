@@ -29,7 +29,6 @@ from rdiff_backup import (
     FilenameMapping,
     Globals,
     log,
-    restore,  # FIXME shouldn't be necessary!
     rpath,
     Security,
     SetConnections,
@@ -108,7 +107,7 @@ class Repo(locations.Location):
         or 0 if there is no backup yet.
         """
         incbase = self.data_dir.append_path(b"current_mirror")
-        mirror_rps = restore.get_inclist(incbase)  # FIXME is probably better here
+        mirror_rps = incbase.get_incfiles_list()
         if mirror_rps:
             if len(mirror_rps) == 1:
                 return mirror_rps[0].getinctime()
@@ -160,7 +159,7 @@ class Repo(locations.Location):
             if not self.incs_dir.isdir() or not self.incs_dir.listdir():
                 return None
         curmirroot = self.data_dir.append(b"current_mirror")
-        curmir_incs = restore.get_inclist(curmirroot)  # FIXME belongs here
+        curmir_incs = curmirroot.get_incfiles_list()
         if not curmir_incs:
             log.Log.FatalError(
                 """Bad rdiff-backup-data dir on destination side

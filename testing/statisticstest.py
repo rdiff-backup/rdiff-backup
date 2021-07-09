@@ -2,7 +2,7 @@ import unittest
 import time
 import os
 from commontest import abs_test_dir, Myrm, InternalBackup, old_test_dir, abs_output_dir
-from rdiff_backup import Globals, statistics, rpath, restore
+from rdiff_backup import Globals, statistics, rpath
 
 
 class StatsObjTest(unittest.TestCase):
@@ -202,7 +202,7 @@ class IncStatTest(unittest.TestCase):
         rbdir = rpath.RPath(Globals.local_connection,
                             os.path.join(abs_output_dir, b"rdiff-backup-data"))
 
-        incs = sorti(restore.get_inclist(rbdir.append("session_statistics")))
+        incs = sorti(rbdir.append("session_statistics").get_incfiles_list())
         self.assertEqual(len(incs), 2)
         s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
         self.assertEqual(s2.SourceFiles, 7)

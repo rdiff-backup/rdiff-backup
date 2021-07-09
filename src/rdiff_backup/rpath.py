@@ -1032,6 +1032,25 @@ class RPath(RORPath):
                     log.ERROR)
             return (self, [], None)
 
+    def get_incfiles_list(self):
+        """
+        Returns list of increments whose name starts like the current file
+        """
+        dirname, basename = self.dirsplit()
+        parent_dir = self.__class__(self.conn, dirname, ())
+        if not parent_dir.isdir():
+            return []  # inc directory not created yet
+
+        inc_list = []
+        for filename in parent_dir.listdir():
+            inc_info = get_incfile_info(filename)
+            if inc_info and inc_info[3] == basename:
+                inc = parent_dir.append(filename)
+                assert inc.isincfile(), (
+                    "Path '{irp!r}' must be an increment file".format(irp=inc))
+                inc_list.append(inc)
+        return inc_list
+
     def newpath(self, newpath, index=()):
         """Return new RPath with the same connection but different path"""
         return self.__class__(self.conn, newpath, index)
