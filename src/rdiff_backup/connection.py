@@ -658,6 +658,7 @@ from . import (  # noqa: E402,F401
     SetConnections, librsync, log, regress, fs_abilities,
     eas_acls, user_group, compare
 )
+from rdiffbackup.locations import _dir_shadow, _repo_shadow  # noqa: E402,F401
 try:
     from . import win_acls  # noqa: F401
 except ImportError:
