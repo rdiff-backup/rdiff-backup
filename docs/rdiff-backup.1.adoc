@@ -105,14 +105,6 @@ See the <<remote-operation,REMOTE OPERATION>> section for details.
 
 --remote-tempdir _dirpath_:: use path as temporary directory on the remote side of the connection.
 
---restrict-path _dirpath_::
-Require that all file access be inside the given path.
-This switch, and *--restrict-mode*, are intended to be used with the *server* action to provide a bit more protection when doing automated remote backups.
-+
-CAUTION: Those options are _not_ intended as your only line of defense so please don't do something silly like allow public access to an rdiff-backup server run with *--restrict-mode read-only*.
-
---restrict-mode {*read-write*,*read-only*,*update-only*}:: restriction mode for the directory given by *--restrict-path*, either full access (aka read-write), read-only, or only to update incrementally an already existing back-up (default is *read-write*).
-
 --ssh-compression, --no-ssh-compression::
 use SSH with or without compression with default remote-schema.
 This option is ignored when using *--remote-schema*.
@@ -216,7 +208,7 @@ See <<time-formats,TIME FORMATS>> for details.
 the _source_ parameter is expected to be an increment within a
 back-up repository, to be restored into the given target directory.
 
-server [**--debug**]::
+server [<<restrict-options,RESTRICT OPTIONS>>] [**--debug**]::
 Enter server mode (not to be invoked directly, but instead used by another rdiff-backup process on a remote computer).
 
 --debug;;
@@ -282,6 +274,17 @@ Without the option rdiff-backup may generate unnecessary numbers of tiny diff fi
 --never-drop-acls::
 Exit with error instead of dropping ACLs or ACL entries.
 Normally this may happen (with a warning) because the destination does not support them or because the relevant user/group names do not exist on the destination side.
+
+[[restrict-options]]
+== RESTRICT OPTIONS
+
+--restrict-path _dirpath_::
+Require that all file access be inside the given path.
+This switch, and *--restrict-mode*, are intended to be used with the *server* action to provide a bit more protection when doing automated remote backups.
++
+CAUTION: Those options are _not_ intended as your only line of defense so please don't do something silly like allow public access to an rdiff-backup server run with *--restrict-mode read-only*.
+
+--restrict-mode {*read-write*,*read-only*,*update-only*}:: restriction mode for the directory given by *--restrict-path*, either full access (aka read-write), read-only, or only to update incrementally an already existing back-up (default is *read-write*).
 
 [[selection-options]]
 == SELECTION OPTIONS
@@ -449,7 +452,7 @@ Using *--remote-schema*, rdiff-backup can invoke an arbitrary command in order t
 For instance,
 
  rdiff-backup backup --remote-schema 'cd /usr; {h}' \
-                     foo 'rdiff-backup --server'::bar
+                     foo 'rdiff-backup server'::bar
 
 is basically equivalent to (but slower than)
 
@@ -474,7 +477,7 @@ And finally, to include a literal '[.code]``%``' in the string specified by *--r
 
 Although ssh itself may be secure, using rdiff-backup in the default way presents some security risks.
 For instance if the server is run as root, then an attacker who compromised the client could then use rdiff-backup to overwrite arbitrary server files by "backing up" over them.
-Such a setup can be made more secure by using the sshd configuration option '[.code]``command="rdiff-backup --server"``' possibly along with the *--restrict-path* and *--restrict-mode* options to rdiff-backup.
+Such a setup can be made more secure by using the sshd configuration option '[.code]``command="rdiff-backup server"``' possibly along with the *--restrict-path* and *--restrict-mode* options to rdiff-backup.
 For more information, see the web page, the wiki, and the entries for those options on this man page.
 
 [[file-selection]]
