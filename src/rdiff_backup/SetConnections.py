@@ -30,12 +30,6 @@ import sys
 import subprocess
 from . import Globals, connection, log, rpath
 
-# This is the schema that determines how rdiff-backup will open a
-# pipe to the remote system.  If the file is given as A::B, %s will
-# be substituted with A in the schema.
-__cmd_schema = b"ssh -C {h} rdiff-backup --server"
-__cmd_schema_no_compress = b"ssh {h} rdiff-backup --server"
-
 # This is a list of remote commands used to start the connections.
 # The first is None because it is the local connection.
 __conn_remote_cmds = [None]
@@ -50,21 +44,34 @@ class SetConnectionsException(Exception):
 
 
 def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
-                  remote_tempdir=None):
+                  remote_tempdir=None, term_verbosity=None):
     """Map the given file descriptions into command pairs
 
     Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
     None iff it describes a local path, and cmdpair[1] is the path.
 
     """
-    global __cmd_schema
-    if remote_schema:
-        __cmd_schema = remote_schema
-    elif not ssh_compression:
-        __cmd_schema = __cmd_schema_no_compress
 
-    if remote_tempdir:
-        __cmd_schema += (b" --tempdir=" + remote_tempdir)
+    # This is the schema that determines how rdiff-backup will open a
+    # pipe to the remote system.  If the file is given as A::B, {h}/%s will
+    # be substituted with A in the schema.
+    if remote_schema:
+        cmd_schema = remote_schema
+    else:
+        if ssh_compression:
+            cmd_schema = b"ssh -C {h} rdiff-backup"
+        else:
+            cmd_schema = b"ssh {h} rdiff-backup"
+        if remote_tempdir:
+            cmd_schema += (b" --tempdir=" + remote_tempdir)
+        # we could wait until the verbosity is "transferred" to the remote side
+        # but we might miss important messages at the beginning of the process
+        if term_verbosity is not None:
+            cmd_schema += b" --terminal-verbosity %d" % term_verbosity
+        if Globals.get_api_version() > 200:  # compat200
+            cmd_schema += b" server"
+        else:
+            cmd_schema += b" --server"
 
     if not locations:
         return []
@@ -82,7 +89,15 @@ def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
     # strip the error field from the triples to get pairs
     desc_pairs = [triple[:2] for triple in desc_triples]
 
-    cmd_pairs = list(map(_desc2cmd_pairs, desc_pairs))
+    def desc2cmd_pairs(desc_pair):
+        """Return pair (remote_cmd, filename) from desc_pair"""
+        host_info, filename = desc_pair
+        if not host_info:
+            return (None, filename)
+        else:
+            return (_fill_schema(host_info, cmd_schema), filename)
+
+    cmd_pairs = list(map(desc2cmd_pairs, desc_pairs))
 
     return cmd_pairs
 
@@ -171,15 +186,6 @@ def TestConnections(rpaths):
         return 1
 
 
-def _desc2cmd_pairs(desc_pair):
-    """Return pair (remote_cmd, filename) from desc_pair"""
-    host_info, filename = desc_pair
-    if not host_info:
-        return (None, filename)
-    else:
-        return (_fill_schema(host_info), filename)
-
-
 def parse_location(file_desc):
     """
     Parse file description returning triple (host_info, filename, error)
@@ -252,9 +258,11 @@ def parse_location(file_desc):
     return (file_host, file_path, None)
 
 
-def _fill_schema(host_info):
+def _fill_schema(host_info, cmd_schema):
     """
-    Fills host_info and optionally the version into the schema and returns remote command.
+    Fills host_info and optionally the version into the schema
+
+    Returns the filled remote command
     """
     assert isinstance(host_info, bytes), (
         "host_info parameter must be bytes not {thi}".format(
@@ -263,22 +271,22 @@ def _fill_schema(host_info):
         # for security reasons, we accept only specific format placeholders
         # h for host_info, vx,vy,vz for version x.y.z
         # and the host placeholder is mandatory
-        if ((re.findall(b"{[^}]*}", __cmd_schema)
-             != re.findall(b"{h}|{v[xyz]}", __cmd_schema))
-                or (b"{h}" not in __cmd_schema
-                    and b"%s" not in __cmd_schema)):  # compat200
+        if ((re.findall(b"{[^}]*}", cmd_schema)
+             != re.findall(b"{h}|{v[xyz]}", cmd_schema))
+                or (b"{h}" not in cmd_schema
+                    and b"%s" not in cmd_schema)):  # compat200
             raise KeyError
-        if b"{h}" in __cmd_schema:
+        if b"{h}" in cmd_schema:
             ver_split = Globals.version.split(".")
             # bytes doesn't have a format method, hence the conversions
-            return os.fsencode(os.fsdecode(__cmd_schema).format(
+            return os.fsencode(os.fsdecode(cmd_schema).format(
                 h=os.fsdecode(host_info),
                 vx=ver_split[0], vy=ver_split[1], vz=ver_split[2]))
         else:  # compat200: accepts "%s" as host place-holder
-            return __cmd_schema % host_info
+            return cmd_schema % host_info
     except (TypeError, KeyError):
         log.Log.FatalError("Invalid remote schema: {rs}".format(
-            rs=_safe_str(__cmd_schema)))
+            rs=_safe_str(cmd_schema)))
 
 
 def _init_connection(remote_cmd):

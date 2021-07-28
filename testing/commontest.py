@@ -109,10 +109,10 @@ def rdiff_backup(source_local,
 
     """
     if not source_local:
-        src_dir = (b'"cd %s; %s --server::%s"' %
+        src_dir = (b'"cd %s; %s server::%s"' %
                    (abs_remote1_dir, RBBin, src_dir))
     if dest_dir and not dest_local:
-        dest_dir = (b'"cd %s; %s --server::%s"' %
+        dest_dir = (b'"cd %s; %s server::%s"' %
                     (abs_remote2_dir, RBBin, dest_dir))
 
     cmdargs = [RBBin, extra_options]
@@ -157,10 +157,10 @@ def rdiff_backup_action(source_local, dest_local,
     rdiff-backup with pre-defined input.
     """
     if src_dir and not source_local:
-        src_dir = (b"cd %s; %s --server::%s" %
+        src_dir = (b"cd %s; %s server::%s" %
                    (abs_remote1_dir, RBBin, src_dir))
     if dest_dir and not dest_local:
-        dest_dir = (b"cd %s; %s --server::%s" %
+        dest_dir = (b"cd %s; %s server::%s" %
                     (abs_remote2_dir, RBBin, dest_dir))
 
     if not (source_local and dest_local):
