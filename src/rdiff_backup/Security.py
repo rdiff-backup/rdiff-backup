@@ -237,47 +237,63 @@ def _set_allowed_requests(sec_class, sec_level):
             "restore.MirrorStruct.initialize_rf_cache",
             "restore.MirrorStruct.close_rf_cache",
             "restore.MirrorStruct.get_diffs", "restore.ListChangedSince",
-            "restore.ListAtTime", "backup.SourceStruct.get_source_select",
-            "backup.SourceStruct.set_source_select",
-            "backup.SourceStruct.get_diffs",
+            "restore.ListAtTime",
             "compare.RepoSide.init_and_get_iter",
             "compare.RepoSide.close_rf_cache", "compare.RepoSide.attach_files",
             "compare.DataSide.get_source_select",
             "compare.DataSide.compare_fast", "compare.DataSide.compare_hash",
-            "compare.DataSide.compare_full", "compare.Verify"
+            "compare.DataSide.compare_full", "compare.Verify",
+            # API < 201
+            "backup.SourceStruct.get_source_select",
+            "backup.SourceStruct.set_source_select",
+            "backup.SourceStruct.get_diffs",
+            # API >= 201
+            "_dir_shadow.ShadowReadDir.get_select",
+            "_dir_shadow.ShadowReadDir.set_select",
+            "_dir_shadow.ShadowReadDir.get_diffs",
         ])
     if sec_level == "update-only" or sec_level == "read-write":
         requests.update([
             "log.Log.open_logfile_local", "log.Log.close_logfile_local",
             "log.ErrorLog.open", "log.ErrorLog.isopen", "log.ErrorLog.close",
+            "regress.check_pids", "statistics.record_error",
+            "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals",
+            # API < 201
             "backup.DestinationStruct.set_rorp_cache",
             "backup.DestinationStruct.get_sigs",
             "backup.DestinationStruct.patch_and_increment",
             "Main.backup_touch_curmirror_local",
             "Main.backup_remove_curmirror_local",
-            "Main.backup_close_statistics", "regress.check_pids",
-            "statistics.record_error",
-            "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals"
+            "Main.backup_close_statistics",
+            # API >= 201
+            "_repo_shadow.ShadowRepo.set_rorp_cache",
+            "_repo_shadow.ShadowRepo.get_sigs",
+            "_repo_shadow.ShadowRepo.patch_and_increment",
+            "_repo_shadow.ShadowRepo.touch_current_mirror",
+            "_repo_shadow.ShadowRepo.remove_current_mirror",
+            "_repo_shadow.ShadowRepo.close_statistics",
         ])
     if sec_level == "read-write":
         requests.update([
             "os.mkdir", "os.chown", "os.lchown", "os.rename", "os.unlink",
             "os.remove", "os.chmod", "os.makedirs",
-            "rpath.delete_dir_no_files", "backup.DestinationStruct.patch",
+            "rpath.delete_dir_no_files",
             "restore.TargetStruct.get_initial_iter",
             "restore.TargetStruct.patch",
             "restore.TargetStruct.set_target_select",
             "fs_abilities.restore_set_globals",
             "fs_abilities.single_set_globals", "regress.Regress",
-            "manage.delete_earlier_than_local"
+            "manage.delete_earlier_than_local",
+            # API < 201
+            "backup.DestinationStruct.patch",
+            # API >= 201
+            "_repo_shadow.ShadowRepo.patch",
         ])
     if sec_class == "server":
         requests.update([
             "SetConnections.init_connection_remote", "log.Log.setverbosity",
             "log.Log.setterm_verbosity", "Time.setprevtime_local",
             "Globals.postset_regexp_local",
-            "backup.SourceStruct.set_session_info",
-            "backup.DestinationStruct.set_session_info",
             "user_group.init_user_mapping", "user_group.init_group_mapping"
         ])
     return requests

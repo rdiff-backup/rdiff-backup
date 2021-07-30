@@ -26,7 +26,7 @@ usable for a back-up.
 
 import io
 from rdiffbackup import locations
-from rdiff_backup import log
+from rdiff_backup import Globals, log
 
 
 class Dir():
@@ -34,8 +34,21 @@ class Dir():
 
 
 class ReadDir(Dir, locations.ReadLocation):
-    selections = []
-    select_files = []
+
+    def setup(self):
+        ret_code = super().setup()
+        if ret_code != 0:
+            return ret_code
+
+        if Globals.get_api_version() >= 201:  # compat200
+            if self.base_dir.conn is Globals.local_connection:
+                # should be more efficient than going through the connection
+                from rdiffbackup.locations import _dir_shadow
+                self._shadow = _dir_shadow.ShadowReadDir
+            else:
+                self._shadow = self.base_dir.conn._dir_shadow.ShadowReadDir
+
+        return 0  # all is good
 
     def set_select(self, select_opts, select_data):
         """
@@ -54,9 +67,24 @@ class ReadDir(Dir, locations.ReadLocation):
             log.Log("Symbolic links excluded by default on Windows",
                     log.NOTE)
             select_opts.append(("--exclude-symbolic-links", None))
-        # FIXME we're retransforming bytes into a file pointer
-        self.base_dir.conn.backup.SourceStruct.set_source_select(
-            self.base_dir, select_opts, *list(map(io.BytesIO, select_data)))
+        if Globals.get_api_version() < 201:  # compat200
+            self.base_dir.conn.backup.SourceStruct.set_source_select(
+                self.base_dir, select_opts, *list(map(io.BytesIO, select_data)))
+        else:  # FIXME we're retransforming bytes into a file pointer
+            self._shadow.set_select(self.base_dir, select_opts,
+                                    *list(map(io.BytesIO, select_data)))
+
+    def get_select(self):
+        """
+        Shadow function for ShadowReadDir.get_source_select
+        """
+        return self._shadow.get_select()
+
+    def get_diffs(self, dest_sigiter):
+        """
+        Shadow function for ShadowReadDir.get_diffs
+        """
+        return self._shadow.get_diffs(dest_sigiter)
 
 
 class WriteDir(Dir, locations.WriteLocation):

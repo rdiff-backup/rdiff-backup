@@ -97,6 +97,14 @@ class Repo(locations.Location):
 
         SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
 
+        if Globals.get_api_version() >= 201:  # compat200
+            if self.base_dir.conn is Globals.local_connection:
+                # should be more efficient than going through the connection
+                from rdiffbackup.locations import _repo_shadow
+                self._shadow = _repo_shadow.ShadowRepo
+            else:
+                self._shadow = self.base_dir.conn._repo_shadow.ShadowRepo
+
         return 0  # all is good
 
     def get_mirror_time(self):
@@ -227,6 +235,49 @@ information in it.
         if select_opts:
             self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
                 target_rp, select_opts, *list(map(io.BytesIO, select_data)))
+
+    def set_rorp_cache(self, source_iter, use_increment):
+        """
+        Shadow function for ShadowRepo.set_rorp_cache
+        """
+        return self._shadow.set_rorp_cache(self.base_dir, source_iter,
+                                           use_increment)
+
+    def get_sigs(self):
+        """
+        Shadow function for ShadowRepo.set_rorp_cache
+        """
+        return self._shadow.get_sigs(self.base_dir)
+
+    def patch_or_increment(self, source_diffiter, increment):
+        """
+        Shadow function for ShadowRepo.patch and .patch_and_increment
+        """
+        if increment:
+            return self._shadow.patch_and_increment(
+                self.base_dir, source_diffiter, self.incs_dir)
+        else:
+            return self._shadow.patch(
+                self.base_dir, source_diffiter)
+
+    def touch_current_mirror(self, current_time_str):
+        """
+        Shadow function for ShadowRepo.touch_current_mirror
+        """
+        return self._shadow.touch_current_mirror(self.data_dir,
+                                                 current_time_str)
+
+    def remove_current_mirror(self):
+        """
+        Shadow function for ShadowRepo.remove_current_mirror
+        """
+        return self._shadow.remove_current_mirror(self.data_dir)
+
+    def close_statistics(self, end_time):
+        """
+        Shadow function for ShadowRepo.close_statistics
+        """
+        return self._shadow.close_statistics(end_time)
 
     def _is_existing(self):
         # check first that the directory itself exists

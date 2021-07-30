@@ -10,15 +10,17 @@
 
 === Internal
 
-* `backup.DestinationStruct`
-* `backup.SourceStruct`
-* `backup.SourceStruct.set_source_select`
+==== rdiff_backup
+
+* `backup.DestinationStruct` **deprecated**
+* `backup.SourceStruct` **deprecated**
+* `backup.SourceStruct.set_source_select` **deprecated**
 * `compare.DataSide`
 * `compare.RepoSide`
 * `compare.Verify`
-* `conn_number`
-* `quit`
-* `reval`
+* `connection.conn_number`
+* `connection.quit`
+* `connection.reval`
 * `eas_acls.get_acl_lists_from_rp`
 * `eas_acls.set_rp_acl`
 * `FilenameMapping.set_init_quote_vals`
@@ -44,9 +46,9 @@
 * `log.Log.open_logfile_local`
 * `log.Log.setterm_verbosity`
 * `log.Log.setverbosity`
-* `Main.backup_close_statistics`
-* `Main.backup_remove_curmirror_local`
-* `Main.backup_touch_curmirror_local`
+* `Main.backup_close_statistics` **deprecated**
+* `Main.backup_remove_curmirror_local` **deprecated**
+* `Main.backup_touch_curmirror_local` **deprecated**
 * `manage.delete_earlier_than_local`
 * `regress.check_pids`
 * `regress.Regress`
@@ -73,6 +75,21 @@
 * `user_group.init_group_mapping`
 * `user_group.init_user_mapping`
 * `user_group.map_rpath`
+
+==== rdiffbackup
+
+* `locations._dir_shadow.ShadowReadDir`  **new**
+** `.set_select`
+** `.get_select`
+** `.get_diffs`
+* `locations._repo_shadow.ShadowRepo`  **new**
+** `.set_rorp_cache`
+** `.get_sigs`
+** `.patch`
+** `.patch_and_increment`
+** `.touch_current_mirror`
+** `.remove_current_mirror`
+** `.close_statistics`
 
 === External
 

@@ -1,0 +1,75 @@
+"""
+Test the basic backup and restore actions with api version >= 201
+"""
+import os
+import unittest
+
+import commontest as comtst
+import fileset
+
+
+class ActionBackupRestoreTest(unittest.TestCase):
+    """
+    Test that rdiff-backup really restores what has been backed-up
+    """
+
+    def setUp(self):
+        self.base_dir = os.path.join(comtst.abs_test_dir, b"backuprestore")
+        self.from1_struct = {
+            "from1": {"subs": {"fileA": {"content": "initial"}, "fileB": {}}}
+        }
+        self.from1_path = os.path.join(self.base_dir, b"from1")
+        self.from2_struct = {
+            "from2": {"subs": {"fileA": {"content": "modified"}, "fileC": {}}}
+        }
+        self.from2_path = os.path.join(self.base_dir, b"from2")
+        fileset.create_fileset(self.base_dir, self.from1_struct)
+        fileset.create_fileset(self.base_dir, self.from2_struct)
+        fileset.remove_fileset(self.base_dir, {"bak": {}})
+        fileset.remove_fileset(self.base_dir, {"to1": {}})
+        fileset.remove_fileset(self.base_dir, {"to2": {}})
+        self.bak_path = os.path.join(self.base_dir, b"bak")
+        self.to1_path = os.path.join(self.base_dir, b"to1")
+        self.to2_path = os.path.join(self.base_dir, b"to2")
+        self.success = False
+
+    def test_action_backuprestore(self):
+        """test the "backup" and "restore" actions"""
+        # we backup twice to the same backup repository at different times
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, False, self.from1_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "10000"),
+            b"backup", ()), 0)
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, True, self.from2_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "20000"),
+            b"backup", ()), 0)
+
+        # then we restore the increment and the last mirror to two directories
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, False, self.bak_path, self.to1_path,
+            ("--api-version", "201"),
+            b"restore", ("--at", "1B")), 0)
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, self.to2_path,
+            ("--api-version", "201"),
+            b"restore", ()), 0)
+
+        self.assertFalse(fileset.compare_paths(self.from1_path, self.to1_path))
+        self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
+
+        # all tests were successful
+        self.success = True
+
+    def tearDown(self):
+        # we clean-up only if the test was successful
+        if self.success:
+            fileset.remove_fileset(self.base_dir, self.from1_struct)
+            fileset.remove_fileset(self.base_dir, self.from2_struct)
+            fileset.remove_fileset(self.base_dir, {"bak": {}})
+            fileset.remove_fileset(self.base_dir, {"to1": {}})
+            fileset.remove_fileset(self.base_dir, {"to2": {}})
+
+
+if __name__ == "__main__":
+    unittest.main()
