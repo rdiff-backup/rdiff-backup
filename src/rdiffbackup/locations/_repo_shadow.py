@@ -16,146 +16,41 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""High level functions for mirroring and mirror+incrementing"""
+
+"""
+A shadow repository is called like this because like a shadow it does
+what the local representation of the repository is telling it to do, but
+it has no real life of itself, i.e. it has only class methods and can't
+be instantiated.
+"""
 
 import errno
-from . import Globals, metadata, rorpiter, Hardlink, robust, \
-    increment, rpath, log, selection, Time, Rdiff, statistics, iterfile, \
-    hash, longname
+import os
+from rdiff_backup import (
+    C, Globals, Hardlink, hash, increment, iterfile, log, longname, metadata,
+    Rdiff, robust, rorpiter, rpath, selection, statistics, Time,
+)
+
+# ### COPIED FROM BACKUP ####
 
 
-def mirror_compat200(src_rpath, dest_rpath):
-    """Turn dest_rpath into a copy of src_rpath"""
-    log.Log("Starting mirror from source path {sp} to destination "
-            "path {dp}".format(sp=src_rpath, dp=dest_rpath), log.NOTE)
-    SourceS = src_rpath.conn.backup.SourceStruct
-    DestS = dest_rpath.conn.backup.DestinationStruct
+# @API(ShadowRepo, 201)
+class ShadowRepo:
+    """
+    Shadow repository for the local repository representation
+    """
 
-    source_rpiter = SourceS.get_source_select()
-    DestS.set_rorp_cache(dest_rpath, source_rpiter, 0)
-    dest_sigiter = DestS.get_sigs(dest_rpath)
-    source_diffiter = SourceS.get_diffs(dest_sigiter)
-    DestS.patch(dest_rpath, source_diffiter)
-
-
-def mirror_and_increment_compat200(src_rpath, dest_rpath, inc_rpath):
-    """Mirror + put increments in tree based at inc_rpath"""
-    log.Log("Starting increment operation from source path {sp} to destination "
-            "path {dp}".format(sp=src_rpath, dp=dest_rpath), log.NOTE)
-    SourceS = src_rpath.conn.backup.SourceStruct
-    DestS = dest_rpath.conn.backup.DestinationStruct
-
-    source_rpiter = SourceS.get_source_select()
-    DestS.set_rorp_cache(dest_rpath, source_rpiter, 1)
-    dest_sigiter = DestS.get_sigs(dest_rpath)
-    source_diffiter = SourceS.get_diffs(dest_sigiter)
-    DestS.patch_and_increment(dest_rpath, source_diffiter, inc_rpath)
-
-
-# @API(SourceStruct, 200, 200)
-class SourceStruct:
-    """Hold info used on source side when backing up"""
-    _source_select = None  # will be set to source Select iterator
-
-    # @API(SourceStruct.set_source_select, 200, 200)
     @classmethod
-    def set_source_select(cls, rpath, tuplelist, *filelists):
-        """Initialize select object using tuplelist
-
-        Note that each list in filelists must each be passed as
-        separate arguments, so each is recognized as a file by the
-        connection.  Otherwise we will get an error because a list
-        containing files can't be pickled.
-
-        Also, cls._source_select needs to be cached so get_diffs below
-        can retrieve the necessary rps.
-
+    def set_rorp_cache(cls, baserp, source_iter, use_increment):
         """
-        sel = selection.Select(rpath)
-        sel.parse_selection_args(tuplelist, filelists)
-        sel_iter = sel.set_iter()
-        cache_size = Globals.pipeline_max_length * 3  # to and from+leeway
-        cls._source_select = rorpiter.CacheIndexable(sel_iter, cache_size)
-        Globals.set('select_mirror', sel_iter)
-
-    @classmethod
-    def get_source_select(cls):
-        """Return source select iterator, set by set_source_select"""
-        return cls._source_select
-
-    @classmethod
-    def get_diffs(cls, dest_sigiter):
-        """Return diffs of any files with signature in dest_sigiter"""
-        source_rps = cls._source_select
-        error_handler = robust.get_error_handler("ListError")
-
-        def attach_snapshot(diff_rorp, src_rp):
-            """Attach file of snapshot to diff_rorp, w/ error checking"""
-            fileobj = robust.check_common_error(
-                error_handler, rpath.RPath.open, (src_rp, "rb"))
-            if fileobj:
-                diff_rorp.setfile(hash.FileWrapper(fileobj))
-            else:
-                diff_rorp.zero()
-            diff_rorp.set_attached_filetype('snapshot')
-
-        def attach_diff(diff_rorp, src_rp, dest_sig):
-            """Attach file of diff to diff_rorp, w/ error checking"""
-            fileobj = robust.check_common_error(
-                error_handler, Rdiff.get_delta_sigrp_hash, (dest_sig, src_rp))
-            if fileobj:
-                diff_rorp.setfile(fileobj)
-                diff_rorp.set_attached_filetype('diff')
-            else:
-                diff_rorp.zero()
-                diff_rorp.set_attached_filetype('snapshot')
-
-        for dest_sig in dest_sigiter:
-            if dest_sig is iterfile.MiscIterFlushRepeat:
-                yield iterfile.MiscIterFlush  # Flush buffer when get_sigs does
-                continue
-            src_rp = (source_rps.get(dest_sig.index)
-                      or rpath.RORPath(dest_sig.index))
-            diff_rorp = src_rp.getRORPath()
-            if dest_sig.isflaglinked():
-                diff_rorp.flaglinked(dest_sig.get_link_flag())
-            elif src_rp.isreg():
-                reset_perms = False
-                if (Globals.process_uid != 0 and not src_rp.readable()
-                        and src_rp.isowner()):
-                    reset_perms = True
-                    src_rp.chmod(0o400 | src_rp.getperms())
-
-                if dest_sig.isreg():
-                    attach_diff(diff_rorp, src_rp, dest_sig)
-                else:
-                    attach_snapshot(diff_rorp, src_rp)
-
-                if reset_perms:
-                    src_rp.chmod(src_rp.getperms() & ~0o400)
-            else:
-                dest_sig.close_if_necessary()
-                diff_rorp.set_attached_filetype('snapshot')
-            yield diff_rorp
-
-
-# @API(DestinationStruct, 200, 200)
-class DestinationStruct:
-    """Hold info used by destination side when backing up"""
-
-    @classmethod
-    def set_rorp_cache(cls, baserp, source_iter, for_increment):
-        """
-
         Initialize cls.CCPP, the destination rorp cache
 
-        for_increment should be true if we are mirror+incrementing,
+        use_increment should be true if we are mirror+incrementing,
         false if we are just mirroring.
-
         """
-        dest_iter = cls._get_dest_select(baserp, for_increment)
+        dest_iter = cls._get_dest_select(baserp, use_increment)
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
-        cls.CCPP = CacheCollatedPostProcess(
+        cls.CCPP = _CacheCollatedPostProcess(
             collated, Globals.pipeline_max_length * 4, baserp)
         # pipeline len adds some leeway over just*3 (to and from and back)
 
@@ -188,7 +83,7 @@ class DestinationStruct:
     @classmethod
     def patch(cls, dest_rpath, source_diffiter, start_index=()):
         """Patch dest_rpath with an rorpiter of diffs"""
-        ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
+        ITR = rorpiter.IterTreeReducer(_PatchITRB, [dest_rpath, cls.CCPP])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
             log.Log("Processing file {cf}".format(cf=diff), log.INFO)
             ITR(diff.index, diff)
@@ -199,7 +94,7 @@ class DestinationStruct:
     @classmethod
     def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
         """Patch dest_rpath with rorpiter of diffs and write increments"""
-        ITR = rorpiter.IterTreeReducer(IncrementITRB,
+        ITR = rorpiter.IterTreeReducer(_IncrementITRB,
                                        [dest_rpath, inc_rpath, cls.CCPP])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
             log.Log("Processing changed file {cf}".format(cf=diff), log.INFO)
@@ -209,7 +104,7 @@ class DestinationStruct:
         dest_rpath.setdata()
 
     @classmethod
-    def _get_dest_select(cls, rpath, use_metadata=1):
+    def _get_dest_select(cls, rpath, use_metadata=True):
         """
 
         Return destination select rorpath iterator
@@ -282,8 +177,66 @@ class DestinationStruct:
             else:
                 raise
 
+    @classmethod
+    def touch_current_mirror(cls, data_dir, current_time_str):
+        """
+        Make a file like current_mirror.<datetime>.data to record time
 
-class CacheCollatedPostProcess:
+        When doing an incremental backup, this should happen before any
+        other writes, and the file should be removed after all writes.
+        That way we can tell whether the previous session aborted if there
+        are two current_mirror files.
+
+        When doing the initial full backup, the file can be created after
+        everything else is in place.
+        """
+        mirrorrp = data_dir.append(b'.'.join(
+            (b"current_mirror", os.fsencode(current_time_str), b"data")))
+        log.Log("Writing mirror marker {mm}".format(mm=mirrorrp), log.INFO)
+        try:
+            pid = os.getpid()
+        except BaseException:
+            pid = "NA"
+        mirrorrp.write_string("PID {pp}\n".format(pp=pid))
+        mirrorrp.fsync_with_dir()
+
+    @classmethod
+    def remove_current_mirror(cls, data_dir):
+        """
+        Remove the older of the current_mirror files.
+
+        Use at end of session
+        """
+        curmir_incs = data_dir.append(b"current_mirror").get_incfiles_list()
+        assert len(curmir_incs) == 2, (
+            "There must be two current mirrors not '{ilen}'.".format(
+                ilen=len(curmir_incs)))
+        if curmir_incs[0].getinctime() < curmir_incs[1].getinctime():
+            older_inc = curmir_incs[0]
+        else:
+            older_inc = curmir_incs[1]
+        if Globals.do_fsync:
+            # Make sure everything is written before current_mirror is removed
+            C.sync()
+        older_inc.delete()
+
+    @classmethod
+    def close_statistics(cls, end_time):
+        """
+        Close out the tracking of the backup statistics.
+
+        Moved to run at this point so that only the clock of the system on which
+        rdiff-backup is run is used (set by passing in time.time() from that
+        system). Use at end of session.
+        """
+        if Globals.print_statistics:
+            statistics.print_active_stats(end_time)
+        if Globals.file_statistics:
+            statistics.FileStats.close()
+        statistics.write_active_statfileobj(end_time)
+
+
+class _CacheCollatedPostProcess:
     """
 
     Cache a collated iter of (source_rorp, dest_rorp) pairs
@@ -559,7 +512,7 @@ class CacheCollatedPostProcess:
         raise KeyError(index)
 
 
-class PatchITRB(rorpiter.ITRBranch):
+class _PatchITRB(rorpiter.ITRBranch):
     """Patch an rpath with the given diff iters (use with IterTreeReducer)
 
     The main complication here involves directories.  We have to
@@ -781,16 +734,16 @@ class PatchITRB(rorpiter.ITRBranch):
                 self.CCPP.flag_success(diff_rorp.index)
 
 
-class IncrementITRB(PatchITRB):
+class _IncrementITRB(_PatchITRB):
     """Patch an rpath with the given diff iters and write increments
 
-    Like PatchITRB, but this time also write increments.
+    Like _PatchITRB, but this time also write increments.
 
     """
 
     def __init__(self, basis_root_rp, inc_root_rp, rorp_cache):
         self.inc_root_rp = inc_root_rp
-        PatchITRB.__init__(self, basis_root_rp, rorp_cache)
+        _PatchITRB.__init__(self, basis_root_rp, rorp_cache)
 
     def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp and write increment (neither is dir)"""

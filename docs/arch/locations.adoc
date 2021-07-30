@@ -25,6 +25,24 @@ The `set_select` method is also common to directories and repositories but is st
 * Repository.set_select: restore.MirrorStruct.set_mirror_select
 ====
 
+== Shadows
+
+Each Location class has a "shadow" class, which it uses to communicate remotely.
+Those shadow classes are called so because they do only what their "real" class does but haven't an existence of their own.
+
+The shadow classes hence have only class methods and can't be called directly, but only through their real class, which must offer corresponding methods to interact with the remote side.
+This is why those shadow classes are prefixed with an underscore, they are considered private to the location namespace.
+
+The aim is to bundle the communication with the remote side (and hence the API definition) through those shadow classes.
+
+Internally, each location class defines a _private_ `_shadow` variable which points to the corresponding shadow class (either locally or remotely, through the connection of the basis directory).
+It is set in the `setup()` method (so it can't be used earlier).
+This variable can be used by the interfacing methods to interact with the class methods of the shadow class.
+
+CAUTION: the fact that the shadow classes can't be instantiated make them some kind of singleton, so that only one type of each can be handled locally.
+This isn't an issue currently, but needs to be considered should an extension require this feature.
+This said, it isn't an issue remotely, because each location has its own instance running in a different rdiff-backup process.
+
 == Directories
 
 A directory is either:

@@ -109,7 +109,7 @@ def _main_run(arglist, security_override=False):
     return ret_val
 
 
-# @API(backup_touch_curmirror_local, 200)
+# @API(backup_touch_curmirror_local, 200, 200)
 def backup_touch_curmirror_local(rpin, rpout):
     """Make a file like current_mirror.time.data to record time
 
@@ -133,7 +133,7 @@ def backup_touch_curmirror_local(rpin, rpout):
     mirrorrp.fsync_with_dir()
 
 
-# @API(backup_remove_curmirror_local, 200)
+# @API(backup_remove_curmirror_local, 200, 200)
 def backup_remove_curmirror_local():
     """Remove the older of the current_mirror files.  Use at end of session"""
     assert Globals.rbdir.conn is Globals.local_connection, (
@@ -152,7 +152,7 @@ def backup_remove_curmirror_local():
     older_inc.delete()
 
 
-# @API(backup_close_statistics, 200)
+# @API(backup_close_statistics, 200, 200)
 def backup_close_statistics(end_time):
     """Close out the tracking of the backup statistics.
 

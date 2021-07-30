@@ -25,6 +25,7 @@ import time
 
 from rdiff_backup import (
     backup,
+    Globals,
     log,
     Security,
     selection,
@@ -115,7 +116,6 @@ class BackupAction(actions.BaseAction):
                 log.Log("Unable to open logfile due to '{ex}'".format(
                     ex=exc), log.ERROR)
                 return 1
-        # TODO could we get rid of the error log?
         log.ErrorLog.open(Time.curtimestr, compress=self.values.compression)
 
         (select_opts, select_data) = selection.get_prepared_selections(
@@ -138,21 +138,52 @@ class BackupAction(actions.BaseAction):
                     "the last backup is not in the past. Aborting.",
                     log.ERROR)
             return 1
-        elif previous_time:
-            Time.setprevtime(previous_time)
-            self.target.base_dir.conn.Main.backup_touch_curmirror_local(
-                self.source.base_dir, self.target.base_dir)
-            backup.Mirror_and_increment(self.source.base_dir,
-                                        self.target.base_dir,
-                                        self.target.incs_dir)
-            self.target.base_dir.conn.Main.backup_remove_curmirror_local()
-        else:
-            backup.Mirror(self.source.base_dir, self.target.base_dir)
-            self.target.base_dir.conn.Main.backup_touch_curmirror_local(
-                self.source.base_dir, self.target.base_dir)
-        self.target.base_dir.conn.Main.backup_close_statistics(time.time())
+        if Globals.get_api_version() < 201:  # compat200
+            if previous_time:
+                Time.setprevtime(previous_time)
+                self.target.base_dir.conn.Main.backup_touch_curmirror_local(
+                    self.source.base_dir, self.target.base_dir)
+                backup.mirror_and_increment_compat200(
+                    self.source.base_dir, self.target.base_dir,
+                    self.target.incs_dir)
+                self.target.base_dir.conn.Main.backup_remove_curmirror_local()
+            else:
+                backup.mirror_compat200(
+                    self.source.base_dir, self.target.base_dir)
+                self.target.base_dir.conn.Main.backup_touch_curmirror_local(
+                    self.source.base_dir, self.target.base_dir)
+            self.target.base_dir.conn.Main.backup_close_statistics(time.time())
+        else:  # API 201 and higher
+            if previous_time:
+                Time.setprevtime(previous_time)
+            self._operate_backup(previous_time)
 
         return 0
+
+    def _operate_backup(self, previous_time=None):
+        """
+        Execute the actual backup operation
+        """
+        log.Log(
+            "Starting backup operation from source path {sp} to destination "
+            "path {dp}".format(sp=self.source.base_dir,
+                               dp=self.target.base_dir), log.NOTE)
+
+        if previous_time:
+            self.target.touch_current_mirror(Time.curtimestr)
+
+        source_rpiter = self.source.get_select()
+        self.target.set_rorp_cache(source_rpiter, previous_time)
+        dest_sigiter = self.target.get_sigs()
+        source_diffiter = self.source.get_diffs(dest_sigiter)
+        self.target.patch_or_increment(source_diffiter, previous_time)
+
+        if previous_time:
+            self.target.remove_current_mirror()
+        else:
+            self.target.touch_current_mirror(Time.curtimestr)
+
+        self.target.close_statistics(time.time())
 
     def _warn_if_infinite_recursion(self, rpin, rpout):
         """
