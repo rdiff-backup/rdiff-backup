@@ -94,7 +94,8 @@ COMMON_PARSER.add_argument(
     "--use-compatible-timestamps", action="store_true",
     help="[opt] use hyphen '-' instead of colon ':' to represent time")
 COMMON_PARSER.add_argument(
-    "-v", "--verbosity", type=int, choices=range(0, 10), default=3,
+    "-v", "--verbosity", type=int, choices=range(0, 10),
+    default=int(os.getenv('RDIFF_BACKUP_VERBOSITY', '3')),
     help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
 
 
@@ -446,7 +447,8 @@ class BaseAction:
                 self.values.locations,
                 remote_schema=self.remote_schema,
                 ssh_compression=self.values.ssh_compression,
-                remote_tempdir=self.remote_tempdir
+                remote_tempdir=self.remote_tempdir,
+                term_verbosity=log.Log.term_verbosity
             )
             Security.initialize(self.get_security_class(), cmdpairs)
             self.connected_locations = list(

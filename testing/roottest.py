@@ -278,7 +278,7 @@ class HalfRoot(BaseRootTest):
         in_rp1, in_rp2 = self.make_dirs()
         outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
         re_init_rpath_dir(outrp, userid)
-        remote_schema = b'su -c "%s --server" %s' % (RBBin, user.encode())
+        remote_schema = b'su -c "%s server" %s' % (RBBin, user.encode())
         cmd_schema = (RBBin + b" --current-time %i --remote-schema '{h}' %b '%b'::%b")
 
         cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
