@@ -38,7 +38,7 @@ it later.
 """
 
 import errno
-from . import log, Globals, restore, regress
+from rdiff_backup import Globals, log
 
 _long_name_dir = b"long_filename_data"
 _long_name_rootrp = None
@@ -153,12 +153,16 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
 
 
 # ------------------------------------------------------------------
-# The following section is for restoring
+# The following section is for restoring or regressing
 # ------------------------------------------------------------------
 
 
-def update_rf(rf, rorp, mirror_root):
-    """Return new or updated restorefile based on alt name info in rorp"""
+def update_rf(rf, rorp, mirror_root, rf_class):
+    """
+    Return new or updated file based on alt name info in rorp
+
+    rf_class is the object type to return, RestoreFile or RegressFile
+    """
 
     def _safe_str(cmd):
         """Transform bytes into string without risk of conversion error"""
@@ -172,7 +176,7 @@ def update_rf(rf, rorp, mirror_root):
         log.Log("Restoring with increment base {ib} for file {rp}".format(
             ib=_safe_str(inc_base), rp=rf), log.DEBUG)
         rf.inc_rp = _get_long_rp(inc_base)
-        rf.inc_list = _get_inclist(inc_base)
+        rf.inc_list = _get_inclist(inc_base, rf_class)
         rf.set_relevant_incs()
 
     def update_existing_rf(rf, rorp):
@@ -200,9 +204,9 @@ def update_rf(rf, rorp, mirror_root):
             if rorp.has_alt_inc_name():
                 inc_name = rorp.get_alt_inc_name()
             else:
-                return restore.RestoreFile(mirror_rp, None, [])
+                return rf_class(mirror_rp, None, [])
 
-        rf = restore.RestoreFile(mirror_rp, None, [])
+        rf = rf_class(mirror_rp, None, [])
         update_incs(rf, inc_name)
         return rf
 
@@ -215,14 +219,6 @@ def update_rf(rf, rorp, mirror_root):
         return rf
     else:
         return make_new_rf(rorp, mirror_root)
-
-
-def update_regressfile(rf, rorp, mirror_root):
-    """Like update_rf except return a regress file object"""
-    rf = update_rf(rf, rorp, mirror_root)
-    if isinstance(rf, regress.RegressFile):
-        return rf
-    return regress.RegressFile(rf.mirror_rp, rf.inc_rp, rf.inc_list)
 
 
 # === INTERNAL FUNCTIONS ===
@@ -328,19 +324,19 @@ def _check_new_index(base, index, make_dirs=0):
         return wrap_call(base.new_index, index)
 
 
-def _get_inclist(inc_base_name):
+def _get_inclist(inc_base_name, rf_class):
     if not _restore_inc_cache:
-        _set_restore_cache()
+        _set_restore_cache(rf_class)
     try:
         return _restore_inc_cache[inc_base_name]
     except KeyError:
         return []
 
 
-def _set_restore_cache():
+def _set_restore_cache(rf_class):
     """Initialize _restore_inc_cache based on long filename dir"""
     global _restore_inc_cache
     _restore_inc_cache = {}
-    root_rf = restore.RestoreFile(_get_long_rp(), _get_long_rp(), [])
+    root_rf = rf_class(_get_long_rp(), _get_long_rp(), [])
     for incbase_rp, inclist in root_rf.yield_inc_complexes(_get_long_rp()):
         _restore_inc_cache[incbase_rp.index[-1]] = inclist

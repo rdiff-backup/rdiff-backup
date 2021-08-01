@@ -433,7 +433,8 @@ def _iterate_meta_rfs(mirror_rp, inc_rp):
     raw_rfs = _iterate_raw_rfs(mirror_rp, inc_rp)
     collated = rorpiter.Collate2Iters(raw_rfs, _yield_metadata())
     for raw_rf, metadata_rorp in collated:
-        raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
+        raw_rf = longname.update_rf(raw_rf, metadata_rorp, mirror_rp,
+                                    RegressFile)
         if not raw_rf:
             log.Log("Warning, metadata file has entry for path {pa}, "
                     "but there are no associated files.".format(

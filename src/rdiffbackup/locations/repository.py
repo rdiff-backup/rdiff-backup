@@ -113,6 +113,9 @@ class Repo(locations.Location):
 
         Return -1 if there is more than one mirror,
         or 0 if there is no backup yet.
+
+        This function could use ShadowRepo.get_mirror_time but they have a
+        different signature.
         """
         incbase = self.data_dir.append_path(b"current_mirror")
         mirror_rps = incbase.get_incfiles_list()
@@ -233,8 +236,12 @@ information in it.
 
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
-            self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
-                target_rp, select_opts, *list(map(io.BytesIO, select_data)))
+            if Globals.get_api_version() >= 201:  # compat200
+                self._shadow.set_select(
+                    target_rp, select_opts, *list(map(io.BytesIO, select_data)))
+            else:
+                self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
+                    target_rp, select_opts, *list(map(io.BytesIO, select_data)))
 
     def set_rorp_cache(self, source_iter, use_increment):
         """
@@ -278,6 +285,31 @@ information in it.
         Shadow function for ShadowRepo.close_statistics
         """
         return self._shadow.close_statistics(end_time)
+
+    def initialize_restore(self, restore_time):
+        """
+        Shadow function for ShadowRepo.initialize_restore
+        """
+        return self._shadow.initialize_restore(self.data_dir, restore_time)
+
+    def initialize_rf_cache(self, inc_rpath):
+        """
+        Shadow function for ShadowRepo.initialize_rf_cache
+        """
+        return self._shadow.initialize_rf_cache(
+            self.base_dir.new_index(self.restore_index), inc_rpath)
+
+    def close_rf_cache(self):
+        """
+        Shadow function for ShadowRepo.close_rf_cache
+        """
+        return self._shadow.close_rf_cache()
+
+    def get_diffs(self, target_iter):
+        """
+        Shadow function for ShadowRepo.get_diffs
+        """
+        return self._shadow.get_diffs(target_iter)
 
     def _is_existing(self):
         # check first that the directory itself exists
