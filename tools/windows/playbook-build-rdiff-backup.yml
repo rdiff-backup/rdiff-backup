@@ -54,6 +54,9 @@
       loop:
         - "{{ bin_exe }}"
         - "{{ wheel_pkg }}"
+      tags:
+      - fetch
+      - never
 
     # the following lines are not absolutely necessary but help debugging rdiff-backup
 

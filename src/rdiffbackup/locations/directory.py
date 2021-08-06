@@ -63,10 +63,15 @@ class ReadDir(Dir, locations.ReadLocation):
         """
 
         # FIXME not sure we couldn't support symbolic links nowadays on Windows
-        if self.base_dir.conn.os.name == 'nt':
+        # knowing that it would require specific handling when reading the link:
+        #   File "rdiff_backup\rpath.py", line 771, in symlink
+        #   TypeError: symlink: src should be string, bytes or os.PathLike, not NoneType
+        # I suspect that not all users can read symlinks with os.readlink
+        if (self.base_dir.conn.os.name == 'nt'
+                and ("--exclude-symbolic-links", None) not in select_opts):
             log.Log("Symbolic links excluded by default on Windows",
                     log.NOTE)
-            select_opts.append(("--exclude-symbolic-links", None))
+            select_opts.insert(0, ("--exclude-symbolic-links", None))
         if Globals.get_api_version() < 201:  # compat200
             self.base_dir.conn.backup.SourceStruct.set_source_select(
                 self.base_dir, select_opts, *list(map(io.BytesIO, select_data)))
