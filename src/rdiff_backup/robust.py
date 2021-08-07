@@ -28,7 +28,7 @@ from . import librsync, C, rpath, Globals, log, connection
 # impacting only a single file, especially on remote file systems.
 # We list first only the POSIX conform signals, present on all platforms.
 _robust_errno_list = [errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
-                      errno.EEXIST, errno.ENOTDIR, errno.EILSEQ,
+                      errno.EEXIST, errno.ENOTDIR, errno.EILSEQ, errno.EBADF,
                       errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
                       errno.ENOTEMPTY, errno.EIO, errno.ETXTBSY,
                       errno.ESRCH, errno.EINVAL, errno.EDEADLK,
