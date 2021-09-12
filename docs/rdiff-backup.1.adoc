@@ -24,7 +24,7 @@ rdiff-backup also preserves symlinks, special files, hardlinks, permissions, uid
 rdiff-backup can also operate in a bandwidth efficient manner over a pipe, like *rsync*(1).
 Thus you can use ssh and rdiff-backup to securely back a hard drive up to a remote location, and only the differences will be transmitted.
 Using the default settings, rdiff-backup requires that the remote system accept ssh connections, and that rdiff-backup is installed in the user's PATH on the remote system.
-See the <<remote-operation,REMOTE OPERATION>> section for details.
+See the <<_remote_operation,REMOTE OPERATION>> section for details.
 
 Note that you should not write to the mirror directory except with rdiff-backup.
 Many of the increments are stored as reverse diffs, so if you delete or modify a file, you may lose the ability to restore previous versions of that file.
@@ -101,17 +101,9 @@ Currently this only applies when listing increments using the *list increments* 
 --remote-schema _remoteschema_::
 Specify an alternate method of connecting to a remote computer.
 This is necessary to get rdiff-backup not to use ssh for remote backups, or if, for instance, rdiff-backup is not in the PATH on the remote side.
-See the <<remote-operation,REMOTE OPERATION>> section for details.
+See the <<_remote_operation,REMOTE OPERATION>> section for details.
 
 --remote-tempdir _dirpath_:: use path as temporary directory on the remote side of the connection.
-
---restrict-path _dirpath_::
-Require that all file access be inside the given path.
-This switch, and *--restrict-mode*, are intended to be used with the *server* action to provide a bit more protection when doing automated remote backups.
-+
-CAUTION: Those options are _not_ intended as your only line of defense so please don't do something silly like allow public access to an rdiff-backup server run with *--restrict-mode read-only*.
-
---restrict-mode {*read-write*,*read-only*,*update-only*}:: restriction mode for the directory given by *--restrict-path*, either full access (aka read-write), read-only, or only to update incrementally an already existing back-up (default is *read-write*).
 
 --ssh-compression, --no-ssh-compression::
 use SSH with or without compression with default remote-schema.
@@ -136,13 +128,13 @@ This determines how much is written to the log file, and without using *--termin
 
 === Actions
 
-backup [<<creation-options,CREATION OPTIONS>>] [<<compression-options,COMPRESSION OPTIONS>>] [<<selection-options,SELECTION OPTIONS>>] [<<filesystem-options,FILESYSTEM OPTIONS>>] [<<user-group-options,USER GROUP OPTIONS>>] [<<statistics-options,STATISTICS OPTIONS>>] _sourcedir_ _targetdir_:: back-up a source directory to a target backup repository.
+backup [<<_creation_options,CREATION OPTIONS>>] [<<_compression_options,COMPRESSION OPTIONS>>] [<<_selection_options,SELECTION OPTIONS>>] [<<_filesystem_options,FILESYSTEM OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [<<_statistics_options,STATISTICS OPTIONS>>] _sourcedir_ _targetdir_:: back-up a source directory to a target backup repository.
 
 calculate [--method *average*] _statfile1_ _statfile2_ [...]:: calculate average across multiple statistics files
 
 --method *average*;; there is currently only one method and it is the default, but it might change in the future.
 
-compare [<<selection-options,SELECTION OPTIONS>>] [--method _method_] [--at _time_] _sourcedir_ _targetdir_::
+compare [<<_selection_options,SELECTION OPTIONS>>] [--method _method_] [--at _time_] _sourcedir_ _targetdir_::
 Compare a directory with the backup set at the given time.
 This can be useful to see how archived data differs from current data, or to check that a backup is current.
 
@@ -156,7 +148,7 @@ With *meta* only the metadata of files will be compared (name, size, date, type,
 --at _time_;;
 at which _time_ of the back-up directory should the comparaison take place.
 The default is *now*, meaning the latest version.
-See <<time-formats,TIME FORMATS>> for details.
+See <<_time_formats,TIME FORMATS>> for details.
 
 info:: outputs information about the current system in YAML format, so that it can be used in a bug report, and exits.
 
@@ -165,18 +157,18 @@ list modified or existing files in a given back-up repository.
 
 --changed-since _time_;;
 List the files that have changed in the destination directory
-since the given time. See <<time-formats,TIME FORMATS>> for the format of time.
+since the given time. See <<_time_formats,TIME FORMATS>> for the format of time.
 If a directory in the archive is specified, list only the files
 under that directory. This option does not read the source
 directory; it is used to compare the contents of two different
 rdiff-backup sessions.
-See <<time-formats,TIME FORMATS>> for details.
+See <<_time_formats,TIME FORMATS>> for details.
 
 --at _time_;;
 List the files in the archive that were present at the given
 time. If a directory in the archive is specified, list only the
 files under that directory.
-See <<time-formats,TIME FORMATS>> for details.
+See <<_time_formats,TIME FORMATS>> for details.
 
 list *increments* [*--no-size*|*--size*] _repository_::
 list increments with date in a given back-up repository.
@@ -187,7 +179,7 @@ is to _not_ show sizes. When showing sizes, it becomes allowable to
 specify a directory within a repository, then only the cumulated
 sizes of that directory will be shown.
 
-regress [<<compression-options,COMPRESSION OPTIONS>>] [<<user-group-options,USER GROUP OPTIONS>>] [<<timestamp-options,TIMESTAMP OPTIONS>>] _repository_::
+regress [<<_compression_options,COMPRESSION OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [<<_timestamp_options,TIMESTAMP OPTIONS>>] _repository_::
 If an rdiff-backup session fails, this action will undo the failed directory.
 This happens automatically if you attempt to back-up to a directory and the last backup failed.
 
@@ -201,22 +193,22 @@ Thus if you deleted a file two weeks ago, backed up immediately afterwards, and 
 
 --older-than _time_;;
 all the increments older than the given time will be deleted.
-See <<time-formats,TIME FORMATS>> for details.
+See <<_time_formats,TIME FORMATS>> for details.
 
-restore [<<creation-options,CREATION OPTIONS>>] [<<compression-options,COMPRESSION OPTIONS>>] [<<selection-options,SELECTION OPTIONS>>] [<<filesystem-options,FILESYSTEM OPTIONS>>] [<<user-group-options,USER GROUP OPTIONS>>] [*--at* _time_|*--increment*] _source_ _targetdir_::
+restore [<<_creation_options,CREATION OPTIONS>>] [<<_compression_options,COMPRESSION OPTIONS>>] [<<_selection_options,SELECTION OPTIONS>>] [<<_filesystem_options,FILESYSTEM OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [*--at* _time_|*--increment*] _source_ _targetdir_::
 restore a source backup repository at a specific time or a specific     source increment to a target directory.
-See <<restoring,RESTORING>> for details.
+See <<_restoring,RESTORING>> for details.
 
 --at _time_;;
 the _source_ parameter is interpreted as a back-up directory, and
 the content is restored from the given time.
-See <<time-formats,TIME FORMATS>> for details.
+See <<_time_formats,TIME FORMATS>> for details.
 
 --increment;;
 the _source_ parameter is expected to be an increment within a
 back-up repository, to be restored into the given target directory.
 
-server [**--debug**]::
+server [<<_restrict_options,RESTRICT OPTIONS>>] [**--debug**]::
 Enter server mode (not to be invoked directly, but instead used by another rdiff-backup process on a remote computer).
 
 --debug;;
@@ -225,16 +217,15 @@ See the https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.ad
 
 test _remote_location_1_ [_remote_location_2_ ...]::
 Test for the presence of a compatible rdiff-backup server as specified in the following remote location argument(s) (of which the filename section will be ignored).
-See the <<remote-operation,REMOTE OPERATION>> section for details.
+See the <<_remote_operation,REMOTE OPERATION>> section for details.
 
 verify [*--at* _time_] _location_::
 Check all the data in the repository at the given time by computing the SHA1 hash of all the regular files and comparing them with the hashes stored in the metadata file.
 
 --at _time_;;
 the time of the data which needs to be verified.
-See <<time-formats,TIME FORMATS>> for details.
+See <<_time_formats,TIME FORMATS>> for details.
 
-[[compression-options]]
 == COMPRESSION OPTIONS
 
 --compression, --no-compression::
@@ -246,7 +237,6 @@ Default is to compress all files, except those excluded as noted below.
 Do not compress increments based on files whose filenames match regexp.
 The default includes many common audiovisual and archive files, and may be found from the help.
 
-[[creation-options]]
 == CREATION OPTIONS
 
 --create-full-path::
@@ -255,7 +245,6 @@ With this option, all missing directories on the destination path will be create
 Use this option with care: if there is a typo in the remote path, the remote filesystem could fill up very quickly (by creating a duplicate backup tree).
 For this reason this option is primarily aimed at scripts which automate backups.
 
-[[filesystem-options]]
 == FILESYSTEM OPTIONS
 
 --acls, --no-acls:: enable/disable back-up of Access Control Lists.
@@ -283,10 +272,19 @@ Without the option rdiff-backup may generate unnecessary numbers of tiny diff fi
 Exit with error instead of dropping ACLs or ACL entries.
 Normally this may happen (with a warning) because the destination does not support them or because the relevant user/group names do not exist on the destination side.
 
-[[selection-options]]
+== RESTRICT OPTIONS
+
+--restrict-path _dirpath_::
+Require that all file access be inside the given path.
+This switch, and *--restrict-mode*, are intended to be used with the *server* action to provide a bit more protection when doing automated remote backups.
++
+CAUTION: Those options are _not_ intended as your only line of defense so please don't do something silly like allow public access to an rdiff-backup server run with *--restrict-mode read-only*.
+
+--restrict-mode {*read-write*,*read-only*,*update-only*}:: restriction mode for the directory given by *--restrict-path*, either full access (aka read-write), read-only, or only to update incrementally an already existing back-up (default is *read-write*).
+
 == SELECTION OPTIONS
 
-This section only quickly lists the existing options, the section <<file-selection,FILE SELECTION>> explains those more in details.
+This section only quickly lists the existing options, the section <<_file_selection,FILE SELECTION>> explains those more in details.
 
 === Globs, Regex, File lists selection
 
@@ -337,7 +335,6 @@ The default is to include other filesystems.
 
 --min-file-size _sizeinbytes_:: Exclude files that are smaller than the given size in bytes.
 
-[[statistics-options]]
 == STATISTICS OPTIONS
 
 --file-statistics, --no-file-statistics::
@@ -345,13 +342,12 @@ Enable/disable writing to the '[.code]``file_statistics``' file in the *rdiff-ba
 rdiff-backup will run slightly quicker and take up a bit less space.
 Default is to write the statistics file(s).
 +
-See the <<files,FILES>> section for more information about statistics files.
+See the <<_files,FILES>> section for more information about statistics files.
 
 --no-print-statistics, --print-statistics::
 Summary statistics will be printed (or not) after a successful backup.
 Even if disabled (the default), this information will still be available from the session statistics file.
 
-[[timestamp-options]]
 == TIMESTAMP OPTIONS
 
 --allow-duplicate-timestamps::
@@ -363,10 +359,9 @@ In such cases, you may use this flag to first recover from the failed backup wit
 +
 after which you will need to remove those old duplicate entries using the *remove increments* action.
 
-[[user-group-options]]
 == USER GROUP OPTIONS
 
-See the <<users-and-groups,USERS AND GROUPS>> section for more information.
+See the <<_users_and_groups,USERS AND GROUPS>> section for more information.
 
 --group-mapping-file _mapfile_:: Map group names and IDs according to the group mapping file _mapfile_.
 
@@ -374,7 +369,6 @@ See the <<users-and-groups,USERS AND GROUPS>> section for more information.
 
 --preserve-numerical-ids:: If set, rdiff-backup will preserve uids/gids instead of trying to preserve unames and gnames.
 
-[[restoring]]
 == RESTORING
 
 There are two ways to tell rdiff-backup to restore a file or directory:
@@ -392,7 +386,7 @@ One way to do this is to run:
 
  rdiff-backup restore --at 3D /usr.backup/local /usr/local.old
 
-here above the '[.code]``3D``' means 3 days (for other ways to specify the time, see the <<time-formats,TIME FORMATS>> section).
+here above the '[.code]``3D``' means 3 days (for other ways to specify the time, see the <<_time_formats,TIME FORMATS>> section).
 The '[.code]``/usr.backup/local``' directory was selected, because that is the directory containing the current version of '[.code]``usr/local``'.
 
 Note that the parameter of *--at* always specifies an exact time.
@@ -413,7 +407,6 @@ would also restore the file as desired.
 
 If you are not sure exactly which version of a file you need, it is probably easiest to either restore from the increments files as described immediately above, or to see which increments are available with '[.code]``list increments``', and then specify an exact time with *--at*.
 
-[[time-formats]]
 == TIME FORMATS
 
 rdiff-backup uses time strings in two places.
@@ -435,7 +428,6 @@ For instance, '[.code]``2002/3/5``', '[.code]``03-05-2002``', and '[.code]``2002
 . A backup session specification which is a non-negative integer followed by '[.code]``B``'.
 For instance, '[.code]``0B``' specifies the time of the current mirror, and '[.code]``3B``' specifies the time of the 3rd newest increment.
 
-[[remote-operation]]
 == REMOTE OPERATION
 
 In order to access remote files, rdiff-backup opens up a pipe to a copy of rdiff-backup running on the remote machine.
@@ -449,7 +441,7 @@ Using *--remote-schema*, rdiff-backup can invoke an arbitrary command in order t
 For instance,
 
  rdiff-backup backup --remote-schema 'cd /usr; {h}' \
-                     foo 'rdiff-backup --server'::bar
+                     foo 'rdiff-backup server'::bar
 
 is basically equivalent to (but slower than)
 
@@ -474,10 +466,9 @@ And finally, to include a literal '[.code]``%``' in the string specified by *--r
 
 Although ssh itself may be secure, using rdiff-backup in the default way presents some security risks.
 For instance if the server is run as root, then an attacker who compromised the client could then use rdiff-backup to overwrite arbitrary server files by "backing up" over them.
-Such a setup can be made more secure by using the sshd configuration option '[.code]``command="rdiff-backup --server"``' possibly along with the *--restrict-path* and *--restrict-mode* options to rdiff-backup.
+Such a setup can be made more secure by using the sshd configuration option '[.code]``command="rdiff-backup server"``' possibly along with the *--restrict-path* and *--restrict-mode* options to rdiff-backup.
 For more information, see the web page, the wiki, and the entries for those options on this man page.
 
-[[file-selection]]
 == FILE SELECTION
 
 rdiff-backup has a number of file selection options.
@@ -490,7 +481,7 @@ For instance, trailing backslashes have no special significance.
 
 IMPORTANT: include and exclude patterns under Windows solely support slashes '[.code]``/``' as file separators, given that backslashes '[.code]``\``' have a special meaning in regex/glob patterns.
 
-All the available file selection conditions are listed under <<selection-options,SELECTION OPTIONS>>.
+All the available file selection conditions are listed under <<_selection_options,SELECTION OPTIONS>>.
 
 Two principles need to be understood before really starting:
 
@@ -616,7 +607,6 @@ So for instance
 matches any files whose full pathnames contain 7 consecutive digits which aren't followed by 'foo'.
 However, it wouldn't match '[.code]``/home``' even if '[.code]``/home/ben/1234567``' existed.
 
-[[users-and-groups]]
 == USERS AND GROUPS
 
 There can be complications preserving ownership across systems.
@@ -648,9 +638,8 @@ For instance, suppose you have mapped all the files owned by alice in the source
 In this case there is no need to use any of the mapping options.
 However, if you wanted to restore the files so that the files originally owned by alice on the source are now owned by ben, you would have to use the mapping options, even though you just want the unames of the repository's files preserved in the restored files.
 
-See <<user-group-options,USER GROUP OPTIONS>> for a list and description of related options.
+See <<_user_group_options,USER GROUP OPTIONS>> for a list and description of related options.
 
-[[files]]
 == FILES
 
 _any-config-file_:: you can create a file with one option/action/sub-option per line and use it on the command line with an at sign prefix like _@any-config-file_ and its content will be interpreted as if given on the command line.
@@ -674,7 +663,7 @@ However, the session statistics file is intended to be very readable and only de
 The files statistics file is more compact (and slightly less readable) but describes every directory backed up.
 It also may be compressed to save space.
 +
-See also <<statistics-options,STATISTICS OPTIONS>> and the *--null-separator* option.
+See also <<_statistics_options,STATISTICS OPTIONS>> and the *--null-separator* option.
 
 *backup.log*, *restore.log*, *error_log*::
 rdiff-backup will save various messages to the log file, which is '[.code]``rdiff-backup-data/backup.log``' for backup sessions and '[.code]``rdiff-backup-data/restore.log``' for restore sessions.
@@ -684,7 +673,6 @@ Errors during backup are also written to a file '[.code]``rdiff-backup-data/erro
 +
 The log files are not compressed and can become quite large if rdiff-backup is run with high verbosity.
 
-[[environment]]
 == ENVIRONMENT
 
 RDIFF_BACKUP_VERBOSITY=_[0-9]_:: the default verbosity for log file and terminal, can be overwritten by the corresponding options *-v/--verbosity* and *--terminal-verbosity*.
@@ -693,20 +681,17 @@ RDIFF_BACKUP_DEBUG=[_address_][:__port__]::
 set a non-default listening address and/or port (default is `127.0.0.1:4444`) for  rpdb.
 Valid values are _address_, _address:port_ or _:port_.
 
-[[bugs]]
 == BUGS
 
 See GitHub issues::: https://github.com/rdiff-backup/rdiff-backup/issues
 
 In doubt subscribe to and ask the mailing list::: https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users
 
-[[authors]]
 == AUTHORS
 
 * Ben Escoto link:mailto:ben@emerose.org[ben@emerose.org]
 * Eric Lavarde <ewl+rdiffbackup@lavar.de> ...
 
-[[see-also]]
 == SEE ALSO
 
 *python*(1), *rdiff*(1), *rsync*(1), *ssh*(1).
