@@ -1772,19 +1772,6 @@ def make_file_dict(filename):
     (incomplete) rpath object.
     """
 
-    def _readlink(filename):
-        """FIXME wrapper function to workaround a bug in os.readlink on Windows
-        not accepting bytes path. This function can be removed once pyinstaller
-        supports Python 3.8 and a new release can be made.
-        See https://github.com/pyinstaller/pyinstaller/issues/4311
-        """
-
-        if os.name == 'nt' and not isinstance(filename, str):
-            # we assume a bytes representation
-            return os.fsencode(os.readlink(os.fsdecode(filename)))
-        else:
-            return os.readlink(filename)
-
     try:
         statblock = os.lstat(filename)
     except (FileNotFoundError, NotADirectoryError, PermissionError):
@@ -1813,9 +1800,7 @@ def make_file_dict(filename):
         type_ = 'fifo'
     elif stat.S_ISLNK(mode):
         type_ = 'sym'
-        # FIXME reverse once Python 3.8 can be used under Windows
-        # data['linkname'] = os.readlink(filename)
-        data['linkname'] = _readlink(filename)
+        data['linkname'] = os.readlink(filename)
     elif stat.S_ISSOCK(mode):
         type_ = 'sock'
     else:
