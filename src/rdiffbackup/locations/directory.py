@@ -94,6 +94,21 @@ class ReadDir(Dir, locations.ReadLocation):
 
 class WriteDir(Dir, locations.WriteLocation):
 
+    def setup(self):
+        ret_code = super().setup()
+        if ret_code != 0:
+            return ret_code
+
+        if Globals.get_api_version() >= 201:  # compat200
+            if self.base_dir.conn is Globals.local_connection:
+                # should be more efficient than going through the connection
+                from rdiffbackup.locations import _dir_shadow
+                self._shadow = _dir_shadow.ShadowWriteDir
+            else:
+                self._shadow = self.base_dir.conn._dir_shadow.ShadowWriteDir
+
+        return 0  # all is good
+
     def check(self):
         ret_code = super().check()
 
@@ -127,5 +142,22 @@ class WriteDir(Dir, locations.WriteLocation):
 
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
-            self.base_dir.conn.restore.TargetStruct.set_target_select(
-                self.base_dir, select_opts, *list(map(io.BytesIO, select_data)))
+            if Globals.get_api_version() >= 201:  # compat200
+                self._shadow.set_select(self.base_dir, select_opts,
+                                        *list(map(io.BytesIO, select_data)))
+            else:
+                self.base_dir.conn.restore.TargetStruct.set_target_select(
+                    self.base_dir, select_opts,
+                    *list(map(io.BytesIO, select_data)))
+
+    def get_initial_iter(self):
+        """
+        Shadow function for ShadowWriteDir.get_initial_iter
+        """
+        return self._shadow.get_initial_iter(self.base_dir)
+
+    def patch(self, source_diff_iter):
+        """
+        Shadow function for ShadowWriteDir.patch
+        """
+        return self._shadow.patch(self.base_dir, source_diff_iter)

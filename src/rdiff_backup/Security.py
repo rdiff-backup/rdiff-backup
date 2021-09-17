@@ -231,12 +231,7 @@ def _set_allowed_requests(sec_class, sec_level):
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
             "fs_abilities.get_readonly_fsa",
-            "restore.MirrorStruct.get_increment_times",
-            "restore.MirrorStruct.set_mirror_and_rest_times",
-            "restore.MirrorStruct.set_mirror_select",
-            "restore.MirrorStruct.initialize_rf_cache",
-            "restore.MirrorStruct.close_rf_cache",
-            "restore.MirrorStruct.get_diffs", "restore.ListChangedSince",
+            "restore.ListChangedSince",
             "restore.ListAtTime",
             "compare.RepoSide.init_and_get_iter",
             "compare.RepoSide.close_rf_cache", "compare.RepoSide.attach_files",
@@ -247,10 +242,23 @@ def _set_allowed_requests(sec_class, sec_level):
             "backup.SourceStruct.get_source_select",
             "backup.SourceStruct.set_source_select",
             "backup.SourceStruct.get_diffs",
+            "restore.MirrorStruct.get_increment_times",
+            "restore.MirrorStruct.set_mirror_and_rest_times",
+            "restore.MirrorStruct.set_mirror_select",
+            "restore.MirrorStruct.initialize_rf_cache",
+            "restore.MirrorStruct.close_rf_cache",
+            "restore.MirrorStruct.get_diffs",
             # API >= 201
             "_dir_shadow.ShadowReadDir.get_select",
             "_dir_shadow.ShadowReadDir.set_select",
             "_dir_shadow.ShadowReadDir.get_diffs",
+            "_repo_shadow.ShadowRepo.initialize_restore",
+            "_repo_shadow.ShadowRepo.get_mirror_time",
+            "_repo_shadow.ShadowRepo.get_increment_times",
+            "_repo_shadow.ShadowRepo.set_select",
+            "_repo_shadow.ShadowRepo.initialize_rf_cache",
+            "_repo_shadow.ShadowRepo.close_rf_cache",
+            "_repo_shadow.ShadowRepo.get_diffs",
         ])
     if sec_level == "update-only" or sec_level == "read-write":
         requests.update([
@@ -278,16 +286,19 @@ def _set_allowed_requests(sec_class, sec_level):
             "os.mkdir", "os.chown", "os.lchown", "os.rename", "os.unlink",
             "os.remove", "os.chmod", "os.makedirs",
             "rpath.delete_dir_no_files",
-            "restore.TargetStruct.get_initial_iter",
-            "restore.TargetStruct.patch",
-            "restore.TargetStruct.set_target_select",
             "fs_abilities.restore_set_globals",
             "fs_abilities.single_set_globals", "regress.Regress",
             "manage.delete_earlier_than_local",
             # API < 201
             "backup.DestinationStruct.patch",
+            "restore.TargetStruct.get_initial_iter",
+            "restore.TargetStruct.patch",
+            "restore.TargetStruct.set_target_select",
             # API >= 201
             "_repo_shadow.ShadowRepo.patch",
+            "_dir_shadow.ShadowWriteDir.get_initial_iter",
+            "_dir_shadow.ShadowWriteDir.patch",
+            "_dir_shadow.ShadowWriteDir.set_select",
         ])
     if sec_class == "server":
         requests.update([

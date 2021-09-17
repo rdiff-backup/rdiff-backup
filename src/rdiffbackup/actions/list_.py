@@ -25,7 +25,7 @@ The module is named with an underscore at the end to avoid overwriting the
 builtin 'list' class.
 """
 
-from rdiff_backup import (manage, restore)
+from rdiff_backup import manage
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
@@ -138,7 +138,8 @@ class ListAction(actions.BaseAction):
     def _list_increments(self):
         """Print out a summary of the increments and their times"""
         incs = self.inc_rpath.get_incfiles_list()
-        mirror_time = restore.MirrorStruct.get_mirror_time()
+        mirror_time = self.source.get_mirror_time()
+        # TODO return error if mirror_time <= 0 !!!
         if self.values.parsable_output:
             print(manage.describe_incs_parsable(incs, mirror_time,
                                                 self.mirror_rpath))

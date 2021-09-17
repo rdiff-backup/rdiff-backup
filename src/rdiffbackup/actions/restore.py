@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import (log, restore, selection, Security)
+from rdiff_backup import (Globals, log, restore, selection, Security)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 
@@ -167,9 +167,12 @@ class RestoreAction(actions.BaseAction):
                         rp=self.source.base_dir), log.ERROR)
             return 1
         try:
-            restore.Restore(
-                self.source.base_dir.new_index(self.source.restore_index),
-                self.inc_rpath, self.target.base_dir, self.action_time)
+            if Globals.get_api_version() < 201:  # compat200
+                restore.Restore(
+                    self.source.base_dir.new_index(self.source.restore_index),
+                    self.inc_rpath, self.target.base_dir, self.action_time)
+            else:
+                self._operate_restore()
         except OSError as exc:
             log.Log("Could not complete restore due to exception '{ex}'".format(
                 ex=exc), log.ERROR)
@@ -177,6 +180,22 @@ class RestoreAction(actions.BaseAction):
         else:
             log.Log("Restore successfully finished", log.INFO)
             return 0
+
+    def _operate_restore(self):
+        """
+        Execute the actual restore operation
+        """
+        log.Log(
+            "Starting restore operation from source path {sp} to destination "
+            "path {dp}".format(sp=self.source.base_dir,
+                               dp=self.target.base_dir), log.NOTE)
+
+        self.source.initialize_restore(self.action_time)
+        self.source.initialize_rf_cache(self.inc_rpath)
+        target_iter = self.target.get_initial_iter()
+        src_diff_iter = self.source.get_diffs(target_iter)
+        self.target.patch(src_diff_iter)
+        self.source.close_rf_cache()
 
 
 def get_action_class():

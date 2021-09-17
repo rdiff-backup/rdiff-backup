@@ -294,7 +294,8 @@ class CachedRF:
     def get_fp(self, index, mir_rorp):
         """Return the file object (for reading) of given index"""
         rf = longname.update_rf(
-            self._get_rf(index, mir_rorp), mir_rorp, self.root_rf.mirror_rp)
+            self._get_rf(index, mir_rorp), mir_rorp, self.root_rf.mirror_rp,
+            RestoreFile)
         if not rf:
             log.Log(
                 "Unable to retrieve data for file {fi}! The cause is "
