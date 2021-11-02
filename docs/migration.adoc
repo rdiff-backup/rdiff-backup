@@ -84,7 +84,7 @@ This will upgrade rdiff-backup to the new version.
 
 Next, you will need to tweak the command line used to run your backup to something similar:
 
- rdiff-backup --remote-schema “ssh %s rdiff-backup2 –server” ...
+ rdiff-backup --remote-schema "ssh %s rdiff-backup2 --server" ...
 
 === Use Case: Remote to Local (pull)
 
