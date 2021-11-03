@@ -39,6 +39,7 @@ class ShadowReadDir:
     """
     _select = None  # will be set to source Select iterator
 
+    # @API(ShadowReadDir.set_select, 201)
     @classmethod
     def set_select(cls, rp, tuplelist, *filelists):
         """
@@ -59,6 +60,7 @@ class ShadowReadDir:
         cls._select = rorpiter.CacheIndexable(sel_iter, cache_size)
         Globals.set('select_mirror', sel_iter)
 
+    # @API(ShadowReadDir.get_select, 201)
     @classmethod
     def get_select(cls):
         """
@@ -66,6 +68,7 @@ class ShadowReadDir:
         """
         return cls._select
 
+    # @API(ShadowReadDir.get_diffs, 201)
     @classmethod
     def get_diffs(cls, dest_sigiter):
         """
@@ -129,6 +132,7 @@ class ShadowWriteDir:
     """Hold functions to be run on the target side when restoring"""
     _select = None
 
+    # @API(ShadowWriteDir.set_select, 201)
     @classmethod
     def set_select(cls, target, select_opts, *filelists):
         """Return a selection object iterating the rorpaths in target"""
@@ -137,6 +141,7 @@ class ShadowWriteDir:
         cls._select = selection.Select(target)
         cls._select.parse_selection_args(select_opts, filelists)
 
+    # @API(ShadowWriteDir.get_initial_iter, 201)
     @classmethod
     def get_initial_iter(cls, target):
         """Return selector previously set with set_initial_iter"""
@@ -145,6 +150,7 @@ class ShadowWriteDir:
         else:
             return selection.Select(target).set_iter()
 
+    # @API(ShadowWriteDir.patch, 201)
     @classmethod
     def patch(cls, target, diff_iter):
         """

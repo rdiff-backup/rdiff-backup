@@ -49,6 +49,7 @@ class ShadowRepo:
     # This will be set to the exact time to restore to (not restore_to_time)
     _restore_time = None
 
+    # @API(ShadowRepo.set_rorp_cache, 201)
     @classmethod
     def set_rorp_cache(cls, baserp, source_iter, use_increment):
         """
@@ -63,6 +64,7 @@ class ShadowRepo:
             collated, Globals.pipeline_max_length * 4, baserp)
         # pipeline len adds some leeway over just*3 (to and from and back)
 
+    # @API(ShadowRepo.get_sigs, 201)
     @classmethod
     def get_sigs(cls, dest_base_rpath):
         """
@@ -89,6 +91,7 @@ class ShadowRepo:
                     cls.CCPP.flag_changed(index)
                     yield sig
 
+    # @API(ShadowRepo.patch, 201)
     @classmethod
     def patch(cls, dest_rpath, source_diffiter, start_index=()):
         """Patch dest_rpath with an rorpiter of diffs"""
@@ -100,6 +103,7 @@ class ShadowRepo:
         cls.CCPP.close()
         dest_rpath.setdata()
 
+    # @API(ShadowRepo.patch_and_increment, 201)
     @classmethod
     def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
         """Patch dest_rpath with rorpiter of diffs and write increments"""
@@ -186,6 +190,7 @@ class ShadowRepo:
             else:
                 raise
 
+    # @API(ShadowRepo.touch_current_mirror, 201)
     @classmethod
     def touch_current_mirror(cls, data_dir, current_time_str):
         """
@@ -209,6 +214,7 @@ class ShadowRepo:
         mirrorrp.write_string("PID {pp}\n".format(pp=pid))
         mirrorrp.fsync_with_dir()
 
+    # @API(ShadowRepo.remove_current_mirror, 201)
     @classmethod
     def remove_current_mirror(cls, data_dir):
         """
@@ -229,6 +235,7 @@ class ShadowRepo:
             C.sync()
         older_inc.delete()
 
+    # @API(ShadowRepo.close_statistics, 201)
     @classmethod
     def close_statistics(cls, end_time):
         """
@@ -246,6 +253,7 @@ class ShadowRepo:
 
 # ### COPIED FROM RESTORE ####
 
+    # @API(ShadowRepo.initialize_restore, 201)
     @classmethod
     def initialize_restore(cls, data_dir, restore_to_time):
         """Set class variable _restore_time on mirror conn"""
@@ -255,6 +263,7 @@ class ShadowRepo:
         # the other way around as it used to be
         RestoreFile.initialize(cls._restore_time, cls.get_mirror_time())
 
+    # @API(ShadowRepo.get_mirror_time, 201)
     @classmethod
     def get_mirror_time(cls):
         """
@@ -275,6 +284,7 @@ class ShadowRepo:
             cls._mirror_time = cur_mirror_incs[0].getinctime()
         return cls._mirror_time
 
+    # @API(ShadowRepo.get_increment_times, 201)
     @classmethod
     def get_increment_times(cls, rp=None):
         """Return list of times of backups, including current mirror
@@ -296,6 +306,7 @@ class ShadowRepo:
         return_list.sort()
         return return_list
 
+    # @API(ShadowRepo.initialize_rf_cache, 201)
     @classmethod
     def initialize_rf_cache(cls, mirror_base, inc_base):
         """Set cls.rf_cache to _CachedRF object"""
@@ -305,21 +316,22 @@ class ShadowRepo:
         cls.root_rf = rf
         cls.rf_cache = _CachedRF(rf)
 
+    # @API(ShadowRepo.close_rf_cache, 201)
     @classmethod
     def close_rf_cache(cls):
         """Run anything remaining on _CachedRF object"""
         cls.rf_cache.close()
 
     @classmethod
-    def get_mirror_rorp_iter(cls, rest_time=None, require_metadata=None):
-        """Return iter of mirror rps at given restore time
+    def _get_mirror_rorp_iter(cls, rest_time=None, require_metadata=None):
+        """
+        Return iter of mirror rps at given restore time
 
         Usually we can use the metadata file, but if this is
         unavailable, we may have to build it from scratch.
 
         If the cls._select object is set, use it to filter out the
         unwanted files from the metadata_iter.
-
         """
         if rest_time is None:
             rest_time = cls._restore_time
@@ -338,6 +350,7 @@ class ShadowRepo:
             rorp_iter = selection.FilterIter(cls._select, rorp_iter)
         return rorp_iter
 
+    # @API(ShadowRepo.set_select, 201)
     @classmethod
     def set_select(cls, target_rp, select_opts, *filelists):
         """Initialize the mirror selection object"""
@@ -347,12 +360,12 @@ class ShadowRepo:
         cls._select.parse_selection_args(select_opts, filelists)
 
     @classmethod
-    def subtract_indices(cls, index, rorp_iter):
-        """Subtract index from index of each rorp in rorp_iter
+    def _subtract_indices(cls, index, rorp_iter):
+        """
+        Subtract index from index of each rorp in rorp_iter
 
-        subtract_indices is necessary because we
+        _subtract_indices is necessary because we
         may not be restoring from the root index.
-
         """
         if index == ():
             return rorp_iter
@@ -367,17 +380,18 @@ class ShadowRepo:
 
         return get_iter()
 
+    # @API(ShadowRepo.get_diffs, 201)
     @classmethod
     def get_diffs(cls, target_iter):
-        """Given rorp iter of target files, return diffs
+        """
+        Given rorp iter of target files, return diffs
 
         Here the target_iter doesn't contain any actual data, just
         attribute listings.  Thus any diffs we generate will be
         snapshots.
-
         """
-        mir_iter = cls.subtract_indices(cls.mirror_base.index,
-                                        cls.get_mirror_rorp_iter())
+        mir_iter = cls._subtract_indices(cls.mirror_base.index,
+                                         cls._get_mirror_rorp_iter())
         collated = rorpiter.Collate2Iters(mir_iter, target_iter)
         return cls._get_diffs_from_collated(collated)
 
