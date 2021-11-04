@@ -12,8 +12,14 @@ bytes).
 === Internal
 
 * `backup.DestinationStruct`
+** `.get_sigs`
+** `.patch`
+** `.patch_and_increment`
+** `.set_rorp_cache`
 * `backup.SourceStruct`
-* `backup.SourceStruct.set_source_select`
+** `.get_diffs`
+** `.get_source_select`
+** `.set_source_select`
 * `compare.DataSide`
 * `compare.RepoSide`
 * `compare.Verify`
@@ -54,9 +60,16 @@ bytes).
 * `restore.ListAtTime`
 * `restore.ListChangedSince`
 * `restore.MirrorStruct`
-* `restore.MirrorStruct.set_mirror_select`
+** `.close_rf_cache`
+** `.get_diffs`
+** `.get_increment_times`
+** `.initialize_rf_cache`
+** `.set_mirror_and_rest_times`
+** `.set_mirror_select`
 * `restore.TargetStruct`
-* `restore.TargetStruct.set_target_select`
+** `.get_initial_iter`
+** `.patch`
+** `.set_target_select`
 * `robust.install_signal_handlers`
 * `rpath.copy_reg_file`
 * `rpath.delete_dir_no_files`

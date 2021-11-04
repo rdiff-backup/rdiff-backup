@@ -78,11 +78,13 @@ class SourceStruct:
         cls._source_select = rorpiter.CacheIndexable(sel_iter, cache_size)
         Globals.set('select_mirror', sel_iter)
 
+    # @API(SourceStruct.get_source_select, 200, 200)
     @classmethod
     def get_source_select(cls):
         """Return source select iterator, set by set_source_select"""
         return cls._source_select
 
+    # @API(SourceStruct.get_diffs, 200, 200)
     @classmethod
     def get_diffs(cls, dest_sigiter):
         """Return diffs of any files with signature in dest_sigiter"""
@@ -143,6 +145,7 @@ class SourceStruct:
 class DestinationStruct:
     """Hold info used by destination side when backing up"""
 
+    # @API(DestinationStruct.set_rorp_cache, 200, 200)
     @classmethod
     def set_rorp_cache(cls, baserp, source_iter, for_increment):
         """
@@ -159,6 +162,7 @@ class DestinationStruct:
             collated, Globals.pipeline_max_length * 4, baserp)
         # pipeline len adds some leeway over just*3 (to and from and back)
 
+    # @API(DestinationStruct.get_sigs, 200, 200)
     @classmethod
     def get_sigs(cls, dest_base_rpath):
         """
@@ -185,6 +189,7 @@ class DestinationStruct:
                     cls.CCPP.flag_changed(index)
                     yield sig
 
+    # @API(DestinationStruct.patch, 200, 200)
     @classmethod
     def patch(cls, dest_rpath, source_diffiter, start_index=()):
         """Patch dest_rpath with an rorpiter of diffs"""
@@ -196,6 +201,7 @@ class DestinationStruct:
         cls.CCPP.close()
         dest_rpath.setdata()
 
+    # @API(DestinationStruct.patch_and_increment, 200, 200)
     @classmethod
     def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
         """Patch dest_rpath with rorpiter of diffs and write increments"""

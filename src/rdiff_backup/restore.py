@@ -27,7 +27,7 @@ class RestoreError(Exception):
     pass
 
 
-# @API(MirrorStruct, 200)
+# @API(MirrorStruct, 200, 200)
 class MirrorStruct:
     """Hold functions to be run on the mirror side"""
     # If selection command line arguments given, use Select here
@@ -37,6 +37,7 @@ class MirrorStruct:
     # This will be set to the exact time to restore to (not restore_to_time)
     _rest_time = None
 
+    # @API(MirrorStruct.set_mirror_and_rest_times, 200, 200)
     @classmethod
     def set_mirror_and_rest_times(cls, restore_to_time):
         """Set class variables _mirror_time and _rest_time on mirror conn"""
@@ -55,6 +56,7 @@ class MirrorStruct:
                     log.WARNING)
         return cur_mirror_incs[0].getinctime()
 
+    # @API(MirrorStruct.get_increment_times, 200, 200)
     @classmethod
     def get_increment_times(cls, rp=None):
         """Return list of times of backups, including current mirror
@@ -79,6 +81,7 @@ class MirrorStruct:
         return_list.sort()
         return return_list
 
+    # @API(MirrorStruct.initialize_rf_cache, 200, 200)
     @classmethod
     def initialize_rf_cache(cls, mirror_base, inc_base):
         """Set cls.rf_cache to CachedRF object"""
@@ -88,6 +91,7 @@ class MirrorStruct:
         cls.root_rf = rf
         cls.rf_cache = CachedRF(rf)
 
+    # @API(MirrorStruct.close_rf_cache, 200, 200)
     @classmethod
     def close_rf_cache(cls):
         """Run anything remaining on CachedRF object"""
@@ -121,7 +125,7 @@ class MirrorStruct:
             rorp_iter = selection.FilterIter(cls._select, rorp_iter)
         return rorp_iter
 
-    # @API(MirrorStruct.set_mirror_select, 200)
+    # @API(MirrorStruct.set_mirror_select, 200, 200)
     @classmethod
     def set_mirror_select(cls, target_rp, select_opts, *filelists):
         """Initialize the mirror selection object"""
@@ -151,6 +155,7 @@ class MirrorStruct:
 
         return get_iter()
 
+    # @API(MirrorStruct.get_diffs, 200, 200)
     @classmethod
     def get_diffs(cls, target_iter):
         """Given rorp iter of target files, return diffs
@@ -229,12 +234,12 @@ class MirrorStruct:
         return mir_rorp
 
 
-# @API(TargetStruct, 200)
+# @API(TargetStruct, 200, 200)
 class TargetStruct:
     """Hold functions to be run on the target side when restoring"""
     _select = None
 
-    # @API(TargetStruct.set_target_select, 200)
+    # @API(TargetStruct.set_target_select, 200, 200)
     @classmethod
     def set_target_select(cls, target, select_opts, *filelists):
         """Return a selection object iterating the rorpaths in target"""
@@ -243,6 +248,7 @@ class TargetStruct:
         cls._select = selection.Select(target)
         cls._select.parse_selection_args(select_opts, filelists)
 
+    # @API(TargetStruct.get_initial_iter, 200, 200)
     @classmethod
     def get_initial_iter(cls, target):
         """Return selector previously set with set_initial_iter"""
@@ -251,6 +257,7 @@ class TargetStruct:
         else:
             return selection.Select(target).set_iter()
 
+    # @API(TargetStruct.patch, 200, 200)
     @classmethod
     def patch(cls, target, diff_iter):
         """Patch target with the diffs from the mirror side

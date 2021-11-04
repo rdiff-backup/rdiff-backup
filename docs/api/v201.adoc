@@ -13,8 +13,14 @@
 ==== rdiff_backup
 
 * `backup.DestinationStruct` **deprecated**
+** `.get_sigs`
+** `.patch`
+** `.patch_and_increment`
+** `.set_rorp_cache`
 * `backup.SourceStruct` **deprecated**
-* `backup.SourceStruct.set_source_select` **deprecated**
+** `.get_diffs`
+** `.get_source_select`
+** `.set_source_select`
 * `compare.DataSide`
 * `compare.RepoSide`
 * `compare.Verify`
@@ -54,10 +60,17 @@
 * `regress.Regress`
 * `restore.ListAtTime`
 * `restore.ListChangedSince`
-* `restore.MirrorStruct`
-* `restore.MirrorStruct.set_mirror_select`
-* `restore.TargetStruct`
-* `restore.TargetStruct.set_target_select`
+* `restore.MirrorStruct` **deprecated**
+** `.close_rf_cache`
+** `.get_diffs`
+** `.get_increment_times`
+** `.initialize_rf_cache`
+** `.set_mirror_and_rest_times`
+** `.set_mirror_select`
+* `restore.TargetStruct` **deprecated**
+** `.get_initial_iter`
+** `.patch`
+** `.set_target_select`
 * `robust.install_signal_handlers`
 * `rpath.copy_reg_file`
 * `rpath.delete_dir_no_files`
@@ -79,17 +92,28 @@
 ==== rdiffbackup
 
 * `locations._dir_shadow.ShadowReadDir`  **new**
-** `.set_select`
-** `.get_select`
 ** `.get_diffs`
+** `.get_select`
+** `.set_select`
+* `locations._dir_shadow.ShadowWriteDir`  **new**
+** `.get_initial_iter`
+** `.patch`
+** `.set_select`
 * `locations._repo_shadow.ShadowRepo`  **new**
-** `.set_rorp_cache`
+** `.close_rf_cache`
+** `.close_statistics`
+** `.get_diffs`
+** `.get_increment_times`
+** `.get_mirror_time`
 ** `.get_sigs`
+** `.initialize_restore`
+** `.initialize_rf_cache`
 ** `.patch`
 ** `.patch_and_increment`
-** `.touch_current_mirror`
 ** `.remove_current_mirror`
-** `.close_statistics`
+** `.set_rorp_cache`
+** `.set_select`
+** `.touch_current_mirror`
 
 === External
 
