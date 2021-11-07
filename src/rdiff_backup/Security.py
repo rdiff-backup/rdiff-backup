@@ -231,8 +231,6 @@ def _set_allowed_requests(sec_class, sec_level):
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
             "fs_abilities.get_readonly_fsa",
-            "restore.ListChangedSince",
-            "restore.ListAtTime",
             "compare.RepoSide.init_and_get_iter",
             "compare.RepoSide.close_rf_cache", "compare.RepoSide.attach_files",
             "compare.DataSide.get_source_select",
@@ -248,6 +246,8 @@ def _set_allowed_requests(sec_class, sec_level):
             "restore.MirrorStruct.initialize_rf_cache",
             "restore.MirrorStruct.close_rf_cache",
             "restore.MirrorStruct.get_diffs",
+            "restore.ListChangedSince",
+            "restore.ListAtTime",
             # API >= 201
             "_dir_shadow.ShadowReadDir.get_select",
             "_dir_shadow.ShadowReadDir.set_select",
@@ -259,6 +259,8 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.ShadowRepo.initialize_rf_cache",
             "_repo_shadow.ShadowRepo.close_rf_cache",
             "_repo_shadow.ShadowRepo.get_diffs",
+            "_repo_shadow.ShadowRepo.list_files_changed_since",
+            "_repo_shadow.ShadowRepo.list_files_at_time",
         ])
     if sec_level == "update-only" or sec_level == "read-write":
         requests.update([

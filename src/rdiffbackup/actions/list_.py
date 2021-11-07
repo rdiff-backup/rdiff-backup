@@ -25,7 +25,7 @@ The module is named with an underscore at the end to avoid overwriting the
 builtin 'list' class.
 """
 
-from rdiff_backup import manage
+from rdiff_backup import Globals, manage
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
@@ -149,15 +149,23 @@ class ListAction(actions.BaseAction):
 
     def _list_files_changed_since(self):
         """List all the files under rp that have changed since restoretime"""
-        for rorp in self.source.base_dir.conn.restore.ListChangedSince(
-                self.mirror_rpath, self.inc_rpath, self.action_time):
+        if Globals.get_api_version() < 201:
+            rorp_iter = self.source.base_dir.conn.restore.ListChangedSince(
+                self.mirror_rpath, self.inc_rpath, self.action_time)
+        else:
+            rorp_iter = self.source.list_files_changed_since(self.action_time)
+        for rorp in rorp_iter:
             # This is a hack, see restore.ListChangedSince for rationale
             print(str(rorp))
 
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
-        for rorp in self.source.base_dir.conn.restore.ListAtTime(
-                self.mirror_rpath, self.inc_rpath, self.action_time):
+        if Globals.get_api_version() < 201:
+            rorp_iter = self.source.base_dir.conn.restore.ListAtTime(
+                self.mirror_rpath, self.inc_rpath, self.action_time)
+        else:
+            rorp_iter = self.source.list_files_at_time(self.action_time)
+        for rorp in rorp_iter:
             print(str(rorp))
 
 

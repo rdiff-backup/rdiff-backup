@@ -58,8 +58,8 @@
 * `manage.delete_earlier_than_local`
 * `regress.check_pids`
 * `regress.Regress`
-* `restore.ListAtTime`
-* `restore.ListChangedSince`
+* `restore.ListAtTime` **deprecated**
+* `restore.ListChangedSince` **deprecated**
 * `restore.MirrorStruct` **deprecated**
 ** `.close_rf_cache`
 ** `.get_diffs`
@@ -114,6 +114,8 @@
 ** `.set_rorp_cache`
 ** `.set_select`
 ** `.touch_current_mirror`
+** `.list_files_changed_since`
+** `.list_files_at_time`
 
 === External
 
