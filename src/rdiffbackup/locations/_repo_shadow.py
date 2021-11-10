@@ -258,7 +258,7 @@ class ShadowRepo:
     def initialize_restore(cls, data_dir, restore_to_time):
         """Set class variable _restore_time on mirror conn"""
         cls._data_dir = data_dir
-        cls._restore_time = cls._get_rest_time(restore_to_time)
+        cls._set_restore_time(restore_to_time)
         # it's a bit ugly to set the values to another class, but less than
         # the other way around as it used to be
         RestoreFile.initialize(cls._restore_time, cls.get_mirror_time())
@@ -287,11 +287,11 @@ class ShadowRepo:
     # @API(ShadowRepo.get_increment_times, 201)
     @classmethod
     def get_increment_times(cls, rp=None):
-        """Return list of times of backups, including current mirror
+        """
+        Return list of times of backups, including current mirror
 
         Take the total list of times from the increments.<time>.dir
         file and the mirror_metadata file.  Sorted ascending.
-
         """
         # use dictionary to remove dups
         d = {cls.get_mirror_time(): None}
@@ -396,8 +396,10 @@ class ShadowRepo:
         return cls._get_diffs_from_collated(collated)
 
     @classmethod
-    def _get_rest_time(cls, restore_to_time):
-        """Return older time, if restore_to_time is in between two inc times
+    def _set_restore_time(cls, restore_to_time):
+        """
+        Set restore to older time, if restore_to_time is in between two inc
+        times
 
         There is a slightly tricky reason for doing this: The rest of the
         code just ignores increments that are older than restore_to_time.
@@ -408,14 +410,14 @@ class ShadowRepo:
 
         So if restore_to_time is inbetween two increments, return the
         older one.
-
         """
         inctimes = cls.get_increment_times()
         older_times = [time for time in inctimes if time <= restore_to_time]
         if older_times:
-            return max(older_times)
+            cls._restore_time = max(older_times)
         else:  # restore time older than oldest increment, just return that
-            return min(inctimes)
+            cls._restore_time = min(inctimes)
+        return cls._restore_time
 
     @classmethod
     def _get_rorp_iter_from_rf(cls, rf):
@@ -458,10 +460,60 @@ class ShadowRepo:
         mir_rorp.set_attached_filetype('snapshot')
         return mir_rorp
 
+# ### COPIED FROM RESTORE (LIST) ####
+
+    # @API(list_files_changed_since, 201)
+    @classmethod
+    def list_files_changed_since(cls, mirror_rp, inc_rp, data_dir,
+                                 restore_to_time):
+        """
+        List the changed files under mirror_rp since rest time
+
+        Notice the output is an iterator of RORPs.  We do this because we
+        want to give the remote connection the data in buffered
+        increments, and this is done automatically for rorp iterators.
+        Encode the lines in the first element of the rorp's index.
+        """
+        assert mirror_rp.conn is Globals.local_connection, "Run locally only"
+        cls.initialize_restore(data_dir, restore_to_time)
+        cls.initialize_rf_cache(mirror_rp, inc_rp)
+
+        old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
+        cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(), True)
+        collated = rorpiter.Collate2Iters(old_iter, cur_iter)
+        for old_rorp, cur_rorp in collated:
+            if not old_rorp:
+                change = "new"
+            elif not cur_rorp:
+                change = "deleted"
+            elif old_rorp == cur_rorp:
+                continue
+            else:
+                change = "changed"
+            path_desc = (old_rorp and str(old_rorp) or str(cur_rorp))
+            yield rpath.RORPath(("%-7s %s" % (change, path_desc), ))
+        cls.close_rf_cache()
+
+    # @API(list_files_at_time, 201)
+    @classmethod
+    def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, time):
+        """
+        List the files in archive at the given time
+
+        Output is a RORP Iterator with info in index.
+        See list_files_changed_since for details.
+        """
+        assert mirror_rp.conn is Globals.local_connection, "Run locally only"
+        cls.initialize_restore(data_dir, time)
+        cls.initialize_rf_cache(mirror_rp, inc_rp)
+        old_iter = cls._get_mirror_rorp_iter()
+        for rorp in old_iter:
+            yield rorp
+        cls.close_rf_cache()
+
 
 class _CacheCollatedPostProcess:
     """
-
     Cache a collated iter of (source_rorp, dest_rorp) pairs
 
     This is necessary for three reasons:
@@ -490,7 +542,6 @@ class _CacheCollatedPostProcess:
     also update the processed correctly flag.  When an item falls out
     of the cache, we assume it has been processed, and write the
     metadata for it.
-
     """
 
     def __init__(self, collated_iter, cache_size, dest_root_rp):

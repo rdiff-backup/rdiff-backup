@@ -42,7 +42,7 @@ try:
             import pkg_resources
             version = pkg_resources.get_distribution("rdiff-backup").version
 except BaseException:  # if everything else fails...
-    version = "DEV-no-metadata"
+    version = "DEV.no.metadata"
 
 # The default, supported (min/max) and actual API versions.
 # An actual value of 0 means that the default version is to be used or whatever

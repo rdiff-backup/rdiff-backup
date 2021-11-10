@@ -311,6 +311,20 @@ information in it.
         """
         return self._shadow.get_diffs(target_iter)
 
+    def list_files_changed_since(self, time):
+        """
+        Shadow function for ShadowRepo.list_files_changed_since
+        """
+        return self._shadow.list_files_changed_since(
+            self.base_dir, self.incs_dir, self.data_dir, time)
+
+    def list_files_at_time(self, time):
+        """
+        Shadow function for ShadowRepo.list_files_at_time
+        """
+        return self._shadow.list_files_at_time(
+            self.base_dir, self.incs_dir, self.data_dir, time)
+
     def _is_existing(self):
         # check first that the directory itself exists
         if not super()._is_existing():

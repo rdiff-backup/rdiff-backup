@@ -139,7 +139,7 @@ def rdiff_backup(source_local,
 def rdiff_backup_action(source_local, dest_local,
                         src_dir, dest_dir,
                         generic_opts, action, specific_opts,
-                        std_input=None):
+                        std_input=None, return_stdout=False):
     """
     Run rdiff-backup with the given action and options, faking remote locations
 
@@ -163,7 +163,7 @@ def rdiff_backup_action(source_local, dest_local,
         dest_dir = (b"cd %s; %s server::%s" %
                     (abs_remote2_dir, RBBin, dest_dir))
 
-    if not (source_local and dest_local):
+    if source_local is False or dest_local is False:
         generic_opts = list(generic_opts) + [b"--remote-schema", b"{h}"]
 
     cmdargs = [RBBin] + list(generic_opts) + [action] + list(specific_opts)
@@ -173,7 +173,11 @@ def rdiff_backup_action(source_local, dest_local,
     if dest_dir:
         cmdargs.append(dest_dir)
     print("Executing: ", cmdargs)
-    ret_val = os_system(cmdargs, input=std_input, universal_newlines=False)
+    if return_stdout:
+        ret_val = subprocess.check_output(cmdargs, input=std_input,
+                                          universal_newlines=False)
+    else:
+        ret_val = os_system(cmdargs, input=std_input, universal_newlines=False)
     return ret_val
 
 

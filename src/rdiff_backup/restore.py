@@ -804,7 +804,7 @@ def Restore(mirror_rp, inc_rpath, target, restore_to_time):
     MirrorS.close_rf_cache()
 
 
-# @API(ListChangedSince, 200)
+# @API(ListChangedSince, 200, 200)
 def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
     """List the changed files under mirror_rp since rest time
 
@@ -835,7 +835,7 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
     MirrorStruct.close_rf_cache()
 
 
-# @API(ListAtTime, 200)
+# @API(ListAtTime, 200, 200)
 def ListAtTime(mirror_rp, inc_rp, time):
     """List the files in archive at the given time
 
