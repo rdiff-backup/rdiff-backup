@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import (log, manage, Security, Time)
+from rdiff_backup import (Globals, log, manage, Security, Time)
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 
@@ -114,7 +114,12 @@ class RemoveAction(actions.BaseAction):
         action_time = self._get_parsed_time(self.values.older_than)
         if action_time is None:
             return 1
-        manage.delete_earlier_than(self.source.base_dir, action_time)
+        elif action_time < 0:  # no increment is old enough
+            return 0
+        if Globals.get_api_version() < 201:
+            manage.delete_earlier_than(self.source.base_dir, action_time)
+        else:
+            self.source.remove_increments_older_than(action_time)
 
         return 0
 
@@ -123,8 +128,8 @@ class RemoveAction(actions.BaseAction):
         Check remove older than time_string, return time in seconds
 
         Return None if the time string can't be interpreted as such, or
-        if more than one increment would be removed, without the force option,
-        or if no increment would be removed.
+        if more than one increment would be removed, without the force option;
+        or -1 if no increment would be removed.
         """
         action_time = super()._get_parsed_time(time_string)
         if action_time is None:
@@ -137,7 +142,7 @@ class RemoveAction(actions.BaseAction):
         if not times_in_secs:
             log.Log("No increments older than {at} found, exiting.".format(
                 at=Time.timetopretty(action_time)), log.NOTE)
-            return None
+            return -1
 
         times_in_secs.sort()
         pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))

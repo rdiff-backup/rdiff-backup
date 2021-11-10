@@ -25,7 +25,9 @@ The module is named with an underscore at the end to avoid overwriting the
 builtin 'list' class.
 """
 
-from rdiff_backup import Globals, manage
+import os
+import yaml
+from rdiff_backup import Globals, statistics, Time
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
@@ -130,22 +132,50 @@ class ListAction(actions.BaseAction):
 
     def _list_increments_sizes(self):
         """
-        Print out a summary of the increments
+        Print out a summary of the increments with their size and
+        cumulative size
         """
-        print(manage.list_increment_sizes(self.source.base_dir,
-                                          self.source.restore_index))
+        triples = self.source.get_increments_sizes()
+
+        if self.values.parsable_output:
+            print(yaml.safe_dump(triples,
+                                 explicit_start=True, explicit_end=True))
+        else:
+            stat_obj = statistics.StatsObj()  # used for byte summary string
+
+            print("{: ^24} {: ^17} {: ^17}".format("Time", "Size",
+                                                   "Cumulative size"))
+            print("{:-^24} {:-^17} {:-^17}".format("", "", ""))
+            # print the normal increments then the mirror
+            for triple in triples[:-1]:
+                print("{: <24} {: >17} {: >17}".format(
+                    Time.timetopretty(triple["time"]),
+                    stat_obj.get_byte_summary_string(triple["size"]),
+                    stat_obj.get_byte_summary_string(triple["total_size"])))
+            print("{: <24} {: >17} {: >17}  (current mirror)".format(
+                Time.timetopretty(triples[-1]["time"]),
+                stat_obj.get_byte_summary_string(triples[-1]["size"]),
+                stat_obj.get_byte_summary_string(triples[-1]["total_size"])))
 
     def _list_increments(self):
-        """Print out a summary of the increments and their times"""
-        incs = self.inc_rpath.get_incfiles_list()
-        mirror_time = self.source.get_mirror_time()
-        # TODO return error if mirror_time <= 0 !!!
+        """
+        Print out a summary of the increments and their times
+        """
+        incs = self.source.get_increments()
         if self.values.parsable_output:
-            print(manage.describe_incs_parsable(incs, mirror_time,
-                                                self.mirror_rpath))
+            if Globals.get_api_version() < 201:
+                for inc in incs:
+                    print("{ti} {it}".format(ti=inc["time"], it=inc["type"]))
+            else:
+                print(yaml.safe_dump(incs,
+                                     explicit_start=True, explicit_end=True))
         else:
-            print(manage.describe_incs_human(incs, mirror_time,
-                                             self.mirror_rpath))
+            print("Found {ni} increments:".format(ni=len(incs) - 1))
+            for inc in incs[:-1]:
+                print("    {ib}   {ti}".format(
+                    ib=inc["base"], ti=Time.timetopretty(inc["time"])))
+            print("Current mirror: {ti}".format(
+                ti=Time.timetopretty(incs[-1]["time"])))  # time of the mirror
 
     def _list_files_changed_since(self):
         """List all the files under rp that have changed since restoretime"""

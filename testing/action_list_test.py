@@ -8,7 +8,7 @@ import commontest as comtst
 import fileset
 
 
-class ActionListFilesTest(unittest.TestCase):
+class ActionListTest(unittest.TestCase):
     """
     Test that rdiff-backup really restores what has been backed-up
     """
@@ -120,6 +120,40 @@ deleted fileOld
             b"""changed fileChanged
 new     fileNew
 deleted fileOld
+""")
+
+        # all tests were successful
+        self.success = True
+
+    def test_action_listincrements(self):
+        """test the list increments action, without and with size"""
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, None, self.bak_path, None,
+            ("--api-version", "201", "--parsable"),
+            b"list", ("increments", ), return_stdout=True),
+            b"""---
+- base: increments.1970-01-01T03:46:40+01:00.dir
+  time: 10000
+  type: directory
+- base: bak
+  time: 20000
+  type: directory
+...
+
+""")
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, None, self.bak_path, None,
+            ("--api-version", "201", "--parsable"),
+            b"list", ("increments", "--size"), return_stdout=True),
+            b"""---
+- size: 139
+  time: 10000
+  total_size: 242
+- size: 103
+  time: 20000
+  total_size: 103
+...
+
 """)
 
         # all tests were successful
