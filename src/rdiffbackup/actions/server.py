@@ -61,7 +61,7 @@ class ServerAction(actions.BaseAction):
         return connection.PipeConnection(sys.stdin.buffer,
                                          sys.stdout.buffer).Server()
 
-    def _set_breakpoint(self):
+    def _set_breakpoint(self):  # pragma: no cover
         """
         Set a breakpoint for remote debugging
 
