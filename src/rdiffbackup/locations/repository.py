@@ -22,7 +22,9 @@ A location module to define repository classes as created by rdiff-backup
 """
 
 import io
+import os
 
+from rdiff_backup import selection
 from rdiffbackup import locations
 
 from rdiff_backup import (
@@ -311,6 +313,12 @@ information in it.
         """
         return self._shadow.get_diffs(target_iter)
 
+    def remove_increments_older_than(self, time):
+        """
+        Shadow function for ShadowRepo.remove_increments_older_than
+        """
+        return self._shadow.remove_increments_older_than(self.base_dir, time)
+
     def list_files_changed_since(self, time):
         """
         Shadow function for ShadowRepo.list_files_changed_since
@@ -324,6 +332,102 @@ information in it.
         """
         return self._shadow.list_files_at_time(
             self.base_dir, self.incs_dir, self.data_dir, time)
+
+    def get_increments(self):
+        """
+        Return a list of increments (without size) with their time, type
+        and basename.
+
+        The list is sorted by increasing time stamp, meaning that the mirror
+        is last in the list
+        """
+        inc_base = self.data_dir.append_path(b'increments', self.restore_index)
+        incs_list = inc_base.get_incfiles_list()
+        incs = [{"time": inc.getinctime(),
+                 "type": self._get_inc_type(inc),
+                 "base": os.fsdecode(inc.dirsplit()[1])}
+                for inc in incs_list]
+
+        # append the mirror itself
+        # TODO handle error if mirror_time <= 0 !!!
+        mirror_time = self.get_mirror_time()
+        mirror_path = self.base_dir.new_index(self.restore_index)
+        incs.append({"time": mirror_time,
+                     "type": self._get_file_type(mirror_path),
+                     "base": os.fsdecode(mirror_path.dirsplit()[1])})
+
+        return sorted(incs, key=lambda x: x["time"])
+
+    def get_increments_sizes(self):
+        """
+        Return list of triples summarizing the size of all the increments
+
+        The list contains tuples of the form (time, size, cumulative size)
+        """
+
+        def get_total(rp_iter):
+            """Return the total size of everything in rp_iter"""
+            total = 0
+            for rp in rp_iter:
+                total += rp.getsize()
+            return total
+
+        def get_time_dict(inc_iter):
+            """Return dictionary pairing times to total size of incs"""
+            time_dict = {}
+            for inc in inc_iter:
+                if not inc.isincfile():
+                    continue
+                t = inc.getinctime()
+                if t not in time_dict:
+                    time_dict[t] = 0
+                time_dict[t] += inc.getsize()
+            return time_dict
+
+        def get_mirror_select():
+            """Return iterator of mirror rpaths"""
+            mirror_base = self.base_dir.new_index(self.restore_index)
+            mirror_select = selection.Select(mirror_base)
+            if not self.restore_index:  # must exclude rdiff-backup-directory
+                mirror_select.parse_rbdir_exclude()
+            return mirror_select.set_iter()
+
+        def get_inc_select():
+            """Return iterator of increment rpaths"""
+            inc_base = self.data_dir.append_path(b'increments',
+                                                 self.restore_index)
+            for base_inc in inc_base.get_incfiles_list():
+                yield base_inc
+            if inc_base.isdir():
+                inc_select = selection.Select(inc_base).set_iter()
+                for inc in inc_select:
+                    yield inc
+
+        def get_summary_triples(mirror_total, time_dict):
+            """Return list of triples (time, size, cumulative size)"""
+            triples = []
+
+            cur_mir_base = self.data_dir.append(b'current_mirror')
+            mirror_time = (cur_mir_base.get_incfiles_list())[0].getinctime()
+            triples.append({"time": mirror_time, "size": mirror_total,
+                            "total_size": mirror_total})
+
+            inc_times = list(time_dict.keys())
+            inc_times.sort()
+            inc_times.reverse()
+            cumulative_size = mirror_total
+            for inc_time in inc_times:
+                size = time_dict[inc_time]
+                cumulative_size += size
+                triples.append({"time": inc_time, "size": size,
+                                "total_size": cumulative_size})
+            return triples
+
+        mirror_total = get_total(get_mirror_select())
+        time_dict = get_time_dict(get_inc_select())
+        triples = get_summary_triples(mirror_total, time_dict)
+
+        return sorted(triples, key=lambda x: x["time"])
 
     def _is_existing(self):
         # check first that the directory itself exists
@@ -442,3 +546,33 @@ information in it.
             rp = self.data_dir.append_path(file_name)
             if not rp.isdir():  # Only remove files, not folders
                 rp.delete()
+
+    @classmethod
+    def _get_inc_type(cls, inc):
+        """Return file type increment represents"""
+        assert inc.isincfile(), (
+            "File '{inc!s}' must be an increment.".format(inc=inc))
+        inc_type = inc.getinctype()
+        if inc_type == b"dir":
+            return "directory"
+        elif inc_type == b"diff":
+            return "regular"
+        elif inc_type == b"missing":
+            return "missing"
+        elif inc_type == b"snapshot":
+            return cls._get_file_type(inc)
+        else:
+            log.Log.FatalError("Unknown type '{ut}' of increment '{ic}'".format(
+                ut=inc_type, ic=inc))
+
+    @classmethod
+    def _get_file_type(cls, rp):
+        """Returns one of "regular", "directory", "missing", or "special"."""
+        if not rp.lstat():
+            return "missing"
+        elif rp.isdir():
+            return "directory"
+        elif rp.isreg():
+            return "regular"
+        else:
+            return "special"

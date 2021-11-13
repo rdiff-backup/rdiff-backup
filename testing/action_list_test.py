@@ -8,7 +8,7 @@ import commontest as comtst
 import fileset
 
 
-class ActionListFilesTest(unittest.TestCase):
+class ActionListTest(unittest.TestCase):
     """
     Test that rdiff-backup really restores what has been backed-up
     """
@@ -120,6 +120,43 @@ deleted fileOld
             b"""changed fileChanged
 new     fileNew
 deleted fileOld
+""")
+
+        # all tests were successful
+        self.success = True
+
+    def test_action_listincrements(self):
+        """test the list increments action, without and with size"""
+        # we need to use a regex for different timezones
+        self.assertRegex(comtst.rdiff_backup_action(
+            False, None, self.bak_path, None,
+            ("--api-version", "201", "--parsable"),
+            b"list", ("increments", ), return_stdout=True),
+            b"""---
+- base: increments.1970-01-0[12]T[0-9][0-9]:[14]6:40.*.dir
+  time: 10000
+  type: directory
+- base: bak
+  time: 20000
+  type: directory
+...
+
+""")
+        # we need to use a regex for different filesystem types
+        # especially directories can have any kind of size
+        self.assertRegex(comtst.rdiff_backup_action(
+            False, None, self.bak_path, None,
+            ("--api-version", "201", "--parsable"),
+            b"list", ("increments", "--size"), return_stdout=True),
+            b"""---
+- size: [0-9]+
+  time: 10000
+  total_size: [0-9]+
+- size: [0-9]+
+  time: 20000
+  total_size: [0-9]+
+...
+
 """)
 
         # all tests were successful

@@ -511,6 +511,31 @@ class ShadowRepo:
             yield rorp
         cls.close_rf_cache()
 
+# ### COPIED FROM MANAGE ####
+
+    # @API(remove_increments_older_than, 201)
+    @classmethod
+    def remove_increments_older_than(cls, baserp, time):
+        """
+        Remove increments older than the given time
+        """
+        assert baserp.conn is Globals.local_connection, (
+            "Function should be called only locally "
+            "and not over '{co}'.".format(co=baserp.conn))
+
+        def yield_files(rp):
+            if rp.isdir():
+                for filename in rp.listdir():
+                    for sub_rp in yield_files(rp.append(filename)):
+                        yield sub_rp
+            yield rp
+
+        for rp in yield_files(baserp):
+            if ((rp.isincfile() and rp.getinctime() < time)
+                    or (rp.isdir() and not rp.listdir())):
+                log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
+                rp.delete()
+
 
 class _CacheCollatedPostProcess:
     """
