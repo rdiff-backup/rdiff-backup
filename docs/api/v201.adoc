@@ -55,7 +55,7 @@
 * `Main.backup_close_statistics` **deprecated**
 * `Main.backup_remove_curmirror_local` **deprecated**
 * `Main.backup_touch_curmirror_local` **deprecated**
-* `manage.delete_earlier_than_local`
+* `manage.delete_earlier_than_local` **deprecated**
 * `regress.check_pids`
 * `regress.Regress`
 * `restore.ListAtTime` **deprecated**
@@ -102,6 +102,7 @@
 * `locations._repo_shadow.ShadowRepo`  **new**
 ** `.close_rf_cache`
 ** `.close_statistics`
+** `.delete_increments_older_than`
 ** `.get_diffs`
 ** `.get_increment_times`
 ** `.get_mirror_time`

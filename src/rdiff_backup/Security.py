@@ -290,14 +290,15 @@ def _set_allowed_requests(sec_class, sec_level):
             "rpath.delete_dir_no_files",
             "fs_abilities.restore_set_globals",
             "fs_abilities.single_set_globals", "regress.Regress",
-            "manage.delete_earlier_than_local",
             # API < 201
             "backup.DestinationStruct.patch",
+            "manage.delete_earlier_than_local",
             "restore.TargetStruct.get_initial_iter",
             "restore.TargetStruct.patch",
             "restore.TargetStruct.set_target_select",
             # API >= 201
             "_repo_shadow.ShadowRepo.patch",
+            "_repo_shadow.ShadowRepo.remove_increments_older_than",
             "_dir_shadow.ShadowWriteDir.get_initial_iter",
             "_dir_shadow.ShadowWriteDir.patch",
             "_dir_shadow.ShadowWriteDir.set_select",
