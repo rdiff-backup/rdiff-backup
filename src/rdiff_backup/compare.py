@@ -16,21 +16,24 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Perform various kinds of comparisons.
+"""
+Perform various kinds of comparisons.
 
 For instance, full-file compare, compare by hash, and metadata-only
 compare.  This uses elements of the backup and restore modules.
-
 """
 
 import os
-from . import Globals, restore, rorpiter, log, backup, rpath, hash, robust, Hardlink
+from rdiff_backup import (
+    backup, Globals, Hardlink, hash, log, restore, robust, rorpiter, rpath
+)
 
 
-# @API(RepoSide, 200)
+# @API(RepoSide, 200, 200)
 class RepoSide(restore.MirrorStruct):
     """On the repository side, comparing is like restoring"""
 
+    # @API(RepoSide.init_and_get_iter, 200, 200)
     @classmethod
     def init_and_get_iter(cls, mirror_rp, inc_rp, compare_time):
         """Return rorp iter at given compare time"""
@@ -39,6 +42,7 @@ class RepoSide(restore.MirrorStruct):
         return cls.subtract_indices(cls.mirror_base.index,
                                     cls.get_mirror_rorp_iter())
 
+    # @API(RepoSide.attach_files, 200, 200)
     @classmethod
     def attach_files(cls, src_iter, mirror_rp, inc_rp, compare_time):
         """Attach data to all the files that need checking
@@ -68,10 +72,11 @@ class RepoSide(restore.MirrorStruct):
                 yield rpath.RORPath(index)  # indicate deleted mir_rorp
 
 
-# @API(DataSide, 200)
+# @API(DataSide, 200, 200)
 class DataSide(backup.SourceStruct):
     """On the side that has the current data, compare is like backing up"""
 
+    # @API(DataSide.compare_fast, 200, 200)
     @classmethod
     def compare_fast(cls, repo_iter):
         """Compare rorps (metadata only) quickly, return report iter"""
@@ -83,13 +88,14 @@ class DataSide(backup.SourceStruct):
             else:
                 _log_success(src_rorp, mir_rorp)
 
+    # @API(DataSide.compare_hash, 200, 200)
     @classmethod
     def compare_hash(cls, repo_iter):
         """Like above, but also compare sha1 sums of any regular files"""
 
         def hashes_changed(src_rp, mir_rorp):
             """Return 0 if their data hashes same, 1 otherwise"""
-            verify_sha1 = _get_hash(mir_rorp)
+            verify_sha1 = Hardlink.get_hash(mir_rorp)
             if not verify_sha1:
                 log.Log("Metadata file has no digest for mirror file {mf}, "
                         "unable to compare.".format(mf=mir_rorp), log.WARNING)
@@ -107,6 +113,7 @@ class DataSide(backup.SourceStruct):
             else:
                 _log_success(src_rp, mir_rorp)
 
+    # @API(DataSide.compare_full, 200, 200)
     @classmethod
     def compare_full(cls, src_root, repo_iter):
         """Given repo iter with full data attached, return report iter"""
@@ -197,7 +204,7 @@ def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
     return return_val
 
 
-# @API(Verify, 200)
+# @API(Verify, 200, 200)
 def Verify(mirror_rp, inc_rp, verify_time):
     """Compute SHA1 sums of repository files and check against metadata"""
     assert mirror_rp.conn is Globals.local_connection, (
@@ -211,7 +218,7 @@ def Verify(mirror_rp, inc_rp, verify_time):
     for repo_rorp in repo_iter:
         if not repo_rorp.isreg():
             continue
-        verify_sha1 = _get_hash(repo_rorp)
+        verify_sha1 = Hardlink.get_hash(repo_rorp)
         if not verify_sha1:
             log.Log("Cannot find SHA1 digest for file {fi}, "
                     "perhaps because this feature was added in v1.1.1".format(
@@ -241,20 +248,6 @@ def Verify(mirror_rp, inc_rp, verify_time):
     else:
         log.Log("All files verified successfully", log.NOTE)
     return 0
-
-
-def _get_hash(repo_rorp):
-    """ Try to get a sha1 digest from the repository.  If hardlinks
-    are saved in the metadata, get the sha1 from the first hardlink """
-    Hardlink.add_rorp(repo_rorp)
-    if Hardlink.is_linked(repo_rorp):
-        verify_sha1 = Hardlink.get_sha1(repo_rorp)
-    elif repo_rorp.has_sha1():
-        verify_sha1 = repo_rorp.get_sha1()
-    else:
-        verify_sha1 = None
-    Hardlink.del_rorp(repo_rorp)
-    return verify_sha1
 
 
 def _print_reports(report_iter):

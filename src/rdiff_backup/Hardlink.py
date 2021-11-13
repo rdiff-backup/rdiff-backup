@@ -140,6 +140,20 @@ def get_sha1(rorp):
     return _inode_index[_get_inode_key(rorp)][3]
 
 
+def get_hash(rorp):
+    """ Try to get a sha1 digest from the repository.  If hardlinks
+    are saved in the metadata, get the sha1 from the first hardlink """
+    add_rorp(rorp)
+    if is_linked(rorp):
+        verify_sha1 = get_sha1(rorp)
+    elif rorp.has_sha1():
+        verify_sha1 = rorp.get_sha1()
+    else:
+        verify_sha1 = None
+    del_rorp(rorp)
+    return verify_sha1
+
+
 def link_rp(diff_rorp, dest_rpath, dest_root=None):
     """Make dest_rpath into a link using link flag in diff_rorp"""
     if not dest_root:

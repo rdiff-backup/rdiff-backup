@@ -21,9 +21,16 @@
 ** `.get_diffs`
 ** `.get_source_select`
 ** `.set_source_select`
-* `compare.DataSide`
-* `compare.RepoSide`
-* `compare.Verify`
+* `compare.DataSide` **deprecated**
+** `.compare_fast`
+** `.compare_full`
+** `.compare_hash`
+** `.get_source_select` (inherited from SourceStruct)
+* `compare.RepoSide` **deprecated**
+** `.attach_files`
+** `.close_rf_cache` (inherited from MirrorStruct)
+** `.init_and_get_iter`
+* `compare.Verify`  **deprecated**
 * `connection.conn_number`
 * `connection.quit`
 * `connection.reval`
@@ -92,6 +99,9 @@
 ==== rdiffbackup
 
 * `locations._dir_shadow.ShadowReadDir`  **new**
+** `.compare_full`
+** `.compare_hash`
+** `.compare_meta`
 ** `.get_diffs`
 ** `.get_select`
 ** `.set_select`
@@ -100,6 +110,7 @@
 ** `.patch`
 ** `.set_select`
 * `locations._repo_shadow.ShadowRepo`  **new**
+** `.attach_files`
 ** `.close_rf_cache`
 ** `.close_statistics`
 ** `.delete_increments_older_than`
@@ -107,16 +118,18 @@
 ** `.get_increment_times`
 ** `.get_mirror_time`
 ** `.get_sigs`
+** `.init_and_get_iter`
 ** `.initialize_restore`
 ** `.initialize_rf_cache`
+** `.list_files_at_time`
+** `.list_files_changed_since`
 ** `.patch`
 ** `.patch_and_increment`
 ** `.remove_current_mirror`
 ** `.set_rorp_cache`
 ** `.set_select`
 ** `.touch_current_mirror`
-** `.list_files_changed_since`
-** `.list_files_at_time`
+** `.verify`
 
 === External
 

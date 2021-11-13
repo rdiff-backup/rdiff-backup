@@ -24,6 +24,7 @@ This plug-in verifies that files in a repository at a given time
 have the correct hash.
 """
 
+from rdiff_backup import Globals
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 
@@ -83,11 +84,13 @@ class VerifyAction(actions.BaseAction):
             self.source.base_dir, 1)  # read_only=True
         self.source.init_quoting(self.values.chars_to_quote)
 
-        self.mirror_rpath = self.source.base_dir.new_index(
-            self.source.restore_index)
+        if Globals.get_api_version() < 201:  # compat200
+            self.mirror_rpath = self.source.base_dir.new_index(
+                self.source.restore_index)
         self.inc_rpath = self.source.data_dir.append_path(
             b'increments', self.source.restore_index)
 
+        # FIXME move method _get_parsed_time to Repo and remove inc_rpath?
         self.action_time = self._get_parsed_time(self.values.at,
                                                  ref_rp=self.inc_rpath)
         if self.action_time is None:
@@ -96,8 +99,11 @@ class VerifyAction(actions.BaseAction):
         return 0  # all is good
 
     def run(self):
-        return self.source.base_dir.conn.compare.Verify(
-            self.mirror_rpath, self.inc_rpath, self.action_time)
+        if Globals.get_api_version() < 201:  # compat200
+            return self.source.base_dir.conn.compare.Verify(
+                self.mirror_rpath, self.inc_rpath, self.action_time)
+        else:
+            return self.source.verify(self.action_time)
 
 
 def get_action_class():

@@ -536,6 +536,105 @@ class ShadowRepo:
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
 
+# ### COPIED FROM COMPARE ####
+
+    # @API(ShadowRepo.init_and_get_iter, 201)
+    @classmethod
+    def init_and_get_iter(cls, data_dir, mirror_rp, inc_rp, compare_time):
+        """Return rorp iter at given compare time"""
+        cls.initialize_restore(data_dir, compare_time)
+        cls.initialize_rf_cache(mirror_rp, inc_rp)
+        return cls._subtract_indices(cls.mirror_base.index,
+                                     cls._get_mirror_rorp_iter())
+
+    # @API(ShadowRepo.attach_files, 201)
+    @classmethod
+    def attach_files(cls, data_dir, src_iter, mirror_rp, inc_rp, compare_time):
+        """
+        Attach data to all the files that need checking
+
+        Return an iterator of repo rorps that includes all the files
+        that may have changed, and has the fileobj set on all rorps
+        that need it.
+        """
+        repo_iter = cls.init_and_get_iter(data_dir, mirror_rp, inc_rp, compare_time)
+        base_index = cls.mirror_base.index
+        for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
+            index = src_rorp and src_rorp.index or mir_rorp.index
+            if src_rorp and mir_rorp:
+                if not src_rorp.isreg() and src_rorp == mir_rorp:
+                    cls._log_success(src_rorp, mir_rorp)
+                    continue  # They must be equal, nothing else to check
+                if (src_rorp.isreg() and mir_rorp.isreg()
+                        and src_rorp.getsize() == mir_rorp.getsize()):
+                    fp = cls.rf_cache.get_fp(base_index + index, mir_rorp)
+                    mir_rorp.setfile(fp)
+                    mir_rorp.set_attached_filetype('snapshot')
+
+            if mir_rorp:
+                yield mir_rorp
+            else:
+                yield rpath.RORPath(index)  # indicate deleted mir_rorp
+
+    # @API(ShadowRepo.verify, 201)
+    @classmethod
+    def verify(cls, data_dir, mirror_rp, inc_rp, verify_time):
+        """
+        Compute SHA1 sums of repository files and check against metadata
+        """
+        assert mirror_rp.conn is Globals.local_connection, (
+            "Only verify mirror locally, not remotely over '{conn}'.".format(
+                conn=mirror_rp.conn))
+        repo_iter = cls.init_and_get_iter(data_dir, mirror_rp, inc_rp, verify_time)
+        base_index = cls.mirror_base.index
+
+        bad_files = 0
+        no_hash = 0
+        for repo_rorp in repo_iter:
+            if not repo_rorp.isreg():
+                continue
+            verify_sha1 = Hardlink.get_hash(repo_rorp)
+            if not verify_sha1:
+                log.Log("Cannot find SHA1 digest for file {fi}, perhaps "
+                        "because this feature was added in v1.1.1".format(
+                            fi=repo_rorp), log.WARNING)
+                no_hash += 1
+                continue
+            fp = cls.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
+            computed_hash = hash.compute_sha1_fp(fp)
+            if computed_hash == verify_sha1:
+                log.Log("Verified SHA1 digest of file {fi}".format(
+                    fi=repo_rorp), log.INFO)
+            else:
+                bad_files += 1
+                log.Log("Computed SHA1 digest of file {fi} '{cd}' "
+                        "doesn't match recorded digest of '{rd}'. "
+                        "Your backup repository may be corrupted!".format(
+                            fi=repo_rorp, cd=computed_hash, rd=verify_sha1),
+                        log.WARNING)
+        cls.close_rf_cache()
+        if bad_files:
+            log.Log(
+                "Verification found {cf} potentially corrupted files".format(
+                    cf=bad_files), log.ERROR)
+            return 2
+        if no_hash:
+            log.Log("Verification found {fi} files without hash, all others "
+                    "could be verified successfully".format(fi=no_hash),
+                    log.NOTE)
+        else:
+            log.Log("All files verified successfully", log.NOTE)
+        return 0
+
+    @classmethod
+    def _log_success(cls, src_rorp, mir_rorp=None):
+        """
+        Log that src_rorp and mir_rorp compare successfully
+        """
+        # FIXME eliminate duplicate function with _dir_shadow
+        path = src_rorp and str(src_rorp) or str(mir_rorp)
+        log.Log("Successfully compared path {pa}".format(pa=path), log.INFO)
+
 
 class _CacheCollatedPostProcess:
     """

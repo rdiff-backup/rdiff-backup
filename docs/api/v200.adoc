@@ -21,7 +21,14 @@ bytes).
 ** `.get_source_select`
 ** `.set_source_select`
 * `compare.DataSide`
+** `.compare_fast`
+** `.compare_full`
+** `.compare_hash`
+** `.get_source_select` (inherited from SourceStruct)
 * `compare.RepoSide`
+** `.attach_files`
+** `.close_rf_cache` (inherited from MirrorStruct)
+** `.init_and_get_iter`
 * `compare.Verify`
 * `conn_number`
 * `quit`

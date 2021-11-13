@@ -174,8 +174,11 @@ def rdiff_backup_action(source_local, dest_local,
         cmdargs.append(dest_dir)
     print("Executing: ", cmdargs)
     if return_stdout:
-        ret_val = subprocess.check_output(cmdargs, input=std_input,
-                                          universal_newlines=False)
+        try:
+            ret_val = subprocess.check_output(cmdargs, input=std_input,
+                                              universal_newlines=False)
+        except subprocess.CalledProcessError as exc:
+            ret_val = exc.output
     else:
         ret_val = os_system(cmdargs, input=std_input, universal_newlines=False)
     return ret_val

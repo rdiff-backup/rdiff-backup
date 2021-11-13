@@ -126,6 +126,133 @@ class ShadowReadDir:
                 diff_rorp.set_attached_filetype('snapshot')
             yield diff_rorp
 
+    # @API(ShadowReadDir.compare_meta, 201)
+    @classmethod
+    def compare_meta(cls, repo_iter):
+        """Compare rorps (metadata only) quickly, return report iter"""
+        src_iter = cls.get_select()
+        for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
+            report = cls._get_basic_report(src_rorp, mir_rorp)
+            if report:
+                yield report
+            else:
+                cls._log_success(src_rorp, mir_rorp)
+
+    # @API(ShadowReadDir.compare_hash, 201)
+    @classmethod
+    def compare_hash(cls, repo_iter):
+        """Like above, but also compare sha1 sums of any regular files"""
+
+        def hashes_changed(src_rp, mir_rorp):
+            """Return 0 if their data hashes same, 1 otherwise"""
+            verify_sha1 = Hardlink.get_hash(mir_rorp)
+            if not verify_sha1:
+                log.Log("Metadata file has no digest for mirror file {mf}, "
+                        "unable to compare.".format(mf=mir_rorp), log.WARNING)
+                return 0
+            elif (src_rp.getsize() == mir_rorp.getsize()
+                  and hash.compute_sha1(src_rp) == verify_sha1):
+                return 0
+            return 1
+
+        src_iter = cls.get_select()
+        for src_rp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
+            report = cls._get_basic_report(src_rp, mir_rorp, hashes_changed)
+            if report:
+                yield report
+            else:
+                cls._log_success(src_rp, mir_rorp)
+
+    # @API(ShadowReadDir.compare_full, 201)
+    @classmethod
+    def compare_full(cls, src_root, repo_iter):
+        """Given repo iter with full data attached, return report iter"""
+
+        def error_handler(exc, src_rp, repo_rorp):
+            log.Log("Error reading source file {sf}".format(sf=src_rp),
+                    log.WARNING)
+            return 0  # They aren't the same if we get an error
+
+        def data_changed(src_rp, repo_rorp):
+            """Return 0 if full compare of data matches, 1 otherwise"""
+            if src_rp.getsize() != repo_rorp.getsize():
+                return 1
+            return not robust.check_common_error(error_handler, rpath.cmp,
+                                                 (src_rp, repo_rorp))
+
+        for repo_rorp in repo_iter:
+            src_rp = src_root.new_index(repo_rorp.index)
+            report = cls._get_basic_report(src_rp, repo_rorp, data_changed)
+            if report:
+                yield report
+            else:
+                cls._log_success(repo_rorp)
+
+    @classmethod
+    def _get_basic_report(cls, src_rp, repo_rorp, comp_data_func=None):
+        """
+        Compare src_rp and repo_rorp, return _CompareReport
+
+        comp_data_func should be a function that accepts (src_rp,
+        repo_rorp) as arguments, and return 1 if they have the same data,
+        0 otherwise.  If comp_data_func is false, don't compare file data,
+        only metadata.
+        """
+        if src_rp:
+            index = src_rp.index
+        else:
+            index = repo_rorp.index
+        if not repo_rorp or not repo_rorp.lstat():
+            return _CompareReport(index, "new")
+        elif not src_rp or not src_rp.lstat():
+            return _CompareReport(index, "deleted")
+        elif comp_data_func and src_rp.isreg() and repo_rorp.isreg():
+            if src_rp == repo_rorp:
+                meta_changed = 0
+            else:
+                meta_changed = 1
+            data_changed = comp_data_func(src_rp, repo_rorp)
+
+            if not meta_changed and not data_changed:
+                return None
+            if meta_changed:
+                meta_string = "metadata changed, "
+            else:
+                meta_string = "metadata the same, "
+            if data_changed:
+                data_string = "data changed"
+            else:
+                data_string = "data the same"
+            return _CompareReport(index, meta_string + data_string)
+        elif src_rp == repo_rorp:
+            return None
+        else:
+            return _CompareReport(index, "changed")
+
+    @classmethod
+    def _log_success(cls, src_rorp, mir_rorp=None):
+        """Log that src_rorp and mir_rorp compare successfully"""
+        path = src_rorp and str(src_rorp) or str(mir_rorp)
+        log.Log("Successfully compared path {pa}".format(pa=path), log.INFO)
+
+
+class _CompareReport:
+    """
+    When two files don't match, this tells you how they don't match
+
+    This is necessary because the system that is doing the actual
+    comparing may not be the one printing out the reports.  For speed
+    the compare information can be pipelined back to the client
+    connection as an iter of _CompareReports.
+    """
+    # self.file is added so that _CompareReports can masquerade as
+    # RORPaths when in an iterator, and thus get pipelined.
+    file = None
+
+    def __init__(self, index, reason):
+        self.index = index
+        self.reason = reason
+
 
 # @API(ShadowWriteDir, 201)
 class ShadowWriteDir:

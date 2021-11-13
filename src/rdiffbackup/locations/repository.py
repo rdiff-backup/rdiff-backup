@@ -22,7 +22,6 @@ A location module to define repository classes as created by rdiff-backup
 """
 
 import io
-import os
 
 from rdiff_backup import selection
 from rdiffbackup import locations
@@ -345,16 +344,17 @@ information in it.
         incs_list = inc_base.get_incfiles_list()
         incs = [{"time": inc.getinctime(),
                  "type": self._get_inc_type(inc),
-                 "base": os.fsdecode(inc.dirsplit()[1])}
+                 "base": inc.dirsplit()[1].decode(errors="replace")}
                 for inc in incs_list]
 
         # append the mirror itself
         # TODO handle error if mirror_time <= 0 !!!
         mirror_time = self.get_mirror_time()
         mirror_path = self.base_dir.new_index(self.restore_index)
-        incs.append({"time": mirror_time,
-                     "type": self._get_file_type(mirror_path),
-                     "base": os.fsdecode(mirror_path.dirsplit()[1])})
+        incs.append({
+            "time": mirror_time,
+            "type": self._get_file_type(mirror_path),
+            "base": mirror_path.dirsplit()[1].decode(errors="replace")})
 
         return sorted(incs, key=lambda x: x["time"])
 
@@ -428,6 +428,32 @@ information in it.
         triples = get_summary_triples(mirror_total, time_dict)
 
         return sorted(triples, key=lambda x: x["time"])
+
+    def init_and_get_iter(self, compare_time):
+        """
+        Shadow function for ShadowRepo.init_and_get_iter
+        """
+        mirror_rp = self.base_dir.new_index(self.restore_index)
+        inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
+        return self._shadow.init_and_get_iter(self.data_dir, mirror_rp, inc_rp,
+                                              compare_time)
+
+    def attach_files(self, src_iter, compare_time):
+        """
+        Shadow function for ShadowRepo.attach_files
+        """
+        mirror_rp = self.base_dir.new_index(self.restore_index)
+        inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
+        return self._shadow.attach_files(self.data_dir, src_iter,
+                                         mirror_rp, inc_rp, compare_time)
+
+    def verify(self, verify_time):
+        """
+        Shadow function for ShadowRepo.verify
+        """
+        mirror_rp = self.base_dir.new_index(self.restore_index)
+        inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
+        return self._shadow.verify(self.data_dir, mirror_rp, inc_rp, verify_time)
 
     def _is_existing(self):
         # check first that the directory itself exists
