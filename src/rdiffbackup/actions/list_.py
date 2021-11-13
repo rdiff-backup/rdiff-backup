@@ -25,7 +25,6 @@ The module is named with an underscore at the end to avoid overwriting the
 builtin 'list' class.
 """
 
-import os
 import yaml
 from rdiff_backup import Globals, statistics, Time
 from rdiffbackup import actions
