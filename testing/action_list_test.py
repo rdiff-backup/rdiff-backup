@@ -142,17 +142,19 @@ deleted fileOld
 ...
 
 """)
-        self.assertEqual(comtst.rdiff_backup_action(
+        # we need to use a regex for different filesystem types
+        # especially directories can have any kind of size
+        self.assertRegex(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", "--size"), return_stdout=True),
             b"""---
-- size: 139
+- size: [0-9]+
   time: 10000
-  total_size: 242
-- size: 103
+  total_size: [0-9]+
+- size: [0-9]+
   time: 20000
-  total_size: 103
+  total_size: [0-9]+
 ...
 
 """)
