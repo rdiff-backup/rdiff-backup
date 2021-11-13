@@ -127,12 +127,13 @@ deleted fileOld
 
     def test_action_listincrements(self):
         """test the list increments action, without and with size"""
-        self.assertEqual(comtst.rdiff_backup_action(
+        # we need to use a regex for different timezones
+        self.assertRegex(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", ), return_stdout=True),
             b"""---
-- base: increments.1970-01-01T03:46:40+01:00.dir
+- base: increments.1970-01-0[12]T[0-9][0-9]:[14]6:40.*.dir
   time: 10000
   type: directory
 - base: bak

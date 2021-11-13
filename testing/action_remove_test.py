@@ -84,12 +84,12 @@ class ActionRemoveTest(unittest.TestCase):
             ("--api-version", "201", "--force"),  # now forcing!
             b"remove", ("increments", "--older-than", "1B")), 0)
         # then check that only one increment and mirror remain
-        self.assertEqual(comtst.rdiff_backup_action(
+        self.assertRegex(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", ), return_stdout=True),
             b"""---
-- base: increments.1970-01-01T09:20:00+01:00.dir
+- base: increments.1970-01-0[12]T[0-9][0-9]:[25]0:00.*.dir
   time: 30000
   type: directory
 - base: bak
@@ -104,12 +104,12 @@ class ActionRemoveTest(unittest.TestCase):
             False, None, self.bak_path, None,
             ("--api-version", "201", "--force"),
             b"remove", ("increments", "--older-than", "30000")), 0)
-        self.assertEqual(comtst.rdiff_backup_action(
+        self.assertRegex(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", ), return_stdout=True),
             b"""---
-- base: increments.1970-01-01T09:20:00+01:00.dir
+- base: increments.1970-01-0[12]T[0-9][0-9]:[25]0:00.*.dir
   time: 30000
   type: directory
 - base: bak
