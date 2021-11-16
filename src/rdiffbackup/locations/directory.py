@@ -91,6 +91,24 @@ class ReadDir(Dir, locations.ReadLocation):
         """
         return self._shadow.get_diffs(dest_sigiter)
 
+    def compare_meta(self, repo_iter):
+        """
+        Shadow function for ShadowWriteDir.patch
+        """
+        return self._shadow.compare_meta(repo_iter)
+
+    def compare_hash(self, repo_iter):
+        """
+        Shadow function for ShadowWriteDir.patch
+        """
+        return self._shadow.compare_hash(repo_iter)
+
+    def compare_full(self, repo_iter):
+        """
+        Shadow function for ShadowWriteDir.patch
+        """
+        return self._shadow.compare_full(self.base_dir, repo_iter)
+
 
 class WriteDir(Dir, locations.WriteLocation):
 

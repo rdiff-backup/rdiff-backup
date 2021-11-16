@@ -23,7 +23,8 @@ a back-up repository with the current state of a directory.
 Comparaison can be done using metadata, file content or hashes.
 """
 
-from rdiff_backup import (compare, selection)
+import yaml
+from rdiff_backup import (compare, Globals, log, selection)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 
@@ -55,9 +56,9 @@ class CompareAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value:
-            self.source = directory.ReadDir(self.connected_locations[0],
-                                            self.values.force)
-            self.target = repository.Repo(
+            self.dir = directory.ReadDir(self.connected_locations[0],
+                                         self.values.force)
+            self.repo = repository.Repo(
                 self.connected_locations[1], self.values.force,
                 must_be_writable=False, must_exist=True, can_be_sub_path=True
             )
@@ -70,8 +71,8 @@ class CompareAction(actions.BaseAction):
         return_code = super().check()
 
         # we verify that source directory and target repository are correct
-        return_code |= self.source.check()
-        return_code |= self.target.check()
+        return_code |= self.dir.check()
+        return_code |= self.repo.check()
 
         return return_code
 
@@ -82,28 +83,30 @@ class CompareAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.source.setup()
+        return_code = self.dir.setup()
         if return_code != 0:
             return return_code
 
-        return_code = self.target.setup()
+        return_code = self.repo.setup()
         if return_code != 0:
             return return_code
 
         # set the filesystem properties of the repository
-        self.target.base_dir.conn.fs_abilities.single_set_globals(
-            self.target.base_dir, 1)  # read_only=True
-        self.target.init_quoting(self.values.chars_to_quote)
+        self.repo.base_dir.conn.fs_abilities.single_set_globals(
+            self.repo.base_dir, 1)  # read_only=True
+        self.repo.init_quoting(self.values.chars_to_quote)
 
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
-        self.source.set_select(select_opts, select_data)
+        self.dir.set_select(select_opts, select_data)
 
-        self.mirror_rpath = self.target.base_dir.new_index(
-            self.target.restore_index)
-        self.inc_rpath = self.target.data_dir.append_path(
-            b'increments', self.target.restore_index)
+        if Globals.get_api_version() < 201:  # compat200
+            self.mirror_rpath = self.repo.base_dir.new_index(
+                self.repo.restore_index)
+        self.inc_rpath = self.repo.data_dir.append_path(
+            b'increments', self.repo.restore_index)
 
+        # FIXME move method _get_parsed_time to Repo and remove inc_rpath?
         self.action_time = self._get_parsed_time(self.values.at,
                                                  ref_rp=self.inc_rpath)
         if self.action_time is None:
@@ -113,16 +116,90 @@ class CompareAction(actions.BaseAction):
 
     def run(self):
         # call the right comparaison function for the chosen method
-        compare_funcs = {
-            "meta": compare.Compare,
-            "hash": compare.Compare_hash,
-            "full": compare.Compare_full
-        }
-        ret_code = compare_funcs[self.values.method](self.source.base_dir,
-                                                     self.mirror_rpath,
-                                                     self.inc_rpath,
-                                                     self.action_time)
+        if Globals.get_api_version() < 201:  # compat200
+            compare_funcs = {
+                "meta": compare.Compare,
+                "hash": compare.Compare_hash,
+                "full": compare.Compare_full
+            }
+            ret_code = compare_funcs[self.values.method](self.dir.base_dir,
+                                                         self.mirror_rpath,
+                                                         self.inc_rpath,
+                                                         self.action_time)
+        else:
+            compare_funcs = {
+                "meta": self._compare_meta,
+                "hash": self._compare_hash,
+                "full": self._compare_full
+            }
+            reports_iter = compare_funcs[self.values.method](self.action_time)
+            ret_code = self._print_reports(reports_iter,
+                                           self.values.parsable_output)
+            self.repo.close_rf_cache()
+
         return ret_code
+
+    def _compare_meta(self, compare_time):
+        """
+        Compares metadata in directory with metadata in mirror_rp at time
+        """
+        repo_iter = self.repo.init_and_get_iter(compare_time)
+        report_iter = self.dir.compare_meta(repo_iter)
+        return report_iter
+
+    def _compare_hash(self, compare_time):
+        """
+        Compare files in directory with repo at compare_time
+
+        Note metadata differences, but also check to see if file data is
+        different.  If two regular files have the same size, hash the
+        source and compare to the hash presumably already present in repo.
+        """
+        repo_iter = self.repo.init_and_get_iter(compare_time)
+        report_iter = self.dir.compare_hash(repo_iter)
+        return report_iter
+
+    def _compare_full(self, compare_time):
+        """
+        Compare full data of files in directory with repo at compare_time
+
+        Like Compare_hash, but do not rely on hashes, instead copy full
+        data over.
+        """
+        src_iter = self.dir.get_select()
+        attached_repo_iter = self.repo.attach_files(src_iter, compare_time)
+        report_iter = self.dir.compare_full(attached_repo_iter)
+        return report_iter
+
+    def _print_reports(self, report_iter, parsable=False):
+        """
+        Given an iter of CompareReport objects, print them to screen.
+
+        Output a list in YAML format if parsable is True.
+        """
+        assert not Globals.server, "This function shouldn't run as server."
+        changed_files_found = 0
+        reason_verify_list = []
+        for report in report_iter:
+            changed_files_found += 1
+            indexpath = report.index and b"/".join(report.index) or b"."
+            indexpath = indexpath.decode(errors="replace")
+            if parsable:
+                reason_verify_list.append({"reason": report.reason,
+                                           "path": indexpath})
+            else:
+                print("{rr}: {ip}".format(rr=report.reason, ip=indexpath))
+
+        if parsable:
+            print(yaml.safe_dump(reason_verify_list,
+                                 explicit_start=True, explicit_end=True))
+        if not changed_files_found:
+            log.Log("No changes found. Directory matches backup data", log.NOTE)
+            return 0
+        else:
+            log.Log("Directory has {fd} file differences to backup".format(
+                fd=changed_files_found), log.WARNING)
+            return 1
 
 
 def get_action_class():

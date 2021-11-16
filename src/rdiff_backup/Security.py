@@ -231,15 +231,18 @@ def _set_allowed_requests(sec_class, sec_level):
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
             "fs_abilities.get_readonly_fsa",
-            "compare.RepoSide.init_and_get_iter",
-            "compare.RepoSide.close_rf_cache", "compare.RepoSide.attach_files",
-            "compare.DataSide.get_source_select",
-            "compare.DataSide.compare_fast", "compare.DataSide.compare_hash",
-            "compare.DataSide.compare_full", "compare.Verify",
             # API < 201
             "backup.SourceStruct.get_source_select",
             "backup.SourceStruct.set_source_select",
             "backup.SourceStruct.get_diffs",
+            "compare.DataSide.get_source_select",
+            "compare.DataSide.compare_fast",
+            "compare.DataSide.compare_hash",
+            "compare.DataSide.compare_full",
+            "compare.RepoSide.init_and_get_iter",
+            "compare.RepoSide.close_rf_cache",
+            "compare.RepoSide.attach_files",
+            "compare.Verify",
             "restore.MirrorStruct.get_increment_times",
             "restore.MirrorStruct.set_mirror_and_rest_times",
             "restore.MirrorStruct.set_mirror_select",
@@ -249,9 +252,12 @@ def _set_allowed_requests(sec_class, sec_level):
             "restore.ListChangedSince",
             "restore.ListAtTime",
             # API >= 201
+            "_dir_shadow.ShadowReadDir.compare_full",
+            "_dir_shadow.ShadowReadDir.compare_hash",
+            "_dir_shadow.ShadowReadDir.compare_meta",
+            "_dir_shadow.ShadowReadDir.get_diffs",
             "_dir_shadow.ShadowReadDir.get_select",
             "_dir_shadow.ShadowReadDir.set_select",
-            "_dir_shadow.ShadowReadDir.get_diffs",
             "_repo_shadow.ShadowRepo.initialize_restore",
             "_repo_shadow.ShadowRepo.get_mirror_time",
             "_repo_shadow.ShadowRepo.get_increment_times",
@@ -261,6 +267,9 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.ShadowRepo.get_diffs",
             "_repo_shadow.ShadowRepo.list_files_changed_since",
             "_repo_shadow.ShadowRepo.list_files_at_time",
+            "_repo_shadow.ShadowRepo.init_and_get_iter",
+            "_repo_shadow.ShadowRepo.attach_files",
+            "_repo_shadow.ShadowRepo.verify",
         ])
     if sec_level == "update-only" or sec_level == "read-write":
         requests.update([
