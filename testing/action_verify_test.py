@@ -14,7 +14,7 @@ class ActionRemoveTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"listfiles")
+        self.base_dir = os.path.join(comtst.abs_test_dir, b"action_verify")
         self.from1_struct = {
             "from1": {"subs": {
                 "fileChanged": {"content": "initial"},

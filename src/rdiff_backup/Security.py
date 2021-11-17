@@ -275,7 +275,7 @@ def _set_allowed_requests(sec_class, sec_level):
         requests.update([
             "log.Log.open_logfile_local", "log.Log.close_logfile_local",
             "log.ErrorLog.open", "log.ErrorLog.isopen", "log.ErrorLog.close",
-            "regress.check_pids", "statistics.record_error",
+            "statistics.record_error",
             "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals",
             # API < 201
             "backup.DestinationStruct.set_rorp_cache",
@@ -284,6 +284,7 @@ def _set_allowed_requests(sec_class, sec_level):
             "Main.backup_touch_curmirror_local",
             "Main.backup_remove_curmirror_local",
             "Main.backup_close_statistics",
+            "regress.check_pids",
             # API >= 201
             "_repo_shadow.ShadowRepo.set_rorp_cache",
             "_repo_shadow.ShadowRepo.get_sigs",
@@ -291,6 +292,7 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.ShadowRepo.touch_current_mirror",
             "_repo_shadow.ShadowRepo.remove_current_mirror",
             "_repo_shadow.ShadowRepo.close_statistics",
+            "_repo_shadow.ShadowRepo.needs_regress",
         ])
     if sec_level == "read-write":
         requests.update([
@@ -298,15 +300,17 @@ def _set_allowed_requests(sec_class, sec_level):
             "os.remove", "os.chmod", "os.makedirs",
             "rpath.delete_dir_no_files",
             "fs_abilities.restore_set_globals",
-            "fs_abilities.single_set_globals", "regress.Regress",
+            "fs_abilities.single_set_globals",
             # API < 201
             "backup.DestinationStruct.patch",
             "manage.delete_earlier_than_local",
+            "regress.Regress",
             "restore.TargetStruct.get_initial_iter",
             "restore.TargetStruct.patch",
             "restore.TargetStruct.set_target_select",
             # API >= 201
             "_repo_shadow.ShadowRepo.patch",
+            "_repo_shadow.ShadowRepo.regress",
             "_repo_shadow.ShadowRepo.remove_increments_older_than",
             "_dir_shadow.ShadowWriteDir.get_initial_iter",
             "_dir_shadow.ShadowWriteDir.patch",

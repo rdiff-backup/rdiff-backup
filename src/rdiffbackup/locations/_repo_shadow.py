@@ -27,6 +27,7 @@ be instantiated.
 import errno
 import io
 import os
+import re
 import tempfile
 from rdiff_backup import (
     C, Globals, Hardlink, hash, increment, iterfile, log, longname, metadata,
@@ -48,6 +49,11 @@ class ShadowRepo:
     _mirror_time = None
     # This will be set to the exact time to restore to (not restore_to_time)
     _restore_time = None
+    # _regress_time should be set to the time we want to regress back to
+    # (usually the time of the last successful backup)
+    _regress_time = None
+    # This should be set to the latest unsuccessful backup time
+    _unsuccessful_backup_time = None
 
     # @API(ShadowRepo.set_rorp_cache, 201)
     @classmethod
@@ -261,7 +267,7 @@ class ShadowRepo:
         cls._set_restore_time(restore_to_time)
         # it's a bit ugly to set the values to another class, but less than
         # the other way around as it used to be
-        RestoreFile.initialize(cls._restore_time, cls.get_mirror_time())
+        _RestoreFile.initialize(cls._restore_time, cls.get_mirror_time())
 
     # @API(ShadowRepo.get_mirror_time, 201)
     @classmethod
@@ -311,7 +317,7 @@ class ShadowRepo:
     def initialize_rf_cache(cls, mirror_base, inc_base):
         """Set cls.rf_cache to _CachedRF object"""
         inc_list = inc_base.get_incfiles_list()
-        rf = RestoreFile(mirror_base, inc_base, inc_list)
+        rf = _RestoreFile(mirror_base, inc_base, inc_list)
         cls.mirror_base, cls.inc_base = mirror_base, inc_base
         cls.root_rf = rf
         cls.rf_cache = _CachedRF(rf)
@@ -634,6 +640,319 @@ class ShadowRepo:
         # FIXME eliminate duplicate function with _dir_shadow
         path = src_rorp and str(src_rorp) or str(mir_rorp)
         log.Log("Successfully compared path {pa}".format(pa=path), log.INFO)
+
+    # ### COPIED FROM REGRESS ####
+
+    # @API(ShadowRepo.needs_regress, 201)
+    @classmethod
+    def needs_regress(cls, base_dir, data_dir, incs_dir, force):
+        """
+        Checks if the repository contains a previously failed backup and needs
+        to be regressed
+
+        Return None if the repository can't be found,
+        True if it needs regressing, False otherwise.
+        """
+        if not base_dir.isdir() or not data_dir.isdir():
+            return None
+        for filename in data_dir.listdir():
+            # check if we can find any file of importance
+            if filename not in [
+                    b'chars_to_quote', b'special_escapes',
+                    b'backup.log', b'increments'
+            ]:
+                break
+        else:  # This may happen the first backup just after we test for quoting
+            if not incs_dir.isdir() or not incs_dir.listdir():
+                return None
+        curmirroot = data_dir.append(b"current_mirror")
+        curmir_incs = curmirroot.get_incfiles_list()
+        if not curmir_incs:
+            log.Log.FatalError(
+                """Bad rdiff-backup-data dir on destination side
+
+The rdiff-backup data directory
+{dd}
+exists, but we cannot find a valid current_mirror marker.  You can
+avoid this message by removing the rdiff-backup-data directory;
+however any data in it will be lost.
+
+Probably this error was caused because the first rdiff-backup session
+into a new directory failed.  If this is the case it is safe to delete
+the rdiff-backup-data directory because there is no important
+information in it.
+
+""".format(dd=data_dir))
+        elif len(curmir_incs) == 1:
+            return False
+        else:
+            if not force:
+                try:
+                    cls._check_pids(curmir_incs)
+                except OSError as exc:
+                    log.Log.FatalError(
+                        "Could not check if rdiff-backup is currently"
+                        "running due to exception '{ex}'".format(ex=exc))
+            assert len(curmir_incs) == 2, (
+                "Found more than 2 current_mirror incs in '{ci}'.".format(
+                    ci=data_dir))
+            return True
+
+    @classmethod
+    def _check_pids(cls, curmir_incs):
+        """Check PIDs in curmir markers to make sure rdiff-backup not running"""
+        pid_re = re.compile(r"^PID\s*([0-9]+)", re.I | re.M)
+
+        def extract_pid(curmir_rp):
+            """Return process ID from a current mirror marker, if any"""
+            match = pid_re.search(curmir_rp.get_string())
+            if not match:
+                return None
+            else:
+                return int(match.group(1))
+
+        def pid_running(pid):
+            """Return True if we know if process with pid is currently running,
+            False if it isn't running, and None if we don't know for sure."""
+            if os.name == 'nt':
+                import win32api
+                import win32con
+                import pywintypes
+                process = None
+                try:
+                    process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS,
+                                                   0, pid)
+                except pywintypes.error as error:
+                    if error.winerror == 87:
+                        # parameter incorrect, PID does not exist
+                        return False
+                    elif error.winerror == 5:
+                        # access denied, means nevertheless PID still exists
+                        return True
+                    else:
+                        log.Log("Unable to check if process ID {pi} "
+                                "is still running".format(pi=pid), log.WARNING)
+                        return None  # we don't know if the process is running
+                else:
+                    if process:
+                        win32api.CloseHandle(process)
+                        return True
+                    else:
+                        return False
+            else:
+                try:
+                    os.kill(pid, 0)
+                except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
+                    return False
+                except OSError:  # any other OS error
+                    log.Log("Unable to check if process ID {pi} "
+                            "is still running".format(pi=pid), log.WARNING)
+                    return None  # we don't know if the process is still running
+                else:  # the process still exists
+                    return True
+
+        for curmir_rp in curmir_incs:
+            assert curmir_rp.conn is Globals.local_connection, (
+                "Function must be called locally not over '{conn}'.".format(
+                    conn=curmir_rp.conn))
+            pid = extract_pid(curmir_rp)
+            # FIXME differentiate between don't know and know and handle
+            # err.errno == errno.EPERM: EPERM clearly means there's a process
+            # to deny access to with OSError
+            if pid is not None and pid_running(pid):
+                log.Log.FatalError(
+                    """It appears that a previous rdiff-backup session with process
+    id {pi} is still running.  If two different rdiff-backup processes write
+    the same repository simultaneously, data corruption will probably
+    result.  To proceed with regress anyway, rerun rdiff-backup with the
+    --force option""".format(pi=pid))
+
+    # @API(regress, 201)
+    @classmethod
+    def regress(cls, mirror_rp):
+        """
+        Bring mirror and inc directory back to regress_to_time
+
+        Also affects the rdiff-backup-data directory, so Globals.rbdir
+        should be set.  Regress should only work one step at a time
+        (i.e. don't "regress" through two separate backup sets.  This
+        function should be run locally to the rdiff-backup-data directory.
+        """
+        inc_rpath = Globals.rbdir.append_path(b"increments")
+        assert mirror_rp.index == () and inc_rpath.index == (), (
+            "Mirror and increment paths must have an empty index")
+        assert mirror_rp.isdir() and inc_rpath.isdir(), (
+            "Mirror and increments paths must be directories")
+        assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection, (
+            "Regress must happen locally.")
+        manager, former_current_mirror_rp = cls._set_regress_time()
+        cls._set_restore_times()
+        cls._regress_rbdir(manager)
+        ITR = rorpiter.IterTreeReducer(_RepoRegressITRB, [])
+        for rf in cls._iterate_meta_rfs(mirror_rp, inc_rpath):
+            ITR(rf.index, rf)
+        ITR.finish_processing()
+        if former_current_mirror_rp:
+            if Globals.do_fsync:
+                # Sync first, since we are marking dest dir as good now
+                C.sync()
+            former_current_mirror_rp.delete()
+
+    @classmethod
+    def _set_regress_time(cls):
+        """Set regress_time to previous successful backup
+
+        If there are two current_mirror increments, then the last one
+        corresponds to a backup session that failed.
+
+        """
+        manager = metadata.SetManager()
+        curmir_incs = manager.sorted_prefix_inclist(b'current_mirror')
+        assert len(curmir_incs) == 2, (
+            "Found {ilen} current_mirror flags, expected 2".format(
+                ilen=len(curmir_incs)))
+        mirror_rp_to_delete = curmir_incs[0]
+        cls._regress_time = curmir_incs[1].getinctime()
+        cls._unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
+        log.Log("Regressing to date/time {dt}".format(
+            dt=Time.timetopretty(cls._regress_time)), log.NOTE)
+        return manager, mirror_rp_to_delete
+
+    @classmethod
+    def _set_restore_times(cls):
+        """Set _rest_time and _mirror_time in the restore module
+
+        _rest_time (restore time) corresponds to the last successful
+        backup time.  _mirror_time is the unsuccessful backup time.
+
+        """
+        cls._mirror_time = cls._unsuccessful_backup_time
+        cls._restore_time = cls._regress_time
+
+    @classmethod
+    def _regress_rbdir(cls, meta_manager):
+        """Delete the increments in the rdiff-backup-data directory
+
+        Returns the former current mirror rp so we can delete it later.
+        All of the other rp's should be deleted before the actual regress,
+        to clear up disk space the rest of the procedure may need.
+
+        Also, in case the previous session failed while diffing the
+        metadata file, either recreate the mirror_metadata snapshot, or
+        delete the extra regress_time diff.
+
+        """
+        meta_diffs = []
+        meta_snaps = []
+        for old_rp in meta_manager.timerpmap[cls._regress_time]:
+            if old_rp.getincbase_bname() == b'mirror_metadata':
+                if old_rp.getinctype() == b'snapshot':
+                    meta_snaps.append(old_rp)
+                elif old_rp.getinctype() == b'diff':
+                    meta_diffs.append(old_rp)
+                else:
+                    raise ValueError(
+                        "Increment type for metadata mirror must be one of "
+                        "'snapshot' or 'diff', not {mtype}.".format(
+                            mtype=old_rp.getinctype()))
+        if meta_diffs and not meta_snaps:
+            cls._recreate_meta(meta_manager)
+
+        for new_rp in meta_manager.timerpmap[cls._unsuccessful_backup_time]:
+            if new_rp.getincbase_bname() != b'current_mirror':
+                log.Log("Deleting old diff {od}".format(od=new_rp), log.INFO)
+                new_rp.delete()
+
+        for rp in meta_diffs:
+            rp.delete()
+
+    @classmethod
+    def _recreate_meta(cls, meta_manager):
+        """Make regress_time mirror_metadata snapshot by patching
+
+        We write to a tempfile first.  Otherwise, in case of a crash, it
+        would seem we would have an intact snapshot and partial diff, not
+        the reverse.
+
+        """
+        temprp = [Globals.rbdir.get_temp_rpath()]
+
+        def callback(rp):
+            temprp[0] = rp
+
+        writer = metadata.MetadataFile(
+            temprp[0], 'wb', check_path=0, callback=callback)
+        for rorp in meta_manager.get_meta_at_time(cls._regress_time, None):
+            writer.write_object(rorp)
+        writer.close()
+
+        finalrp = Globals.rbdir.append(
+            b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(
+                cls._regress_time))
+        assert not finalrp.lstat(), (
+            "Metadata path '{mrp}' shouldn't exist.".format(mrp=finalrp))
+        rpath.rename(temprp[0], finalrp)
+        if Globals.fsync_directories:
+            Globals.rbdir.fsync()
+
+    @classmethod
+    def _iterate_raw_rfs(cls, mirror_rp, inc_rp):
+        """Iterate all _RegressFile objects in mirror/inc directory
+
+        Also changes permissions of unreadable files.  We don't have to
+        change them back later because regress will do that for us.
+
+        """
+        root_rf = _RegressFile(mirror_rp, inc_rp,
+                               inc_rp.get_incfiles_list())
+
+        def helper(rf):
+            mirror_rp = rf.mirror_rp
+            if Globals.process_uid != 0:
+                if mirror_rp.isreg() and not mirror_rp.readable():
+                    mirror_rp.chmod(0o400 | mirror_rp.getperms())
+                elif mirror_rp.isdir() and not mirror_rp.hasfullperms():
+                    mirror_rp.chmod(0o700 | mirror_rp.getperms())
+            yield rf
+            if rf.mirror_rp.isdir() or rf.inc_rp.isdir():
+                for sub_rf in rf.yield_sub_rfs():
+                    for sub_sub_rf in helper(sub_rf):
+                        yield sub_sub_rf
+
+        return helper(root_rf)
+
+    @classmethod
+    def _iterate_meta_rfs(cls, mirror_rp, inc_rp):
+        """Yield _RegressFile objects with extra metadata information added
+
+        Each _RegressFile will have an extra object variable .metadata_rorp
+        which will contain the metadata attributes of the mirror file at
+        cls._regress_time.
+
+        """
+        raw_rfs = cls._iterate_raw_rfs(mirror_rp, inc_rp)
+        collated = rorpiter.Collate2Iters(raw_rfs, cls._yield_metadata())
+        for raw_rf, metadata_rorp in collated:
+            raw_rf = longname.update_rf(raw_rf, metadata_rorp, mirror_rp,
+                                        _RegressFile)
+            if not raw_rf:
+                log.Log("Warning, metadata file has entry for path {pa}, "
+                        "but there are no associated files.".format(
+                            pa=metadata_rorp), log.WARNING)
+                continue
+            raw_rf.set_metadata_rorp(metadata_rorp)
+            yield raw_rf
+
+    @classmethod
+    def _yield_metadata(cls):
+        """Iterate rorps from metadata file, if any are available"""
+        metadata.SetManager()
+        metadata_iter = metadata.ManagerObj.GetAtTime(cls._regress_time)
+        if metadata_iter:
+            return metadata_iter
+        log.Log.FatalError(
+            "No metadata for time {pt} ({rt}) found, cannot regress".format(
+                pt=Time.timetopretty(cls._regress_time), rt=cls._regress_time))
 
 
 class _CacheCollatedPostProcess:
@@ -1194,14 +1513,14 @@ class _RepoIncrementITRB(_RepoPatchITRB):
 
 
 class _CachedRF:
-    """Store RestoreFile objects until they are needed
+    """Store _RestoreFile objects until they are needed
 
     The code above would like to pretend it has random access to RFs,
     making one for a particular index at will.  However, in general
     this involves listing and filtering a directory, which can get
     expensive.
 
-    Thus, when a _CachedRF retrieves an RestoreFile, it creates all the
+    Thus, when a _CachedRF retrieves an _RestoreFile, it creates all the
     RFs of that directory at the same time, and doesn't have to
     recalculate.  It assumes the indices will be in order, so the
     cache is deleted if a later index is requested.
@@ -1218,7 +1537,7 @@ class _CachedRF:
     def get_fp(self, index, mir_rorp):
         """Return the file object (for reading) of given index"""
         rf = longname.update_rf(self._get_rf(index, mir_rorp), mir_rorp,
-                                self.root_rf.mirror_rp, RestoreFile)
+                                self.root_rf.mirror_rp, _RestoreFile)
         if not rf:
             log.Log(
                 "Unable to retrieve data for file {fi}! The cause is "
@@ -1233,7 +1552,7 @@ class _CachedRF:
             self.perm_changer.finish()
 
     def _get_rf(self, index, mir_rorp=None):
-        """Get a RestoreFile for given index, or None"""
+        """Get a _RestoreFile for given index, or None"""
         while 1:
             if not self.rf_list:
                 if not self._add_rfs(index, mir_rorp):
@@ -1267,7 +1586,7 @@ class _CachedRF:
         parent_index = index[:-1]
         if Globals.process_uid != 0:
             self.perm_changer(parent_index)
-        temp_rf = RestoreFile(
+        temp_rf = _RestoreFile(
             self.root_rf.mirror_rp.new_index(parent_index),
             self.root_rf.inc_rp.new_index(parent_index), [])
         new_rfs = list(temp_rf.yield_sub_rfs())
@@ -1284,7 +1603,7 @@ class _CachedRF:
         return "\n".join((s1, s2, s3))
 
 
-class RestoreFile:
+class _RestoreFile:
     """
     Hold data about a single mirror file and its related increments
 
@@ -1307,7 +1626,7 @@ class RestoreFile:
     @classmethod
     def initialize(cls, restore_time, mirror_time):
         """
-        Initialize the RestoreFile class with restore and mirror time
+        Initialize the _RestoreFile class with restore and mirror time
         """
         cls._restore_time = restore_time
         cls._mirror_time = mirror_time
@@ -1410,7 +1729,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""".format(
         return robust.check_common_error(error_handler, get_fp)
 
     def yield_sub_rfs(self):
-        """Return RestoreFiles under current RestoreFile (which is dir)"""
+        """Return _RestoreFiles under current _RestoreFile (which is dir)"""
         if not self.mirror_rp.isdir() and not self.inc_rp.isdir():
             return
         if self.mirror_rp.isdir():
@@ -1587,3 +1906,153 @@ class _PermissionChanger:
 
         for total_len in range(common_prefix_len + 1, len(index) + 1):
             yield self.root_rp.new_index(index[:total_len])
+
+
+class _RegressFile(_RestoreFile):
+    """
+    Like _RestoreFile but with metadata
+
+    Hold mirror_rp and related incs, but also put metadata info for
+    the mirror file at regress time in self.metadata_rorp.
+    self.metadata_rorp is not set in this class.
+    """
+
+    def __init__(self, mirror_rp, inc_rp, inc_list):
+        super().__init__(mirror_rp, inc_rp, inc_list)
+
+    def set_relevant_incs(self):
+        super().set_relevant_incs()
+
+        # Set self.regress_inc to increment to be removed (or None)
+        newer_incs = self.get_newer_incs()
+        assert len(newer_incs) <= 1, "Too many recent increments"
+        if newer_incs:
+            self.regress_inc = newer_incs[0]  # first is mirror_rp
+        else:
+            self.regress_inc = None
+
+    def set_metadata_rorp(self, metadata_rorp):
+        """Set self.metadata_rorp, creating empty if given None"""
+        if metadata_rorp:
+            self.metadata_rorp = metadata_rorp
+        else:
+            self.metadata_rorp = rpath.RORPath(self.index)
+
+    def isdir(self):
+        """Return true if regress needs before/after processing"""
+        return ((self.metadata_rorp and self.metadata_rorp.isdir())
+                or (self.mirror_rp and self.mirror_rp.isdir()))
+
+
+class _RepoRegressITRB(rorpiter.ITRBranch):
+    """
+    Turn back state of dest directory (use with IterTreeReducer)
+
+    The arguments to the ITR will be _RegressFiles.  There are two main
+    assumptions this procedure makes (besides those mentioned above):
+
+    1.  The mirror_rp and the metadata_rorp equal_loose correctly iff
+        they contain the same data.  If this is the case, then the inc
+        file is unnecessary and we can delete it.
+
+    2.  If the don't match, then applying the inc file will
+        successfully get us back to the previous state.
+
+    Since the metadata file is required, the two above really only
+    matter for regular files.
+    """
+
+    def __init__(self):
+        """Just initialize some variables to None"""
+        self.rf = None  # will hold _RegressFile applying to a directory
+
+    def can_fast_process(self, index, rf):
+        """True if none of the rps is a directory"""
+        return not rf.mirror_rp.isdir() and not rf.metadata_rorp.isdir()
+
+    def fast_process_file(self, index, rf):
+        """Process when nothing is a directory"""
+        if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
+            log.Log("Regressing file {fi}".format(fi=rf.metadata_rorp),
+                    log.INFO)
+            if rf.metadata_rorp.isreg():
+                self._restore_orig_regfile(rf)
+            else:
+                if rf.mirror_rp.lstat():
+                    rf.mirror_rp.delete()
+                if rf.metadata_rorp.isspecial():
+                    robust.check_common_error(None, rpath.copy_with_attribs,
+                                              (rf.metadata_rorp, rf.mirror_rp))
+                else:
+                    rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+        if rf.regress_inc:
+            log.Log("Deleting increment {ic}".format(ic=rf.regress_inc),
+                    log.INFO)
+            rf.regress_inc.delete()
+
+    def start_process_directory(self, index, rf):
+        """Start processing directory"""
+        if rf.metadata_rorp.isdir():
+            # make sure mirror is a readable dir
+            if not rf.mirror_rp.isdir():
+                if rf.mirror_rp.lstat():
+                    rf.mirror_rp.delete()
+                rf.mirror_rp.mkdir()
+            if not rf.mirror_rp.hasfullperms():
+                rf.mirror_rp.chmod(0o700)
+        self.rf = rf
+
+    def end_process_directory(self):
+        """Finish processing a directory"""
+        rf = self.rf
+        if rf.metadata_rorp.isdir():
+            if rf.mirror_rp.isdir():
+                rf.mirror_rp.setdata()
+                if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
+                    log.Log("Regressing attributes of path {pa}".format(pa=rf),
+                            log.INFO)
+                    rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
+            else:
+                rf.mirror_rp.delete()
+                log.Log("Regressing file {fi}".format(fi=rf.mirror_rp),
+                        log.INFO)
+                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+        else:  # replacing a dir with some other kind of file
+            assert rf.mirror_rp.isdir(), (
+                "Mirror '{mrp!r}' can only be a directory.".format(
+                    mrp=rf.mirror_rp))
+            log.Log("Replacing directory {di}".format(di=rf), log.INFO)
+            if rf.metadata_rorp.isreg():
+                self._restore_orig_regfile(rf)
+            else:
+                rf.mirror_rp.delete()
+                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+        if rf.regress_inc:
+            log.Log("Deleting increment {ic}".format(ic=rf), log.INFO)
+            rf.regress_inc.delete()
+
+    def _restore_orig_regfile(self, rf):
+        """Restore original regular file
+
+        This is the trickiest case for avoiding information loss,
+        because we don't want to delete the increment before the
+        mirror is fully written.
+
+        """
+        assert rf.metadata_rorp.isreg(), (
+            "Metadata path '{mp}' can only be regular file.".format(
+                mp=rf.metadata_rorp))
+        if rf.mirror_rp.isreg():
+            tf = rf.mirror_rp.get_temp_rpath(sibling=True)
+            tf.write_from_fileobj(rf.get_restore_fp())
+            tf.fsync_with_dir()  # make sure tf fully written before move
+            rpath.copy_attribs(rf.metadata_rorp, tf)
+            rpath.rename(tf, rf.mirror_rp)  # move is atomic
+        else:
+            if rf.mirror_rp.lstat():
+                rf.mirror_rp.delete()
+            rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
+            rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
+        if Globals.fsync_directories:
+            rf.mirror_rp.get_parent_rp().fsync(
+            )  # force move before inc delete

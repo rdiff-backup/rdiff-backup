@@ -50,7 +50,7 @@ class RemoveAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value:
-            self.source = repository.Repo(
+            self.repo = repository.Repo(
                 self.connected_locations[0], self.values.force,
                 must_be_writable=True, must_exist=True
             )
@@ -63,16 +63,16 @@ class RemoveAction(actions.BaseAction):
         return_code = super().check()
 
         # we verify that the source repository is correct
-        return_code |= self.source.check()
+        return_code |= self.repo.check()
 
         # the source directory must directly point at the base directory of
         # the repository
-        if self.source.restore_index:
+        if self.repo.restore_index:
             log.Log("Increments for sub-directory '{sd}' cannot be removed "
                     "separately. "
                     "Instead run on entire directory '{ed}'.".format(
-                        sd=self.source.orig_path,
-                        ed=self.source.base_dir), log.ERROR)
+                        sd=self.repo.orig_path,
+                        ed=self.repo.base_dir), log.ERROR)
             return_code |= 1
 
         return return_code
@@ -84,21 +84,21 @@ class RemoveAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.source.setup()
+        return_code = self.repo.setup()
         if return_code != 0:
             return return_code
 
         # set the filesystem properties of the repository
-        self.source.base_dir.conn.fs_abilities.single_set_globals(
-            self.source.base_dir, 0)  # read_only=False
-        self.source.init_quoting(self.values.chars_to_quote)
+        self.repo.base_dir.conn.fs_abilities.single_set_globals(
+            self.repo.base_dir, 0)  # read_only=False
+        self.repo.init_quoting(self.values.chars_to_quote)
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
         if log.Log.verbosity > 0:
             try:  # the source repository must be writable
                 log.Log.open_logfile(
-                    self.source.data_dir.append(self.name + ".log"))
+                    self.repo.data_dir.append(self.name + ".log"))
             except (log.LoggerError, Security.Violation) as exc:
                 log.Log("Unable to open logfile due to exception '{ex}'".format(
                     ex=exc), log.ERROR)
@@ -117,9 +117,9 @@ class RemoveAction(actions.BaseAction):
         elif action_time < 0:  # no increment is old enough
             return 0
         if Globals.get_api_version() < 201:
-            manage.delete_earlier_than(self.source.base_dir, action_time)
+            manage.delete_earlier_than(self.repo.base_dir, action_time)
         else:
-            self.source.remove_increments_older_than(action_time)
+            self.repo.remove_increments_older_than(action_time)
 
         return 0
 
@@ -136,7 +136,7 @@ class RemoveAction(actions.BaseAction):
             return None
 
         times_in_secs = [
-            inc.getinctime() for inc in self.source.incs_dir.get_incfiles_list()
+            inc.getinctime() for inc in self.repo.incs_dir.get_incfiles_list()
         ]
         times_in_secs = [t for t in times_in_secs if t < action_time]
         if not times_in_secs:

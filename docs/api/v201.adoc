@@ -63,8 +63,8 @@
 * `Main.backup_remove_curmirror_local` **deprecated**
 * `Main.backup_touch_curmirror_local` **deprecated**
 * `manage.delete_earlier_than_local` **deprecated**
-* `regress.check_pids`
-* `regress.Regress`
+* `regress.check_pids` **deprecated**
+* `regress.Regress` **deprecated**
 * `restore.ListAtTime` **deprecated**
 * `restore.ListChangedSince` **deprecated**
 * `restore.MirrorStruct` **deprecated**
@@ -123,8 +123,10 @@
 ** `.initialize_rf_cache`
 ** `.list_files_at_time`
 ** `.list_files_changed_since`
+** `.needs_regress`
 ** `.patch`
 ** `.patch_and_increment`
+** `.regress`
 ** `.remove_current_mirror`
 ** `.set_rorp_cache`
 ** `.set_select`

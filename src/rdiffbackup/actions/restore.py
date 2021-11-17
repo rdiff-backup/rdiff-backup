@@ -58,13 +58,13 @@ class RestoreAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value:
-            self.source = repository.Repo(
+            self.repo = repository.Repo(
                 self.connected_locations[0], self.values.force,
                 must_be_writable=False, must_exist=True, can_be_sub_path=True
             )
-            self.target = directory.WriteDir(self.connected_locations[1],
-                                             self.values.force,
-                                             self.values.create_full_path)
+            self.dir = directory.WriteDir(self.connected_locations[1],
+                                          self.values.force,
+                                          self.values.create_full_path)
         return conn_value
 
     def check(self):
@@ -75,14 +75,14 @@ class RestoreAction(actions.BaseAction):
 
         # we validate that the discovered restore type and the given options
         # fit together
-        if self.source.restore_type == "inc":
+        if self.repo.restore_type == "inc":
             if self.values.at:
                 log.Log("You can't give an increment file and a time to "
                         "restore at the same time.", log.ERROR)
                 return_code |= 1
             elif not self.values.increment:
                 self.values.increment = True
-        elif self.source.restore_type in ("base", "subdir"):
+        elif self.repo.restore_type in ("base", "subdir"):
             if self.values.increment:
                 log.Log("You can't use the --increment option and _not_ "
                         "give an increment file", log.ERROR)
@@ -91,8 +91,8 @@ class RestoreAction(actions.BaseAction):
                 self.values.at = "now"
 
         # we verify that source directory and target repository are correct
-        return_code |= self.source.check()
-        return_code |= self.target.check()
+        return_code |= self.repo.check()
+        return_code |= self.dir.check()
 
         return return_code
 
@@ -103,44 +103,44 @@ class RestoreAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.source.setup()
+        return_code = self.repo.setup()
         if return_code != 0:
             return return_code
 
-        return_code = self.target.setup()
+        return_code = self.dir.setup()
         if return_code != 0:
             return return_code
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
         try:
-            self.target.base_dir.conn.fs_abilities.restore_set_globals(
-                self.target.base_dir)
+            self.dir.base_dir.conn.fs_abilities.restore_set_globals(
+                self.dir.base_dir)
         except OSError as exc:
             log.Log("Could not begin restore due to exception '{ex}'".format(
                 ex=exc), log.ERROR)
             return 1
-        self.source.init_quoting(self.values.chars_to_quote)
-        self._init_user_group_mapping(self.target.base_dir.conn)
+        self.repo.init_quoting(self.values.chars_to_quote)
+        self._init_user_group_mapping(self.dir.base_dir.conn)
         if log.Log.verbosity > 0:
             try:  # the source repository could be read-only
                 log.Log.open_logfile(
-                    self.source.data_dir.append("restore.log"))
+                    self.repo.data_dir.append("restore.log"))
             except (log.LoggerError, Security.Violation) as exc:
                 log.Log(
                     "Unable to open logfile due to exception '{ex}'".format(
                         ex=exc), log.WARNING)
 
         # we need now to identify the actual time of restore
-        self.inc_rpath = self.source.data_dir.append_path(
-            b'increments', self.source.restore_index)
+        self.inc_rpath = self.repo.data_dir.append_path(
+            b'increments', self.repo.restore_index)
         if self.values.at:
             self.action_time = self._get_parsed_time(self.values.at,
                                                      ref_rp=self.inc_rpath)
             if self.action_time is None:
                 return 1
         elif self.values.increment:
-            self.action_time = self.source.orig_path.getinctime()
+            self.action_time = self.repo.orig_path.getinctime()
         else:  # this should have been catched in the check method
             log.Log("This shouldn't happen but neither restore time nor "
                     "an increment have been identified so far", log.ERROR)
@@ -150,8 +150,8 @@ class RestoreAction(actions.BaseAction):
         # We must set both sides because restore filtering is different from
         # select filtering.  For instance, if a file is excluded it should
         # not be deleted from the target directory.
-        self.source.set_select(select_opts, select_data, self.target.base_dir)
-        self.target.set_select(select_opts, select_data)
+        self.repo.set_select(select_opts, select_data, self.dir.base_dir)
+        self.dir.set_select(select_opts, select_data)
 
         return 0  # all is good
 
@@ -159,18 +159,18 @@ class RestoreAction(actions.BaseAction):
 
         # This is more a check than a part of run, but because backup does
         # the regress in the run section, we also do the check here...
-        if self.source.needs_regress():
+        if self._operate_regress(try_regress=False):
             # source could be read-only, so we don't try to regress it
             log.Log("Previous backup to {rp} seems to have failed. "
                     "Use rdiff-backup to 'regress' first the failed backup, "
                     "then try again to restore".format(
-                        rp=self.source.base_dir), log.ERROR)
+                        rp=self.repo.base_dir), log.ERROR)
             return 1
         try:
             if Globals.get_api_version() < 201:  # compat200
                 restore.Restore(
-                    self.source.base_dir.new_index(self.source.restore_index),
-                    self.inc_rpath, self.target.base_dir, self.action_time)
+                    self.repo.base_dir.new_index(self.repo.restore_index),
+                    self.inc_rpath, self.dir.base_dir, self.action_time)
             else:
                 self._operate_restore()
         except OSError as exc:
@@ -187,15 +187,15 @@ class RestoreAction(actions.BaseAction):
         """
         log.Log(
             "Starting restore operation from source path {sp} to destination "
-            "path {dp}".format(sp=self.source.base_dir,
-                               dp=self.target.base_dir), log.NOTE)
+            "path {dp}".format(sp=self.repo.base_dir,
+                               dp=self.dir.base_dir), log.NOTE)
 
-        self.source.initialize_restore(self.action_time)
-        self.source.initialize_rf_cache(self.inc_rpath)
-        target_iter = self.target.get_initial_iter()
-        src_diff_iter = self.source.get_diffs(target_iter)
-        self.target.patch(src_diff_iter)
-        self.source.close_rf_cache()
+        self.repo.initialize_restore(self.action_time)
+        self.repo.initialize_rf_cache(self.inc_rpath)
+        target_iter = self.dir.get_initial_iter()
+        src_diff_iter = self.repo.get_diffs(target_iter)
+        self.dir.patch(src_diff_iter)
+        self.repo.close_rf_cache()
 
 
 def get_action_class():

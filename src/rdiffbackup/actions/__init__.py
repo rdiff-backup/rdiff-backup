@@ -558,6 +558,41 @@ class BaseAction:
                     "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
             return None
 
+    def _operate_regress(self, try_regress=True):
+        """
+        Check the given repository and regress it if necessary
+        """
+        if Globals.get_api_version() < 201:  # compat200
+            if self.repo.needs_regress_compat200():
+                if not try_regress:
+                    return 1
+                log.Log("Previous backup seems to have failed, regressing "
+                        "destination now", log.WARNING)
+                try:
+                    self.repo.base_dir.conn.regress.Regress(self.repo.base_dir)
+                    return 0
+                except Security.Violation:
+                    log.Log(
+                        "Security violation while attempting to regress "
+                        "destination, perhaps due to --restrict-read-only or "
+                        "--restrict-update-only", log.ERROR)
+                    return 1
+            else:
+                log.Log("Given repository doesn't need to be regressed",
+                        log.NOTE)
+                return 0  # all is good
+        else:
+            if self.repo.needs_regress():
+                if not try_regress:
+                    return 1
+                log.Log("Previous backup seems to have failed, regressing "
+                        "destination now", log.WARNING)
+                return self.repo.regress()
+            else:
+                log.Log("Given repository doesn't need to be regressed",
+                        log.NOTE)
+                return 0  # all is good
+
 
 def get_action_class():
     """

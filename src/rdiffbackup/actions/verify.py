@@ -51,7 +51,7 @@ class VerifyAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value:
-            self.source = repository.Repo(
+            self.repo = repository.Repo(
                 self.connected_locations[0], self.values.force,
                 must_be_writable=False, must_exist=True, can_be_sub_path=True
             )
@@ -64,7 +64,7 @@ class VerifyAction(actions.BaseAction):
         return_code = super().check()
 
         # we verify that source repository is correct
-        return_code |= self.source.check()
+        return_code |= self.repo.check()
 
         return return_code
 
@@ -75,20 +75,20 @@ class VerifyAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.source.setup()
+        return_code = self.repo.setup()
         if return_code != 0:
             return return_code
 
         # set the filesystem properties of the repository
-        self.source.base_dir.conn.fs_abilities.single_set_globals(
-            self.source.base_dir, 1)  # read_only=True
-        self.source.init_quoting(self.values.chars_to_quote)
+        self.repo.base_dir.conn.fs_abilities.single_set_globals(
+            self.repo.base_dir, 1)  # read_only=True
+        self.repo.init_quoting(self.values.chars_to_quote)
 
         if Globals.get_api_version() < 201:  # compat200
-            self.mirror_rpath = self.source.base_dir.new_index(
-                self.source.restore_index)
-        self.inc_rpath = self.source.data_dir.append_path(
-            b'increments', self.source.restore_index)
+            self.mirror_rpath = self.repo.base_dir.new_index(
+                self.repo.restore_index)
+        self.inc_rpath = self.repo.data_dir.append_path(
+            b'increments', self.repo.restore_index)
 
         # FIXME move method _get_parsed_time to Repo and remove inc_rpath?
         self.action_time = self._get_parsed_time(self.values.at,
@@ -100,10 +100,10 @@ class VerifyAction(actions.BaseAction):
 
     def run(self):
         if Globals.get_api_version() < 201:  # compat200
-            return self.source.base_dir.conn.compare.Verify(
+            return self.repo.base_dir.conn.compare.Verify(
                 self.mirror_rpath, self.inc_rpath, self.action_time)
         else:
-            return self.source.verify(self.action_time)
+            return self.repo.verify(self.action_time)
 
 
 def get_action_class():

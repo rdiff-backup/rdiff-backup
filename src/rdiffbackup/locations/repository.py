@@ -152,6 +152,13 @@ class Repo(locations.Location):
 
     def needs_regress(self):
         """
+        Shadow function for ShadowRepo.needs_regress
+        """
+        return self._shadow.needs_regress(
+            self.base_dir, self.data_dir, self.incs_dir, self.force)
+
+    def needs_regress_compat200(self):
+        """
         Checks if the repository contains a previously failed backup and needs
         to be regressed
 
@@ -210,8 +217,6 @@ information in it.
         This can/should be run before any action on the repository to start
         with a clean state.
         """
-        log.Log("Previous backup seems to have failed, regressing "
-                "destination now", log.WARNING)
         try:
             self.base_dir.conn.regress.Regress(self.base_dir)
             return 0
