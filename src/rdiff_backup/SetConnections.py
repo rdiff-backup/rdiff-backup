@@ -269,10 +269,10 @@ def _fill_schema(host_info, cmd_schema):
             thi=type(host_info)))
     try:
         # for security reasons, we accept only specific format placeholders
-        # h for host_info, vx,vy,vz for version x.y.z
+        # h for host_info, Vx,Vy,Vz for version x.y.z
         # and the host placeholder is mandatory
         if ((re.findall(b"{[^}]*}", cmd_schema)
-             != re.findall(b"{h}|{v[xyz]}", cmd_schema))
+             != re.findall(b"{h}|{V[xyz]}", cmd_schema))
                 or (b"{h}" not in cmd_schema
                     and b"%s" not in cmd_schema)):  # compat200
             raise KeyError
@@ -281,7 +281,7 @@ def _fill_schema(host_info, cmd_schema):
             # bytes doesn't have a format method, hence the conversions
             return os.fsencode(os.fsdecode(cmd_schema).format(
                 h=os.fsdecode(host_info),
-                vx=ver_split[0], vy=ver_split[1], vz=ver_split[2]))
+                Vx=ver_split[0], Vy=ver_split[1], Vz=ver_split[2]))
         else:  # compat200: accepts "%s" as host place-holder
             return cmd_schema % host_info
     except (TypeError, KeyError):
