@@ -18,6 +18,7 @@
 # 02110-1301, USA
 """Functions to make sure remote requests are kosher"""
 
+import os
 import tempfile
 from . import Globals, log, rpath
 
@@ -333,7 +334,7 @@ def _vet_filename(request, arglist):
         _raise_violation("argument list shorter than %d" % i + 1, request,
                          arglist)
     filename = arglist[i]
-    if not isinstance(filename, (bytes, str)):
+    if not isinstance(filename, (bytes, str, os.PathLike)):
         _raise_violation("argument %d doesn't look like a filename" % i,
                          request, arglist)
 
