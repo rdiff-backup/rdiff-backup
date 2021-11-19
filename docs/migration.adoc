@@ -189,7 +189,7 @@ rdiff-backup --remote-schema 'ssh -C %s rdiff-backup-2.0 --server' \
 Starting with rdiff-backup 2.1+, the command would look like this and wouldn't need to be changed with each update of the client, as the version would automatically follow:
 
 ----
-rdiff-backup --remote-schema 'ssh -C {h} rdiff-backup-{vx}.{vy} server' \
+rdiff-backup --remote-schema 'ssh -C {h} rdiff-backup-{Vx}.{Vy} server' \
 	backup /sourcedir user@serverhost::/backup-repo
 ----
 

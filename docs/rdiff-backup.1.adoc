@@ -453,11 +453,11 @@ Similarly, if you want to refer to a local file whose filename contains two cons
 Because the backslash is a quote character in these circumstances, it too must be quoted to get a literal backslash, so '[.code]``foo\::\\bar``' evaluates to '[.code]``foo::\bar``'.
 To make things more complicated, because the backslash is also a common shell quoting character, you may need to type in '[.code]``\\\\``' at the shell prompt to get a literal backslash.
 
-You may also use the placehoders '[.code]``{vx}``', '[.code]``{vy}``' and '[.code]``{vz}``' for the '[.code]``x.y.z``' version of rdiff-backup, so that you can have multiple versions of rdiff-backup installed on the server, and automatically targeted from the client.
+You may also use the placehoders '[.code]``{Vx}``', '[.code]``{Vy}``' and '[.code]``{Vz}``' for the '[.code]``x.y.z``' version of rdiff-backup, so that you can have multiple versions of rdiff-backup installed on the server, and automatically targeted from the client.
 
 For example, if you have rdiff-backup 2.1.5 and 2.2.1 installed in virtual environments on the server, respectively under '[.code]``/usr/local/lib/rdiff-backup-2.0``' and '[.code]``/usr/local/lib/rdiff-backup-2.1``' (we assume that the z-Version isn't relevant to any kind of compatibility), then the client may be called with the following remote schema:
 
- ssh -C {h} /usr/local/lib/rdiff-backup-{vx}.{vy} --server
+ ssh -C {h} /usr/local/lib/rdiff-backup-{Vx}.{Vy} --server
 
 The client will then use the correct version of rdiff-backup based on its own version '[.code]``x.y.z``'.
 You'll find more explanations in the *migration* file in the documentation.
