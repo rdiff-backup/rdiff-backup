@@ -45,11 +45,6 @@ regress_time = None
 unsuccessful_backup_time = None
 
 
-class RegressException(Exception):
-    """Raised on any exception in regress process"""
-    pass
-
-
 class RegressFile(restore.RestoreFile):
     """Like RestoreFile but with metadata
 
@@ -200,7 +195,7 @@ class RegressITRB(rorpiter.ITRBranch):
             )  # force move before inc delete
 
 
-# @API(check_pids, 200)
+# @API(check_pids, 200, 200)
 def check_pids(curmir_incs):
     """Check PIDs in curmir markers to make sure rdiff-backup not running"""
     pid_re = re.compile(r"^PID\s*([0-9]+)", re.I | re.M)
@@ -269,7 +264,7 @@ result.  To proceed with regress anyway, rerun rdiff-backup with the
 --force option""".format(pi=pid))
 
 
-# @API(Regress, 200)
+# @API(Regress, 200, 200)
 def Regress(mirror_rp):
     """Bring mirror and inc directory back to regress_to_time
 

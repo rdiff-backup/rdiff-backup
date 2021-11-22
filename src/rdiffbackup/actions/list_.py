@@ -66,7 +66,7 @@ class ListAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value:
-            self.source = repository.Repo(
+            self.repo = repository.Repo(
                 self.connected_locations[0], self.values.force,
                 must_be_writable=False, must_exist=True, can_be_sub_path=True
             )
@@ -79,7 +79,7 @@ class ListAction(actions.BaseAction):
         return_code = super().check()
 
         # we verify that source repository is correct
-        return_code |= self.source.check()
+        return_code |= self.repo.check()
 
         return return_code
 
@@ -90,19 +90,19 @@ class ListAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.source.setup()
+        return_code = self.repo.setup()
         if return_code != 0:
             return return_code
 
         # set the filesystem properties of the repository
-        self.source.base_dir.conn.fs_abilities.single_set_globals(
-            self.source.base_dir, 1)  # read_only=True
-        self.source.init_quoting(self.values.chars_to_quote)
+        self.repo.base_dir.conn.fs_abilities.single_set_globals(
+            self.repo.base_dir, 1)  # read_only=True
+        self.repo.init_quoting(self.values.chars_to_quote)
 
-        self.mirror_rpath = self.source.base_dir.new_index(
-            self.source.restore_index)
-        self.inc_rpath = self.source.data_dir.append_path(
-            b'increments', self.source.restore_index)
+        self.mirror_rpath = self.repo.base_dir.new_index(
+            self.repo.restore_index)
+        self.inc_rpath = self.repo.data_dir.append_path(
+            b'increments', self.repo.restore_index)
 
         if self.values.entity == "files":
             if self.values.changed_since:
@@ -134,7 +134,7 @@ class ListAction(actions.BaseAction):
         Print out a summary of the increments with their size and
         cumulative size
         """
-        triples = self.source.get_increments_sizes()
+        triples = self.repo.get_increments_sizes()
 
         if self.values.parsable_output:
             print(yaml.safe_dump(triples,
@@ -160,7 +160,7 @@ class ListAction(actions.BaseAction):
         """
         Print out a summary of the increments and their times
         """
-        incs = self.source.get_increments()
+        incs = self.repo.get_increments()
         if self.values.parsable_output:
             if Globals.get_api_version() < 201:
                 for inc in incs:
@@ -179,10 +179,10 @@ class ListAction(actions.BaseAction):
     def _list_files_changed_since(self):
         """List all the files under rp that have changed since restoretime"""
         if Globals.get_api_version() < 201:
-            rorp_iter = self.source.base_dir.conn.restore.ListChangedSince(
+            rorp_iter = self.repo.base_dir.conn.restore.ListChangedSince(
                 self.mirror_rpath, self.inc_rpath, self.action_time)
         else:
-            rorp_iter = self.source.list_files_changed_since(self.action_time)
+            rorp_iter = self.repo.list_files_changed_since(self.action_time)
         for rorp in rorp_iter:
             # This is a hack, see restore.ListChangedSince for rationale
             print(str(rorp))
@@ -190,10 +190,10 @@ class ListAction(actions.BaseAction):
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
         if Globals.get_api_version() < 201:
-            rorp_iter = self.source.base_dir.conn.restore.ListAtTime(
+            rorp_iter = self.repo.base_dir.conn.restore.ListAtTime(
                 self.mirror_rpath, self.inc_rpath, self.action_time)
         else:
-            rorp_iter = self.source.list_files_at_time(self.action_time)
+            rorp_iter = self.repo.list_files_at_time(self.action_time)
         for rorp in rorp_iter:
             print(str(rorp))
 

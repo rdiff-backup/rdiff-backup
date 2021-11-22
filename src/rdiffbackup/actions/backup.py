@@ -59,9 +59,9 @@ class BackupAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value:
-            self.source = directory.ReadDir(self.connected_locations[0],
-                                            self.values.force)
-            self.target = repository.Repo(
+            self.dir = directory.ReadDir(self.connected_locations[0],
+                                         self.values.force)
+            self.repo = repository.Repo(
                 self.connected_locations[1], self.values.force,
                 must_be_writable=True, must_exist=False,
                 create_full_path=self.values.create_full_path
@@ -75,8 +75,8 @@ class BackupAction(actions.BaseAction):
         return_code = super().check()
 
         # we verify that source directory and target repository are correct
-        return_code |= self.source.check()
-        return_code |= self.target.check()
+        return_code |= self.dir.check()
+        return_code |= self.repo.check()
 
         return return_code
 
@@ -87,23 +87,23 @@ class BackupAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.source.setup()
+        return_code = self.dir.setup()
         if return_code != 0:
             return return_code
 
-        return_code = self.target.setup()
+        return_code = self.repo.setup()
         if return_code != 0:
             return return_code
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
-        SetConnections.BackupInitConnections(self.source.base_dir.conn,
-                                             self.target.base_dir.conn)
-        self.target.base_dir.conn.fs_abilities.backup_set_globals(
-            self.source.base_dir, self.values.force)
-        self.target.init_quoting(self.values.chars_to_quote)
-        self._init_user_group_mapping(self.target.base_dir.conn)
-        previous_time = self.target.get_mirror_time()
+        SetConnections.BackupInitConnections(self.dir.base_dir.conn,
+                                             self.repo.base_dir.conn)
+        self.repo.base_dir.conn.fs_abilities.backup_set_globals(
+            self.dir.base_dir, self.values.force)
+        self.repo.init_quoting(self.values.chars_to_quote)
+        self._init_user_group_mapping(self.repo.base_dir.conn)
+        previous_time = self.repo.get_mirror_time()
         if previous_time >= Time.curtime:
             log.Log("The last backup is not in the past. Aborting.",
                     log.ERROR)
@@ -111,7 +111,7 @@ class BackupAction(actions.BaseAction):
         if log.Log.verbosity > 0:
             try:  # the target repository must be writable
                 log.Log.open_logfile(
-                    self.target.data_dir.append("backup.log"))
+                    self.repo.data_dir.append("backup.log"))
             except (log.LoggerError, Security.Violation) as exc:
                 log.Log("Unable to open logfile due to '{ex}'".format(
                     ex=exc), log.ERROR)
@@ -120,19 +120,18 @@ class BackupAction(actions.BaseAction):
 
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
-        self.source.set_select(select_opts, select_data)
-        self._warn_if_infinite_recursion(self.source.base_dir,
-                                         self.target.base_dir)
+        self.dir.set_select(select_opts, select_data)
+        self._warn_if_infinite_recursion(self.dir.base_dir,
+                                         self.repo.base_dir)
 
         return 0
 
     def run(self):
         # do regress the target directory if necessary
-        if self.target.needs_regress():
-            ret_code = self.target.regress()
-            if ret_code != 0:
-                return ret_code
-        previous_time = self.target.get_mirror_time()
+        if self._operate_regress():
+            # regress was necessary and failed
+            return 1
+        previous_time = self.repo.get_mirror_time()
         if previous_time < 0 or previous_time >= Time.curtime:
             log.Log("Either there is more than one current_mirror or "
                     "the last backup is not in the past. Aborting.",
@@ -141,18 +140,18 @@ class BackupAction(actions.BaseAction):
         if Globals.get_api_version() < 201:  # compat200
             if previous_time:
                 Time.setprevtime(previous_time)
-                self.target.base_dir.conn.Main.backup_touch_curmirror_local(
-                    self.source.base_dir, self.target.base_dir)
+                self.repo.base_dir.conn.Main.backup_touch_curmirror_local(
+                    self.dir.base_dir, self.repo.base_dir)
                 backup.mirror_and_increment_compat200(
-                    self.source.base_dir, self.target.base_dir,
-                    self.target.incs_dir)
-                self.target.base_dir.conn.Main.backup_remove_curmirror_local()
+                    self.dir.base_dir, self.repo.base_dir,
+                    self.repo.incs_dir)
+                self.repo.base_dir.conn.Main.backup_remove_curmirror_local()
             else:
                 backup.mirror_compat200(
-                    self.source.base_dir, self.target.base_dir)
-                self.target.base_dir.conn.Main.backup_touch_curmirror_local(
-                    self.source.base_dir, self.target.base_dir)
-            self.target.base_dir.conn.Main.backup_close_statistics(time.time())
+                    self.dir.base_dir, self.repo.base_dir)
+                self.repo.base_dir.conn.Main.backup_touch_curmirror_local(
+                    self.dir.base_dir, self.repo.base_dir)
+            self.repo.base_dir.conn.Main.backup_close_statistics(time.time())
         else:  # API 201 and higher
             if previous_time:
                 Time.setprevtime(previous_time)
@@ -166,24 +165,24 @@ class BackupAction(actions.BaseAction):
         """
         log.Log(
             "Starting backup operation from source path {sp} to destination "
-            "path {dp}".format(sp=self.source.base_dir,
-                               dp=self.target.base_dir), log.NOTE)
+            "path {dp}".format(sp=self.dir.base_dir,
+                               dp=self.repo.base_dir), log.NOTE)
 
         if previous_time:
-            self.target.touch_current_mirror(Time.curtimestr)
+            self.repo.touch_current_mirror(Time.curtimestr)
 
-        source_rpiter = self.source.get_select()
-        self.target.set_rorp_cache(source_rpiter, previous_time)
-        dest_sigiter = self.target.get_sigs()
-        source_diffiter = self.source.get_diffs(dest_sigiter)
-        self.target.patch_or_increment(source_diffiter, previous_time)
+        source_rpiter = self.dir.get_select()
+        self.repo.set_rorp_cache(source_rpiter, previous_time)
+        dest_sigiter = self.repo.get_sigs()
+        source_diffiter = self.dir.get_diffs(dest_sigiter)
+        self.repo.patch_or_increment(source_diffiter, previous_time)
 
         if previous_time:
-            self.target.remove_current_mirror()
+            self.repo.remove_current_mirror()
         else:
-            self.target.touch_current_mirror(Time.curtimestr)
+            self.repo.touch_current_mirror(Time.curtimestr)
 
-        self.target.close_statistics(time.time())
+        self.repo.close_statistics(time.time())
 
     def _warn_if_infinite_recursion(self, rpin, rpout):
         """

@@ -14,7 +14,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"backuprestore")
+        self.base_dir = os.path.join(comtst.abs_test_dir,
+                                     b"action_backuprestore")
         self.from1_struct = {
             "from1": {"subs": {"fileA": {"content": "initial"}, "fileB": {}}}
         }

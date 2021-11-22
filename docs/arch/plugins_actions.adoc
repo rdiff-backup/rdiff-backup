@@ -14,9 +14,7 @@ All those plug-ins are found by the action manager module `rdiffbackup.actions_m
 * key is the name returned by the Action class (see below the `get_name` method)
 * value is the Action class itself, as returned by the `get_action_class` function of the action plug-in module.
 
-____
-*NOTE:* more information is provided with `pydoc rdiffbackup.actions_mgr`.
-____
+NOTE: more information is provided with `pydoc rdiffbackup.actions_mgr`.
 
 The actions manager also has two functions to get lists of argparse parsers to use with `arguments.parse`, `get_generic_parsers` for generic parsers common to all actions, and `get_parent_parsers_compat200` to get all parsers of all "traditional" actions, for faking the old CLI.
 
@@ -49,25 +47,21 @@ Again, it is expected that the runtime context object returned by `__enter__` is
 +
 This context object has the following interface, usable through the connection(s) started by `connect()`:
 
- ** `self.check()` to validate the environment before doing _any_ changes.
+** `self.check()` to validate the environment before doing _any_ changes.
 The check method continues to verify the environment and report as many issues as it can, as to help the user to fix them at once.
 It returns 0 in case of success, else an integer to be used as exit code.
- ** `self.setup()` prepares the environment (define variables, etc), it might create empty directories and logfiles, but it can't lead under any circumstances to a broken repository requiring a regression.
+** `self.setup()` prepares the environment (define variables, etc), it might create empty directories and logfiles, but it can't lead under any circumstances to a broken repository requiring a regression.
 The setup method returns as soon as it finds an issue and doesn't try to continue.
 It returns 0 in case of success, else an integer to be used as exit code.
- ** `self.run()` finally does whatever the action is supposed to do.
+** `self.run()` finally does whatever the action is supposed to do.
 It might return 0 in case of success, else an integer to be used as exit code.
 It is the only function that might exit directly instead, even though it isn't the recommended approach (but a matter of fact for most existing actions).
 
-____
-*NOTE:* the context object doesn't need a "cleanup" action as clean-up is to   be done as part of the `__exit__` method provided by the context manager.
-____
+NOTE: the context object doesn't need a "cleanup" action as clean-up is to   be done as part of the `__exit__` method provided by the context manager.
 
 Of course, action classes inheriting from the BaseAction class don't need to define all aspects themselves, making the life of plug-in developers easier.
 
-____
-*NOTE:* more information is provided with `pydoc rdiffbackup.actions`.
-____
+NOTE: more information is provided with `pydoc rdiffbackup.actions`.
 
 == Pseudo-code
 
@@ -90,6 +84,9 @@ with action.connect() as conn_act:
 # implicit context_manager.__exit__(exc_type, exc_val, exc_tb)
 ----
 
-____
-*TIP:* the actual code can be found in `rdiff_backup.Main._main_run()`.
-____
+TIP: the actual code can be found in `rdiff_backup.Main._main_run()`.
+
+== Recommendations
+
+- save the repository as `self.repo` and the directory as `self.dir`.
+The `_operate_regress` method expects it, and it might help in future implementations.
