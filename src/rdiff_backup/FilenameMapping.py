@@ -117,7 +117,6 @@ class QuotedRPath(rpath.RPath):
         return unquote(self.path)
 
 
-# @API(set_init_quote_vals, 200)
 def set_init_quote_vals():
     """Set quoting value from Globals on all conns"""
     for conn in Globals.connections:

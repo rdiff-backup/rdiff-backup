@@ -139,7 +139,7 @@ def UpdateGlobal(setting_name, val):
         conn.Globals.set(setting_name, val)
 
 
-def BackupInitConnections(reading_conn, writing_conn):
+def BackupInitConnections(reading_conn, writing_conn):  # compat200
     """Backup specific connection initialization"""
     reading_conn.Globals.set("isbackup_reader", True)
     writing_conn.Globals.set("isbackup_writer", True)

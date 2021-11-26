@@ -28,6 +28,7 @@ from rdiff_backup import (
     Globals, Hardlink, hash, iterfile, log,
     Rdiff, robust, rorpiter, rpath, selection
 )
+from rdiffbackup.locations import fs_abilities
 
 # ### COPIED FROM BACKUP ####
 
@@ -188,6 +189,11 @@ class ShadowReadDir:
             else:
                 cls._log_success(repo_rorp)
 
+    # @API(ShadowReadDir.get_fs_abilities, 201)
+    @classmethod
+    def get_fs_abilities(cls, base_dir):
+        return fs_abilities.FSAbilities(base_dir, writable=False)
+
     @classmethod
     def _get_basic_report(cls, src_rp, repo_rorp, comp_data_func=None):
         """
@@ -294,6 +300,11 @@ class ShadowWriteDir:
             ITR(diff.index, diff)
         ITR.finish_processing()
         target.setdata()
+
+    # @API(ShadowWriteDir.get_fs_abilities, 201)
+    @classmethod
+    def get_fs_abilities(cls, base_dir):
+        return fs_abilities.FSAbilities(base_dir, writable=True)
 
 
 class _DirPatchITRB(rorpiter.ITRBranch):

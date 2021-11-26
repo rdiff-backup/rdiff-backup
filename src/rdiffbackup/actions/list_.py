@@ -95,9 +95,10 @@ class ListAction(actions.BaseAction):
             return return_code
 
         # set the filesystem properties of the repository
-        self.repo.base_dir.conn.fs_abilities.single_set_globals(
-            self.repo.base_dir, 1)  # read_only=True
-        self.repo.init_quoting(self.values.chars_to_quote)
+        if Globals.get_api_version() < 201:  # compat200
+            self.repo.base_dir.conn.fs_abilities.single_set_globals(
+                self.repo.base_dir, 1)  # read_only=True
+            self.repo.init_quoting()
 
         self.mirror_rpath = self.repo.base_dir.new_index(
             self.repo.restore_index)

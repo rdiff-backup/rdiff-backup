@@ -36,6 +36,9 @@ class Location():
         self.base_dir = base_dir
         self.force = force
 
+    def __str__(self):
+        return str(self.base_dir)
+
     def _is_existing(self):
         """
         check that the location exists and is a directory

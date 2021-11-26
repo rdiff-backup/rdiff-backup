@@ -107,20 +107,19 @@ class RestoreAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.dir.setup()
+        return_code = self.dir.setup(self.repo)
         if return_code != 0:
             return return_code
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
-        try:
+
+        # set the filesystem properties of the repository
+        if Globals.get_api_version() < 201:  # compat200
             self.dir.base_dir.conn.fs_abilities.restore_set_globals(
                 self.dir.base_dir)
-        except OSError as exc:
-            log.Log("Could not begin restore due to exception '{ex}'".format(
-                ex=exc), log.ERROR)
-            return 1
-        self.repo.init_quoting(self.values.chars_to_quote)
+            self.repo.init_quoting()
+
         self._init_user_group_mapping(self.dir.base_dir.conn)
         if log.Log.verbosity > 0:
             try:  # the source repository could be read-only

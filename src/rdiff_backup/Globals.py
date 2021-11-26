@@ -152,11 +152,11 @@ connection_dict = {}
 
 # True if the script is the end that reads the source directory
 # for backups.  It is true for purely local sessions.
-isbackup_reader = None
+isbackup_reader = None  # compat200
 
 # Connection of the real backup reader (for which isbackup_reader
 # is true)
-backup_reader = None
+backup_reader = None  # compat200
 
 # True if the script is the end that writes to the increment and
 # mirror directories.  True for purely local sessions.

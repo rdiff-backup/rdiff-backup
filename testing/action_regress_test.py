@@ -23,6 +23,8 @@ class ActionRegressTest(unittest.TestCase):
                 "fileChanged": {"content": "initial"},
                 "fileOld": {},
                 "fileUnchanged": {"content": "unchanged"},
+                "itemX": {"type": "dir"},
+                "itemY": {"type": "file"},
             }}
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
@@ -31,6 +33,8 @@ class ActionRegressTest(unittest.TestCase):
                 "fileChanged": {"content": "modified"},
                 "fileNew": {},
                 "fileUnchanged": {"content": "unchanged"},
+                "itemX": {"type": "file"},
+                "itemY": {"type": "dir"},
             }}
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
@@ -39,6 +43,8 @@ class ActionRegressTest(unittest.TestCase):
                 "fileChanged": {"content": "modified again"},
                 "fileNew": {},
                 "fileUnchanged": {"content": "unchanged"},
+                "itemX": {"type": "dir"},
+                "itemY": {"type": "file"},
             }}
         }
         self.from3_path = os.path.join(self.base_dir, b"from3")
@@ -47,6 +53,8 @@ class ActionRegressTest(unittest.TestCase):
                 "fileChanged": {"content": "modified again"},
                 "fileEvenNewer": {},
                 "fileUnchanged": {"content": "unchanged"},
+                "itemX": {"type": "file"},
+                "itemY": {"type": "dir"},
             }}
         }
         self.from4_path = os.path.join(self.base_dir, b"from4")

@@ -23,14 +23,15 @@ A location module to define repository classes as created by rdiff-backup
 
 import io
 
-from rdiff_backup import selection
 from rdiffbackup import locations
+from rdiffbackup.locations import fs_abilities
 
 from rdiff_backup import (
     FilenameMapping,
     Globals,
     log,
     rpath,
+    selection,
     Security,
     SetConnections,
 )
@@ -88,7 +89,7 @@ class Repo(locations.Location):
 
         return ret_code
 
-    def setup(self):
+    def setup(self, src_dir=None):
         if self.must_be_writable and not self._create():
             return 1
 
@@ -105,6 +106,31 @@ class Repo(locations.Location):
                 self._shadow = _repo_shadow.ShadowRepo
             else:
                 self._shadow = self.base_dir.conn._repo_shadow.ShadowRepo
+            if self.must_be_writable:
+                self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
+                    self.base_dir)
+            else:
+                self.fs_abilities = self._shadow.get_fs_abilities_readonly(
+                    self.base_dir)
+            if not self.fs_abilities:
+                return 1  # something was wrong
+            else:
+                log.Log("--- Repository file system capabilities ---\n"
+                        + str(self.fs_abilities), log.INFO)
+
+            if src_dir is None:
+                self.remote_transfer = None  # just in case
+                return fs_abilities.SingleRepoSetGlobals(self)()
+            else:
+                # FIXME this shouldn't be necessary, and the setting of variable
+                # across the connection should happen through the shadow
+                SetConnections.UpdateGlobal("backup_writer", self.base_dir.conn)
+                self.base_dir.conn.Globals.set("isbackup_writer", True)
+                # this is the new way, more dedicated but not sufficient yet
+                self.remote_transfer = (src_dir.base_dir.conn
+                                        is not self.base_dir.conn)
+                return fs_abilities.Dir2RepoSetGlobals(src_dir,
+                                                       self)(self.force)
 
         return 0  # all is good
 
@@ -128,7 +154,7 @@ class Repo(locations.Location):
         else:  # it's the first backup
             return 0  # is always in the past
 
-    def init_quoting(self, chars_to_quote):
+    def init_quoting(self):
         """
         Set QuotedRPath versions of important RPaths if chars_to_quote is set.
 
@@ -260,7 +286,7 @@ information in it.
         """
         Shadow function for ShadowRepo.set_rorp_cache
         """
-        return self._shadow.get_sigs(self.base_dir)
+        return self._shadow.get_sigs(self.base_dir, self.remote_transfer)
 
     def patch_or_increment(self, source_diffiter, increment):
         """
@@ -458,7 +484,40 @@ information in it.
         """
         mirror_rp = self.base_dir.new_index(self.restore_index)
         inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
-        return self._shadow.verify(self.data_dir, mirror_rp, inc_rp, verify_time)
+        return self._shadow.verify(self.data_dir, mirror_rp, inc_rp,
+                                   verify_time)
+
+    def get_chars_to_quote(self):
+        """
+        Shadow function for ShadowRepo.get_config for chars_to_quote
+        """
+        return self._shadow.get_config(self.base_dir, "chars_to_quote")
+
+    def set_chars_to_quote(self, chars_to_quote):
+        """
+        Shadow function for ShadowRepo.set_config for chars_to_quote
+        """
+        return self._shadow.set_config(self.base_dir, "chars_to_quote",
+                                       chars_to_quote)
+
+    def get_special_escapes(self):
+        """
+        Shadow function for ShadowRepo.get_config for special_escapes
+        """
+        return self._shadow.get_config(self.base_dir, "special_escapes")
+
+    def set_special_escapes(self, special_escapes):
+        """
+        Shadow function for ShadowRepo.set_config for special_escapes
+        """
+        return self._shadow.set_config(self.base_dir, "special_escapes",
+                                       special_escapes)
+
+    def update_quoting(self):
+        """
+        Shadow function for ShadowRepo.update_quoting
+        """
+        return self._shadow.update_quoting(self.base_dir)
 
     def _is_existing(self):
         # check first that the directory itself exists

@@ -35,7 +35,6 @@ bytes).
 * `reval`
 * `eas_acls.get_acl_lists_from_rp`
 * `eas_acls.set_rp_acl`
-* `FilenameMapping.set_init_quote_vals`
 * `FilenameMapping.set_init_quote_vals_local`
 * `fs_abilities.backup_set_globals`
 * `fs_abilities.get_readonly_fsa`

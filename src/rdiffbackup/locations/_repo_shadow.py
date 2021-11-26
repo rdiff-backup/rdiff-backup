@@ -30,9 +30,11 @@ import os
 import re
 import tempfile
 from rdiff_backup import (
-    C, Globals, Hardlink, hash, increment, iterfile, log, longname, metadata,
+    C, FilenameMapping, Globals, Hardlink, hash, increment, iterfile,
+    log, longname, metadata,
     Rdiff, robust, rorpiter, rpath, selection, statistics, Time,
 )
+from rdiffbackup.locations import fs_abilities
 
 # ### COPIED FROM BACKUP ####
 
@@ -55,6 +57,11 @@ class ShadowRepo:
     # This should be set to the latest unsuccessful backup time
     _unsuccessful_backup_time = None
 
+    _configs = {
+        "chars_to_quote": {"type": bytes},
+        "special_escapes": {"type": set},
+    }
+
     # @API(ShadowRepo.set_rorp_cache, 201)
     @classmethod
     def set_rorp_cache(cls, baserp, source_iter, use_increment):
@@ -72,7 +79,7 @@ class ShadowRepo:
 
     # @API(ShadowRepo.get_sigs, 201)
     @classmethod
-    def get_sigs(cls, dest_base_rpath):
+    def get_sigs(cls, dest_base_rpath, is_remote_transfer):
         """
         Yield signatures of any changed destination files
         """
@@ -81,7 +88,7 @@ class ShadowRepo:
         for src_rorp, dest_rorp in cls.CCPP:
             # If we are backing up across a pipe, we must flush the pipeline
             # every so often so it doesn't get congested on destination end.
-            if (Globals.backup_reader is not Globals.backup_writer):
+            if is_remote_transfer:
                 num_rorps_seen += 1
                 if (num_rorps_seen > flush_threshold):
                     num_rorps_seen = 0
@@ -767,7 +774,7 @@ information in it.
     result.  To proceed with regress anyway, rerun rdiff-backup with the
     --force option""".format(pi=pid))
 
-    # @API(regress, 201)
+    # @API(RepoShadow.regress, 201)
     @classmethod
     def regress(cls, mirror_rp):
         """
@@ -953,6 +960,73 @@ information in it.
         log.Log.FatalError(
             "No metadata for time {pt} ({rt}) found, cannot regress".format(
                 pt=Time.timetopretty(cls._regress_time), rt=cls._regress_time))
+
+# ### COPIED FROM FS_ABILITIES ####
+
+    # @API(ShadowRepo.get_fs_abilities_readonly, 201)
+    @classmethod
+    def get_fs_abilities_readonly(cls, base_dir):
+        return fs_abilities.FSAbilities(base_dir, writable=False)
+
+    # @API(ShadowRepo.get_fs_abilities_readwrite, 201)
+    @classmethod
+    def get_fs_abilities_readwrite(cls, base_dir):
+        return fs_abilities.FSAbilities(base_dir, writable=True)
+
+    # @API(ShadowRepo.get_config, 201)
+    @classmethod
+    def get_config(cls, base_dir, key):
+        """
+        Returns the configuration value(s) for the given key,
+        or None if the configuration doesn't exist.
+        """
+        # the key is used as filename for now, acceptable values are
+        # chars_to_quote or special_escapes
+        if key not in cls._configs:
+            raise ValueError("Config key '{ck}' isn't valid")
+        rp = base_dir.append(key)
+        if not rp.lstat():
+            return None
+        else:
+            if cls._configs[key]["type"] is set:
+                return set(rp.get_string().strip().split("\n"))
+            elif cls._configs[key]["type"] is bytes:
+                return rp.get_bytes()
+
+    # @API(ShadowRepo.set_config, 201)
+    @classmethod
+    def set_config(cls, base_dir, key, value):
+        """
+        Sets the key configuration to the given value.
+
+        The value can currently be bytes or a set of strings.
+
+        Returns False if there was nothing to change, None if there was no
+        old value, and True if the value changed
+        """
+        old_value = cls.get_config(base_dir, key)
+        if old_value == value:
+            return False
+        rp = base_dir.append(key)
+        if rp.lstat():
+            rp.delete()
+        if cls._configs[key]["type"] is set:
+            rp.write_string("\n".join(value))
+        elif cls._configs[key]["type"] is bytes:
+            rp.write_bytes(value)
+        if old_value is None:  # there was no old value
+            return None
+        else:
+            # TODO call update_quoting(base_dir) ???
+            return True
+
+    # @API(ShadowRepo.update_quoting, 201)
+    @classmethod
+    def update_quoting(cls, base_dir):
+        """
+        Update the quoting of the repo after it has changed
+        """
+        return FilenameMapping.update_quoting(base_dir)
 
 
 class _CacheCollatedPostProcess:
