@@ -31,7 +31,7 @@ try:
     from argparse import BooleanOptionalAction
 except ImportError:
     # the class exists only since Python 3.9
-    class BooleanOptionalAction(argparse.Action):
+    class BooleanOptionalAction(argparse.Action):  # pragma: no cover
         """
         Copy of the standard implementation in argparse
 

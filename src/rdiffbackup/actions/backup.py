@@ -91,17 +91,19 @@ class BackupAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
-        return_code = self.repo.setup()
+        return_code = self.repo.setup(self.dir)
         if return_code != 0:
             return return_code
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
-        SetConnections.BackupInitConnections(self.dir.base_dir.conn,
-                                             self.repo.base_dir.conn)
-        self.repo.base_dir.conn.fs_abilities.backup_set_globals(
-            self.dir.base_dir, self.values.force)
-        self.repo.init_quoting(self.values.chars_to_quote)
+        if Globals.get_api_version() < 201:  # compat200
+            SetConnections.BackupInitConnections(self.dir.base_dir.conn,
+                                                 self.repo.base_dir.conn)
+            self.repo.base_dir.conn.fs_abilities.backup_set_globals(
+                self.dir.base_dir, self.values.force)
+            self.repo.init_quoting()
+
         self._init_user_group_mapping(self.repo.base_dir.conn)
         previous_time = self.repo.get_mirror_time()
         if previous_time >= Time.curtime:

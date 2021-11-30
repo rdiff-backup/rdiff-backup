@@ -216,7 +216,7 @@ def _set_allowed_requests(sec_class, sec_level):
         "Globals.is_not_None", "Globals.get_dict_val",
         "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
         "log.Log.log_to_file", "FilenameMapping.set_init_quote_vals_local",
-        "FilenameMapping.set_init_quote_vals", "Time.setcurtime_local",
+        "Time.setcurtime_local",
         "SetConnections.add_redirected_conn", "RedirectedRun",
         "sys.stdout.write", "robust.install_signal_handlers"
     }
@@ -231,7 +231,6 @@ def _set_allowed_requests(sec_class, sec_level):
         ])
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
-            "fs_abilities.get_readonly_fsa",
             # API < 201
             "backup.SourceStruct.get_source_select",
             "backup.SourceStruct.set_source_select",
@@ -244,6 +243,7 @@ def _set_allowed_requests(sec_class, sec_level):
             "compare.RepoSide.close_rf_cache",
             "compare.RepoSide.attach_files",
             "compare.Verify",
+            "fs_abilities.get_readonly_fsa",
             "restore.MirrorStruct.get_increment_times",
             "restore.MirrorStruct.set_mirror_and_rest_times",
             "restore.MirrorStruct.set_mirror_select",
@@ -257,8 +257,11 @@ def _set_allowed_requests(sec_class, sec_level):
             "_dir_shadow.ShadowReadDir.compare_hash",
             "_dir_shadow.ShadowReadDir.compare_meta",
             "_dir_shadow.ShadowReadDir.get_diffs",
+            "_dir_shadow.ShadowReadDir.get_fs_abilities",
             "_dir_shadow.ShadowReadDir.get_select",
             "_dir_shadow.ShadowReadDir.set_select",
+            "_repo_shadow.ShadowRepo.get_config",
+            "_repo_shadow.ShadowRepo.get_fs_abilities_readonly",
             "_repo_shadow.ShadowRepo.initialize_restore",
             "_repo_shadow.ShadowRepo.get_mirror_time",
             "_repo_shadow.ShadowRepo.get_increment_times",
@@ -277,34 +280,38 @@ def _set_allowed_requests(sec_class, sec_level):
             "log.Log.open_logfile_local", "log.Log.close_logfile_local",
             "log.ErrorLog.open", "log.ErrorLog.isopen", "log.ErrorLog.close",
             "statistics.record_error",
-            "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals",
+            "log.ErrorLog.write_if_open",
             # API < 201
             "backup.DestinationStruct.set_rorp_cache",
             "backup.DestinationStruct.get_sigs",
             "backup.DestinationStruct.patch_and_increment",
+            "fs_abilities.backup_set_globals",
             "Main.backup_touch_curmirror_local",
             "Main.backup_remove_curmirror_local",
             "Main.backup_close_statistics",
             "regress.check_pids",
             # API >= 201
-            "_repo_shadow.ShadowRepo.set_rorp_cache",
-            "_repo_shadow.ShadowRepo.get_sigs",
-            "_repo_shadow.ShadowRepo.patch_and_increment",
-            "_repo_shadow.ShadowRepo.touch_current_mirror",
-            "_repo_shadow.ShadowRepo.remove_current_mirror",
             "_repo_shadow.ShadowRepo.close_statistics",
+            "_repo_shadow.ShadowRepo.get_fs_abilities_readwrite",
+            "_repo_shadow.ShadowRepo.get_sigs",
             "_repo_shadow.ShadowRepo.needs_regress",
+            "_repo_shadow.ShadowRepo.patch_and_increment",
+            "_repo_shadow.ShadowRepo.remove_current_mirror",
+            "_repo_shadow.ShadowRepo.set_config",
+            "_repo_shadow.ShadowRepo.set_rorp_cache",
+            "_repo_shadow.ShadowRepo.touch_current_mirror",
+            "_repo_shadow.ShadowRepo.update_quoting",
         ])
     if sec_level == "read-write":
         requests.update([
             "os.mkdir", "os.chown", "os.lchown", "os.rename", "os.unlink",
             "os.remove", "os.chmod", "os.makedirs",
             "rpath.delete_dir_no_files",
-            "fs_abilities.restore_set_globals",
-            "fs_abilities.single_set_globals",
             # API < 201
             "backup.DestinationStruct.patch",
             "manage.delete_earlier_than_local",
+            "fs_abilities.restore_set_globals",
+            "fs_abilities.single_set_globals",
             "regress.Regress",
             "restore.TargetStruct.get_initial_iter",
             "restore.TargetStruct.patch",
@@ -313,6 +320,7 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.ShadowRepo.patch",
             "_repo_shadow.ShadowRepo.regress",
             "_repo_shadow.ShadowRepo.remove_increments_older_than",
+            "_dir_shadow.ShadowWriteDir.get_fs_abilities",
             "_dir_shadow.ShadowWriteDir.get_initial_iter",
             "_dir_shadow.ShadowWriteDir.patch",
             "_dir_shadow.ShadowWriteDir.set_select",

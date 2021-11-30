@@ -17,11 +17,23 @@ class ActionBackupRestoreTest(unittest.TestCase):
         self.base_dir = os.path.join(comtst.abs_test_dir,
                                      b"action_backuprestore")
         self.from1_struct = {
-            "from1": {"subs": {"fileA": {"content": "initial"}, "fileB": {}}}
+            "from1": {"subs": {
+                "fileA": {"content": "initial"},
+                "fileB": {},
+                "dirOld": {"type": "dir"},
+                "itemX": {"type": "dir"},
+                "itemY": {"type": "file"},
+            }}
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"subs": {"fileA": {"content": "modified"}, "fileC": {}}}
+            "from2": {"subs": {
+                "fileA": {"content": "modified"},
+                "fileC": {},
+                "dirNew": {"type": "dir"},
+                "itemX": {"type": "file"},
+                "itemY": {"type": "dir"},
+            }}
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
         fileset.create_fileset(self.base_dir, self.from1_struct)

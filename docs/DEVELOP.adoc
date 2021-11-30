@@ -309,6 +309,19 @@ Depending on the kind of issue, there are some good places to put a breakpoint:
 * if there is a file access issue, `src/rdiff_backup/rpath.py` in the `make_file_dict(filename)` function.
 * if you need to follow the listing of files and directories, `src/rdiff_backup/selection.py` in the `diryield(rpath)` function.
 
+=== Get coverage details
+
+If you need to check the details of the coverage report after the run of `tox -e pyXY`, you can simply call something like the following:
+
+----
+COVERAGE_FILE=.tox/pyXY/log/coverage.sqlite .tox/pyXY/bin/coverage report -m
+----
+
+The report output will show you which code lines aren't covered by the tests.
+
+TIP: if a clause needs to be excluded from the report, you can use the comment `# pragma: no cover`.
+But don't do it because you can but only because you must!
+
 === Profile rdiff-backup
 
 ==== Profiling without code changes

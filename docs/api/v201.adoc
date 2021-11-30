@@ -36,12 +36,11 @@
 * `connection.reval`
 * `eas_acls.get_acl_lists_from_rp`
 * `eas_acls.set_rp_acl`
-* `FilenameMapping.set_init_quote_vals`
 * `FilenameMapping.set_init_quote_vals_local`
-* `fs_abilities.backup_set_globals`
-* `fs_abilities.get_readonly_fsa`
-* `fs_abilities.restore_set_globals`
-* `fs_abilities.single_set_globals`
+* `fs_abilities.backup_set_globals` **deprecated**
+* `fs_abilities.get_readonly_fsa` **deprecated**
+* `fs_abilities.restore_set_globals` **deprecated**
+* `fs_abilities.single_set_globals` **deprecated**
 * `Globals.get`
 * `Globals.postset_regexp_local`
 * `Globals.set`
@@ -114,6 +113,7 @@
 ** `.close_rf_cache`
 ** `.close_statistics`
 ** `.delete_increments_older_than`
+** `.get_config`
 ** `.get_diffs`
 ** `.get_increment_times`
 ** `.get_mirror_time`
@@ -128,9 +128,11 @@
 ** `.patch_and_increment`
 ** `.regress`
 ** `.remove_current_mirror`
+** `.set_config`
 ** `.set_rorp_cache`
 ** `.set_select`
 ** `.touch_current_mirror`
+** `.update_quoting`
 ** `.verify`
 
 === External

@@ -26,6 +26,7 @@ usable for a back-up.
 
 import io
 from rdiffbackup import locations
+from rdiffbackup.locations import fs_abilities
 from rdiff_backup import Globals, log
 
 
@@ -47,6 +48,12 @@ class ReadDir(Dir, locations.ReadLocation):
                 self._shadow = _dir_shadow.ShadowReadDir
             else:
                 self._shadow = self.base_dir.conn._dir_shadow.ShadowReadDir
+            self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
+            if not self.fs_abilities:
+                return 1  # something was wrong
+            else:
+                log.Log("--- Read directory file system capabilities ---\n"
+                        + str(self.fs_abilities), log.INFO)
 
         return 0  # all is good
 
@@ -93,26 +100,26 @@ class ReadDir(Dir, locations.ReadLocation):
 
     def compare_meta(self, repo_iter):
         """
-        Shadow function for ShadowWriteDir.patch
+        Shadow function for ShadowReadDir.patch
         """
         return self._shadow.compare_meta(repo_iter)
 
     def compare_hash(self, repo_iter):
         """
-        Shadow function for ShadowWriteDir.patch
+        Shadow function for ShadowReadDir.patch
         """
         return self._shadow.compare_hash(repo_iter)
 
     def compare_full(self, repo_iter):
         """
-        Shadow function for ShadowWriteDir.patch
+        Shadow function for ShadowReadDir.patch
         """
         return self._shadow.compare_full(self.base_dir, repo_iter)
 
 
 class WriteDir(Dir, locations.WriteLocation):
 
-    def setup(self):
+    def setup(self, src_repo):
         ret_code = super().setup()
         if ret_code != 0:
             return ret_code
@@ -124,6 +131,14 @@ class WriteDir(Dir, locations.WriteLocation):
                 self._shadow = _dir_shadow.ShadowWriteDir
             else:
                 self._shadow = self.base_dir.conn._dir_shadow.ShadowWriteDir
+            self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
+            if not self.fs_abilities:
+                return 1  # something was wrong
+            else:
+                log.Log("--- Write directory file system capabilities ---\n"
+                        + str(self.fs_abilities), log.INFO)
+
+            return fs_abilities.Repo2DirSetGlobals(src_repo, self)()
 
         return 0  # all is good
 

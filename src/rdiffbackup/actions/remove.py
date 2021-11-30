@@ -89,9 +89,10 @@ class RemoveAction(actions.BaseAction):
             return return_code
 
         # set the filesystem properties of the repository
-        self.repo.base_dir.conn.fs_abilities.single_set_globals(
-            self.repo.base_dir, 0)  # read_only=False
-        self.repo.init_quoting(self.values.chars_to_quote)
+        if Globals.get_api_version() < 201:  # compat200
+            self.repo.base_dir.conn.fs_abilities.single_set_globals(
+                self.repo.base_dir, 0)  # read_only=False
+            self.repo.init_quoting()
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
