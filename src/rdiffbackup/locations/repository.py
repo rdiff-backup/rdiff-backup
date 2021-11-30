@@ -103,9 +103,9 @@ class Repo(locations.Location):
             if self.base_dir.conn is Globals.local_connection:
                 # should be more efficient than going through the connection
                 from rdiffbackup.locations import _repo_shadow
-                self._shadow = _repo_shadow.ShadowRepo
+                self._shadow = _repo_shadow.RepoShadow
             else:
-                self._shadow = self.base_dir.conn._repo_shadow.ShadowRepo
+                self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
             if self.must_be_writable:
                 self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
                     self.base_dir)
@@ -141,7 +141,7 @@ class Repo(locations.Location):
         Return -1 if there is more than one mirror,
         or 0 if there is no backup yet.
 
-        This function could use ShadowRepo.get_mirror_time but they have a
+        This function could use RepoShadow.get_mirror_time but they have a
         different signature.
         """
         incbase = self.data_dir.append_path(b"current_mirror")
@@ -178,7 +178,7 @@ class Repo(locations.Location):
 
     def needs_regress(self):
         """
-        Shadow function for ShadowRepo.needs_regress
+        Shadow function for RepoShadow.needs_regress
         """
         return self._shadow.needs_regress(
             self.base_dir, self.data_dir, self.incs_dir, self.force)
@@ -277,20 +277,20 @@ information in it.
 
     def set_rorp_cache(self, source_iter, use_increment):
         """
-        Shadow function for ShadowRepo.set_rorp_cache
+        Shadow function for RepoShadow.set_rorp_cache
         """
         return self._shadow.set_rorp_cache(self.base_dir, source_iter,
                                            use_increment)
 
     def get_sigs(self):
         """
-        Shadow function for ShadowRepo.set_rorp_cache
+        Shadow function for RepoShadow.set_rorp_cache
         """
         return self._shadow.get_sigs(self.base_dir, self.remote_transfer)
 
     def patch_or_increment(self, source_diffiter, increment):
         """
-        Shadow function for ShadowRepo.patch and .patch_and_increment
+        Shadow function for RepoShadow.patch and .patch_and_increment
         """
         if increment:
             return self._shadow.patch_and_increment(
@@ -301,64 +301,64 @@ information in it.
 
     def touch_current_mirror(self, current_time_str):
         """
-        Shadow function for ShadowRepo.touch_current_mirror
+        Shadow function for RepoShadow.touch_current_mirror
         """
         return self._shadow.touch_current_mirror(self.data_dir,
                                                  current_time_str)
 
     def remove_current_mirror(self):
         """
-        Shadow function for ShadowRepo.remove_current_mirror
+        Shadow function for RepoShadow.remove_current_mirror
         """
         return self._shadow.remove_current_mirror(self.data_dir)
 
     def close_statistics(self, end_time):
         """
-        Shadow function for ShadowRepo.close_statistics
+        Shadow function for RepoShadow.close_statistics
         """
         return self._shadow.close_statistics(end_time)
 
     def initialize_restore(self, restore_time):
         """
-        Shadow function for ShadowRepo.initialize_restore
+        Shadow function for RepoShadow.initialize_restore
         """
         return self._shadow.initialize_restore(self.data_dir, restore_time)
 
     def initialize_rf_cache(self, inc_rpath):
         """
-        Shadow function for ShadowRepo.initialize_rf_cache
+        Shadow function for RepoShadow.initialize_rf_cache
         """
         return self._shadow.initialize_rf_cache(
             self.base_dir.new_index(self.restore_index), inc_rpath)
 
     def close_rf_cache(self):
         """
-        Shadow function for ShadowRepo.close_rf_cache
+        Shadow function for RepoShadow.close_rf_cache
         """
         return self._shadow.close_rf_cache()
 
     def get_diffs(self, target_iter):
         """
-        Shadow function for ShadowRepo.get_diffs
+        Shadow function for RepoShadow.get_diffs
         """
         return self._shadow.get_diffs(target_iter)
 
     def remove_increments_older_than(self, time):
         """
-        Shadow function for ShadowRepo.remove_increments_older_than
+        Shadow function for RepoShadow.remove_increments_older_than
         """
         return self._shadow.remove_increments_older_than(self.base_dir, time)
 
     def list_files_changed_since(self, time):
         """
-        Shadow function for ShadowRepo.list_files_changed_since
+        Shadow function for RepoShadow.list_files_changed_since
         """
         return self._shadow.list_files_changed_since(
             self.base_dir, self.incs_dir, self.data_dir, time)
 
     def list_files_at_time(self, time):
         """
-        Shadow function for ShadowRepo.list_files_at_time
+        Shadow function for RepoShadow.list_files_at_time
         """
         return self._shadow.list_files_at_time(
             self.base_dir, self.incs_dir, self.data_dir, time)
@@ -462,7 +462,7 @@ information in it.
 
     def init_and_get_iter(self, compare_time):
         """
-        Shadow function for ShadowRepo.init_and_get_iter
+        Shadow function for RepoShadow.init_and_get_iter
         """
         mirror_rp = self.base_dir.new_index(self.restore_index)
         inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
@@ -471,7 +471,7 @@ information in it.
 
     def attach_files(self, src_iter, compare_time):
         """
-        Shadow function for ShadowRepo.attach_files
+        Shadow function for RepoShadow.attach_files
         """
         mirror_rp = self.base_dir.new_index(self.restore_index)
         inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
@@ -480,7 +480,7 @@ information in it.
 
     def verify(self, verify_time):
         """
-        Shadow function for ShadowRepo.verify
+        Shadow function for RepoShadow.verify
         """
         mirror_rp = self.base_dir.new_index(self.restore_index)
         inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
@@ -489,33 +489,33 @@ information in it.
 
     def get_chars_to_quote(self):
         """
-        Shadow function for ShadowRepo.get_config for chars_to_quote
+        Shadow function for RepoShadow.get_config for chars_to_quote
         """
         return self._shadow.get_config(self.base_dir, "chars_to_quote")
 
     def set_chars_to_quote(self, chars_to_quote):
         """
-        Shadow function for ShadowRepo.set_config for chars_to_quote
+        Shadow function for RepoShadow.set_config for chars_to_quote
         """
         return self._shadow.set_config(self.base_dir, "chars_to_quote",
                                        chars_to_quote)
 
     def get_special_escapes(self):
         """
-        Shadow function for ShadowRepo.get_config for special_escapes
+        Shadow function for RepoShadow.get_config for special_escapes
         """
         return self._shadow.get_config(self.base_dir, "special_escapes")
 
     def set_special_escapes(self, special_escapes):
         """
-        Shadow function for ShadowRepo.set_config for special_escapes
+        Shadow function for RepoShadow.set_config for special_escapes
         """
         return self._shadow.set_config(self.base_dir, "special_escapes",
                                        special_escapes)
 
     def update_quoting(self):
         """
-        Shadow function for ShadowRepo.update_quoting
+        Shadow function for RepoShadow.update_quoting
         """
         return self._shadow.update_quoting(self.base_dir)
 

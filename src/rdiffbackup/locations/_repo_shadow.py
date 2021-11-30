@@ -39,8 +39,8 @@ from rdiffbackup.locations import fs_abilities
 # ### COPIED FROM BACKUP ####
 
 
-# @API(ShadowRepo, 201)
-class ShadowRepo:
+# @API(RepoShadow, 201)
+class RepoShadow:
     """
     Shadow repository for the local repository representation
     """
@@ -62,7 +62,7 @@ class ShadowRepo:
         "special_escapes": {"type": set},
     }
 
-    # @API(ShadowRepo.set_rorp_cache, 201)
+    # @API(RepoShadow.set_rorp_cache, 201)
     @classmethod
     def set_rorp_cache(cls, baserp, source_iter, use_increment):
         """
@@ -77,7 +77,7 @@ class ShadowRepo:
             collated, Globals.pipeline_max_length * 4, baserp)
         # pipeline len adds some leeway over just*3 (to and from and back)
 
-    # @API(ShadowRepo.get_sigs, 201)
+    # @API(RepoShadow.get_sigs, 201)
     @classmethod
     def get_sigs(cls, dest_base_rpath, is_remote_transfer):
         """
@@ -104,7 +104,7 @@ class ShadowRepo:
                     cls.CCPP.flag_changed(index)
                     yield sig
 
-    # @API(ShadowRepo.patch, 201)
+    # @API(RepoShadow.patch, 201)
     @classmethod
     def patch(cls, dest_rpath, source_diffiter, start_index=()):
         """Patch dest_rpath with an rorpiter of diffs"""
@@ -116,7 +116,7 @@ class ShadowRepo:
         cls.CCPP.close()
         dest_rpath.setdata()
 
-    # @API(ShadowRepo.patch_and_increment, 201)
+    # @API(RepoShadow.patch_and_increment, 201)
     @classmethod
     def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
         """Patch dest_rpath with rorpiter of diffs and write increments"""
@@ -203,7 +203,7 @@ class ShadowRepo:
             else:
                 raise
 
-    # @API(ShadowRepo.touch_current_mirror, 201)
+    # @API(RepoShadow.touch_current_mirror, 201)
     @classmethod
     def touch_current_mirror(cls, data_dir, current_time_str):
         """
@@ -227,7 +227,7 @@ class ShadowRepo:
         mirrorrp.write_string("PID {pp}\n".format(pp=pid))
         mirrorrp.fsync_with_dir()
 
-    # @API(ShadowRepo.remove_current_mirror, 201)
+    # @API(RepoShadow.remove_current_mirror, 201)
     @classmethod
     def remove_current_mirror(cls, data_dir):
         """
@@ -248,7 +248,7 @@ class ShadowRepo:
             C.sync()
         older_inc.delete()
 
-    # @API(ShadowRepo.close_statistics, 201)
+    # @API(RepoShadow.close_statistics, 201)
     @classmethod
     def close_statistics(cls, end_time):
         """
@@ -266,7 +266,7 @@ class ShadowRepo:
 
 # ### COPIED FROM RESTORE ####
 
-    # @API(ShadowRepo.initialize_restore, 201)
+    # @API(RepoShadow.initialize_restore, 201)
     @classmethod
     def initialize_restore(cls, data_dir, restore_to_time):
         """Set class variable _restore_time on mirror conn"""
@@ -276,7 +276,7 @@ class ShadowRepo:
         # the other way around as it used to be
         _RestoreFile.initialize(cls._restore_time, cls.get_mirror_time())
 
-    # @API(ShadowRepo.get_mirror_time, 201)
+    # @API(RepoShadow.get_mirror_time, 201)
     @classmethod
     def get_mirror_time(cls):
         """
@@ -297,7 +297,7 @@ class ShadowRepo:
             cls._mirror_time = cur_mirror_incs[0].getinctime()
         return cls._mirror_time
 
-    # @API(ShadowRepo.get_increment_times, 201)
+    # @API(RepoShadow.get_increment_times, 201)
     @classmethod
     def get_increment_times(cls, rp=None):
         """
@@ -319,7 +319,7 @@ class ShadowRepo:
         return_list.sort()
         return return_list
 
-    # @API(ShadowRepo.initialize_rf_cache, 201)
+    # @API(RepoShadow.initialize_rf_cache, 201)
     @classmethod
     def initialize_rf_cache(cls, mirror_base, inc_base):
         """Set cls.rf_cache to _CachedRF object"""
@@ -329,7 +329,7 @@ class ShadowRepo:
         cls.root_rf = rf
         cls.rf_cache = _CachedRF(rf)
 
-    # @API(ShadowRepo.close_rf_cache, 201)
+    # @API(RepoShadow.close_rf_cache, 201)
     @classmethod
     def close_rf_cache(cls):
         """Run anything remaining on _CachedRF object"""
@@ -363,7 +363,7 @@ class ShadowRepo:
             rorp_iter = selection.FilterIter(cls._select, rorp_iter)
         return rorp_iter
 
-    # @API(ShadowRepo.set_select, 201)
+    # @API(RepoShadow.set_select, 201)
     @classmethod
     def set_select(cls, target_rp, select_opts, *filelists):
         """Initialize the mirror selection object"""
@@ -393,7 +393,7 @@ class ShadowRepo:
 
         return get_iter()
 
-    # @API(ShadowRepo.get_diffs, 201)
+    # @API(RepoShadow.get_diffs, 201)
     @classmethod
     def get_diffs(cls, target_iter):
         """
@@ -551,7 +551,7 @@ class ShadowRepo:
 
 # ### COPIED FROM COMPARE ####
 
-    # @API(ShadowRepo.init_and_get_iter, 201)
+    # @API(RepoShadow.init_and_get_iter, 201)
     @classmethod
     def init_and_get_iter(cls, data_dir, mirror_rp, inc_rp, compare_time):
         """Return rorp iter at given compare time"""
@@ -560,7 +560,7 @@ class ShadowRepo:
         return cls._subtract_indices(cls.mirror_base.index,
                                      cls._get_mirror_rorp_iter())
 
-    # @API(ShadowRepo.attach_files, 201)
+    # @API(RepoShadow.attach_files, 201)
     @classmethod
     def attach_files(cls, data_dir, src_iter, mirror_rp, inc_rp, compare_time):
         """
@@ -589,7 +589,7 @@ class ShadowRepo:
             else:
                 yield rpath.RORPath(index)  # indicate deleted mir_rorp
 
-    # @API(ShadowRepo.verify, 201)
+    # @API(RepoShadow.verify, 201)
     @classmethod
     def verify(cls, data_dir, mirror_rp, inc_rp, verify_time):
         """
@@ -650,7 +650,7 @@ class ShadowRepo:
 
     # ### COPIED FROM REGRESS ####
 
-    # @API(ShadowRepo.needs_regress, 201)
+    # @API(RepoShadow.needs_regress, 201)
     @classmethod
     def needs_regress(cls, base_dir, data_dir, incs_dir, force):
         """
@@ -963,17 +963,17 @@ information in it.
 
 # ### COPIED FROM FS_ABILITIES ####
 
-    # @API(ShadowRepo.get_fs_abilities_readonly, 201)
+    # @API(RepoShadow.get_fs_abilities_readonly, 201)
     @classmethod
     def get_fs_abilities_readonly(cls, base_dir):
         return fs_abilities.FSAbilities(base_dir, writable=False)
 
-    # @API(ShadowRepo.get_fs_abilities_readwrite, 201)
+    # @API(RepoShadow.get_fs_abilities_readwrite, 201)
     @classmethod
     def get_fs_abilities_readwrite(cls, base_dir):
         return fs_abilities.FSAbilities(base_dir, writable=True)
 
-    # @API(ShadowRepo.get_config, 201)
+    # @API(RepoShadow.get_config, 201)
     @classmethod
     def get_config(cls, base_dir, key):
         """
@@ -993,7 +993,7 @@ information in it.
             elif cls._configs[key]["type"] is bytes:
                 return rp.get_bytes()
 
-    # @API(ShadowRepo.set_config, 201)
+    # @API(RepoShadow.set_config, 201)
     @classmethod
     def set_config(cls, base_dir, key, value):
         """
@@ -1020,7 +1020,7 @@ information in it.
             # TODO call update_quoting(base_dir) ???
             return True
 
-    # @API(ShadowRepo.update_quoting, 201)
+    # @API(RepoShadow.update_quoting, 201)
     @classmethod
     def update_quoting(cls, base_dir):
         """

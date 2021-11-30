@@ -33,14 +33,14 @@ from rdiffbackup.locations import fs_abilities
 # ### COPIED FROM BACKUP ####
 
 
-# @API(ShadowReadDir, 201)
-class ShadowReadDir:
+# @API(ReadDirShadow, 201)
+class ReadDirShadow:
     """
     Shadow read directory for the local directory representation
     """
     _select = None  # will be set to source Select iterator
 
-    # @API(ShadowReadDir.set_select, 201)
+    # @API(ReadDirShadow.set_select, 201)
     @classmethod
     def set_select(cls, rp, tuplelist, *filelists):
         """
@@ -61,7 +61,7 @@ class ShadowReadDir:
         cls._select = rorpiter.CacheIndexable(sel_iter, cache_size)
         Globals.set('select_mirror', sel_iter)
 
-    # @API(ShadowReadDir.get_select, 201)
+    # @API(ReadDirShadow.get_select, 201)
     @classmethod
     def get_select(cls):
         """
@@ -69,7 +69,7 @@ class ShadowReadDir:
         """
         return cls._select
 
-    # @API(ShadowReadDir.get_diffs, 201)
+    # @API(ReadDirShadow.get_diffs, 201)
     @classmethod
     def get_diffs(cls, dest_sigiter):
         """
@@ -127,7 +127,7 @@ class ShadowReadDir:
                 diff_rorp.set_attached_filetype('snapshot')
             yield diff_rorp
 
-    # @API(ShadowReadDir.compare_meta, 201)
+    # @API(ReadDirShadow.compare_meta, 201)
     @classmethod
     def compare_meta(cls, repo_iter):
         """Compare rorps (metadata only) quickly, return report iter"""
@@ -139,7 +139,7 @@ class ShadowReadDir:
             else:
                 cls._log_success(src_rorp, mir_rorp)
 
-    # @API(ShadowReadDir.compare_hash, 201)
+    # @API(ReadDirShadow.compare_hash, 201)
     @classmethod
     def compare_hash(cls, repo_iter):
         """Like above, but also compare sha1 sums of any regular files"""
@@ -164,7 +164,7 @@ class ShadowReadDir:
             else:
                 cls._log_success(src_rp, mir_rorp)
 
-    # @API(ShadowReadDir.compare_full, 201)
+    # @API(ReadDirShadow.compare_full, 201)
     @classmethod
     def compare_full(cls, src_root, repo_iter):
         """Given repo iter with full data attached, return report iter"""
@@ -189,7 +189,7 @@ class ShadowReadDir:
             else:
                 cls._log_success(repo_rorp)
 
-    # @API(ShadowReadDir.get_fs_abilities, 201)
+    # @API(ReadDirShadow.get_fs_abilities, 201)
     @classmethod
     def get_fs_abilities(cls, base_dir):
         return fs_abilities.FSAbilities(base_dir, writable=False)
@@ -260,12 +260,12 @@ class _CompareReport:
         self.reason = reason
 
 
-# @API(ShadowWriteDir, 201)
-class ShadowWriteDir:
+# @API(WriteDirShadow, 201)
+class WriteDirShadow:
     """Hold functions to be run on the target side when restoring"""
     _select = None
 
-    # @API(ShadowWriteDir.set_select, 201)
+    # @API(WriteDirShadow.set_select, 201)
     @classmethod
     def set_select(cls, target, select_opts, *filelists):
         """Return a selection object iterating the rorpaths in target"""
@@ -274,7 +274,7 @@ class ShadowWriteDir:
         cls._select = selection.Select(target)
         cls._select.parse_selection_args(select_opts, filelists)
 
-    # @API(ShadowWriteDir.get_initial_iter, 201)
+    # @API(WriteDirShadow.get_initial_iter, 201)
     @classmethod
     def get_initial_iter(cls, target):
         """Return selector previously set with set_initial_iter"""
@@ -283,7 +283,7 @@ class ShadowWriteDir:
         else:
             return selection.Select(target).set_iter()
 
-    # @API(ShadowWriteDir.patch, 201)
+    # @API(WriteDirShadow.patch, 201)
     @classmethod
     def patch(cls, target, diff_iter):
         """
@@ -301,7 +301,7 @@ class ShadowWriteDir:
         ITR.finish_processing()
         target.setdata()
 
-    # @API(ShadowWriteDir.get_fs_abilities, 201)
+    # @API(WriteDirShadow.get_fs_abilities, 201)
     @classmethod
     def get_fs_abilities(cls, base_dir):
         return fs_abilities.FSAbilities(base_dir, writable=True)

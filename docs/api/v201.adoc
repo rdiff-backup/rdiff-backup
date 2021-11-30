@@ -97,18 +97,18 @@
 
 ==== rdiffbackup
 
-* `locations._dir_shadow.ShadowReadDir`  **new**
+* `locations._dir_shadow.ReadDirShadow`  **new**
 ** `.compare_full`
 ** `.compare_hash`
 ** `.compare_meta`
 ** `.get_diffs`
 ** `.get_select`
 ** `.set_select`
-* `locations._dir_shadow.ShadowWriteDir`  **new**
+* `locations._dir_shadow.WriteDirShadow`  **new**
 ** `.get_initial_iter`
 ** `.patch`
 ** `.set_select`
-* `locations._repo_shadow.ShadowRepo`  **new**
+* `locations._repo_shadow.RepoShadow`  **new**
 ** `.attach_files`
 ** `.close_rf_cache`
 ** `.close_statistics`
