@@ -45,9 +45,9 @@ class ReadDir(Dir, locations.ReadLocation):
             if self.base_dir.conn is Globals.local_connection:
                 # should be more efficient than going through the connection
                 from rdiffbackup.locations import _dir_shadow
-                self._shadow = _dir_shadow.ShadowReadDir
+                self._shadow = _dir_shadow.ReadDirShadow
             else:
-                self._shadow = self.base_dir.conn._dir_shadow.ShadowReadDir
+                self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
             self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
             if not self.fs_abilities:
                 return 1  # something was wrong
@@ -88,31 +88,31 @@ class ReadDir(Dir, locations.ReadLocation):
 
     def get_select(self):
         """
-        Shadow function for ShadowReadDir.get_source_select
+        Shadow function for ReadDirShadow.get_source_select
         """
         return self._shadow.get_select()
 
     def get_diffs(self, dest_sigiter):
         """
-        Shadow function for ShadowReadDir.get_diffs
+        Shadow function for ReadDirShadow.get_diffs
         """
         return self._shadow.get_diffs(dest_sigiter)
 
     def compare_meta(self, repo_iter):
         """
-        Shadow function for ShadowReadDir.patch
+        Shadow function for ReadDirShadow.patch
         """
         return self._shadow.compare_meta(repo_iter)
 
     def compare_hash(self, repo_iter):
         """
-        Shadow function for ShadowReadDir.patch
+        Shadow function for ReadDirShadow.patch
         """
         return self._shadow.compare_hash(repo_iter)
 
     def compare_full(self, repo_iter):
         """
-        Shadow function for ShadowReadDir.patch
+        Shadow function for ReadDirShadow.patch
         """
         return self._shadow.compare_full(self.base_dir, repo_iter)
 
@@ -128,9 +128,9 @@ class WriteDir(Dir, locations.WriteLocation):
             if self.base_dir.conn is Globals.local_connection:
                 # should be more efficient than going through the connection
                 from rdiffbackup.locations import _dir_shadow
-                self._shadow = _dir_shadow.ShadowWriteDir
+                self._shadow = _dir_shadow.WriteDirShadow
             else:
-                self._shadow = self.base_dir.conn._dir_shadow.ShadowWriteDir
+                self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
             self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
             if not self.fs_abilities:
                 return 1  # something was wrong
@@ -185,12 +185,12 @@ class WriteDir(Dir, locations.WriteLocation):
 
     def get_initial_iter(self):
         """
-        Shadow function for ShadowWriteDir.get_initial_iter
+        Shadow function for WriteDirShadow.get_initial_iter
         """
         return self._shadow.get_initial_iter(self.base_dir)
 
     def patch(self, source_diff_iter):
         """
-        Shadow function for ShadowWriteDir.patch
+        Shadow function for WriteDirShadow.patch
         """
         return self._shadow.patch(self.base_dir, source_diff_iter)

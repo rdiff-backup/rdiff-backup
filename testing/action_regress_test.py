@@ -89,7 +89,7 @@ class ActionRegressTest(unittest.TestCase):
             ("--api-version", "201"),
             b"regress", ()), 0)
         # we again simulate a crash
-        _repo_shadow.ShadowRepo.touch_current_mirror(
+        _repo_shadow.RepoShadow.touch_current_mirror(
             rpath.RPath(Globals.local_connection,
                         self.bak_path, ("rdiff-backup-data",)),
             Time.timetostring(20000))
@@ -110,7 +110,7 @@ class ActionRegressTest(unittest.TestCase):
             b"restore", ()), 0)
         self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
         # we again simulate a crash
-        _repo_shadow.ShadowRepo.touch_current_mirror(
+        _repo_shadow.RepoShadow.touch_current_mirror(
             rpath.RPath(Globals.local_connection,
                         self.bak_path, ("rdiff-backup-data",)),
             Time.timetostring(10000))
