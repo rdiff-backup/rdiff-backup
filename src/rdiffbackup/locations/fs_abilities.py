@@ -29,9 +29,9 @@ FSAbilities object describing it.
 import errno
 import os
 from rdiff_backup import (
-    FilenameMapping, Globals, log, robust, selection, SetConnections,
-    Time, win_acls
+    Globals, log, robust, selection, SetConnections, Time, win_acls
 )
+from rdiffbackup.locations.map import filenames as map_filenames
 
 
 class FSAbilities:
@@ -824,7 +824,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         super().__init__(src_dir, dest_repo)
         self.repo = dest_repo
 
-    def __call__(self, force):
+    def __call__(self):
         """
         Given rps for source filesystem and repository, set fsa globals
         """
@@ -838,13 +838,9 @@ class Dir2RepoSetGlobals(SetGlobals):
         self.set_change_ownership()
         self.set_high_perms()
         self.set_symlink_perms()
-        update_quoting = self.set_chars_to_quote(self.repo, force)
+        self.set_chars_to_quote(self.repo)
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
-
-        if update_quoting and force:
-            self.repo.update_quoting()
-        self.repo.init_quoting()
 
         return 0  # all is good
 
@@ -897,7 +893,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
                 log.INFO)
 
-    def set_chars_to_quote(self, repo, force):
+    def set_chars_to_quote(self, repo):
         """
         Set chars_to_quote setting for backup session
 
@@ -905,13 +901,13 @@ class Dir2RepoSetGlobals(SetGlobals):
         depends on the current settings in the rdiff-backup-data
         directory, not just the current fs features.
         """
-        (ctq, update) = self._compare_ctq_file(repo, self._get_ctq_from_fsas(),
-                                               force)
+        ctq = self._compare_ctq_file(repo, self._get_ctq_from_fsas())
+        regexp, unregexp = map_filenames.get_quoting_regexps(
+            ctq, Globals.quoting_char)
 
         SetConnections.UpdateGlobal('chars_to_quote', ctq)
-        if Globals.chars_to_quote:
-            FilenameMapping.set_init_quote_vals()
-        return update
+        SetConnections.UpdateGlobal('chars_to_quote_regexp', regexp)
+        SetConnections.UpdateGlobal('chars_to_quote_unregexp', unregexp)
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """
@@ -952,14 +948,11 @@ class Dir2RepoSetGlobals(SetGlobals):
             ctq.append(Globals.quoting_char)
         return b"".join(ctq)
 
-    def _compare_ctq_file(self, repo, suggested_ctq, force):
+    def _compare_ctq_file(self, repo, suggested_ctq):
         """
         Compare chars_to_quote previous, enforced and suggested
 
-        If there was no previous_ctq
-
-        Returns a tuple made of the actual quoting and of a boolean telling if
-        a re-quoting is necessary.
+        Returns the actual chars_to_quote string to be used
         """
         previous_ctq = repo.get_chars_to_quote()
         if previous_ctq is None:  # there was no previous chars_to_quote
@@ -973,7 +966,7 @@ class Dir2RepoSetGlobals(SetGlobals):
                             fs=repo, sq=suggested_ctq, oq=actual_ctq),
                         log.NOTE)
             repo.set_chars_to_quote(actual_ctq)
-            return (actual_ctq, False)
+            return actual_ctq
 
         if Globals.chars_to_quote is None:
             if suggested_ctq and suggested_ctq != previous_ctq:
@@ -996,20 +989,13 @@ class Dir2RepoSetGlobals(SetGlobals):
 
         # the quoting didn't change so all is good
         if actual_ctq == previous_ctq:
-            return (actual_ctq, False)
-        elif force:
-            log.Log("Migrating repository quoting '{rq}' from old quoting "
-                    "chars '{oq}' to new quoting chars '{nq}'".format(
-                        rq=repo, oq=previous_ctq, nq=actual_ctq), log.WARNING)
-            repo.set_chars_to_quote(actual_ctq)
-            return (actual_ctq, True)
+            return actual_ctq
         else:
             log.Log.FatalError(
                 "The repository quoting '{rq}' would need to be migrated from "
                 "old quoting chars '{oq}' to new quoting chars '{nq}'. "
                 "This may mean that the repository has been moved between "
-                "different file systems. Use the --force option if you know "
-                "what you are doing".format(
+                "different file systems, and isn't supported".format(
                     rq=repo, oq=previous_ctq, nq=actual_ctq))
 
 
@@ -1040,7 +1026,6 @@ class Repo2DirSetGlobals(SetGlobals):
         self.set_chars_to_quote(self.repo)
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
-        self.repo.init_quoting()
 
         return 0  # all is good
 
@@ -1081,7 +1066,11 @@ class Repo2DirSetGlobals(SetGlobals):
 
         ctq = repo.get_chars_to_quote()
         if ctq is not None:
+            regexp, unregexp = map_filenames.get_quoting_regexps(
+                ctq, Globals.quoting_char)
             SetConnections.UpdateGlobal("chars_to_quote", ctq)
+            SetConnections.UpdateGlobal('chars_to_quote_regexp', regexp)
+            SetConnections.UpdateGlobal('chars_to_quote_unregexp', unregexp)
         else:
             log.Log("chars_to_quote config not found, assuming no quoting "
                     "required in backup repository".format(),
@@ -1139,7 +1128,6 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         self.set_chars_to_quote(self.repo)
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
-        self.repo.init_quoting()
 
         return 0  # all is good
 

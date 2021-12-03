@@ -42,7 +42,9 @@ import shutil
 import stat
 import tempfile
 import time
-from . import Globals, Time, log, user_group, C
+from rdiff_backup import Globals, Time, log, C
+from rdiffbackup.utils import usrgrp
+from rdiffbackup.locations.map import owners as map_owners
 
 try:
     import win32api
@@ -247,7 +249,8 @@ class RORPath:
         if self.lstat() and not self.issym() and Globals.change_ownership:
             # Now compare ownership.  Symlinks don't have ownership
             try:
-                if user_group.map_rpath(self) != other.getuidgid():
+                own_uid_gid = map_owners.map_rpath_owner(self)
+                if own_uid_gid != other.getuidgid():
                     return False
             except KeyError:
                 # uid/gid might be missing if metadata file is corrupt
@@ -1659,8 +1662,10 @@ def copy_attribs(rpin, rpout):
     assert rpin.lstat() == rpout.lstat() or rpin.isspecial(), (
         "Input '{irp!r}' and output '{orp!r}' paths must exist likewise, "
         "or input be special.".format(irp=rpin, orp=rpout))
+    assert rpout.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rpout.conn))
     if Globals.change_ownership:
-        rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
+        rpout.chown(*map_owners.map_rpath_owner(rpin))
     if Globals.eas_write:
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
@@ -1920,8 +1925,8 @@ def setdata_local(rpath):
         reset_perms = True
         rpath.chmod(0o400 | rpath.getperms())
 
-    rpath.data['uname'] = user_group.uid2uname(rpath.data['uid'])
-    rpath.data['gname'] = user_group.gid2gname(rpath.data['gid'])
+    rpath.data['uname'] = usrgrp.uid2uname(rpath.data['uid'])
+    rpath.data['gname'] = usrgrp.gid2gname(rpath.data['gid'])
     if Globals.eas_conn:
         rpath.data['ea'] = ea_get(rpath)
     if Globals.acls_conn:

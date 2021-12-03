@@ -1,4 +1,3 @@
-# DEPRECATED compat200
 # Copyright 2002 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
@@ -17,7 +16,8 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Preserve and restore hard links
+"""
+Preserve and restore hard links
 
 If the preserve_hardlinks option is selected, linked files in the
 source directory will be linked in the mirror directory.  Linked files
@@ -27,33 +27,24 @@ is written in the metadata file.
 
 All these functions are meant to be executed on the mirror side.  The
 source side should only transmit inode information.
-
 """
 
 import errno
 
 # The keys in this dictionary are (inode, devloc) pairs.  The values
-# are a pair (index, remaining_links, dest_key, sha1sum) where index
+# are a tuple (index, remaining_links, dest_key, sha1sum) where index
 # is the rorp index of the first such linked file, remaining_links is
 # the number of files hard linked to this one we may see, and key is
 # either (dest_inode, dest_devloc) or None, and represents the
 # hardlink info of the existing file on the destination.  Finally
 # sha1sum is the hash of the file if it exists, or None.
-_inode_index = None
-
-
-# @API(initialize_dictionaries, 200, 200)
-def initialize_dictionaries():
-    """Set all the hard link dictionaries to empty"""
-    # FIXME: as we never _re_ initialize the _inode_index, we could directly set it to {}
-    # getting rid of the function would require two steps to avoid breaking the interface
-    # between two releases: first stop calling it, then stop offering it
-    global _inode_index
-    _inode_index = {}
+_inode_index = {}
 
 
 def add_rorp(rorp, dest_rorp=None):
-    """Process new rorp and update hard link dictionaries"""
+    """
+    Process new rorp and update hard link dictionaries
+    """
     if not rorp.isreg() or rorp.getnumlinks() < 2:
         return None
     rp_inode_key = _get_inode_key(rorp)
@@ -71,7 +62,9 @@ def add_rorp(rorp, dest_rorp=None):
 
 
 def del_rorp(rorp):
-    """Remove rorp information from dictionary if seen all links"""
+    """
+    Remove rorp information from dictionary if seen all links
+    """
     if not rorp.isreg() or rorp.getnumlinks() < 2:
         return
     rp_inode_key = _get_inode_key(rorp)
@@ -88,22 +81,22 @@ def del_rorp(rorp):
 
 
 def rorp_eq(src_rorp, dest_rorp):
-    """Compare hardlinked for equality
+    """
+    Compare hardlinked for equality
 
     Return false if dest_rorp is linked differently, which can happen
     if dest is linked more than source, or if it is represented by a
     different inode.
-
     """
     if (not src_rorp.isreg() or not dest_rorp.isreg()
             or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1):
         return 1  # Hard links don't apply
 
-    """The sha1 of linked files is only stored in the metadata of the first
-    linked file on the dest side.  If the first linked file on the src side is
-    deleted, then the sha1 will also be deleted on the dest side, so we test for this
-    & report not equal so that another sha1 will be stored with the next linked
-    file on the dest side"""
+    # The sha1 of linked files is only stored in the metadata of the first
+    # linked file on the dest side.  If the first linked file on the src side
+    # is deleted, then the sha1 will also be deleted on the dest side, so we
+    # test for this & report not equal so that another sha1 will be stored
+    # with the next linked file on the dest side
     if (not is_linked(src_rorp) and not dest_rorp.has_sha1()):
         return 0
     if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
@@ -122,7 +115,9 @@ def rorp_eq(src_rorp, dest_rorp):
 
 
 def is_linked(rorp):
-    """True if rorp's index is already linked to something on src side"""
+    """
+    True if rorp's index is already linked to something on src side
+    """
     if not rorp.getnumlinks() > 1:
         return 0
     dict_val = _inode_index.get(_get_inode_key(rorp))
@@ -132,18 +127,24 @@ def is_linked(rorp):
 
 
 def get_link_index(rorp):
-    """Return first index on target side rorp is already linked to"""
+    """
+    Return first index on target side rorp is already linked to
+    """
     return _inode_index[_get_inode_key(rorp)][0]
 
 
 def get_sha1(rorp):
-    """Return sha1 digest of what rorp is linked to"""
+    """
+    Return sha1 digest of what rorp is linked to
+    """
     return _inode_index[_get_inode_key(rorp)][3]
 
 
 def get_hash(rorp):
-    """ Try to get a sha1 digest from the repository.  If hardlinks
-    are saved in the metadata, get the sha1 from the first hardlink """
+    """
+    Try to get a sha1 digest from the repository.  If hardlinks
+    are saved in the metadata, get the sha1 from the first hardlink
+    """
     add_rorp(rorp)
     if is_linked(rorp):
         verify_sha1 = get_sha1(rorp)
@@ -156,7 +157,9 @@ def get_hash(rorp):
 
 
 def link_rp(diff_rorp, dest_rpath, dest_root=None):
-    """Make dest_rpath into a link using link flag in diff_rorp"""
+    """
+    Make dest_rpath into a link using link flag in diff_rorp
+    """
     if not dest_root:
         dest_root = dest_rpath  # use base of dest_rpath
     dest_link_rpath = dest_root.new_index(diff_rorp.get_link_flag())
@@ -177,5 +180,7 @@ def link_rp(diff_rorp, dest_rpath, dest_root=None):
 
 
 def _get_inode_key(rorp):
-    """Return rorp's key for _inode_ dictionaries"""
+    """
+    Return rorp's key for _inode_ dictionaries
+    """
     return (rorp.getinode(), rorp.getdevloc())

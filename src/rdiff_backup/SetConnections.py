@@ -418,8 +418,7 @@ Please make sure you have compatible versions of rdiff-backup""".format(
     if Globals.api_version["actual"]:
         if (Globals.api_version["actual"] >= remote_api_version["min"]
                 and Globals.api_version["actual"] <= remote_api_version["max"]):
-            conn.Globals.set('api_version["actual"]',
-                             Globals.api_version["actual"])
+            conn.Globals.set_api_version(Globals.api_version["actual"])
             log.Log("API version agreed to be actual {av} "
                     "with command {co}".format(
                         av=Globals.api_version["actual"], co=remote_cmd),
@@ -442,7 +441,7 @@ Please make sure you have compatible versions of rdiff-backup""".format(
                                  min(remote_api_version["max"],
                                      Globals.api_version["default"]))
         Globals.api_version["actual"] = actual_api_version
-        conn.Globals.set('api_version["actual"]', actual_api_version)
+        conn.Globals.set_api_version(actual_api_version)
         log.Log("API version agreed to be {av} with command {co}".format(
             av=actual_api_version, co=remote_cmd), log.INFO)
         return True
