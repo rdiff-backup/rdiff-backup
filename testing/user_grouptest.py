@@ -5,6 +5,7 @@ from rdiff_backup import Globals
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
 
+
 class UserGroupTest(unittest.TestCase):
     """Test user and group functionality"""
 

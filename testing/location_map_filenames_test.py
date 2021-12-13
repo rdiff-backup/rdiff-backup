@@ -116,7 +116,6 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # all tests were successful
         self.success = True
 
-
     def tearDown(self):
         # we clean-up only if the test was successful
         if self.success:
