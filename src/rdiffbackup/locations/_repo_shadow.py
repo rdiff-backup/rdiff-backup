@@ -479,7 +479,7 @@ class RepoShadow:
 
 # ### COPIED FROM RESTORE (LIST) ####
 
-    # @API(list_files_changed_since, 201)
+    # @API(RepoShadow.list_files_changed_since, 201)
     @classmethod
     def list_files_changed_since(cls, mirror_rp, inc_rp, data_dir,
                                  restore_to_time):
@@ -511,7 +511,7 @@ class RepoShadow:
             yield rpath.RORPath(("%-7s %s" % (change, path_desc), ))
         cls.close_rf_cache()
 
-    # @API(list_files_at_time, 201)
+    # @API(RepoShadow.list_files_at_time, 201)
     @classmethod
     def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, time):
         """
@@ -530,7 +530,7 @@ class RepoShadow:
 
 # ### COPIED FROM MANAGE ####
 
-    # @API(remove_increments_older_than, 201)
+    # @API(RepoShadow.remove_increments_older_than, 201)
     @classmethod
     def remove_increments_older_than(cls, baserp, time):
         """

@@ -656,9 +656,10 @@ class RPath(RORPath):
             self.base = None
 
     def __repr__(self):
-        return "<{cls}/{cid}:\n\tPath={rp}\n\tIndex={idx}\n\tData={data}>".format(
-            cls=self.__class__.__name__, cid=id(self), rp=self,
-            idx=self.get_safeindex(), data=self.data)
+        return ("<{cls}/{cid}:\n\tPath={rp}\n\tIndex={idx}\n"
+                "\tConnection={conn}\n\tData={data}>".format(
+                    cls=self.__class__.__name__, cid=id(self), rp=self,
+                    idx=self.get_safeindex(), conn=self.conn, data=self.data))
 
     def __fspath__(self):
         """
@@ -1657,7 +1658,7 @@ def copy_attribs(rpin, rpout):
     timestamps, so both must already exist.
 
     """
-    log.Log("Copying attributes from path {fp} to path {tp}".format(
+    log.Log("Copying attributes from path {fp!r} to path {tp!r}".format(
         fp=rpin, tp=rpout), log.DEBUG)
     assert rpin.lstat() == rpout.lstat() or rpin.isspecial(), (
         "Input '{irp!r}' and output '{orp!r}' paths must exist likewise, "
@@ -1692,7 +1693,7 @@ def copy_attribs_inc(rpin, rpout):
     permissions.
 
     """
-    log.Log("Copying inc attributes from path {fp} to path {tp}".format(
+    log.Log("Copying inc attributes from path {fp!r} to path {tp!r}".format(
         fp=rpin, tp=rpout), log.DEBUG)
     _check_for_files(rpin, rpout)
     if Globals.change_ownership:
@@ -1715,6 +1716,7 @@ def copy_attribs_inc(rpin, rpout):
         rpout.write_acl(rpin.get_acl(), map_names=0)
     if not rpin.isdev():
         rpout.setmtime(rpin.getmtime())
+    # TODO check why win_acls aren't copied
 
 
 def copy_with_attribs(rpin, rpout, compress=0):
