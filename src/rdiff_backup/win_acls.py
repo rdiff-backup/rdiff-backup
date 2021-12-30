@@ -322,11 +322,11 @@ def init_acls():
         win32api.CloseHandle(hnd)
 
 
-def _rpath_win_acl_get(rpath):
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{co}'.".format(co=rpath.conn))
+def _rpath_win_acl_get(rp):
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{co}'.".format(co=rp.conn))
     acl = ACL()
-    acl.load_from_rp(rpath)
+    acl.load_from_rp(rp)
     return bytes(acl)
 
 
@@ -342,8 +342,8 @@ rpath.get_blank_win_acl = _rpath_get_blank_win_acl
 
 
 def _rpath_write_win_acl(rp, acl_str):
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{co}'.".format(co=rpath.conn))
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{co}'.".format(co=rp.conn))
     acl = ACL()
     acl.from_string(acl_str)
     acl.write_to_rp(rp)
