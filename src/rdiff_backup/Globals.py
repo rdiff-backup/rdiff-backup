@@ -293,16 +293,27 @@ def get(name):
 
 # @API(set, 200)
 def set(name, val):
-    """Set the value of something in this module
+    """
+    Set the value of something in this module
 
     Use this instead of writing the values directly if the setting
     matters to remote sides.  This function updates the
     changed_settings list, so other connections know to copy the
     changes.
-
     """
     changed_settings.append(name)
     globals()[name] = val
+
+
+def set_all(setting_name, value):
+    """
+    Sets the setting given to the value on all connections
+
+    Where set relies on each connection to grab the value at a later stage,
+    set_all forces the value on all connections at once.
+    """
+    for conn in connections:
+        conn.Globals.set_local(setting_name, value)
 
 
 # @API(set_local, 200)

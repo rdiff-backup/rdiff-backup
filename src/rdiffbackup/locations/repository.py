@@ -34,7 +34,6 @@ from rdiff_backup import (
     rpath,
     selection,
     Security,
-    SetConnections,
 )
 
 
@@ -98,7 +97,7 @@ class Repo(locations.Location):
                 and self.base_dir.conn is Globals.local_connection):
             Security.reset_restrict_path(self.base_dir)
 
-        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
+        Globals.set_all('rbdir', self.data_dir)  # compat200
 
         if Globals.get_api_version() >= 201:  # compat200
             if self.base_dir.conn is Globals.local_connection:
@@ -127,7 +126,7 @@ class Repo(locations.Location):
             else:
                 # FIXME this shouldn't be necessary, and the setting of variable
                 # across the connection should happen through the shadow
-                SetConnections.UpdateGlobal("backup_writer", self.base_dir.conn)
+                Globals.set_all("backup_writer", self.base_dir.conn)
                 self.base_dir.conn.Globals.set("isbackup_writer", True)
                 # this is the new way, more dedicated but not sufficient yet
                 self.remote_transfer = (src_dir.base_dir.conn
@@ -186,7 +185,7 @@ class Repo(locations.Location):
             self.data_dir = map_filenames.get_quotedrpath(self.data_dir)
             self.incs_dir = map_filenames.get_quotedrpath(self.incs_dir)
 
-        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
+        Globals.set_all('rbdir', self.data_dir)  # compat200
 
         return True
 

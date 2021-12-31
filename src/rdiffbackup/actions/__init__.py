@@ -498,7 +498,7 @@ class BaseAction:
             tempfile.tempdir = self.values.tempdir
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
-        SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
+        Globals.set_all("client_conn", Globals.local_connection)
         Globals.postset_regexp('no_compression_regexp',
                                Globals.no_compression_regexp_string)
         for conn in Globals.connections:
