@@ -73,7 +73,7 @@ Start by installing the new rdiff-backup side-by-side on the remote server as fo
      $ rdiff-backup –version
      rdiff-backup 1.2.8
 
-===== On CentOS/Redhat
+===== On CentOS/RHEL
 
 This installs the Python2 application `rdiff-backup-1` side-by-side with
 any other version `rdiff-backup` also installed.  If you wish this to be know
@@ -147,41 +147,20 @@ Then install the wrapper script to auto detect the version of rdiff-backup.
      $ curl https://raw.githubusercontent.com/rdiff-backup/rdiff-backup/master/tools/misc/rdiff-backup-wrap -o /usr/bin/rdiff-backup-wrap
      $ chmod +x /usr/bin/rdiff-backup-wrap
 
-===== On CentOS
-
-This installs the Python2 application `rdiff-backup-1` side-by-side with
-any other version `rdiff-backup` also installed.
-
-CentOS and RHEL 7 (From COPR)
- 
-----
-sudo yum install yum-plugin-copr epel-release
-sudo yum copr enable frankcrawford/python2-rdiff-backup
-sudo yum install python2-rdiff-backup
-----
- 
-CentOS, AlmaLinux, Rocky Linux and RHEL 8 (From COPR)
- 
-----
-sudo dnf install dnf-plugins-core epel-release
-sudo dnf copr enable frankcrawford/python2-rdiff-backup
-sudo dnf copr enable frankcrawford/python2-pyxattr
-sudo dnf --enablerepo=PowerTools install python2-rdiff-backup
-----
-
-Fedora (From COPR)
- 
-----
-sudo dnf install dnf-plugins-core epel-release
-sudo dnf copr enable frankcrawford/python2-rdiff-backup
-sudo dnf copr enable frankcrawford/python2-pyxattr
-sudo dnf copr enable frankcrawford/python2-pylibacl
-sudo dnf install python2-rdiff-backup
-----
-
 Once both version of rdiff-backup are installed side-by-side, you need to adapt your command line to make use of the rdiff-backup-wrap script that is used to auto-detect the version of rdiff-backup to be used.
 
-  rdiff-backup-1 user@10.255.1.102:/source /destination
+  rdiff-backup-wrap user@10.255.1.102:/source /destination
+
+===== On CentOS/RHEL
+
+Install the Python2 application `rdiff-backup-1` side-by-side with
+any other version `rdiff-backup` as per the instructions above.
+
+At that point you need to setup a script that will select either `rdiff-backup`
+or `rdiff-backup-1` based on a list or some other configuration.
+
+If you wish to use the `rdiff-backup-wrap` script listed above, modify the
+script to change the `CMD` from `rdiff-backup2` to `rdiff-backup-1`.
 
 ==== On Remote
 
@@ -196,7 +175,7 @@ The idea is to have a central backup server where multiple clients can connect t
 Because all the clients can't migrate at the same time, it must be made sure that the server is able to support multiple versions of rdiff-backup at the same time.
 
 ____
-*NOTE:* the same approach can be used to support multiple clients of 	different versions but the use case doesn't seem as useful, hence 	it is left to the interpretation of the reader.
+*NOTE:* the same approach can be used to support multiple clients of different versions but the use case doesn't seem as useful, hence it is left to the interpretation of the reader.
 ____
 
 === Server side
@@ -217,7 +196,7 @@ ${BASEDIR}/rdiff-backup-2.0/bin/rdiff-backup --version  # result is 2.0.5
 ----
 
 ____
-*NOTE:* you can also only create major versions virtualenvs, like 	`rdiff-backup-2`, or even z-Versions like `rdiff-backup-2.0.5` but 	the middle version seems like a reasonable middle-way.
+*NOTE:* you can also only create major versions virtualenvs, like `rdiff-backup-2`, or even z-Versions like `rdiff-backup-2.0.5` but the middle version seems like a reasonable middle-way.
 ____
 
 Optionally, you can add to your PATH an executable script `rdiff-backup-2.0` with a content like the following, so that the clients don't need to care about the full-path (which will be our assumption in the following lines):
@@ -229,7 +208,7 @@ exec ${BASEDIR}/$(basename $0)/bin/rdiff-backup "$@"
 ----
 
 ____
-*TIP:* the `basename` trick allows you to only maintain one script, 	linked (hard or soft) under multiple names.
+*TIP:* the `basename` trick allows you to only maintain one script, linked (hard or soft) under multiple names.
 ____
 
 Repeat for each version of rdiff-backup you want to maintain in parallel.
@@ -251,7 +230,7 @@ rdiff-backup --remote-schema 'ssh -C {h} rdiff-backup-{Vx}.{Vy} server' \
 ----
 
 ____
-*TIP:* for older versions of rdiff-backup, one could surely write a 	wrapper script mimicking the same behaviour, using something along the 	line of `$(rdiff-backup --version | awk -F'[.
+*TIP:* for older versions of rdiff-backup, one could surely write a wrapper script mimicking the same behaviour, using something along the line of `$(rdiff-backup --version | awk -F'[.
 ]' '{print $2 "." $3}')`.
 ____
 
@@ -268,7 +247,7 @@ After version 2.0.5, a new Command Line Interface (CLI) has been introduced in r
 The following tables show the main differences between those three versions of the rdiff-backup CLI, using typical usage examples.
 
 ____
-*NOTE:* the new features aren't explained, only the mapping from the old 	syntax to the new one.
+*NOTE:* the new features aren't explained, only the mapping from the old syntax to the new one.
 ____
 
 The differences between the old and the legacy CLI are, obviously, limited and restricted to the restore use cases:
