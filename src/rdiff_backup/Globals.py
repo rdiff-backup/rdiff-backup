@@ -332,13 +332,7 @@ def set_integer(name, val):
     set(name, intval)
 
 
-def postset_regexp(name, re_string, flags=None):
-    """Compile re_string on all existing connections, set to name"""
-    for conn in connections:
-        conn.Globals.postset_regexp_local(name, re_string, flags)
-
-
-# @API(postset_regexp_local, 200)
+# @API(postset_regexp_local, 200, 200)
 def postset_regexp_local(name, re_string, flags):
     """Set name to compiled re_string locally"""
     re_string = os.fsencode(re_string)

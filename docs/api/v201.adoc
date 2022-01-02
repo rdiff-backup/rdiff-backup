@@ -44,7 +44,7 @@
 * `fs_abilities.restore_set_globals` **deprecated**
 * `fs_abilities.single_set_globals` **deprecated**
 * `Globals.get`
-* `Globals.postset_regexp_local`
+* `Globals.postset_regexp_local`  **deprecated**
 * `Globals.set`
 * `Globals.set_api_version`  **new**
 * `Globals.set_local`

@@ -25,6 +25,7 @@ plugins can inheritate default behaviors.
 
 import argparse
 import os
+import re
 import sys
 import tempfile
 import yaml
@@ -499,8 +500,6 @@ class BaseAction:
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
         Globals.set_all("client_conn", Globals.local_connection)
-        Globals.postset_regexp('no_compression_regexp',
-                               Globals.no_compression_regexp_string)
         for conn in Globals.connections:
             conn.robust.install_signal_handlers()
             conn.Hardlink.initialize_dictionaries()  # compat200
@@ -569,6 +568,27 @@ class BaseAction:
                 log.Log("Given repository doesn't need to be regressed",
                         regress_verbosity)
                 return 0  # all is good
+
+    def _set_no_compression_regexp(self):
+        """
+        Sets the no_compression_regexp setting globally
+        """
+        try:  # compat200
+            no_compression_string = os.fsencode(
+                Globals.no_compression_regexp_string)
+        except AttributeError:
+            no_compression_string = os.fsencode(
+                self.values.not_compressed_regexp)
+        try:
+            no_compression_regexp = re.compile(no_compression_string)
+        except re.error:
+            log.Log("No compression regular expression '{ex}' doesn't "
+                    "compile".format(ex=no_compression_string), log.ERROR)
+            return 1
+
+        Globals.set_all('no_compression_regexp', no_compression_regexp)
+
+        return 0  # all is good
 
 
 def get_action_class():

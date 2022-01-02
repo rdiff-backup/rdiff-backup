@@ -72,6 +72,10 @@ class RegressAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        return_code = self._set_no_compression_regexp()
+        if return_code != 0:
+            return return_code
+
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
