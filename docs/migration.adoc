@@ -75,7 +75,36 @@ Start by installing the new rdiff-backup side-by-side on the remote server as fo
 
 ===== On CentOS/Redhat
 
-TODO
+This installs the Python2 application `rdiff-backup-1` side-by-side with
+any other version `rdiff-backup` also installed.  If you wish this to be know
+as `rdiff-backup` you will need to rename or link it to the required name.
+
+CentOS and RHEL 7 (From COPR)
+ 
+----
+sudo yum install yum-plugin-copr epel-release
+sudo yum copr enable frankcrawford/python2-rdiff-backup
+sudo yum install python2-rdiff-backup
+----
+ 
+CentOS, AlmaLinux, Rocky Linux and RHEL 8 (From COPR)
+ 
+----
+sudo dnf install dnf-plugins-core epel-release
+sudo dnf copr enable frankcrawford/python2-rdiff-backup
+sudo dnf copr enable frankcrawford/python2-pyxattr
+sudo dnf --enablerepo=PowerTools install python2-rdiff-backup
+----
+
+Fedora (From COPR)
+ 
+----
+sudo dnf install dnf-plugins-core epel-release
+sudo dnf copr enable frankcrawford/python2-rdiff-backup
+sudo dnf copr enable frankcrawford/python2-pyxattr
+sudo dnf copr enable frankcrawford/python2-pylibacl
+sudo dnf install python2-rdiff-backup
+----
 
 ==== On Local
 
@@ -120,11 +149,39 @@ Then install the wrapper script to auto detect the version of rdiff-backup.
 
 ===== On CentOS
 
-TODO
+This installs the Python2 application `rdiff-backup-1` side-by-side with
+any other version `rdiff-backup` also installed.
+
+CentOS and RHEL 7 (From COPR)
+ 
+----
+sudo yum install yum-plugin-copr epel-release
+sudo yum copr enable frankcrawford/python2-rdiff-backup
+sudo yum install python2-rdiff-backup
+----
+ 
+CentOS, AlmaLinux, Rocky Linux and RHEL 8 (From COPR)
+ 
+----
+sudo dnf install dnf-plugins-core epel-release
+sudo dnf copr enable frankcrawford/python2-rdiff-backup
+sudo dnf copr enable frankcrawford/python2-pyxattr
+sudo dnf --enablerepo=PowerTools install python2-rdiff-backup
+----
+
+Fedora (From COPR)
+ 
+----
+sudo dnf install dnf-plugins-core epel-release
+sudo dnf copr enable frankcrawford/python2-rdiff-backup
+sudo dnf copr enable frankcrawford/python2-pyxattr
+sudo dnf copr enable frankcrawford/python2-pylibacl
+sudo dnf install python2-rdiff-backup
+----
 
 Once both version of rdiff-backup are installed side-by-side, you need to adapt your command line to make use of the rdiff-backup-wrap script that is used to auto-detect the version of rdiff-backup to be used.
 
-  rdiff-backup-wrap user@10.255.1.102:/source /destination
+  rdiff-backup-1 user@10.255.1.102:/source /destination
 
 ==== On Remote
 
