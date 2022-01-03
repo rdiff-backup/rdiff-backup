@@ -33,10 +33,8 @@ If the optional dependencies pylibacl and pyxattr are installed, rdiff-backup wi
 In older Linux distributions the rdiff-backup versions are of the 1.x series, which is not recommended for new installs anymore.
 Follow the instructions below to install the latest 2.x release of rdiff-backup.
 
-____
-*CAUTION:* rdiff-backup 1.x and 2.x aren't compatible and can't be mixed in server/client mode!
+CAUTION: rdiff-backup 1.x and 2.x aren't compatible and can't be mixed in server/client mode!
 See xref:docs/migration.adoc[how to migrate side-by-side].
-____
 
 === Ubuntu Focal or Debian Bullseye or newer (has 2.0)
 
@@ -53,42 +51,36 @@ sudo apt update
 sudo apt install rdiff-backup
 ----
 
-=== CentOS and RHEL 7 (From COPR)
+=== CentOS and RHEL 7 (from EPEL)
 
 ----
-sudo yum install yum-plugin-copr epel-release
-sudo yum copr enable frankcrawford/rdiff-backup
+sudo yum install epel-release
 sudo yum install rdiff-backup
 sudo yum install py3libacl pyxattr
 ----
 
-____
-*NOTE:* the last line is optional to get ACLs and EAs support.
-____
+NOTE: the last line is optional to get ACLs and EAs support.
 
-=== CentOS and RHEL 8 (From COPR)
+=== CentOS, AlmaLinux, Rocky Linux and RHEL 8 (from EPEL)
 
 ----
-sudo dnf install dnf-plugins-core epel-release
-sudo dnf copr enable frankcrawford/rdiff-backup
+sudo dnf install epel-release
 sudo dnf --enablerepo=PowerTools install rdiff-backup
 ----
 
-____
-*NOTE:* you can add the option `--setopt=install_weak_deps=False` to the 	last line if you don't need ACLs and EAs support.
-You can install 	`python3-pylibacl` and `python3-pyxattr` also separately.
-Under RHEL, the repo to enable is https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/package_manifest/codereadylinuxbuilder-repository[codeready-builder-for-rhel-8-x86_64-rpms] in order to get access 	to pyxattr, instead of PowerTools.
-____
+NOTE: you can add the option `--setopt=install_weak_deps=False` to the last line if you don't need ACLs and EAs support.
+You can install `python3-pylibacl` and `python3-pyxattr` also separately.
+Under RHEL, the repo to enable is https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/package_manifest/codereadylinuxbuilder-repository[codeready-builder-for-rhel-8-x86_64-rpms] in order to get access to pyxattr, instead of PowerTools.
 
-=== Fedora 32+
+NOTE: This does not enable updates for `PowerTools`, check the distribution documentation for details on how to do this.
+
+=== Fedora 34+
 
 ----
 sudo dnf install rdiff-backup
 ----
 
-____
-*NOTE:* for earlier versions, see the COPR instructions below.
-____
+NOTE: for earlier versions, see the COPR instructions below.
 
 === Debian and derivatives, Raspbian, etc. (from PyPi)
 
@@ -97,10 +89,8 @@ sudo apt install python3-pip python3-setuptools python3-pylibacl python3-pyxattr
 sudo pip3 install rdiff-backup
 ----
 
-____
-*NOTE:* If your platform is not i386 or amd64, e.g.
+NOTE: If your platform is not i386 or amd64, e.g.
 ARM/MIPS/etc,   you may need the build dependencies `build-essentials`, `librsync-dev`.
-____
 
 === CentOS and RHEL 6 (from PyPi)
 
@@ -120,7 +110,7 @@ sudo dnf install python3-pip python3-setuptools py3libacl python3-pyxattr
 sudo pip3 install rdiff-backup
 ----
 
-=== Other Linux and UN*X-oid systems, e.g. BSD (From PyPi)
+=== Other Linux and UN*X-oid systems, e.g. BSD (from PyPi)
 
 You need to make sure that the following requirements are met:
 
@@ -140,10 +130,8 @@ Then you should only need to call the following before you can use rdiff-backup:
 sudo pip3 install rdiff-backup
 ----
 
-____
-*NOTE:* especially if your platform is not i386 or amd64, e.g.
+NOTE: especially if your platform is not i386 or amd64, e.g.
 ARM/MIPS/PowerPC/etc,   but also if the pip3 installation fails with `+include [...].h+` files missing,   you may need the build dependencies named like `python3-devel` or `librsync-dev`.
-____
 
 === Windows
 
@@ -211,7 +199,7 @@ sudo apt update
 sudo apt install rdiff-backup
 ----
 
-==== Fedora, CentOS and RHEL
+==== Fedora, CentOS and RHEL (from COPR)
 
 On CentOS and RHEL (7 and 8):
 
