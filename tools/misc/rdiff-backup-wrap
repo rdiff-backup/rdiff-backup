@@ -30,8 +30,8 @@ done
 
 # Check if the source is remote.
 case "$SOURCE" in
-    *::*) REMOTE_SOURCE=1;;
-    *) REMOTE_SOURCE=0;;
+    *::*) REMOTE_SOURCE=1 ;;
+    *) REMOTE_SOURCE=0 ;;
 esac
 
 # Pick the right version of rdiff-backup
@@ -39,16 +39,22 @@ CMD=rdiff-backup	# default if nothing else is found
 
 for cmd in rdiff-backup-1 rdiff-backup2
 do
-	if command -v $cmd 2>&1 > /dev/null
+	if command -v "$cmd" 2>&1 > /dev/null
 	then
-		CMD=$cmd
+		CMD="$cmd"
 	fi
 done
 
 if [ $REMOTE_SOURCE -eq 1 ]; then
     if rdiff-backup --test-server "$SOURCE" 2>&1 > /dev/null; then
-        CMD="rdiff-backup"
+	CMD="rdiff-backup"
+    else
+	# because the version we found previously might also not work
+	if ! "$CMD" --test-server "$SOURCE" 2>&1 > /dev/null; then
+	    echo "ERROR:   Couldn't find a working version of rdiff-backup, tried 'rdiff-backup' and '$CMD'" >&2
+	    exit 1
+	fi
     fi
 fi
 
-"$CMD" $@
+exec "$CMD" "$@"
