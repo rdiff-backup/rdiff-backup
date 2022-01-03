@@ -92,7 +92,6 @@ bytes).
 * `Time.setprevtime_local`
 * `user_group.init_group_mapping`
 * `user_group.init_user_mapping`
-* `user_group.map_rpath`
 
 === External
 

@@ -143,6 +143,11 @@ def _create_fileset(fullname, struct):
         _create_directory(fullname, settings=struct, always_delete=True)
         for name in struct.get("subs", {}):
             _create_fileset(os.path.join(fullname, name), struct["subs"][name])
+    elif (struct.get("type") == "hardlink"
+            or ("link" in struct and "type" not in struct)):
+        _create_link(fullname, settings=struct)
+    elif struct.get("type") == "symlink":  # a link is hard by default
+        _create_link(fullname, settings=struct, linker=os.symlink)
     else:
         _create_file(fullname, settings=struct)
     # other types of items are ignored for now
@@ -175,6 +180,20 @@ def _create_file(file_name, settings):
     with open(file_name, "w" + settings.get("open", DEFAULT_FILE_OPEN)) as fd:
         fd.write(settings.get("content", DEFAULT_FILE_CONTENT))
     os.chmod(file_name, mode=settings.get("mode", DEFAULT_FILE_MODE))
+
+
+def _create_link(link_name, settings, linker=os.link):
+    """
+    Creates a link according to settings, hard or soft depending on function
+    """
+    link = settings["link"]
+    if os.path.isabs(link):
+        linker(link, link_name)
+    else:
+        currdir = os.getcwd()
+        os.chdir(os.path.dirname(link_name))
+        linker(link, link_name)
+        os.chdir(currdir)
 
 
 def _compare_files(file1, stat1, file2, stat2):

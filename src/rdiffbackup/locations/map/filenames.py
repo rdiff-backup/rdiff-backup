@@ -1,4 +1,3 @@
-# DEPRECATED compat200
 # Copyright 2002, 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
@@ -17,7 +16,8 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Coordinate corresponding files with different names
+"""
+Coordinate corresponding files with different names
 
 For instance, some source filenames may contain characters not allowed
 on the mirror end.  These files must be called something different on
@@ -26,23 +26,11 @@ the mirror end, so we escape the offending characters with semicolons.
 One problem/complication is that all this escaping may put files over
 the 256 or whatever limit on the length of file names.  (We just don't
 handle that error.)
-
 """
 
 import os
 import re
-from . import Globals, log, rpath
-
-# If true, enable character quoting, and set characters making
-# regex-style range.
-chars_to_quote = None
-
-# These compiled regular expressions are used in quoting and unquoting
-chars_to_quote_regexp = None
-unquoting_regexp = None
-
-# Use given char to quote.  Default is set in Globals.
-quoting_char = None
+from rdiff_backup import Globals, log, rpath
 
 
 class QuotingException(Exception):
@@ -50,16 +38,18 @@ class QuotingException(Exception):
 
 
 class QuotedRPath(rpath.RPath):
-    """RPath where the filename is quoted version of index
+    """
+    RPath where the filename is quoted version of index
 
     We use QuotedRPaths so we don't need to remember to quote RPaths
     derived from this one (via append or new_index).  Note that only
     the index is quoted, not the base.
-
     """
 
     def __init__(self, connection, base, index=(), data=None):
-        """Make new QuotedRPath"""
+        """
+        Make new QuotedRPath
+        """
         # we avoid handing over "None" as data so that the parent
         # class doesn't try to gather data of an unquoted filename
         # Caution: this works only because RPath checks on "None"
@@ -74,23 +64,27 @@ class QuotedRPath(rpath.RPath):
                 self.setdata()
 
     def __setstate__(self, rpath_state):
-        """Reproduce QuotedRPath from __getstate__ output"""
+        """
+        Reproduce QuotedRPath from __getstate__ output
+        """
         conn_number, self.base, self.index, self.data = rpath_state
         self.conn = Globals.connection_dict[conn_number]
         self.quoted_index = tuple(map(quote, self.index))
         self.path = self.path_join(self.base, *self.quoted_index)
 
     def listdir(self):
-        """Return list of unquoted filenames in current directory
+        """
+        Return list of unquoted filenames in current directory
 
         We want them unquoted so that the results can be sorted
         correctly and append()ed to the current QuotedRPath.
-
         """
         return list(map(unquote, self.conn.os.listdir(self.path)))
 
     def isincfile(self):
-        """Return true if path indicates increment, sets various variables"""
+        """
+        Return true if path indicates increment, sets various variables
+        """
         if not self.index:  # consider the last component as quoted
             dirname, basename = self.dirsplit()
             temp_rp = rpath.RPath(self.conn, dirname, (basename, ))
@@ -118,35 +112,16 @@ class QuotedRPath(rpath.RPath):
         return unquote(self.path)
 
 
-def set_init_quote_vals():
-    """Set quoting value from Globals on all conns"""
-    for conn in Globals.connections:
-        conn.FilenameMapping.set_init_quote_vals_local()
-
-
-# @API(set_init_quote_vals_local, 200, 200)
-def set_init_quote_vals_local():
-    """Set value on local connection, initialize regexps"""
-    global chars_to_quote, quoting_char
-    chars_to_quote = Globals.chars_to_quote
-    if len(Globals.quoting_char) != 1:
-        log.Log.FatalError("Expected single character for quoting char, "
-                           "got '{qc}' instead.".format(
-                               qc=_safe_str(Globals.quoting_char)))
-    quoting_char = Globals.quoting_char
-    _init_quoting_regexps()
-
-
 def quote(path):
-    """Return quoted version of given path
+    """
+    Return quoted version of given path
 
     Any characters quoted will be replaced by the quoting char and
     the ascii number of the character.  For instance, "10:11:12"
     would go to "10;05811;05812" if ":" were quoted and ";" were
     the quoting character.
-
     """
-    QuotedPath = chars_to_quote_regexp.sub(_quote_single, path)
+    QuotedPath = Globals.chars_to_quote_regexp.sub(_quote_single, path)
     if not Globals.escape_dos_devices and not Globals.escape_trailing_spaces:
         return QuotedPath
 
@@ -156,7 +131,7 @@ def quote(path):
         if len(QuotedPath) and (QuotedPath[-1] == ord(' ')
                                 or QuotedPath[-1] == ord('.')):
             QuotedPath = QuotedPath[:-1] + \
-                b"%b%03d" % (quoting_char, QuotedPath[-1])
+                b"%b%03d" % (Globals.quoting_char, QuotedPath[-1])
 
         if not Globals.escape_dos_devices:
             return QuotedPath
@@ -167,16 +142,20 @@ def quote(path):
                      br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath,
                      re.I):
         return QuotedPath
-    return b"%b%03d" % (quoting_char, QuotedPath[0]) + QuotedPath[1:]
+    return b"%b%03d" % (Globals.quoting_char, QuotedPath[0]) + QuotedPath[1:]
 
 
 def unquote(path):
-    """Return original version of quoted filename"""
-    return unquoting_regexp.sub(_unquote_single, path)
+    """
+    Return original version of quoted filename
+    """
+    return Globals.chars_to_quote_unregexp.sub(_unquote_single, path)
 
 
 def get_quotedrpath(rp, separate_basename=0):
-    """Return quoted version of rpath rp"""
+    """
+    Return quoted version of rpath rp
+    """
     assert not rp.index, (
         "Trying to start quoting '{rp}' in the middle.".format(rp=rp))
     if separate_basename:
@@ -186,29 +165,37 @@ def get_quotedrpath(rp, separate_basename=0):
         return QuotedRPath(rp.conn, rp.base, (), rp.data)
 
 
-def _init_quoting_regexps():
-    """Compile quoting regular expressions"""
-    global chars_to_quote_regexp, unquoting_regexp
-    assert chars_to_quote and isinstance(chars_to_quote, bytes), (
-        "Chars to quote must be non-empty bytes: '{ctq}'.".format(
-            ctq=_safe_str(chars_to_quote)))
+def get_quoting_regexps(chars_to_quote, quoting_char):
+    """
+    Compile quoting regular expressions
+
+    Returns tuple of quoting and unquoting regular expressions
+    """
+    if not chars_to_quote:
+        return (None, None)
+
     try:
-        chars_to_quote_regexp = re.compile(b"[%b]|%b" %
-                                           (chars_to_quote, quoting_char), re.S)
-        unquoting_regexp = re.compile(b"%b[0-9]{3}" % quoting_char, re.S)
+        ctq_regexp = re.compile(
+            b"[%b]|%b" % (chars_to_quote, quoting_char), re.S)
+        ctq_unregexp = re.compile(b"%b[0-9]{3}" % quoting_char, re.S)
     except re.error as exc:
         log.Log.FatalError(
             "Regex error '{er}' when processing char quote list {ql}".format(
                 er=exc, ql=chars_to_quote))
+    return (ctq_regexp, ctq_unregexp)
 
 
 def _quote_single(match):
-    """Return replacement for a single character"""
-    return b"%b%03d" % (quoting_char, ord(match.group()))
+    """
+    Return replacement for a single character
+    """
+    return b"%b%03d" % (Globals.quoting_char, ord(match.group()))
 
 
 def _unquote_single(match):
-    """Unquote a single quoted character"""
+    """
+    Unquote a single quoted character
+    """
     if not len(match.group()) == 4:
         raise QuotingException("Quoted group wrong size: '%s'." % _safe_str(match.group()))
     try:
@@ -218,7 +205,9 @@ def _unquote_single(match):
 
 
 def _safe_str(cmd):
-    """Transform bytes into string without risk of conversion error"""
+    """
+    Transform bytes into string without risk of conversion error
+    """
     if isinstance(cmd, str):
         return cmd
     else:
