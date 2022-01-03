@@ -35,13 +35,19 @@ case "$SOURCE" in
 esac
 
 # Pick the right version of rdiff-backup
-if [ $REMOTE_SOURCE -eq 0 ]; then
-    CMD="rdiff-backup2"
-else
+CMD=rdiff-backup	# default if nothing else is found
+
+for cmd in rdiff-backup-1 rdiff-backup2
+do
+	if command -v $cmd 2>&1 > /dev/null
+	then
+		CMD=$cmd
+	fi
+done
+
+if [ $REMOTE_SOURCE -eq 1 ]; then
     if rdiff-backup --test-server "$SOURCE" 2>&1 > /dev/null; then
         CMD="rdiff-backup"
-    else
-        CMD="rdiff-backup2"
     fi
 fi
 
