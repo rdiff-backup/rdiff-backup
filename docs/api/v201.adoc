@@ -36,7 +36,7 @@
 * `connection.reval`
 * `eas_acls.get_acl_lists_from_rp`
 * `eas_acls.set_rp_acl`
-* `FilenameMapping.set_init_quote_vals_local`
+* `FilenameMapping.set_init_quote_vals_local`  **deprecated**
 * `fs_abilities.backup_set_globals` **deprecated**
 * `fs_abilities.get_readonly_fsa` **deprecated**
 * `fs_abilities.restore_set_globals` **deprecated**
@@ -44,8 +44,9 @@
 * `Globals.get`
 * `Globals.postset_regexp_local`
 * `Globals.set`
+* `Globals.set_api_version`  **new**
 * `Globals.set_local`
-* `Hardlink.initialize_dictionaries`
+* `Hardlink.initialize_dictionaries`  **deprecated**
 * `log.ErrorLog.close`
 * `log.ErrorLog.isopen`
 * `log.ErrorLog.open`
@@ -91,9 +92,8 @@
 * `statistics.record_error`
 * `Time.setcurtime_local`
 * `Time.setprevtime_local`
-* `user_group.init_group_mapping`
-* `user_group.init_user_mapping`
-* `user_group.map_rpath`
+* `user_group.init_group_mapping`  **deprecated**
+* `user_group.init_user_mapping`  **deprecated**
 
 ==== rdiffbackup
 
@@ -106,6 +106,7 @@
 ** `.set_select`
 * `locations._dir_shadow.WriteDirShadow`  **new**
 ** `.get_initial_iter`
+** `.init_owners_mapping`
 ** `.patch`
 ** `.set_select`
 * `locations._repo_shadow.RepoShadow`  **new**
@@ -119,6 +120,7 @@
 ** `.get_mirror_time`
 ** `.get_sigs`
 ** `.init_and_get_iter`
+** `.init_owners_mapping`
 ** `.initialize_restore`
 ** `.initialize_rf_cache`
 ** `.list_files_at_time`

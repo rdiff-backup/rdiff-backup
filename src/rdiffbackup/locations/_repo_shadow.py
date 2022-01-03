@@ -30,11 +30,14 @@ import os
 import re
 import tempfile
 from rdiff_backup import (
-    C, FilenameMapping, Globals, Hardlink, hash, increment, iterfile,
-    log, longname, metadata,
+    C, Globals, hash, increment, iterfile, log, metadata,
     Rdiff, robust, rorpiter, rpath, selection, statistics, Time,
 )
 from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.locations.map import hardlinks as map_hardlinks
+from rdiffbackup.locations.map import longnames as map_longnames
+from rdiffbackup.locations.map import owners as map_owners
 
 # ### COPIED FROM BACKUP ####
 
@@ -95,7 +98,7 @@ class RepoShadow:
                     yield iterfile.MiscIterFlushRepeat
             if not (src_rorp and dest_rorp and src_rorp == dest_rorp
                     and (not Globals.preserve_hardlinks
-                         or Hardlink.rorp_eq(src_rorp, dest_rorp))):
+                         or map_hardlinks.rorp_eq(src_rorp, dest_rorp))):
 
                 index = src_rorp and src_rorp.index or dest_rorp.index
                 sig = cls._get_one_sig(dest_base_rpath, index, src_rorp,
@@ -157,13 +160,14 @@ class RepoShadow:
     def _get_one_sig(cls, dest_base_rpath, index, src_rorp, dest_rorp):
         """Return a signature given source and destination rorps"""
         if (Globals.preserve_hardlinks and src_rorp
-                and Hardlink.is_linked(src_rorp)):
+                and map_hardlinks.is_linked(src_rorp)):
             dest_sig = rpath.RORPath(index)
-            dest_sig.flaglinked(Hardlink.get_link_index(src_rorp))
+            dest_sig.flaglinked(map_hardlinks.get_link_index(src_rorp))
         elif dest_rorp:
             dest_sig = dest_rorp.getRORPath()
             if dest_rorp.isreg():
-                dest_rp = longname.get_mirror_rp(dest_base_rpath, dest_rorp)
+                dest_rp = map_longnames.get_mirror_rp(dest_base_rpath,
+                                                      dest_rorp)
                 sig_fp = cls._get_one_sig_fp(dest_rp)
                 if sig_fp is None:
                     return None
@@ -447,15 +451,15 @@ class RepoShadow:
         """Get diff iterator from collated"""
         for mir_rorp, target_rorp in collated:
             if Globals.preserve_hardlinks and mir_rorp:
-                Hardlink.add_rorp(mir_rorp, target_rorp)
+                map_hardlinks.add_rorp(mir_rorp, target_rorp)
             if (not target_rorp or not mir_rorp or not mir_rorp == target_rorp
                     or (Globals.preserve_hardlinks
-                        and not Hardlink.rorp_eq(mir_rorp, target_rorp))):
+                        and not map_hardlinks.rorp_eq(mir_rorp, target_rorp))):
                 diff = cls._get_diff(mir_rorp, target_rorp)
             else:
                 diff = None
             if Globals.preserve_hardlinks and mir_rorp:
-                Hardlink.del_rorp(mir_rorp)
+                map_hardlinks.del_rorp(mir_rorp)
             if diff:
                 yield diff
 
@@ -464,8 +468,8 @@ class RepoShadow:
         """Get a diff for mir_rorp at time"""
         if not mir_rorp:
             mir_rorp = rpath.RORPath(target_rorp.index)
-        elif Globals.preserve_hardlinks and Hardlink.is_linked(mir_rorp):
-            mir_rorp.flaglinked(Hardlink.get_link_index(mir_rorp))
+        elif Globals.preserve_hardlinks and map_hardlinks.is_linked(mir_rorp):
+            mir_rorp.flaglinked(map_hardlinks.get_link_index(mir_rorp))
         elif mir_rorp.isreg():
             expanded_index = cls.mirror_base.index + mir_rorp.index
             file_fp = cls.rf_cache.get_fp(expanded_index, mir_rorp)
@@ -606,7 +610,7 @@ class RepoShadow:
         for repo_rorp in repo_iter:
             if not repo_rorp.isreg():
                 continue
-            verify_sha1 = Hardlink.get_hash(repo_rorp)
+            verify_sha1 = map_hardlinks.get_hash(repo_rorp)
             if not verify_sha1:
                 log.Log("Cannot find SHA1 digest for file {fi}, perhaps "
                         "because this feature was added in v1.1.1".format(
@@ -940,8 +944,8 @@ information in it.
         raw_rfs = cls._iterate_raw_rfs(mirror_rp, inc_rp)
         collated = rorpiter.Collate2Iters(raw_rfs, cls._yield_metadata())
         for raw_rf, metadata_rorp in collated:
-            raw_rf = longname.update_rf(raw_rf, metadata_rorp, mirror_rp,
-                                        _RegressFile)
+            raw_rf = map_longnames.update_rf(raw_rf, metadata_rorp, mirror_rp,
+                                             _RegressFile)
             if not raw_rf:
                 log.Log("Warning, metadata file has entry for path {pa}, "
                         "but there are no associated files.".format(
@@ -975,7 +979,7 @@ information in it.
 
     # @API(RepoShadow.get_config, 201)
     @classmethod
-    def get_config(cls, base_dir, key):
+    def get_config(cls, data_dir, key):
         """
         Returns the configuration value(s) for the given key,
         or None if the configuration doesn't exist.
@@ -984,7 +988,7 @@ information in it.
         # chars_to_quote or special_escapes
         if key not in cls._configs:
             raise ValueError("Config key '{ck}' isn't valid")
-        rp = base_dir.append(key)
+        rp = data_dir.append(key)
         if not rp.lstat():
             return None
         else:
@@ -995,7 +999,7 @@ information in it.
 
     # @API(RepoShadow.set_config, 201)
     @classmethod
-    def set_config(cls, base_dir, key, value):
+    def set_config(cls, data_dir, key, value):
         """
         Sets the key configuration to the given value.
 
@@ -1004,10 +1008,10 @@ information in it.
         Returns False if there was nothing to change, None if there was no
         old value, and True if the value changed
         """
-        old_value = cls.get_config(base_dir, key)
+        old_value = cls.get_config(data_dir, key)
         if old_value == value:
             return False
-        rp = base_dir.append(key)
+        rp = data_dir.append(key)
         if rp.lstat():
             rp.delete()
         if cls._configs[key]["type"] is set:
@@ -1017,7 +1021,7 @@ information in it.
         if old_value is None:  # there was no old value
             return None
         else:
-            # TODO call update_quoting(base_dir) ???
+            # TODO call update_quoting(data_dir) ???
             return True
 
     # @API(RepoShadow.update_quoting, 201)
@@ -1026,7 +1030,13 @@ information in it.
         """
         Update the quoting of the repo after it has changed
         """
-        return FilenameMapping.update_quoting(base_dir)
+        return map_filenames.update_quoting(base_dir)
+
+    # @API(RepoShadow.init_owners_mapping, 201)
+    @classmethod
+    def init_owners_mapping(cls, users_map, groups_map, preserve_num_ids):
+        map_owners.init_users_mapping(users_map, preserve_num_ids)
+        map_owners.init_groups_mapping(groups_map, preserve_num_ids)
 
 
 class _CacheCollatedPostProcess:
@@ -1161,7 +1171,7 @@ class _CacheCollatedPostProcess:
 
     def update_hardlink_hash(self, diff_rorp):
         """Tag associated source_rorp with same hash diff_rorp points to"""
-        sha1sum = Hardlink.get_sha1(diff_rorp)
+        sha1sum = map_hardlinks.get_sha1(diff_rorp)
         if not sha1sum:
             return
         source_rorp = self.get_source_rorp(diff_rorp.index)
@@ -1186,7 +1196,7 @@ class _CacheCollatedPostProcess:
 
         """
         if Globals.preserve_hardlinks and source_rorp:
-            Hardlink.add_rorp(source_rorp, dest_rorp)
+            map_hardlinks.add_rorp(source_rorp, dest_rorp)
         if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
                 and dest_rorp.getperms() % 0o1000 < 0o700):
             self._unreadable_dir_init(source_rorp, dest_rorp)
@@ -1266,7 +1276,7 @@ class _CacheCollatedPostProcess:
 
         """
         if Globals.preserve_hardlinks and source_rorp:
-            Hardlink.del_rorp(source_rorp)
+            map_hardlinks.del_rorp(source_rorp)
 
         if not changed or success:
             if source_rorp:
@@ -1334,7 +1344,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
 
     def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp (case where neither is directory)"""
-        mirror_rp, discard = longname.get_mirror_inc_rps(
+        mirror_rp, discard = map_longnames.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp)
         assert not mirror_rp.isdir(), (
             "Mirror path '{rp}' points to a directory.".format(rp=mirror_rp))
@@ -1356,7 +1366,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
 
     def start_process_directory(self, index, diff_rorp):
         """Start processing directory - record information for later"""
-        self.base_rp, discard = longname.get_mirror_inc_rps(
+        self.base_rp, discard = map_longnames.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp)
         if diff_rorp.isdir():
             self._prepare_dir(diff_rorp, self.base_rp)
@@ -1423,7 +1433,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
 
     def _patch_hardlink_to_temp(self, diff_rorp, new):
         """Hardlink diff_rorp to temp, update hash if necessary"""
-        Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
+        map_hardlinks.link_rp(diff_rorp, new, self.basis_root_rp)
         self.CCPP.update_hardlink_hash(diff_rorp)
 
     def _patch_snapshot_to_temp(self, diff_rorp, new):
@@ -1538,7 +1548,7 @@ class _RepoIncrementITRB(_RepoPatchITRB):
 
     def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp and write increment (neither is dir)"""
-        mirror_rp, inc_prefix = longname.get_mirror_inc_rps(
+        mirror_rp, inc_prefix = map_longnames.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
         tf = mirror_rp.get_temp_rpath(sibling=True)
         if self._patch_to_temp(mirror_rp, diff_rorp, tf):
@@ -1566,7 +1576,7 @@ class _RepoIncrementITRB(_RepoPatchITRB):
 
     def start_process_directory(self, index, diff_rorp):
         """Start processing directory"""
-        self.base_rp, inc_prefix = longname.get_mirror_inc_rps(
+        self.base_rp, inc_prefix = map_longnames.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
         self.base_rp.setdata()
         assert diff_rorp.isdir() or self.base_rp.isdir(), (
@@ -1610,8 +1620,8 @@ class _CachedRF:
 
     def get_fp(self, index, mir_rorp):
         """Return the file object (for reading) of given index"""
-        rf = longname.update_rf(self._get_rf(index, mir_rorp), mir_rorp,
-                                self.root_rf.mirror_rp, _RestoreFile)
+        rf = map_longnames.update_rf(self._get_rf(index, mir_rorp), mir_rorp,
+                                     self.root_rf.mirror_rp, _RestoreFile)
         if not rf:
             log.Log(
                 "Unable to retrieve data for file {fi}! The cause is "

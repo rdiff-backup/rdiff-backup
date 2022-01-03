@@ -1,7 +1,9 @@
 import unittest
 import pwd
 import code
-from rdiff_backup import user_group, Globals
+from rdiff_backup import Globals
+from rdiffbackup.utils import usrgrp
+from rdiffbackup.locations.map import owners as map_owners
 
 
 class UserGroupTest(unittest.TestCase):
@@ -9,26 +11,26 @@ class UserGroupTest(unittest.TestCase):
 
     def test_basic_conversion(self):
         """Test basic id2name.  May need to modify for different systems"""
-        user_group._uid2uname_dict = {}
-        user_group._gid2gname_dict = {}
-        self.assertEqual(user_group.uid2uname(0), "root")
-        self.assertEqual(user_group.uid2uname(0), "root")
-        self.assertEqual(user_group.gid2gname(0), "root")
-        self.assertEqual(user_group.gid2gname(0), "root")
+        usrgrp._uid2uname = {}
+        usrgrp._gid2gname = {}
+        self.assertEqual(usrgrp.uid2uname(0), "root")
+        self.assertEqual(usrgrp.uid2uname(0), "root")
+        self.assertEqual(usrgrp.gid2gname(0), "root")
+        self.assertEqual(usrgrp.gid2gname(0), "root")
         # Assume no user has uid 29378
-        self.assertIsNone(user_group.gid2gname(29378))
-        self.assertIsNone(user_group.gid2gname(29378))
+        self.assertIsNone(usrgrp.gid2gname(29378))
+        self.assertIsNone(usrgrp.gid2gname(29378))
 
     def test_basic_reverse(self):
         """Test basic name2id.  Depends on systems users/groups"""
-        user_group._uname2uid_dict = {}
-        user_group._gname2gid_dict = {}
-        self.assertEqual(user_group._uname2uid("root"), 0)
-        self.assertEqual(user_group._uname2uid("root"), 0)
-        self.assertEqual(user_group._gname2gid("root"), 0)
-        self.assertEqual(user_group._gname2gid("root"), 0)
-        self.assertIsNone(user_group._uname2uid("aoeuth3t2ug89"))
-        self.assertIsNone(user_group._uname2uid("aoeuth3t2ug89"))
+        usrgrp._uname2uid = {}
+        usrgrp._gname2gid = {}
+        self.assertEqual(usrgrp.uname2uid("root"), 0)
+        self.assertEqual(usrgrp.uname2uid("root"), 0)
+        self.assertEqual(usrgrp.gname2gid("root"), 0)
+        self.assertEqual(usrgrp.gname2gid("root"), 0)
+        self.assertIsNone(usrgrp.uname2uid("aoeuth3t2ug89"))
+        self.assertIsNone(usrgrp.uname2uid("aoeuth3t2ug89"))
 
     def test_default_mapping(self):
         """Test the default user mapping"""
@@ -36,11 +38,11 @@ class UserGroupTest(unittest.TestCase):
         rootid = 0
         binid = pwd.getpwnam('bin')[2]
         syncid = pwd.getpwnam('sync')[2]
-        user_group.init_user_mapping()
-        self.assertEqual(user_group._user_map(0), rootid)
-        self.assertEqual(user_group._user_map(0, 'bin'), binid)
-        self.assertEqual(user_group._user_map(0, 'sync'), syncid)
-        self.assertIsNone(user_group._user_map.map_acl(0, 'aoeuth3t2ug89'))
+        map_owners.init_users_mapping()
+        self.assertEqual(map_owners._user_map(0), rootid)
+        self.assertEqual(map_owners._user_map(0, 'bin'), binid)
+        self.assertEqual(map_owners._user_map(0, 'sync'), syncid)
+        self.assertIsNone(map_owners._user_map.map_acl(0, 'aoeuth3t2ug89'))
 
     def test_user_mapping(self):
         """Test the user mapping file through the _DefinedMap class"""
@@ -55,19 +57,19 @@ sync:0"""
         binid = pwd.getpwnam('bin')[2]
         syncid = pwd.getpwnam('sync')[2]
         daemonid = pwd.getpwnam('daemon')[2]
-        user_group.init_user_mapping(mapping_string)
+        map_owners.init_users_mapping(mapping_string)
 
-        self.assertEqual(user_group._user_map(rootid, 'root'), binid)
-        self.assertEqual(user_group._user_map(binid, 'bin'), rootid)
-        self.assertEqual(user_group._user_map(0), syncid)
-        self.assertEqual(user_group._user_map(syncid, 'sync'), 0)
-        self.assertEqual(user_group._user_map(500), 501)
+        self.assertEqual(map_owners._user_map(rootid, 'root'), binid)
+        self.assertEqual(map_owners._user_map(binid, 'bin'), rootid)
+        self.assertEqual(map_owners._user_map(0), syncid)
+        self.assertEqual(map_owners._user_map(syncid, 'sync'), 0)
+        self.assertEqual(map_owners._user_map(500), 501)
 
-        self.assertEqual(user_group._user_map(501), 501)
-        self.assertEqual(user_group._user_map(123, 'daemon'), daemonid)
+        self.assertEqual(map_owners._user_map(501), 501)
+        self.assertEqual(map_owners._user_map(123, 'daemon'), daemonid)
 
-        self.assertIsNone(user_group._user_map.map_acl(29378, 'aoeuth3t2ug89'))
-        self.assertIs(user_group._user_map.map_acl(0, 'aoeuth3t2ug89'), syncid)
+        self.assertIsNone(map_owners._user_map.map_acl(29378, 'aoeuth3t2ug89'))
+        self.assertIs(map_owners._user_map.map_acl(0, 'aoeuth3t2ug89'), syncid)
 
         if 0:
             code.InteractiveConsole(globals()).interact()
@@ -75,8 +77,8 @@ sync:0"""
     def test_overflow(self):
         """Make sure querying large uids/gids doesn't raise exception"""
         large_num = 4000000000
-        self.assertIsNone(user_group.uid2uname(large_num))
-        self.assertIsNone(user_group.gid2gname(large_num))
+        self.assertIsNone(usrgrp.uid2uname(large_num))
+        self.assertIsNone(usrgrp.gid2gname(large_num))
 
 
 if __name__ == "__main__":
