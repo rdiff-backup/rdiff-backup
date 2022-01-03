@@ -1,3 +1,4 @@
+# DEPRECATED compat200
 # Copyright 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
@@ -828,7 +829,7 @@ class BackupSetGlobals(SetGlobals):
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
                 log.INFO)
 
-    def set_chars_to_quote(self, rbdir, force):
+    def set_chars_to_quote(self, rbdir):
         """Set chars_to_quote setting for backup session
 
         Unlike most other options, the chars_to_quote setting also
@@ -836,13 +837,11 @@ class BackupSetGlobals(SetGlobals):
         directory, not just the current fs features.
 
         """
-        (ctq, update) = self._compare_ctq_file(rbdir, self._get_ctq_from_fsas(),
-                                               force)
+        ctq = self._compare_ctq_file(rbdir, self._get_ctq_from_fsas())
 
         SetConnections.UpdateGlobal('chars_to_quote', ctq)
         if Globals.chars_to_quote:
             FilenameMapping.set_init_quote_vals()
-        return update
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """Many of the settings have a common form we can handle here"""
@@ -879,14 +878,11 @@ class BackupSetGlobals(SetGlobals):
             ctq.append(Globals.quoting_char)
         return b"".join(ctq)
 
-    def _compare_ctq_file(self, rbdir, suggested_ctq, force):
+    def _compare_ctq_file(self, rbdir, suggested_ctq):
         """
         Compare chars_to_quote previous, enforced and suggested
 
-        If there was no previous_ctq
-
-        Returns a tuple made of the actual quoting and of a boolean telling if
-        a re-quoting is necessary.
+        Returns the actual quoting to be used
         """
         ctq_rp = rbdir.append(b"chars_to_quote")
         if not ctq_rp.lstat():  # the chars_to_quote file doesn't exist
@@ -900,7 +896,7 @@ class BackupSetGlobals(SetGlobals):
                             fs=ctq_rp, sq=suggested_ctq, oq=actual_ctq),
                         log.NOTE)
             ctq_rp.write_bytes(actual_ctq)
-            return (actual_ctq, False)
+            return actual_ctq
 
         previous_ctq = ctq_rp.get_bytes()
 
@@ -925,21 +921,13 @@ class BackupSetGlobals(SetGlobals):
 
         # the quoting didn't change so all is good
         if actual_ctq == previous_ctq:
-            return (actual_ctq, False)
-        elif force:
-            log.Log("Migrating repository quoting '{rq}' from old quoting "
-                    "chars '{oq}' to new quoting chars '{nq}'".format(
-                        rq=ctq_rp, oq=previous_ctq, nq=actual_ctq), log.WARNING)
-            ctq_rp.delete()
-            ctq_rp.write_bytes(actual_ctq)
-            return (actual_ctq, True)
+            return actual_ctq
         else:
             log.Log.FatalError(
                 "The repository quoting '{rq}' would need to be migrated from "
                 "old quoting chars '{oq}' to new quoting chars '{nq}'. "
                 "This may mean that the repository has been moved between "
-                "different file systems. Use the --force option if you know "
-                "what you are doing".format(
+                "different file systems.".format(
                     rq=ctq_rp, oq=previous_ctq, nq=actual_ctq))
 
 
@@ -1101,12 +1089,9 @@ def backup_set_globals(rpin, force):
     bsg.set_change_ownership()
     bsg.set_high_perms()
     bsg.set_symlink_perms()
-    update_quoting = bsg.set_chars_to_quote(Globals.rbdir, force)
+    bsg.set_chars_to_quote(Globals.rbdir)
     bsg.set_special_escapes(Globals.rbdir)
     bsg.set_compatible_timestamps()
-
-    if update_quoting and force:
-        FilenameMapping.update_quoting(Globals.rbdir)
 
 
 # @API(restore_set_globals, 200, 200)

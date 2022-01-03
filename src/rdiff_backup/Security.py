@@ -215,10 +215,12 @@ def _set_allowed_requests(sec_class, sec_level):
         "VirtualFile.readfromid", "VirtualFile.closebyid", "Globals.get",
         "Globals.is_not_None", "Globals.get_dict_val",
         "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
-        "log.Log.log_to_file", "FilenameMapping.set_init_quote_vals_local",
+        "log.Log.log_to_file",
         "Time.setcurtime_local",
         "SetConnections.add_redirected_conn", "RedirectedRun",
-        "sys.stdout.write", "robust.install_signal_handlers"
+        "sys.stdout.write", "robust.install_signal_handlers",
+        # API < 201
+        "FilenameMapping.set_init_quote_vals_local",
     }
     if (sec_level == "read-only" or sec_level == "update-only"
             or sec_level == "read-write"):
@@ -226,8 +228,8 @@ def _set_allowed_requests(sec_class, sec_level):
             "rpath.make_file_dict", "os.listdir", "rpath.ea_get",
             "rpath.acl_get", "rpath.setdata_local", "log.Log.log_to_file",
             "os.getuid", "rpath.gzip_open_local_read", "rpath.open_local_read",
-            "Hardlink.initialize_dictionaries", "user_group.uid2uname",
-            "user_group.gid2gname"
+            # API < 201
+            "Hardlink.initialize_dictionaries",
         ])
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
@@ -330,7 +332,13 @@ def _set_allowed_requests(sec_class, sec_level):
             "SetConnections.init_connection_remote", "log.Log.setverbosity",
             "log.Log.setterm_verbosity", "Time.setprevtime_local",
             "Globals.postset_regexp_local",
-            "user_group.init_user_mapping", "user_group.init_group_mapping"
+            # API < 201
+            "user_group.init_user_mapping",
+            "user_group.init_group_mapping",
+            # API >= 201
+            "_repo_shadow.RepoShadow.init_owners_mapping",
+            "_dir_shadow.WriteDirShadow.init_owners_mapping",
+            "Globals.set_api_version",
         ])
     return requests
 

@@ -78,15 +78,12 @@ class FilenameMappingTest(unittest.TestCase):
             0)
         time.sleep(1)
         inrp.append("ABC_XYZ.2").touch()
-        # enforce a requote of the whole repository
-        self.assertEqual(
+        # enforce a requote of the whole repository and see it refused
+        self.assertNotEqual(
             ct.rdiff_backup_action(True, True, inrp.path, outrp.path,
                                    ("--chars-to-quote", "X-Z", "--force"),
                                    b"backup", ()),
             0)
-        # let's check that both files have been properly quoted or requoted
-        self.assertTrue(outrp.append("ABC_;088;089;090.1").lstat())
-        self.assertTrue(outrp.append("ABC_;088;089;090.2").lstat())
 
 
 if __name__ == "__main__":

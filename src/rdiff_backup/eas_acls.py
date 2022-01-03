@@ -34,7 +34,9 @@ try:
     import posix1e
 except ImportError:
     pass
-from . import Globals, connection, metadata, rorpiter, log, C, rpath, user_group  # noqa: F401
+from rdiff_backup import C, Globals, log, metadata, rorpiter, rpath
+from rdiffbackup.utils import usrgrp
+from rdiffbackup.locations.map import owners as map_owners
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name
@@ -611,10 +613,10 @@ def _acl_to_list(acl):
         tagchar = acltag_to_char(entry.tag_type)
         if tagchar == "u":
             uid = entry.qualifier
-            owner_pair = (uid, user_group.uid2uname(uid))
+            owner_pair = (uid, usrgrp.uid2uname(uid))
         elif tagchar == "g":
             gid = entry.qualifier
-            owner_pair = (gid, user_group.gid2gname(gid))
+            owner_pair = (gid, usrgrp.gid2gname(gid))
         else:
             owner_pair = None
 
@@ -674,9 +676,9 @@ def _list_to_acl(entry_list, map_names=1):
         if owner_pair:
             if map_names:
                 if typechar == "u":
-                    id = user_group.acl_user_map(*owner_pair)
+                    id = map_owners.map_acl_user(*owner_pair)
                 elif typechar == "g":
-                    id = user_group.acl_group_map(*owner_pair)
+                    id = map_owners.map_acl_group(*owner_pair)
                 else:
                     raise ValueError(
                         "Type '{tc}' must be one of 'u' or 'g'.".format(

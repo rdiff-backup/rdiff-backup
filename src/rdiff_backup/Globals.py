@@ -184,9 +184,12 @@ changed_settings = []
 rbdir = None
 
 # chars_to_quote is a string whose characters should be quoted.  It
-# should be true if certain characters in filenames on the source side
-# should be escaped (see FilenameMapping for more info).
+# should be set if certain characters in filenames on the source side
+# should be escaped (see locations.map.filenames for more info).
 chars_to_quote = None
+chars_to_quote_regexp = None
+chars_to_quote_unregexp = None
+# the quoting character is used to mark quoted characters
 quoting_char = b';'
 
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
@@ -349,6 +352,7 @@ def postset_regexp_local(name, re_string, flags):
         globals()[name] = re.compile(re_string)
 
 
+# @API(set_api_version, 201)
 def set_api_version(val):
     """sets the actual API version after having verified that the new
     value is an integer between mix and max values."""

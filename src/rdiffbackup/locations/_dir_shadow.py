@@ -25,10 +25,11 @@ be instantiated.
 """
 
 from rdiff_backup import (
-    Globals, Hardlink, hash, iterfile, log,
-    Rdiff, robust, rorpiter, rpath, selection
+    Globals, hash, iterfile, log, Rdiff, robust, rorpiter, rpath, selection
 )
 from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations.map import hardlinks as map_hardlinks
+from rdiffbackup.locations.map import owners as map_owners
 
 # ### COPIED FROM BACKUP ####
 
@@ -146,7 +147,7 @@ class ReadDirShadow:
 
         def hashes_changed(src_rp, mir_rorp):
             """Return 0 if their data hashes same, 1 otherwise"""
-            verify_sha1 = Hardlink.get_hash(mir_rorp)
+            verify_sha1 = map_hardlinks.get_hash(mir_rorp)
             if not verify_sha1:
                 log.Log("Metadata file has no digest for mirror file {mf}, "
                         "unable to compare.".format(mf=mir_rorp), log.WARNING)
@@ -306,6 +307,12 @@ class WriteDirShadow:
     def get_fs_abilities(cls, base_dir):
         return fs_abilities.FSAbilities(base_dir, writable=True)
 
+    # @API(WriteDirShadow.init_owners_mapping, 201)
+    @classmethod
+    def init_owners_mapping(cls, users_map, groups_map, preserve_num_ids):
+        map_owners.init_users_mapping(users_map, preserve_num_ids)
+        map_owners.init_groups_mapping(groups_map, preserve_num_ids)
+
 
 class _DirPatchITRB(rorpiter.ITRBranch):
     """Patch an rpath with the given diff iters (use with IterTreeReducer)
@@ -375,7 +382,7 @@ class _DirPatchITRB(rorpiter.ITRBranch):
     def _patch_to_temp(self, basis_rp, diff_rorp, new):
         """Patch basis_rp, writing output in new, which doesn't exist yet"""
         if diff_rorp.isflaglinked():
-            Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
+            map_hardlinks.link_rp(diff_rorp, new, self.basis_root_rp)
             return
         if diff_rorp.get_attached_filetype() == 'snapshot':
             copy_report = rpath.copy(diff_rorp, new)

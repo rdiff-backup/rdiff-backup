@@ -29,7 +29,7 @@ import sys
 import tempfile
 import yaml
 from rdiff_backup import (
-    Globals, log, rpath, Security, SetConnections, Time
+    Globals, log, Security, SetConnections, Time
 )
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
@@ -243,13 +243,13 @@ USER_GROUP_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to user and group mapping")
 USER_GROUP_PARSER.add_argument(
-    "--group-mapping-file", type=str, metavar="MAP_FILE",
+    "--group-mapping-file", type=argparse.FileType("r"), metavar="MAP_FILE",
     help="[sub] map groups according to file")
 USER_GROUP_PARSER.add_argument(
     "--preserve-numerical-ids", action="store_true",
     help="[sub] preserve user and group IDs instead of names")
 USER_GROUP_PARSER.add_argument(
-    "--user-mapping-file", type=str, metavar="MAP_FILE",
+    "--user-mapping-file", type=argparse.FileType("r"), metavar="MAP_FILE",
     help="[sub] map users according to file")
 
 GENERIC_PARSERS = [COMMON_PARSER]
@@ -503,7 +503,7 @@ class BaseAction:
                                Globals.no_compression_regexp_string)
         for conn in Globals.connections:
             conn.robust.install_signal_handlers()
-            conn.Hardlink.initialize_dictionaries()
+            conn.Hardlink.initialize_dictionaries()  # compat200
 
         return 0
 
@@ -514,33 +514,6 @@ class BaseAction:
         Return 0 if everything looked good, else an error code.
         """
         return 0
-
-    def _init_user_group_mapping(self, dest_conn):
-        """
-        Initialize user and group mapping on destination connection
-        """
-        def get_string_from_file(filename):
-            """
-            Helper function to extract string at once from a given file
-            """
-            if not filename:
-                return None
-            rp = rpath.RPath(Globals.local_connection, os.fsencode(filename))
-            try:
-                return rp.get_string()
-            except OSError as e:
-                log.Log.FatalError(
-                    "Error '{er}' reading mapping file '{mf}'".format(
-                        er=e, mf=filename))
-
-        user_mapping_string = get_string_from_file(
-            self.values.user_mapping_file)
-        dest_conn.user_group.init_user_mapping(
-            user_mapping_string, self.values.preserve_numerical_ids)
-        group_mapping_string = get_string_from_file(
-            self.values.group_mapping_file)
-        dest_conn.user_group.init_group_mapping(
-            group_mapping_string, self.values.preserve_numerical_ids)
 
     def _get_parsed_time(self, timestr, ref_rp=None):
         """

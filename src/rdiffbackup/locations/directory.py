@@ -119,7 +119,7 @@ class ReadDir(Dir, locations.ReadLocation):
 
 class WriteDir(Dir, locations.WriteLocation):
 
-    def setup(self, src_repo):
+    def setup(self, src_repo, owners_map=None):
         ret_code = super().setup()
         if ret_code != 0:
             return ret_code
@@ -139,6 +139,11 @@ class WriteDir(Dir, locations.WriteLocation):
                         + str(self.fs_abilities), log.INFO)
 
             return fs_abilities.Repo2DirSetGlobals(src_repo, self)()
+
+        if owners_map is not None:
+            ret_code = self.init_owners_mapping(**owners_map)
+            if ret_code != 0:
+                return ret_code
 
         return 0  # all is good
 
