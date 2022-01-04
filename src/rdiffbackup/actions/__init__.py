@@ -531,10 +531,14 @@ class BaseAction:
                     "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
             return None
 
-    def _operate_regress(self, try_regress=True):
+    def _operate_regress(self, try_regress=True, noticeable=False):
         """
         Check the given repository and regress it if necessary
         """
+        if noticeable:
+            regress_verbosity = log.NOTE
+        else:
+            regress_verbosity = log.INFO
         if Globals.get_api_version() < 201:  # compat200
             if self.repo.needs_regress_compat200():
                 if not try_regress:
@@ -552,7 +556,7 @@ class BaseAction:
                     return 1
             else:
                 log.Log("Given repository doesn't need to be regressed",
-                        log.NOTE)
+                        regress_verbosity)
                 return 0  # all is good
         else:
             if self.repo.needs_regress():
@@ -563,7 +567,7 @@ class BaseAction:
                 return self.repo.regress()
             else:
                 log.Log("Given repository doesn't need to be regressed",
-                        log.NOTE)
+                        regress_verbosity)
                 return 0  # all is good
 
 
