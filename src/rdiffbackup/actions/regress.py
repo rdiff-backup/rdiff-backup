@@ -104,7 +104,7 @@ class RegressAction(actions.BaseAction):
         """
         Check the given repository and regress it if necessary
         """
-        return self._operate_regress()
+        return self._operate_regress(noticeable=True)
 
 
 def get_action_class():
