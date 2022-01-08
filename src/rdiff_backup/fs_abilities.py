@@ -1,3 +1,4 @@
+# DEPRECATED compat200
 # Copyright 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
@@ -16,20 +17,21 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Determine the capabilities of given file system
+"""
+Determine the capabilities of given file system
 
 rdiff-backup needs to read and write to file systems with varying
 abilities.  For instance, some file systems and not others have ACLs,
 are case-sensitive, or can store ownership information.  The code in
 this module tests the file system for various features, and returns an
 FSAbilities object describing it.
-
 """
 
 import errno
 import os
-from . import Globals, log, selection, robust, SetConnections, \
-    FilenameMapping, win_acls, Time
+from rdiff_backup import (
+    FilenameMapping, Globals, log, robust, selection, Time, win_acls
+)
 
 
 class FSAbilities:
@@ -750,28 +752,24 @@ class SetGlobals:
 
     def set_hardlinks(self):
         if Globals.preserve_hardlinks != 0:
-            SetConnections.UpdateGlobal('preserve_hardlinks',
-                                        self.dest_fsa.hardlinks)
+            Globals.set_all('preserve_hardlinks', self.dest_fsa.hardlinks)
 
     def set_fsync_directories(self):
-        SetConnections.UpdateGlobal('fsync_directories',
-                                    self.dest_fsa.fsync_dirs)
+        Globals.set_all('fsync_directories', self.dest_fsa.fsync_dirs)
 
     def set_change_ownership(self):
-        SetConnections.UpdateGlobal('change_ownership',
-                                    self.dest_fsa.ownership)
+        Globals.set_all('change_ownership', self.dest_fsa.ownership)
 
     def set_high_perms(self):
         if not self.dest_fsa.high_perms:
-            SetConnections.UpdateGlobal('permission_mask', 0o777)
+            Globals.set_all('permission_mask', 0o777)
 
     def set_symlink_perms(self):
-        SetConnections.UpdateGlobal('symlink_perms',
-                                    self.dest_fsa.symlink_perms)
+        Globals.set_all('symlink_perms', self.dest_fsa.symlink_perms)
 
     def set_compatible_timestamps(self):
         if Globals.chars_to_quote.find(b":") > -1:
-            SetConnections.UpdateGlobal('use_compatible_timestamps', 1)
+            Globals.set_all('use_compatible_timestamps', 1)
             Time.setcurtime(
                 Time.curtime)  # update Time.curtimestr on all conns
             log.Log("Enabled use_compatible_timestamps", log.INFO)
@@ -820,15 +818,15 @@ class BackupSetGlobals(SetGlobals):
                     "escaped, but we will retain for backwards compatibility",
                     log.WARNING)
 
-        SetConnections.UpdateGlobal('escape_dos_devices', actual_edd)
+        Globals.set_all('escape_dos_devices', actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd),
                 log.INFO)
 
-        SetConnections.UpdateGlobal('escape_trailing_spaces', actual_ets)
+        Globals.set_all('escape_trailing_spaces', actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
                 log.INFO)
 
-    def set_chars_to_quote(self, rbdir, force):
+    def set_chars_to_quote(self, rbdir):
         """Set chars_to_quote setting for backup session
 
         Unlike most other options, the chars_to_quote setting also
@@ -836,13 +834,11 @@ class BackupSetGlobals(SetGlobals):
         directory, not just the current fs features.
 
         """
-        (ctq, update) = self._compare_ctq_file(rbdir, self._get_ctq_from_fsas(),
-                                               force)
+        ctq = self._compare_ctq_file(rbdir, self._get_ctq_from_fsas())
 
-        SetConnections.UpdateGlobal('chars_to_quote', ctq)
+        Globals.set_all('chars_to_quote', ctq)
         if Globals.chars_to_quote:
             FilenameMapping.set_init_quote_vals()
-        return update
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """Many of the settings have a common form we can handle here"""
@@ -850,13 +846,13 @@ class BackupSetGlobals(SetGlobals):
         if Globals.get(active_attr) == 0:
             return  # don't override 0
         for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
+            Globals.set_all(attr, None)
         if not src_support:
             return  # if source doesn't support, nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
+        Globals.set_all(active_attr, 1)
         self.in_conn.Globals.set_local(conn_attr, 1)
         if dest_support:
-            SetConnections.UpdateGlobal(write_attr, 1)
+            Globals.set_all(write_attr, 1)
             self.out_conn.Globals.set_local(conn_attr, 1)
 
     def _get_ctq_from_fsas(self):
@@ -879,14 +875,11 @@ class BackupSetGlobals(SetGlobals):
             ctq.append(Globals.quoting_char)
         return b"".join(ctq)
 
-    def _compare_ctq_file(self, rbdir, suggested_ctq, force):
+    def _compare_ctq_file(self, rbdir, suggested_ctq):
         """
         Compare chars_to_quote previous, enforced and suggested
 
-        If there was no previous_ctq
-
-        Returns a tuple made of the actual quoting and of a boolean telling if
-        a re-quoting is necessary.
+        Returns the actual quoting to be used
         """
         ctq_rp = rbdir.append(b"chars_to_quote")
         if not ctq_rp.lstat():  # the chars_to_quote file doesn't exist
@@ -900,7 +893,7 @@ class BackupSetGlobals(SetGlobals):
                             fs=ctq_rp, sq=suggested_ctq, oq=actual_ctq),
                         log.NOTE)
             ctq_rp.write_bytes(actual_ctq)
-            return (actual_ctq, False)
+            return actual_ctq
 
         previous_ctq = ctq_rp.get_bytes()
 
@@ -925,21 +918,13 @@ class BackupSetGlobals(SetGlobals):
 
         # the quoting didn't change so all is good
         if actual_ctq == previous_ctq:
-            return (actual_ctq, False)
-        elif force:
-            log.Log("Migrating repository quoting '{rq}' from old quoting "
-                    "chars '{oq}' to new quoting chars '{nq}'".format(
-                        rq=ctq_rp, oq=previous_ctq, nq=actual_ctq), log.WARNING)
-            ctq_rp.delete()
-            ctq_rp.write_bytes(actual_ctq)
-            return (actual_ctq, True)
+            return actual_ctq
         else:
             log.Log.FatalError(
                 "The repository quoting '{rq}' would need to be migrated from "
                 "old quoting chars '{oq}' to new quoting chars '{nq}'. "
                 "This may mean that the repository has been moved between "
-                "different file systems. Use the --force option if you know "
-                "what you are doing".format(
+                "different file systems.".format(
                     rq=ctq_rp, oq=previous_ctq, nq=actual_ctq))
 
 
@@ -969,11 +954,11 @@ class RestoreSetGlobals(SetGlobals):
                 actual_edd = self.dest_fsa.escape_dos_devices
                 actual_ets = self.dest_fsa.escape_trailing_spaces
 
-        SetConnections.UpdateGlobal('escape_dos_devices', actual_edd)
+        Globals.set_all('escape_dos_devices', actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd),
                 log.INFO)
 
-        SetConnections.UpdateGlobal('escape_trailing_spaces', actual_ets)
+        Globals.set_all('escape_trailing_spaces', actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
                 log.INFO)
 
@@ -984,12 +969,12 @@ class RestoreSetGlobals(SetGlobals):
 
         ctq_rp = rbdir.append(b"chars_to_quote")
         if ctq_rp.lstat():
-            SetConnections.UpdateGlobal("chars_to_quote", ctq_rp.get_bytes())
+            Globals.set_all("chars_to_quote", ctq_rp.get_bytes())
         else:
             log.Log("chars_to_quote file '{qf}' not found, assuming no quoting "
                     "required in backup repository".format(qf=ctq_rp),
                     log.WARNING)
-            SetConnections.UpdateGlobal("chars_to_quote", b"")
+            Globals.set_all("chars_to_quote", b"")
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """Update global settings for feature based on fsa results
@@ -1004,10 +989,10 @@ class RestoreSetGlobals(SetGlobals):
         if Globals.get(active_attr) == 0:
             return  # don't override 0
         for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
+            Globals.set_all(attr, None)
         if not dest_support:
             return  # if dest doesn't support, do nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
+        Globals.set_all(active_attr, 1)
         self.out_conn.Globals.set_local(conn_attr, 1)
         self.out_conn.Globals.set_local(write_attr, 1)
         if src_support:
@@ -1051,11 +1036,11 @@ class SingleSetGlobals(RestoreSetGlobals):
         if Globals.get(active_attr) == 0:
             return  # don't override 0
         for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
+            Globals.set_all(attr, None)
         if not fsa_support:
             return
-        SetConnections.UpdateGlobal(active_attr, 1)
-        SetConnections.UpdateGlobal(write_attr, 1)
+        Globals.set_all(active_attr, 1)
+        Globals.set_all(write_attr, 1)
         self.conn.Globals.set_local(conn_attr, 1)
 
 
@@ -1070,7 +1055,7 @@ def get_readonly_fsa(desc_string, rp):
     """
     if os.name == "nt":
         log.Log("Hardlinks disabled by default on Windows", log.INFO)
-        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
+        Globals.set_all('preserve_hardlinks', 0)
     return FSAbilities(desc_string, rp, read_only=True)
 
 
@@ -1101,12 +1086,9 @@ def backup_set_globals(rpin, force):
     bsg.set_change_ownership()
     bsg.set_high_perms()
     bsg.set_symlink_perms()
-    update_quoting = bsg.set_chars_to_quote(Globals.rbdir, force)
+    bsg.set_chars_to_quote(Globals.rbdir)
     bsg.set_special_escapes(Globals.rbdir)
     bsg.set_compatible_timestamps()
-
-    if update_quoting and force:
-        FilenameMapping.update_quoting(Globals.rbdir)
 
 
 # @API(restore_set_globals, 200, 200)

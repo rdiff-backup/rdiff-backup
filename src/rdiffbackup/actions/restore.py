@@ -103,11 +103,20 @@ class RestoreAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        return_code = self._set_no_compression_regexp()
+        if return_code != 0:
+            return return_code
+
         return_code = self.repo.setup()
         if return_code != 0:
             return return_code
 
-        return_code = self.dir.setup(self.repo)
+        owners_map = {
+            "users_map": self.values.user_mapping_file,
+            "groups_map": self.values.group_mapping_file,
+            "preserve_num_ids": self.values.preserve_numerical_ids
+        }
+        return_code = self.dir.setup(self.repo, owners_map=owners_map)
         if return_code != 0:
             return return_code
 
@@ -120,7 +129,6 @@ class RestoreAction(actions.BaseAction):
                 self.dir.base_dir)
             self.repo.init_quoting()
 
-        self._init_user_group_mapping(self.dir.base_dir.conn)
         if log.Log.verbosity > 0:
             try:  # the source repository could be read-only
                 log.Log.open_logfile(

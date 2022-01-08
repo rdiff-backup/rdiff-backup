@@ -363,3 +363,13 @@ If you've backed-up a file or directory you shouldn't have backed-up, you can re
 beware that _all_ files, including all earlier versions, will be removed without any question back!
 If the situation is more complicated, you might want to have a look at https://www.timedicer.co.uk/programs/help/rdiff-backup-regress.sh.php[rdiff-backup-regress] which completely removes the last made backup, but beware that regression takes a long time.
 Note that we made a copy of this nice utility, placed under `tools/misc` in our Git repo, just to be sure it doesn't get lost.
+
+== Backup on my file-system XYZ fails, can you support it?
+
+rdiff-backup expects certain qualities from a file system and checks for them.
+Experience shows that some file systems do fail these tests (or even at runtime) and can't be supported: how could you rely on your backup if rdiff-backup can't rely on the file system?
+
+The list might grow but issues are currently known with especially slow combinations like:
+
+* Fuse-exFAT (the newer kernel version seems fine though)
+* "complex" file systems on a NAS (e.g. ZFS on SMB or NFS)

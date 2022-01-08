@@ -24,7 +24,7 @@ All those classes should be considered abstract and not instantiated directly.
 """
 
 import os
-from rdiff_backup import log
+from rdiff_backup import Globals, log
 
 
 class Location():
@@ -38,6 +38,30 @@ class Location():
 
     def __str__(self):
         return str(self.base_dir)
+
+    def init_owners_mapping(self, users_map=None, groups_map=None,
+                            preserve_num_ids=False):
+        """
+        initialize mapping of users and groups (aka owners)
+
+        Shadow function for _repo_shadow.RepoShadow/_dir_shadow.DirShadow
+
+        users_map and groups_map are file descriptors opened in text mode
+        """
+        if users_map is not None:
+            users_map = users_map.read()
+        if groups_map is not None:
+            groups_map = groups_map.read()
+        if Globals.get_api_version() < 201:  # compat200
+            self.base_dir.conn.user_group.init_user_mapping(users_map,
+                                                            preserve_num_ids)
+            self.base_dir.conn.user_group.init_group_mapping(groups_map,
+                                                             preserve_num_ids)
+        else:
+            self._shadow.init_owners_mapping(users_map, groups_map,
+                                             preserve_num_ids)
+
+        return 0  # all is good
 
     def _is_existing(self):
         """

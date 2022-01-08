@@ -30,11 +30,13 @@ bytes).
 ** `.close_rf_cache` (inherited from MirrorStruct)
 ** `.init_and_get_iter`
 * `compare.Verify`
-* `conn_number`
-* `quit`
-* `reval`
-* `eas_acls.get_acl_lists_from_rp`
-* `eas_acls.set_rp_acl`
+* `connection.RedirectedRun`
+* `connection.VirtualFile`
+** `.closebyid`
+** `.readfromid`
+** `.writetoid`
+* `eas_acls.get_acl_lists_from_rp`  **unused**
+* `eas_acls.set_rp_acl`  **unused**
 * `FilenameMapping.set_init_quote_vals_local`
 * `fs_abilities.backup_set_globals`
 * `fs_abilities.get_readonly_fsa`
@@ -48,7 +50,6 @@ bytes).
 * `log.ErrorLog.close`
 * `log.ErrorLog.isopen`
 * `log.ErrorLog.open`
-* `log.ErrorLog.write`
 * `log.ErrorLog.write_if_open`
 * `log.Log.close_logfile_allconn`
 * `log.Log.close_logfile_local`
@@ -92,12 +93,11 @@ bytes).
 * `Time.setprevtime_local`
 * `user_group.init_group_mapping`
 * `user_group.init_user_mapping`
-* `user_group.map_rpath`
 
 === External
 
-* `gzip.GzipFile`
-* `open`
+* `gzip.GzipFile` **???**  // perhaps covered by VirtualFile
+* `open` **???**  // perhaps covered by VirtualFile
 * `os.chmod`
 * `os.chown`
 * `os.getuid`
@@ -117,14 +117,14 @@ bytes).
 * `os.utime`
 * `shutil.rmtree`
 * `sys.stdout.write`
-* `win32security.ConvertSecurityDescriptorToStringSecurityDescriptor`
-* `win32security.ConvertStringSecurityDescriptorToSecurityDescriptor`
-* `win32security.GetNamedSecurityInfo`
-* `win32security.SetNamedSecurityInfo`
-* `xattr.get`
-* `xattr.list`
-* `xattr.remove`
-* `xattr.set`
+* `win32security.ConvertSecurityDescriptorToStringSecurityDescriptor`  **unused**
+* `win32security.ConvertStringSecurityDescriptorToSecurityDescriptor`  **unused**
+* `win32security.GetNamedSecurityInfo`  **unused**
+* `win32security.SetNamedSecurityInfo`  **unused**
+* `xattr.get`  **unused**
+* `xattr.list`  **unused**
+* `xattr.remove`  **unused**
+* `xattr.set`  **unused**
 
 == Testing
 

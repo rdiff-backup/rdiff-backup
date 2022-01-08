@@ -87,11 +87,20 @@ class BackupAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        return_code = self._set_no_compression_regexp()
+        if return_code != 0:
+            return return_code
+
         return_code = self.dir.setup()
         if return_code != 0:
             return return_code
 
-        return_code = self.repo.setup(self.dir)
+        owners_map = {
+            "users_map": self.values.user_mapping_file,
+            "groups_map": self.values.group_mapping_file,
+            "preserve_num_ids": self.values.preserve_numerical_ids
+        }
+        return_code = self.repo.setup(self.dir, owners_map=owners_map)
         if return_code != 0:
             return return_code
 
@@ -104,7 +113,6 @@ class BackupAction(actions.BaseAction):
                 self.dir.base_dir, self.values.force)
             self.repo.init_quoting()
 
-        self._init_user_group_mapping(self.repo.base_dir.conn)
         previous_time = self.repo.get_mirror_time()
         if previous_time >= Time.curtime:
             log.Log("The last backup is not in the past. Aborting.",

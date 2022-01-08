@@ -25,11 +25,12 @@ plugins can inheritate default behaviors.
 
 import argparse
 import os
+import re
 import sys
 import tempfile
 import yaml
 from rdiff_backup import (
-    Globals, log, rpath, Security, SetConnections, Time
+    Globals, log, Security, SetConnections, Time
 )
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
@@ -243,13 +244,13 @@ USER_GROUP_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to user and group mapping")
 USER_GROUP_PARSER.add_argument(
-    "--group-mapping-file", type=str, metavar="MAP_FILE",
+    "--group-mapping-file", type=argparse.FileType("r"), metavar="MAP_FILE",
     help="[sub] map groups according to file")
 USER_GROUP_PARSER.add_argument(
     "--preserve-numerical-ids", action="store_true",
     help="[sub] preserve user and group IDs instead of names")
 USER_GROUP_PARSER.add_argument(
-    "--user-mapping-file", type=str, metavar="MAP_FILE",
+    "--user-mapping-file", type=argparse.FileType("r"), metavar="MAP_FILE",
     help="[sub] map users according to file")
 
 GENERIC_PARSERS = [COMMON_PARSER]
@@ -498,12 +499,10 @@ class BaseAction:
             tempfile.tempdir = self.values.tempdir
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
-        SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
-        Globals.postset_regexp('no_compression_regexp',
-                               Globals.no_compression_regexp_string)
+        Globals.set_all("client_conn", Globals.local_connection)
         for conn in Globals.connections:
             conn.robust.install_signal_handlers()
-            conn.Hardlink.initialize_dictionaries()
+            conn.Hardlink.initialize_dictionaries()  # compat200
 
         return 0
 
@@ -514,33 +513,6 @@ class BaseAction:
         Return 0 if everything looked good, else an error code.
         """
         return 0
-
-    def _init_user_group_mapping(self, dest_conn):
-        """
-        Initialize user and group mapping on destination connection
-        """
-        def get_string_from_file(filename):
-            """
-            Helper function to extract string at once from a given file
-            """
-            if not filename:
-                return None
-            rp = rpath.RPath(Globals.local_connection, os.fsencode(filename))
-            try:
-                return rp.get_string()
-            except OSError as e:
-                log.Log.FatalError(
-                    "Error '{er}' reading mapping file '{mf}'".format(
-                        er=e, mf=filename))
-
-        user_mapping_string = get_string_from_file(
-            self.values.user_mapping_file)
-        dest_conn.user_group.init_user_mapping(
-            user_mapping_string, self.values.preserve_numerical_ids)
-        group_mapping_string = get_string_from_file(
-            self.values.group_mapping_file)
-        dest_conn.user_group.init_group_mapping(
-            group_mapping_string, self.values.preserve_numerical_ids)
 
     def _get_parsed_time(self, timestr, ref_rp=None):
         """
@@ -558,10 +530,14 @@ class BaseAction:
                     "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
             return None
 
-    def _operate_regress(self, try_regress=True):
+    def _operate_regress(self, try_regress=True, noticeable=False):
         """
         Check the given repository and regress it if necessary
         """
+        if noticeable:
+            regress_verbosity = log.NOTE
+        else:
+            regress_verbosity = log.INFO
         if Globals.get_api_version() < 201:  # compat200
             if self.repo.needs_regress_compat200():
                 if not try_regress:
@@ -579,7 +555,7 @@ class BaseAction:
                     return 1
             else:
                 log.Log("Given repository doesn't need to be regressed",
-                        log.NOTE)
+                        regress_verbosity)
                 return 0  # all is good
         else:
             if self.repo.needs_regress():
@@ -590,8 +566,29 @@ class BaseAction:
                 return self.repo.regress()
             else:
                 log.Log("Given repository doesn't need to be regressed",
-                        log.NOTE)
+                        regress_verbosity)
                 return 0  # all is good
+
+    def _set_no_compression_regexp(self):
+        """
+        Sets the no_compression_regexp setting globally
+        """
+        try:  # compat200
+            no_compression_string = os.fsencode(
+                Globals.no_compression_regexp_string)
+        except AttributeError:
+            no_compression_string = os.fsencode(
+                self.values.not_compressed_regexp)
+        try:
+            no_compression_regexp = re.compile(no_compression_string)
+        except re.error:
+            log.Log("No compression regular expression '{ex}' doesn't "
+                    "compile".format(ex=no_compression_string), log.ERROR)
+            return 1
+
+        Globals.set_all('no_compression_regexp', no_compression_regexp)
+
+        return 0  # all is good
 
 
 def get_action_class():

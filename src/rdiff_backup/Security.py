@@ -56,23 +56,29 @@ _disallowed_server_globals = ["server"]
 # The keys are files request, the value is the index of the argument
 # taking a file.
 _file_requests = {
-    'os.listdir': 0,
-    'rpath.make_file_dict': 0,
-    'os.chmod': 0,
-    'os.chown': 0,
-    'os.remove': 0,
-    'os.removedirs': 0,
-    'os.rename': 0,
-    'os.renames': 0,
-    'os.rmdir': 0,
-    'os.unlink': 0,
-    'os.utime': 0,
-    'os.lchown': 0,
-    'os.link': 1,
-    'os.symlink': 1,
-    'os.mkdir': 0,
-    'os.makedirs': 0,
-    'rpath.delete_dir_no_files': 0
+    "os.chmod": 0,
+    "os.chown": 0,
+    "os.lchown": 0,
+    "os.link": 1,
+    "os.listdir": 0,
+    "os.makedirs": 0,
+    "os.mkdir": 0,
+    "os.mkfifo": 0,
+    "os.mknod": 0,
+    "os.remove": 0,
+    "os.rename": 0,
+    "os.rmdir": 0,
+    "os.symlink": 1,
+    "os.unlink": 0,
+    "os.utime": 0,
+    "rpath.make_file_dict": 0,
+    "rpath.delete_dir_no_files": 0
+}
+
+# functions to set global values
+_globals_requests = {
+    "Globals.set",
+    "Globals.set_local"
 }
 
 
@@ -121,7 +127,7 @@ def vet_request(request, arglist):
             _vet_filename(request, arglist)
     if request.function_string in _allowed_requests:
         return
-    if request.function_string in ("Globals.set", "Globals.set_local"):
+    if request.function_string in _globals_requests:
         if arglist[0] not in _disallowed_server_globals:
             return
     _raise_violation("invalid request", request, arglist)
@@ -212,22 +218,36 @@ def _set_allowed_requests(sec_class, sec_level):
     Set the allowed requests list using the security level
     """
     requests = {  # minimal set of requests
-        "VirtualFile.readfromid", "VirtualFile.closebyid", "Globals.get",
-        "Globals.is_not_None", "Globals.get_dict_val",
-        "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
-        "log.Log.log_to_file", "FilenameMapping.set_init_quote_vals_local",
+        "RedirectedRun",  # connection.RedirectedRun
+        "VirtualFile.readfromid",  # connection.VirtualFile.readfromid
+        "VirtualFile.closebyid",  # connection.VirtualFile.closebyid
+        "Globals.get",
+        "log.Log.open_logfile_allconn",
+        "log.Log.close_logfile_allconn",
+        "log.Log.log_to_file",
+        "robust.install_signal_handlers",
+        "SetConnections.add_redirected_conn",
         "Time.setcurtime_local",
-        "SetConnections.add_redirected_conn", "RedirectedRun",
-        "sys.stdout.write", "robust.install_signal_handlers"
+        # System
+        # "gzip.GzipFile",  # ??? perhaps covered by VirtualFile
+        # "open",  # ??? perhaps covered by VirtualFile
+        "sys.stdout.write",
+        # API < 201
+        "FilenameMapping.set_init_quote_vals_local",
     }
     if (sec_level == "read-only" or sec_level == "update-only"
             or sec_level == "read-write"):
         requests.update([
-            "rpath.make_file_dict", "os.listdir", "rpath.ea_get",
-            "rpath.acl_get", "rpath.setdata_local", "log.Log.log_to_file",
-            "os.getuid", "rpath.gzip_open_local_read", "rpath.open_local_read",
-            "Hardlink.initialize_dictionaries", "user_group.uid2uname",
-            "user_group.gid2gname"
+            "rpath.gzip_open_local_read",
+            "rpath.make_file_dict",
+            "rpath.open_local_read",
+            "rpath.setdata_local",
+            # System
+            "os.getuid",
+            "os.listdir",
+            "os.name",
+            # API < 201
+            "Hardlink.initialize_dictionaries",
         ])
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
@@ -235,12 +255,12 @@ def _set_allowed_requests(sec_class, sec_level):
             "backup.SourceStruct.get_source_select",
             "backup.SourceStruct.set_source_select",
             "backup.SourceStruct.get_diffs",
-            "compare.DataSide.get_source_select",
+            "compare.DataSide.get_source_select",  # inherited from SourceStruct
             "compare.DataSide.compare_fast",
             "compare.DataSide.compare_hash",
             "compare.DataSide.compare_full",
             "compare.RepoSide.init_and_get_iter",
-            "compare.RepoSide.close_rf_cache",
+            "compare.RepoSide.close_rf_cache",  # inherited from MirrorStruct
             "compare.RepoSide.attach_files",
             "compare.Verify",
             "fs_abilities.get_readonly_fsa",
@@ -277,10 +297,14 @@ def _set_allowed_requests(sec_class, sec_level):
         ])
     if sec_level == "update-only" or sec_level == "read-write":
         requests.update([
-            "log.Log.open_logfile_local", "log.Log.close_logfile_local",
-            "log.ErrorLog.open", "log.ErrorLog.isopen", "log.ErrorLog.close",
-            "statistics.record_error",
+            "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
+            "log.ErrorLog.close",
+            "log.ErrorLog.isopen",
+            "log.ErrorLog.open",
             "log.ErrorLog.write_if_open",
+            "log.Log.close_logfile_local",
+            "log.Log.open_logfile_local",
+            "statistics.record_error",
             # API < 201
             "backup.DestinationStruct.set_rorp_cache",
             "backup.DestinationStruct.get_sigs",
@@ -304,9 +328,27 @@ def _set_allowed_requests(sec_class, sec_level):
         ])
     if sec_level == "read-write":
         requests.update([
-            "os.mkdir", "os.chown", "os.lchown", "os.rename", "os.unlink",
-            "os.remove", "os.chmod", "os.makedirs",
             "rpath.delete_dir_no_files",
+            "rpath.copy_reg_file",  # FIXME really needed?
+            "rpath.make_socket_local",  # FIXME really needed?
+            "rpath.RPath.fsync_local",  # FIXME really needed?
+            # System
+            "os.chmod",
+            "os.chown",
+            "os.lchown",
+            "os.link",
+            "os.makedev",
+            "os.makedirs",
+            "os.mkdir",
+            "os.mkfifo",
+            "os.mknod",
+            "os.remove",
+            "os.rename",
+            "os.rmdir",
+            "os.symlink",
+            "os.unlink",
+            "os.utime",
+            "shutil.rmtree",
             # API < 201
             "backup.DestinationStruct.patch",
             "manage.delete_earlier_than_local",
@@ -327,10 +369,18 @@ def _set_allowed_requests(sec_class, sec_level):
         ])
     if sec_class == "server":
         requests.update([
-            "SetConnections.init_connection_remote", "log.Log.setverbosity",
-            "log.Log.setterm_verbosity", "Time.setprevtime_local",
+            "log.Log.setverbosity",
+            "log.Log.setterm_verbosity",
+            "SetConnections.init_connection_remote",
+            "Time.setprevtime_local",
+            # API < 201
             "Globals.postset_regexp_local",
-            "user_group.init_user_mapping", "user_group.init_group_mapping"
+            "user_group.init_user_mapping",
+            "user_group.init_group_mapping",
+            # API >= 201
+            "_repo_shadow.RepoShadow.init_owners_mapping",
+            "_dir_shadow.WriteDirShadow.init_owners_mapping",
+            "Globals.set_api_version",
         ])
     return requests
 

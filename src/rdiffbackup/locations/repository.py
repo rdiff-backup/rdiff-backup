@@ -25,6 +25,7 @@ import io
 
 from rdiffbackup import locations
 from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations.map import filenames as map_filenames
 
 from rdiff_backup import (
     FilenameMapping,
@@ -33,7 +34,6 @@ from rdiff_backup import (
     rpath,
     selection,
     Security,
-    SetConnections,
 )
 
 
@@ -89,7 +89,7 @@ class Repo(locations.Location):
 
         return ret_code
 
-    def setup(self, src_dir=None):
+    def setup(self, src_dir=None, owners_map=None):
         if self.must_be_writable and not self._create():
             return 1
 
@@ -97,7 +97,7 @@ class Repo(locations.Location):
                 and self.base_dir.conn is Globals.local_connection):
             Security.reset_restrict_path(self.base_dir)
 
-        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
+        Globals.set_all('rbdir', self.data_dir)  # compat200
 
         if Globals.get_api_version() >= 201:  # compat200
             if self.base_dir.conn is Globals.local_connection:
@@ -120,17 +120,26 @@ class Repo(locations.Location):
 
             if src_dir is None:
                 self.remote_transfer = None  # just in case
-                return fs_abilities.SingleRepoSetGlobals(self)()
+                ret_code = fs_abilities.SingleRepoSetGlobals(self)()
+                if ret_code != 0:
+                    return ret_code
             else:
                 # FIXME this shouldn't be necessary, and the setting of variable
                 # across the connection should happen through the shadow
-                SetConnections.UpdateGlobal("backup_writer", self.base_dir.conn)
+                Globals.set_all("backup_writer", self.base_dir.conn)
                 self.base_dir.conn.Globals.set("isbackup_writer", True)
                 # this is the new way, more dedicated but not sufficient yet
                 self.remote_transfer = (src_dir.base_dir.conn
                                         is not self.base_dir.conn)
-                return fs_abilities.Dir2RepoSetGlobals(src_dir,
-                                                       self)(self.force)
+                ret_code = fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
+                if ret_code != 0:
+                    return ret_code
+            self.init_quoting()
+
+        if owners_map is not None:
+            ret_code = self.init_owners_mapping(**owners_map)
+            if ret_code != 0:
+                return ret_code
 
         return 0  # all is good
 
@@ -166,13 +175,17 @@ class Repo(locations.Location):
         if not Globals.chars_to_quote:
             return False
 
-        FilenameMapping.set_init_quote_vals()  # compat200
+        if Globals.get_api_version() < 201:  # compat200
+            FilenameMapping.set_init_quote_vals()
+            self.base_dir = FilenameMapping.get_quotedrpath(self.base_dir)
+            self.data_dir = FilenameMapping.get_quotedrpath(self.data_dir)
+            self.incs_dir = FilenameMapping.get_quotedrpath(self.incs_dir)
+        else:
+            self.base_dir = map_filenames.get_quotedrpath(self.base_dir)
+            self.data_dir = map_filenames.get_quotedrpath(self.data_dir)
+            self.incs_dir = map_filenames.get_quotedrpath(self.incs_dir)
 
-        self.base_dir = FilenameMapping.get_quotedrpath(self.base_dir)
-        self.data_dir = FilenameMapping.get_quotedrpath(self.data_dir)
-        self.incs_dir = FilenameMapping.get_quotedrpath(self.incs_dir)
-
-        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
+        Globals.set_all('rbdir', self.data_dir)  # compat200
 
         return True
 
@@ -491,26 +504,26 @@ information in it.
         """
         Shadow function for RepoShadow.get_config for chars_to_quote
         """
-        return self._shadow.get_config(self.base_dir, "chars_to_quote")
+        return self._shadow.get_config(self.data_dir, "chars_to_quote")
 
     def set_chars_to_quote(self, chars_to_quote):
         """
         Shadow function for RepoShadow.set_config for chars_to_quote
         """
-        return self._shadow.set_config(self.base_dir, "chars_to_quote",
+        return self._shadow.set_config(self.data_dir, "chars_to_quote",
                                        chars_to_quote)
 
     def get_special_escapes(self):
         """
         Shadow function for RepoShadow.get_config for special_escapes
         """
-        return self._shadow.get_config(self.base_dir, "special_escapes")
+        return self._shadow.get_config(self.data_dir, "special_escapes")
 
     def set_special_escapes(self, special_escapes):
         """
         Shadow function for RepoShadow.set_config for special_escapes
         """
-        return self._shadow.set_config(self.base_dir, "special_escapes",
+        return self._shadow.set_config(self.data_dir, "special_escapes",
                                        special_escapes)
 
     def update_quoting(self):

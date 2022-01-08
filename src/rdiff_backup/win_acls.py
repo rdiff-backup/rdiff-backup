@@ -19,12 +19,15 @@
 
 import re
 import os
-from . import C, metadata, rorpiter, rpath, log
+from rdiff_backup import C, Globals, log, metadata, rorpiter, rpath
 
 try:
     from win32security import (
         AdjustTokenPrivileges,
+        ConvertSecurityDescriptorToStringSecurityDescriptor,
+        ConvertStringSecurityDescriptorToSecurityDescriptor,
         DACL_SECURITY_INFORMATION,
+        GetNamedSecurityInfo,
         GetTokenInformation,
         GROUP_SECURITY_INFORMATION,
         INHERIT_ONLY_ACE,
@@ -39,6 +42,7 @@ try:
         SE_PRIVILEGE_ENABLED,
         SE_RESTORE_NAME,
         SE_SECURITY_NAME,
+        SetNamedSecurityInfo,
         TOKEN_ADJUST_PRIVILEGES,
         TokenPrivileges,
         TOKEN_QUERY,
@@ -79,8 +83,8 @@ class ACL:
             return
 
         try:
-            sd = rp.conn.win32security.GetNamedSecurityInfo(
-                os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+            sd = GetNamedSecurityInfo(os.fsdecode(rp.path),
+                                      SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
             log.Log("Unable to read ACL from path {pa} due to "
                     "exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
@@ -117,7 +121,7 @@ class ACL:
             sd.SetSecurityDescriptorSacl(0, None, 0)
 
         try:
-            self.__acl = rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(
+            self.__acl = ConvertSecurityDescriptorToStringSecurityDescriptor(
                 sd, SDDL_REVISION_1, ACL.flags)
         except (OSError, pywintypes.error) as exc:
             log.Log("Unable to convert ACL of path {pa} to string "
@@ -130,7 +134,7 @@ class ACL:
             return
 
         try:
-            sd = rp.conn.win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
+            sd = ConvertStringSecurityDescriptorToSecurityDescriptor(
                 os.fsdecode(self.__acl), SDDL_REVISION_1)
         except (OSError, pywintypes.error) as exc:
             log.Log("Unable to convert ACL string '{st!r}' to security "
@@ -164,7 +168,7 @@ class ACL:
             self._clear_rp(rp)
 
         try:
-            rp.conn.win32security.SetNamedSecurityInfo(
+            SetNamedSecurityInfo(
                 os.fsdecode(rp.path),
                 SE_FILE_OBJECT, ACL.flags,
                 sd.GetSecurityDescriptorOwner(),
@@ -201,8 +205,8 @@ class ACL:
         # not sure how to interpret this
         # I'll just clear all acl-s from rp.path
         try:
-            sd = rp.conn.win32security.GetNamedSecurityInfo(
-                os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+            sd = GetNamedSecurityInfo(os.fsdecode(rp.path),
+                                      SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
             log.Log("Unable to read ACL from path {pa} for clearing them "
                     "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
@@ -228,7 +232,7 @@ class ACL:
                 sd.SetSecurityDescriptorSacl(0, acl, 0)
 
         try:
-            rp.conn.win32security.SetNamedSecurityInfo(
+            SetNamedSecurityInfo(
                 os.fsdecode(rp.path),
                 SE_FILE_OBJECT,
                 ACL.flags,
@@ -318,9 +322,11 @@ def init_acls():
         win32api.CloseHandle(hnd)
 
 
-def _rpath_win_acl_get(rpath):
+def _rpath_win_acl_get(rp):
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{co}'.".format(co=rp.conn))
     acl = ACL()
-    acl.load_from_rp(rpath)
+    acl.load_from_rp(rp)
     return bytes(acl)
 
 
@@ -336,6 +342,8 @@ rpath.get_blank_win_acl = _rpath_get_blank_win_acl
 
 
 def _rpath_write_win_acl(rp, acl_str):
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{co}'.".format(co=rp.conn))
     acl = ACL()
     acl.from_string(acl_str)
     acl.write_to_rp(rp)

@@ -34,7 +34,17 @@ try:
     import posix1e
 except ImportError:
     pass
-from . import Globals, connection, metadata, rorpiter, log, C, rpath, user_group  # noqa: F401
+try:
+    import xattr.pyxattr_compat as xattr
+except ImportError:
+    try:
+        import xattr
+    except ImportError:
+        pass
+
+from rdiff_backup import C, Globals, log, metadata, rorpiter, rpath
+from rdiffbackup.utils import usrgrp
+from rdiffbackup.locations.map import owners as map_owners
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name
@@ -69,7 +79,7 @@ class ExtendedAttributes:
     def read_from_rp(self, rp):
         """Set the extended attributes from an rpath"""
         try:
-            attr_list = rp.conn.xattr.list(rp.path, rp.issym())
+            attr_list = xattr.list(rp.path, rp.issym())
         except OSError as exc:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
@@ -87,8 +97,7 @@ class ExtendedAttributes:
                 # Resource Fork handled elsewhere, except for directories
                 continue
             try:
-                self.attr_dict[attr] = \
-                    rp.conn.xattr.get(rp.path, attr, rp.issym())
+                self.attr_dict[attr] = xattr.get(rp.path, attr, rp.issym())
             except OSError as exc:
                 # File probably modified while reading, just continue
                 if exc.errno == errno.ENODATA:
@@ -103,10 +112,13 @@ class ExtendedAttributes:
 
     def write_to_rp(self, rp):
         """Write extended attributes to rpath rp"""
+        assert rp.conn is Globals.local_connection, (
+            "Function works locally not over '{co}'.".format(co=rp.conn))
+
         self._clear_rp(rp)
         for (name, value) in self.attr_dict.items():
             try:
-                rp.conn.xattr.set(rp.path, name, value, 0, rp.issym())
+                xattr.set(rp.path, name, value, 0, rp.issym())
             except OSError as exc:
                 # Mac and Linux attributes have different namespaces, so
                 # fail gracefully if can't call xattr.set
@@ -138,9 +150,9 @@ class ExtendedAttributes:
     def _clear_rp(self, rp):
         """Delete all the extended attributes in rpath"""
         try:
-            for name in rp.conn.xattr.list(rp.path, rp.issym()):
+            for name in xattr.list(rp.path, rp.issym()):
                 try:
-                    rp.conn.xattr.remove(rp.path, name, rp.issym())
+                    xattr.remove(rp.path, name, rp.issym())
                 except PermissionError:  # errno.EACCES
                     # SELinux attributes cannot be removed, and we don't want
                     # to bail out or be too noisy at low log levels.
@@ -319,13 +331,13 @@ class AccessControlLists:
 
     def read_from_rp(self, rp):
         """Set self.ACL from an rpath, or None if not supported"""
-        self.entry_list, self.default_entry_list = \
-            rp.conn.eas_acls.get_acl_lists_from_rp(rp)
+        self.entry_list, self.default_entry_list = get_acl_lists_from_rp(rp)
 
     def write_to_rp(self, rp, map_names=1):
         """Write current access control list to RPath rp"""
-        rp.conn.eas_acls.set_rp_acl(rp, self.entry_list,
-                                    self.default_entry_list, map_names)
+        assert rp.conn is Globals.local_connection, (
+            "Function works locally not over '{co}'.".format(co=rp.conn))
+        set_rp_acl(rp, self.entry_list, self.default_entry_list, map_names)
 
     def _set_from_text(self, text):
         """Set self.entry_list and self.default_entry_list from text"""
@@ -494,7 +506,7 @@ class AccessControlListFile(metadata.FlatFile):
                                       os.fsencode(str(acl)))
 
 
-# @API(set_rp_acl, 200)
+# @API(set_rp_acl, 200, 200)  # unused
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
     assert rp.conn is Globals.local_connection, (
@@ -524,7 +536,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
         def_acl.applyto(rp.path, posix1e.ACL_TYPE_DEFAULT)
 
 
-# @API(get_acl_lists_from_rp, 200)
+# @API(get_acl_lists_from_rp, 200, 200)  # unused
 def get_acl_lists_from_rp(rp):
     """Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
     assert rp.conn is Globals.local_connection, (
@@ -611,10 +623,10 @@ def _acl_to_list(acl):
         tagchar = acltag_to_char(entry.tag_type)
         if tagchar == "u":
             uid = entry.qualifier
-            owner_pair = (uid, user_group.uid2uname(uid))
+            owner_pair = (uid, usrgrp.uid2uname(uid))
         elif tagchar == "g":
             gid = entry.qualifier
-            owner_pair = (gid, user_group.gid2gname(gid))
+            owner_pair = (gid, usrgrp.gid2gname(gid))
         else:
             owner_pair = None
 
@@ -674,9 +686,9 @@ def _list_to_acl(entry_list, map_names=1):
         if owner_pair:
             if map_names:
                 if typechar == "u":
-                    id = user_group.acl_user_map(*owner_pair)
+                    id = map_owners.map_acl_user(*owner_pair)
                 elif typechar == "g":
-                    id = user_group.acl_group_map(*owner_pair)
+                    id = map_owners.map_acl_group(*owner_pair)
                 else:
                     raise ValueError(
                         "Type '{tc}' must be one of 'u' or 'g'.".format(
@@ -705,11 +717,13 @@ def _list_to_acl(entry_list, map_names=1):
 
 
 def rpath_acl_get(rp):
-    """Get acls of given rpath rp.
+    """
+    Get acls of given rpath rp.
 
     This overrides a function in the rpath module.
-
     """
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{co}'.".format(co=rp.conn))
     acl = AccessControlLists(rp.index)
     if not rp.issym():
         acl.read_from_rp(rp)
@@ -728,11 +742,13 @@ rpath.get_blank_acl = rpath_get_blank_acl
 
 
 def rpath_ea_get(rp):
-    """Get extended attributes of given rpath
+    """
+    Get extended attributes of given rpath
 
     This overrides a function in the rpath module.
-
     """
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{co}'.".format(co=rp.conn))
     ea = ExtendedAttributes(rp.index)
     if not rp.issock() and not rp.isfifo():
         ea.read_from_rp(rp)

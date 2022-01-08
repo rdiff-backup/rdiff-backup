@@ -27,15 +27,25 @@ jobs:
       matrix:
         arch: [x86, x64]
     steps:
+    - name: skip workflow if only docs PR
+      id: skip-docs # id used for referencing step
+      uses: saulmaldonado/skip-workflow@v1.1.0
+      with:
+        phrase: '[DOC]'
+        search: '["pull_request"]'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
     - uses: actions/checkout@v2
+      if: '!steps.skip-docs.outputs.skip'
       with:
         fetch-depth: 0  # to have the correct version
     - name: Set up Python ${{ env.WIN_PYTHON_VERSION }}
+      if: '!steps.skip-docs.outputs.skip'
       uses: actions/setup-python@v2
       with:
         python-version: ${{ env.WIN_PYTHON_VERSION }}
         architecture: ${{ matrix.arch }}
     - name: Install dependencies
+      if: '!steps.skip-docs.outputs.skip'
       run: |
         python.exe -VV
         pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML
@@ -43,6 +53,8 @@ jobs:
         choco install ruby
         gem install asciidoctor
     - name: Build librsync
+      if: '!steps.skip-docs.outputs.skip'
       run: tools/win_build_librsync.sh ${{ matrix.arch }} ${WIN_LIBRSYNC_VERSION}
     - name: Test rdiff-backup
+      if: '!steps.skip-docs.outputs.skip'
       run: tools/win_test_rdiffbackup.sh ${{ matrix.arch }} ${WIN_PYTHON_VERSION}

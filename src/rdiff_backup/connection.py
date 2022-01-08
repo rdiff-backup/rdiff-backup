@@ -30,18 +30,18 @@ import tempfile  # noqa: F401
 import types  # noqa: F401
 
 # The following EA and ACL modules may be used if available
-try:
+try:  # compat200
     import xattr.pyxattr_compat as xattr  # noqa: F401
 except ImportError:
     try:
         import xattr  # noqa: F401
     except ImportError:
         pass
-try:
+try:  # compat200
     import posix1e  # noqa: F401
 except ImportError:
     pass
-try:
+try:  # compat200
     import win32security  # noqa: F401
 except ImportError:
     pass
@@ -178,7 +178,9 @@ class LowLevelPipeConnection(Connection):
             self._putbuf(obj, req_num)
         elif isinstance(obj, Connection):
             self._putconn(obj, req_num)
-        elif isinstance(obj, FilenameMapping.QuotedRPath):
+        elif isinstance(obj, FilenameMapping.QuotedRPath):  # compat200
+            self._putqrpath(obj, req_num)
+        elif isinstance(obj, map_filenames.QuotedRPath):
             self._putqrpath(obj, req_num)
         elif isinstance(obj, rpath.RPath):
             self._putrpath(obj, req_num)
@@ -349,8 +351,12 @@ class LowLevelPipeConnection(Connection):
     def _getqrpath(self, raw_qrpath_buf):
         """Return QuotedRPath object from raw buffer"""
         conn_number, base, index, data = pickle.loads(raw_qrpath_buf)
-        return FilenameMapping.QuotedRPath(
-            Globals.connection_dict[conn_number], base, index, data)
+        if Globals.get_api_version() < 201:  # compat200
+            return FilenameMapping.QuotedRPath(
+                Globals.connection_dict[conn_number], base, index, data)
+        else:
+            return map_filenames.QuotedRPath(
+                Globals.connection_dict[conn_number], base, index, data)
 
     def _close(self):
         """Close the pipes associated with the connection"""
@@ -369,9 +375,6 @@ class PipeConnection(LowLevelPipeConnection):
     client makes the first request, and the server listens first.
 
     """
-
-    # @API(conn_number, 200)
-    # conn_number is defined in the __init__ function
 
     def __init__(self, inpipe, outpipe, conn_number=0):
         """Init PipeConnection
@@ -401,14 +404,13 @@ class PipeConnection(LowLevelPipeConnection):
         self._get_response(-1)
         return 0  # all is well...
 
-    # @API(reval, 200)
     def reval(self, function_string, *args):
-        """Execute command on remote side
+        """
+        Execute command on remote side
 
         The first argument should be a string that evaluates to a
         function, like "pow", and the remaining are arguments to that
         function.
-
         """
         req_num = self._get_new_req_num()
         self._put(ConnectionRequest(function_string, len(args)), req_num)
@@ -425,7 +427,6 @@ class PipeConnection(LowLevelPipeConnection):
         else:
             return result
 
-    # @API(quit, 200)
     def quit(self):
         """Close the associated pipes and tell server side to quit"""
         assert not Globals.server, "This function shouldn't run as server."
@@ -571,60 +572,43 @@ class VirtualFile:
 
     """
     # The following are used by the server
-    vfiles = {}
-    counter = 0
+    _vfiles = {}
+    _counter = -1
 
-    @classmethod
-    def getbyid(cls, id):
-        return cls.vfiles[id]
-
+    # @API(VirtualFile.readfromid, 200)
     @classmethod
     def readfromid(cls, id, length):
         if length is None:
-            return cls.vfiles[id].read()
+            return cls._vfiles[id].read()
         else:
-            return cls.vfiles[id].read(length)
+            return cls._vfiles[id].read(length)
 
-    @classmethod
-    def readlinefromid(cls, id):
-        return cls.vfiles[id].readline()
-
+    # @API(VirtualFile.writetoid, 200)
     @classmethod
     def writetoid(cls, id, buffer):
-        return cls.vfiles[id].write(buffer)
+        return cls._vfiles[id].write(buffer)
 
+    # @API(VirtualFile.closebyid, 200)
     @classmethod
     def closebyid(cls, id):
-        fp = cls.vfiles[id]
-        del cls.vfiles[id]
+        fp = cls._vfiles[id]
+        del cls._vfiles[id]
         return fp.close()
 
     @classmethod
     def new(cls, fileobj):
         """Associate a new VirtualFile with a read fileobject, return id"""
-        count = cls.counter
-        cls.vfiles[count] = fileobj
-        cls.counter = count + 1
-        return count
+        cls._counter += 1
+        cls._vfiles[cls._counter] = fileobj
+        return cls._counter
 
     # And these are used by the client
     def __init__(self, connection, id):
         self.connection = connection
         self.id = id
 
-    def __iter__(self):
-        """Iterates lines in file, like normal iter(file) behavior"""
-        while 1:
-            line = self.readline()
-            if not line:
-                break
-            yield line
-
     def read(self, length=None):
         return self.connection.VirtualFile.readfromid(self.id, length)
-
-    def readline(self):
-        return self.connection.VirtualFile.readlinefromid(self.id)
 
     def write(self, buf):
         return self.connection.VirtualFile.writetoid(self.id, buf)
@@ -633,6 +617,7 @@ class VirtualFile:
         return self.connection.VirtualFile.closebyid(self.id)
 
 
+# @API(RedirectedRun, 200)
 def RedirectedRun(conn_number, func, *args):
     """Run func with args on connection with conn number conn_number
 
@@ -651,7 +636,7 @@ def RedirectedRun(conn_number, func, *args):
 
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
-from . import (  # noqa: E402,F401
+from rdiff_backup import (  # noqa: E402,F401
     Globals, Time, Rdiff, Hardlink, FilenameMapping, Security,
     Main, rorpiter, selection, increment, statistics, manage,
     iterfile, rpath, robust, restore, backup,
@@ -659,6 +644,7 @@ from . import (  # noqa: E402,F401
     eas_acls, user_group, compare
 )
 from rdiffbackup.locations import _dir_shadow, _repo_shadow  # noqa: E402,F401
+from rdiffbackup.locations.map import filenames as map_filenames  # noqa: E402,F401
 try:
     from . import win_acls  # noqa: F401
 except ImportError:

@@ -31,25 +31,27 @@
 ** `.close_rf_cache` (inherited from MirrorStruct)
 ** `.init_and_get_iter`
 * `compare.Verify`  **deprecated**
-* `connection.conn_number`
-* `connection.quit`
-* `connection.reval`
-* `eas_acls.get_acl_lists_from_rp`
-* `eas_acls.set_rp_acl`
-* `FilenameMapping.set_init_quote_vals_local`
+* `connection.RedirectedRun`
+* `connection.VirtualFile`
+** `.closebyid`
+** `.readfromid`
+** `.writetoid`
+* `eas_acls.get_acl_lists_from_rp` **unused**
+* `eas_acls.set_rp_acl` **unused**
+* `FilenameMapping.set_init_quote_vals_local`  **deprecated**
 * `fs_abilities.backup_set_globals` **deprecated**
 * `fs_abilities.get_readonly_fsa` **deprecated**
 * `fs_abilities.restore_set_globals` **deprecated**
 * `fs_abilities.single_set_globals` **deprecated**
 * `Globals.get`
-* `Globals.postset_regexp_local`
+* `Globals.postset_regexp_local`  **deprecated**
 * `Globals.set`
+* `Globals.set_api_version`  **new**
 * `Globals.set_local`
-* `Hardlink.initialize_dictionaries`
+* `Hardlink.initialize_dictionaries`  **deprecated**
 * `log.ErrorLog.close`
 * `log.ErrorLog.isopen`
 * `log.ErrorLog.open`
-* `log.ErrorLog.write`
 * `log.ErrorLog.write_if_open`
 * `log.Log.close_logfile_allconn`
 * `log.Log.close_logfile_local`
@@ -91,9 +93,8 @@
 * `statistics.record_error`
 * `Time.setcurtime_local`
 * `Time.setprevtime_local`
-* `user_group.init_group_mapping`
-* `user_group.init_user_mapping`
-* `user_group.map_rpath`
+* `user_group.init_group_mapping`  **deprecated**
+* `user_group.init_user_mapping`  **deprecated**
 
 ==== rdiffbackup
 
@@ -102,23 +103,29 @@
 ** `.compare_hash`
 ** `.compare_meta`
 ** `.get_diffs`
+** `.get_fs_abilities`
 ** `.get_select`
 ** `.set_select`
 * `locations._dir_shadow.WriteDirShadow`  **new**
+** `.get_fs_abilities`
 ** `.get_initial_iter`
+** `.init_owners_mapping`
 ** `.patch`
 ** `.set_select`
 * `locations._repo_shadow.RepoShadow`  **new**
 ** `.attach_files`
 ** `.close_rf_cache`
 ** `.close_statistics`
-** `.delete_increments_older_than`
+** `.remove_increments_older_than`
 ** `.get_config`
 ** `.get_diffs`
+** `.get_fs_abilities_readonly`
+** `.get_fs_abilities_readwrite`
 ** `.get_increment_times`
 ** `.get_mirror_time`
 ** `.get_sigs`
 ** `.init_and_get_iter`
+** `.init_owners_mapping`
 ** `.initialize_restore`
 ** `.initialize_rf_cache`
 ** `.list_files_at_time`
@@ -137,8 +144,8 @@
 
 === External
 
-* `gzip.GzipFile`
-* `open`
+* `gzip.GzipFile` **???**  // perhaps covered by VirtualFile
+* `open` **???**  // perhaps covered by VirtualFile
 * `os.chmod`
 * `os.chown`
 * `os.getuid`
@@ -158,14 +165,14 @@
 * `os.utime`
 * `shutil.rmtree`
 * `sys.stdout.write`
-* `win32security.ConvertSecurityDescriptorToStringSecurityDescriptor`
-* `win32security.ConvertStringSecurityDescriptorToSecurityDescriptor`
-* `win32security.GetNamedSecurityInfo`
-* `win32security.SetNamedSecurityInfo`
-* `xattr.get`
-* `xattr.list`
-* `xattr.remove`
-* `xattr.set`
+* `win32security.ConvertSecurityDescriptorToStringSecurityDescriptor`  **unused**
+* `win32security.ConvertStringSecurityDescriptorToSecurityDescriptor`  **unused**
+* `win32security.GetNamedSecurityInfo`  **unused**
+* `win32security.SetNamedSecurityInfo`  **unused**
+* `xattr.get`  **unused**
+* `xattr.list`  **unused**
+* `xattr.remove`  **unused**
+* `xattr.set`  **unused**
 
 == Testing
 

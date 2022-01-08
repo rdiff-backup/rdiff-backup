@@ -19,7 +19,6 @@ jobs:
       matrix:
         python-version: [3.9,3.8,3.7,3.6]
     steps:
-    - uses: actions/checkout@v2
     - name: skip workflow if only docs PR
       id: skip-docs # id used for referencing step
       uses: saulmaldonado/skip-workflow@v1.1.0
@@ -27,6 +26,8 @@ jobs:
         phrase: '[DOC]'
         search: '["pull_request"]'
         github-token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v2
+      if: '!steps.skip-docs.outputs.skip'
     - name: Set up Python ${{ matrix.python-version }}
       if: '!steps.skip-docs.outputs.skip'
       uses: actions/setup-python@v2

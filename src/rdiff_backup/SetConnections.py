@@ -133,18 +133,12 @@ def add_redirected_conn(conn_number):
         connection.RedirectedConnection(conn_number)
 
 
-def UpdateGlobal(setting_name, val):
-    """Update value of global variable across all connections"""
-    for conn in Globals.connections:
-        conn.Globals.set(setting_name, val)
-
-
 def BackupInitConnections(reading_conn, writing_conn):  # compat200
     """Backup specific connection initialization"""
     reading_conn.Globals.set("isbackup_reader", True)
     writing_conn.Globals.set("isbackup_writer", True)
-    UpdateGlobal("backup_reader", reading_conn)
-    UpdateGlobal("backup_writer", writing_conn)
+    Globals.set_all("backup_reader", reading_conn)
+    Globals.set_all("backup_writer", writing_conn)
 
 
 def CloseConnections():
@@ -418,8 +412,7 @@ Please make sure you have compatible versions of rdiff-backup""".format(
     if Globals.api_version["actual"]:
         if (Globals.api_version["actual"] >= remote_api_version["min"]
                 and Globals.api_version["actual"] <= remote_api_version["max"]):
-            conn.Globals.set('api_version["actual"]',
-                             Globals.api_version["actual"])
+            conn.Globals.set_api_version(Globals.api_version["actual"])
             log.Log("API version agreed to be actual {av} "
                     "with command {co}".format(
                         av=Globals.api_version["actual"], co=remote_cmd),
@@ -442,7 +435,7 @@ Please make sure you have compatible versions of rdiff-backup""".format(
                                  min(remote_api_version["max"],
                                      Globals.api_version["default"]))
         Globals.api_version["actual"] = actual_api_version
-        conn.Globals.set('api_version["actual"]', actual_api_version)
+        conn.Globals.set_api_version(actual_api_version)
         log.Log("API version agreed to be {av} with command {co}".format(
             av=actual_api_version, co=remote_cmd), log.INFO)
         return True
