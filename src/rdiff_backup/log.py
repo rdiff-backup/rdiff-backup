@@ -20,7 +20,6 @@
 
 import datetime
 import os  # needed to grab verbosity as environment variable
-import re
 import shutil
 import sys
 import textwrap
@@ -341,22 +340,6 @@ class ErrorLog:
             return cls._log_fileobj is not None
         else:
             return Globals.backup_writer.log.ErrorLog.isopen()
-
-    @classmethod
-    # @API(ErrorLog.write, 200)
-    def write(cls, error_type, rp, exc):
-        """Add line to log file indicating error exc with file rp"""
-        if not Globals.isbackup_writer:
-            return Globals.backup_writer.log.ErrorLog.write(
-                error_type, rp, exc)
-        logstr = cls._get_log_string(error_type, rp, exc)
-        Log(logstr, WARNING)
-        if Globals.null_separator:
-            logstr += "\0"
-        else:
-            logstr = re.sub("\n", " ", logstr)
-            logstr += "\n"
-        cls._log_fileobj.write(_to_bytes(logstr))
 
     @classmethod
     # @API(ErrorLog.write_if_open, 200)

@@ -291,11 +291,6 @@ def get(name):
     return globals()[name]
 
 
-def is_not_None(name):
-    """Returns true if value is not None"""
-    return globals()[name] is not None
-
-
 # @API(set, 200)
 def set(name, val):
     """Set the value of something in this module
@@ -324,16 +319,6 @@ def set_integer(name, val):
         log.Log.FatalError("Variable {vr} must be set to an integer, received "
                            "value '{vl}' instead".format(vr=name, vl=val))
     set(name, intval)
-
-
-def get_dict_val(name, key):
-    """Return val from dictionary in this class"""
-    return globals()[name][key]
-
-
-def set_dict_val(name, key, val):
-    """Set value for dictionary in this class"""
-    globals()[name][key] = val
 
 
 def postset_regexp(name, re_string, flags=None):
