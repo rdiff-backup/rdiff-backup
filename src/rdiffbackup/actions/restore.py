@@ -103,6 +103,10 @@ class RestoreAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        return_code = self._set_no_compression_regexp()
+        if return_code != 0:
+            return return_code
+
         return_code = self.repo.setup()
         if return_code != 0:
             return return_code

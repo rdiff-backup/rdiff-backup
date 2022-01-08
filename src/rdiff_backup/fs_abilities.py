@@ -17,20 +17,21 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Determine the capabilities of given file system
+"""
+Determine the capabilities of given file system
 
 rdiff-backup needs to read and write to file systems with varying
 abilities.  For instance, some file systems and not others have ACLs,
 are case-sensitive, or can store ownership information.  The code in
 this module tests the file system for various features, and returns an
 FSAbilities object describing it.
-
 """
 
 import errno
 import os
-from . import Globals, log, selection, robust, SetConnections, \
-    FilenameMapping, win_acls, Time
+from rdiff_backup import (
+    FilenameMapping, Globals, log, robust, selection, Time, win_acls
+)
 
 
 class FSAbilities:
@@ -751,28 +752,24 @@ class SetGlobals:
 
     def set_hardlinks(self):
         if Globals.preserve_hardlinks != 0:
-            SetConnections.UpdateGlobal('preserve_hardlinks',
-                                        self.dest_fsa.hardlinks)
+            Globals.set_all('preserve_hardlinks', self.dest_fsa.hardlinks)
 
     def set_fsync_directories(self):
-        SetConnections.UpdateGlobal('fsync_directories',
-                                    self.dest_fsa.fsync_dirs)
+        Globals.set_all('fsync_directories', self.dest_fsa.fsync_dirs)
 
     def set_change_ownership(self):
-        SetConnections.UpdateGlobal('change_ownership',
-                                    self.dest_fsa.ownership)
+        Globals.set_all('change_ownership', self.dest_fsa.ownership)
 
     def set_high_perms(self):
         if not self.dest_fsa.high_perms:
-            SetConnections.UpdateGlobal('permission_mask', 0o777)
+            Globals.set_all('permission_mask', 0o777)
 
     def set_symlink_perms(self):
-        SetConnections.UpdateGlobal('symlink_perms',
-                                    self.dest_fsa.symlink_perms)
+        Globals.set_all('symlink_perms', self.dest_fsa.symlink_perms)
 
     def set_compatible_timestamps(self):
         if Globals.chars_to_quote.find(b":") > -1:
-            SetConnections.UpdateGlobal('use_compatible_timestamps', 1)
+            Globals.set_all('use_compatible_timestamps', 1)
             Time.setcurtime(
                 Time.curtime)  # update Time.curtimestr on all conns
             log.Log("Enabled use_compatible_timestamps", log.INFO)
@@ -821,11 +818,11 @@ class BackupSetGlobals(SetGlobals):
                     "escaped, but we will retain for backwards compatibility",
                     log.WARNING)
 
-        SetConnections.UpdateGlobal('escape_dos_devices', actual_edd)
+        Globals.set_all('escape_dos_devices', actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd),
                 log.INFO)
 
-        SetConnections.UpdateGlobal('escape_trailing_spaces', actual_ets)
+        Globals.set_all('escape_trailing_spaces', actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
                 log.INFO)
 
@@ -839,7 +836,7 @@ class BackupSetGlobals(SetGlobals):
         """
         ctq = self._compare_ctq_file(rbdir, self._get_ctq_from_fsas())
 
-        SetConnections.UpdateGlobal('chars_to_quote', ctq)
+        Globals.set_all('chars_to_quote', ctq)
         if Globals.chars_to_quote:
             FilenameMapping.set_init_quote_vals()
 
@@ -849,13 +846,13 @@ class BackupSetGlobals(SetGlobals):
         if Globals.get(active_attr) == 0:
             return  # don't override 0
         for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
+            Globals.set_all(attr, None)
         if not src_support:
             return  # if source doesn't support, nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
+        Globals.set_all(active_attr, 1)
         self.in_conn.Globals.set_local(conn_attr, 1)
         if dest_support:
-            SetConnections.UpdateGlobal(write_attr, 1)
+            Globals.set_all(write_attr, 1)
             self.out_conn.Globals.set_local(conn_attr, 1)
 
     def _get_ctq_from_fsas(self):
@@ -957,11 +954,11 @@ class RestoreSetGlobals(SetGlobals):
                 actual_edd = self.dest_fsa.escape_dos_devices
                 actual_ets = self.dest_fsa.escape_trailing_spaces
 
-        SetConnections.UpdateGlobal('escape_dos_devices', actual_edd)
+        Globals.set_all('escape_dos_devices', actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd),
                 log.INFO)
 
-        SetConnections.UpdateGlobal('escape_trailing_spaces', actual_ets)
+        Globals.set_all('escape_trailing_spaces', actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
                 log.INFO)
 
@@ -972,12 +969,12 @@ class RestoreSetGlobals(SetGlobals):
 
         ctq_rp = rbdir.append(b"chars_to_quote")
         if ctq_rp.lstat():
-            SetConnections.UpdateGlobal("chars_to_quote", ctq_rp.get_bytes())
+            Globals.set_all("chars_to_quote", ctq_rp.get_bytes())
         else:
             log.Log("chars_to_quote file '{qf}' not found, assuming no quoting "
                     "required in backup repository".format(qf=ctq_rp),
                     log.WARNING)
-            SetConnections.UpdateGlobal("chars_to_quote", b"")
+            Globals.set_all("chars_to_quote", b"")
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """Update global settings for feature based on fsa results
@@ -992,10 +989,10 @@ class RestoreSetGlobals(SetGlobals):
         if Globals.get(active_attr) == 0:
             return  # don't override 0
         for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
+            Globals.set_all(attr, None)
         if not dest_support:
             return  # if dest doesn't support, do nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
+        Globals.set_all(active_attr, 1)
         self.out_conn.Globals.set_local(conn_attr, 1)
         self.out_conn.Globals.set_local(write_attr, 1)
         if src_support:
@@ -1039,11 +1036,11 @@ class SingleSetGlobals(RestoreSetGlobals):
         if Globals.get(active_attr) == 0:
             return  # don't override 0
         for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
+            Globals.set_all(attr, None)
         if not fsa_support:
             return
-        SetConnections.UpdateGlobal(active_attr, 1)
-        SetConnections.UpdateGlobal(write_attr, 1)
+        Globals.set_all(active_attr, 1)
+        Globals.set_all(write_attr, 1)
         self.conn.Globals.set_local(conn_attr, 1)
 
 
@@ -1058,7 +1055,7 @@ def get_readonly_fsa(desc_string, rp):
     """
     if os.name == "nt":
         log.Log("Hardlinks disabled by default on Windows", log.INFO)
-        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
+        Globals.set_all('preserve_hardlinks', 0)
     return FSAbilities(desc_string, rp, read_only=True)
 
 

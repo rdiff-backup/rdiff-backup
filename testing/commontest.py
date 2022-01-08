@@ -6,8 +6,8 @@ import code
 import shutil
 import subprocess
 from rdiff_backup import (
-    Globals, Hardlink, log, Main, rpath, eas_acls, rorpiter, hash,
-    Security, SetConnections, selection
+    eas_acls, Globals, Hardlink, hash, log, Main, rorpiter, rpath,
+    Security, selection, SetConnections
 )
 from rdiffbackup import actions
 
@@ -345,7 +345,7 @@ def _reset_connections(src_rp, dest_rp):
     """Reset some global connection information"""
     Security._security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
-    SetConnections.UpdateGlobal('rbdir', None)
+    Globals.set_all('rbdir', None)
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):

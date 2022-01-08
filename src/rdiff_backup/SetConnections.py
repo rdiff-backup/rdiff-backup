@@ -133,18 +133,12 @@ def add_redirected_conn(conn_number):
         connection.RedirectedConnection(conn_number)
 
 
-def UpdateGlobal(setting_name, val):
-    """Update value of global variable across all connections"""
-    for conn in Globals.connections:
-        conn.Globals.set(setting_name, val)
-
-
 def BackupInitConnections(reading_conn, writing_conn):  # compat200
     """Backup specific connection initialization"""
     reading_conn.Globals.set("isbackup_reader", True)
     writing_conn.Globals.set("isbackup_writer", True)
-    UpdateGlobal("backup_reader", reading_conn)
-    UpdateGlobal("backup_writer", writing_conn)
+    Globals.set_all("backup_reader", reading_conn)
+    Globals.set_all("backup_writer", writing_conn)
 
 
 def CloseConnections():

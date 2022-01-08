@@ -369,12 +369,12 @@ def _set_allowed_requests(sec_class, sec_level):
         ])
     if sec_class == "server":
         requests.update([
-            "Globals.postset_regexp_local",
             "log.Log.setverbosity",
             "log.Log.setterm_verbosity",
             "SetConnections.init_connection_remote",
             "Time.setprevtime_local",
             # API < 201
+            "Globals.postset_regexp_local",
             "user_group.init_user_mapping",
             "user_group.init_group_mapping",
             # API >= 201
