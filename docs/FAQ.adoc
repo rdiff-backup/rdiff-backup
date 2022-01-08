@@ -1,9 +1,7 @@
-= rdiff-backup FAQ
+= rdiff-backup Frequently Asked Questions (and their answers)
 :pagetitle: rdiff-backup FAQ
 :sectnums:
 :toc:
-
-[big]#*Questions and Answers*#
 
 == What do the different verbosity levels mean?
 
@@ -79,6 +77,16 @@ these instructions build it fine with all tests running OK
 An important note if you use the Apple-provided version of Python: Apple's version of Python will install rdiff-backup in something like `/System/Library/Frameworks/Python.framework/Versions/Current/bin/rdiff-backup` and `rdiff-backup` will not be in your `$PATH`.
 You can copy rdiff-backup out of this folder and into someplace reasonable like `/usr/bin` or another directory in your `$PATH` to use it.
 For a full explanation of why this happens see this post to the mailing list: https://lists.nongnu.org/archive/html/rdiff-backup-users/2007-06/msg00107.html.
+
+== Does rdiff-backup have a GUI or WebUI?
+
+No, and it doesn't plan to.
+It leaves this exercise to external utilities like (we'll list only open source tools here):
+
+* https://rdiffweb.org/[Rdiffweb] is a Web interface to browse and restore data.
+* https://minarca.org/[Minarca] is a more complete solution for non-technical users.
+It uses Rdiffweb with extra plugins for the server and provides a GUI to be installed on the desktop.
+* https://github.com/schaeferservices/simple-rdiff-backup-webui[simple-rdiff-backup-webui] is a very simple "read-only" PHP based web UI
 
 == Can I backup files to a CIFS or smbfs mount?
 
@@ -318,7 +326,7 @@ In particular, this can happen if rdiff-backup was installed via Fink on a remot
 Fink did this behind the scenes when you set it up.
 Simply add `/sw/bin` to your path manually, or copy rdiff-backup to a directory that is in your `$PATH`.
 
-== What does "`touple index out of range`" mean?
+== What does "`tuple index out of range`" mean?
 
 If you see the error "`tuple index out of range`" after running a command like:\ \ `$ rdiff-backup -l /path/to/backup/rdiff-backup-data/`\ \ then the solution is to simply remove the extra "rdiff-backup-data" from the end of the path.
 The list increments option, and others like it, take the path to the repository, not the path to the rdiff-backup-data directory.
