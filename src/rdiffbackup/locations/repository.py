@@ -134,7 +134,8 @@ class Repo(locations.Location):
                 ret_code = fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
                 if ret_code != 0:
                     return ret_code
-            self.init_quoting()
+            self.setup_quoting()
+            self.setup_paths()
 
         if owners_map is not None:
             ret_code = self.init_owners_mapping(**owners_map)
@@ -143,27 +144,24 @@ class Repo(locations.Location):
 
         return 0  # all is good
 
-    def get_mirror_time(self):
+    def get_mirror_time(self, must_exist=False, refresh=False):
         """
-        Return time in seconds of previous mirror if possible
-
-        Return -1 if there is more than one mirror,
-        or 0 if there is no backup yet.
-
-        This function could use RepoShadow.get_mirror_time but they have a
-        different signature.
+        Shadow function for RepoShadow.get_mirror_time
         """
-        incbase = self.data_dir.append_path(b"current_mirror")
-        mirror_rps = incbase.get_incfiles_list()
-        if mirror_rps:
-            if len(mirror_rps) == 1:
-                return mirror_rps[0].getinctime()
-            else:  # there is a failed backup and 2+ current_mirror files
-                return -1
-        else:  # it's the first backup
-            return 0  # is always in the past
+        if Globals.get_api_version() < 201:  # compat200
+            incbase = self.data_dir.append_path(b"current_mirror")
+            mirror_rps = incbase.get_incfiles_list()
+            if mirror_rps:
+                if len(mirror_rps) == 1:
+                    return mirror_rps[0].getinctime()
+                else:  # there is a failed backup and 2+ current_mirror files
+                    return -1
+            else:  # it's the first backup
+                return 0  # is always in the past
+        else:
+            return self._shadow.get_mirror_time(must_exist, refresh)
 
-    def init_quoting(self):
+    def setup_quoting(self):
         """
         Set QuotedRPath versions of important RPaths if chars_to_quote is set.
 
@@ -188,6 +186,13 @@ class Repo(locations.Location):
         Globals.set_all('rbdir', self.data_dir)  # compat200
 
         return True
+
+    def setup_paths(self):
+        """
+        Shadow function for RepoShadow.setup_paths
+        """
+        return self._shadow.setup_paths(
+            self.base_dir, self.data_dir, self.incs_dir)
 
     def needs_regress(self):
         """
@@ -297,17 +302,17 @@ information in it.
 
     def get_sigs(self):
         """
-        Shadow function for RepoShadow.set_rorp_cache
+        Shadow function for RepoShadow.get_sigs
         """
         return self._shadow.get_sigs(self.base_dir, self.remote_transfer)
 
-    def patch_or_increment(self, source_diffiter, increment):
+    def patch_or_increment(self, source_diffiter, previous_time):
         """
         Shadow function for RepoShadow.patch and .patch_and_increment
         """
-        if increment:
+        if previous_time:
             return self._shadow.patch_and_increment(
-                self.base_dir, source_diffiter, self.incs_dir)
+                self.base_dir, source_diffiter, self.incs_dir, previous_time)
         else:
             return self._shadow.patch(
                 self.base_dir, source_diffiter)
@@ -392,8 +397,7 @@ information in it.
                 for inc in incs_list]
 
         # append the mirror itself
-        # TODO handle error if mirror_time <= 0 !!!
-        mirror_time = self.get_mirror_time()
+        mirror_time = self.get_mirror_time(must_exist=True)
         mirror_path = self.base_dir.new_index(self.restore_index)
         incs.append({
             "time": mirror_time,
@@ -472,6 +476,12 @@ information in it.
         triples = get_summary_triples(mirror_total, time_dict)
 
         return sorted(triples, key=lambda x: x["time"])
+
+    def get_increment_times(self, rp=None):
+        """
+        Shadow function for RepoShadow.get_increment_times()
+        """
+        return self._shadow.get_increment_times(rp)
 
     def init_and_get_iter(self, compare_time):
         """

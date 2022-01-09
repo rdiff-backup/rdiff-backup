@@ -123,7 +123,7 @@ def backup_touch_curmirror_local(rpin, rpout):
 
     """
     mirrorrp = Globals.rbdir.append(b'.'.join(
-        map(os.fsencode, (b"current_mirror", Time.curtimestr, "data"))))
+        map(os.fsencode, (b"current_mirror", Time.getcurtimestr(), "data"))))
     log.Log("Writing mirror marker {mm}".format(mm=mirrorrp), log.DEBUG)
     try:
         pid = os.getpid()

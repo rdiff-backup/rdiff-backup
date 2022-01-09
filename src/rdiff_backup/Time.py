@@ -18,13 +18,13 @@
 # 02110-1301, USA
 """Provide time related exceptions and functions"""
 
-import time
-import re
 import calendar
-from . import Globals
+import re
+import time
+from rdiff_backup import Globals
 
 
-curtime = curtimestr = None
+curtime = curtimestr = None  # compat200
 _interval_conv_dict = {
     "s": 1,
     "m": 60,
@@ -43,28 +43,62 @@ _genstr_date_regexp1 = re.compile(
 _genstr_date_regexp2 = re.compile("^(?P<month>[0-9]{1,2})[-/]"
                                   "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$")
 
+# constants defining the format string for time dates (without timezone)
+TIMEDATE_FORMAT_STRING = "%Y-%m-%dT%H:%M:%S"
+TIMEDATE_FORMAT_COMPAT = TIMEDATE_FORMAT_STRING.replace(":", "-")
+TIMEDATE_FORMAT_LENGTH = 19  # 19 chars with 4 digits year
+# separators in a string looking like the above
+TIMEDATE_FORMAT_REGEXP = re.compile('[T:-]')
+
 
 class TimeException(Exception):
     pass
 
 
-def setcurtime(curtime=None):
-    """Sets the current time in curtime and curtimestr on all systems"""
-    t = curtime or time.time()
-    for conn in Globals.connections:
-        conn.Time.setcurtime_local(int(t))
+def set_current_time(reftime=None):
+    """
+    Sets the current time in curtime and curtimestr on all systems
+    """
+    if reftime is None:
+        reftime = time.time()
+    if Globals.get_api_version() < 201:  # compat200
+        for conn in Globals.connections:
+            conn.Time.setcurtime_local(int(reftime))
+    else:
+        Globals.set_all("current_time", reftime)
+        Globals.set_all("current_time_string", timetostring(reftime))
 
 
-# @API(setcurtime_local, 200)
+# @API(setcurtime_local, 200, 200)
 def setcurtime_local(timeinseconds):
-    """Only set the current time locally"""
+    """
+    Only set the current time locally
+    """
     global curtime, curtimestr
     curtime, curtimestr = timeinseconds, timetostring(timeinseconds)
 
 
-def setprevtime(timeinseconds):
-    """Sets the previous inc time in prevtime and prevtimestr"""
-    assert 0 < timeinseconds < curtime, (
+# compat200 - replace through direct reference to Globals.current_time
+def getcurtime():
+    if Globals.get_api_version() < 201:
+        return curtime
+    else:
+        return Globals.current_time
+
+
+# compat200 - replace through direct reference to Globals.current_time_string
+def getcurtimestr():
+    if Globals.get_api_version() < 201:
+        return curtimestr
+    else:
+        return Globals.current_time_string
+
+
+def setprevtime_compat200(timeinseconds):
+    """
+    Sets the previous inc time in prevtime and prevtimestr on all connections
+    """
+    assert 0 < timeinseconds < getcurtime(), (
         "Time {secs} is either negative or in the future".format(
             secs=timeinseconds))
     timestr = timetostring(timeinseconds)
@@ -72,20 +106,24 @@ def setprevtime(timeinseconds):
         conn.Time.setprevtime_local(timeinseconds, timestr)
 
 
-# @API(setprevtime_local, 200)
+# @API(setprevtime_local, 200, 200)
 def setprevtime_local(timeinseconds, timestr):
-    """Like setprevtime but only set the local version"""
+    """
+    Like setprevtime but only set the local version
+    """
     global prevtime, prevtimestr
     prevtime, prevtimestr = timeinseconds, timestr
 
 
 def timetostring(timeinseconds):
-    """Return w3 datetime compliant listing of timeinseconds, or one in
-    which :'s have been replaced with -'s"""
+    """
+    Return w3 datetime compliant listing of timeinseconds, or one in
+    which :'s have been replaced with -'s
+    """
     if not Globals.use_compatible_timestamps:
-        format_string = "%Y-%m-%dT%H:%M:%S"
+        format_string = TIMEDATE_FORMAT_STRING
     else:
-        format_string = "%Y-%m-%dT%H-%M-%S"
+        format_string = TIMEDATE_FORMAT_COMPAT
     s = time.strftime(format_string, time.localtime(timeinseconds))
     return s + _get_tzd(timeinseconds)
 
@@ -95,19 +133,16 @@ def timetobytes(timeinseconds):
 
 
 def stringtotime(timestring):
-    """Return time in seconds from w3 timestring
+    """
+    Return time in seconds from w3 timestring
 
     If there is an error parsing the string, or it doesn't look
     like a w3 datetime string, return None.
-
     """
-
-    regexp = re.compile('[-:]')
-
     try:
-        date, daytime = timestring[:19].split("T")
-        year, month, day = list(map(int, date.split("-")))
-        hour, minute, second = list(map(int, regexp.split(daytime)))
+        year, month, day, hour, minute, second = list(
+            map(int, TIMEDATE_FORMAT_REGEXP.split(
+                timestring[:TIMEDATE_FORMAT_LENGTH])))
         timetuple = (year, month, day, hour, minute, second, -1, -1, 0)
         if not (1900 < year < 2100
                 and 1 <= month <= 12
@@ -122,7 +157,8 @@ def stringtotime(timestring):
 
         utc_in_secs = calendar.timegm(timetuple)
 
-        return int(utc_in_secs) + _tzd_to_seconds(timestring[19:])
+        return int(utc_in_secs) + _tzd_to_seconds(
+            timestring[TIMEDATE_FORMAT_LENGTH:])
     except (TypeError, ValueError):
         return None
 
@@ -135,12 +171,16 @@ def bytestotime(timebytes):
 
 
 def timetopretty(timeinseconds):
-    """Return pretty version of time"""
+    """
+    Return pretty version of time
+    """
     return time.asctime(time.localtime(timeinseconds))
 
 
 def prettytotime(prettystring):
-    """Converts time like "Mon Jun 5 11:00:23" to epoch sec, or None"""
+    """
+    Converts time like "Mon Jun 5 11:00:23" to epoch sec, or None
+    """
     try:
         return time.mktime(time.strptime(prettystring))
     except ValueError:
@@ -148,7 +188,9 @@ def prettytotime(prettystring):
 
 
 def inttopretty(seconds):
-    """Convert num of seconds to readable string like "2 hours"."""
+    """
+    Convert num of seconds to readable string like "2 hours".
+    """
     partlist = []
     hours, seconds = divmod(seconds, 3600)
     if hours > 1:
@@ -172,17 +214,17 @@ def inttopretty(seconds):
     return " ".join(partlist)
 
 
-def genstrtotime(timestr, curtime=None, rp=None):
-    """Convert a generic time string to a time in seconds
+def genstrtotime(timestr, ref_time=None, rp=None, session_times=None):
+    """
+    Convert a generic time string to a time in seconds
 
     rp is used when the time is of the form "4B" or similar.  Then the
     times of the increments of that particular file are used.
-
     """
-    if curtime is None:
-        curtime = globals()['curtime']
+    if ref_time is None:
+        ref_time = getcurtime()
     if timestr == "now":
-        return curtime
+        return ref_time
 
     def error():
         raise TimeException("""Bad time string "%s"
@@ -205,7 +247,7 @@ the day).""" % timestr)
 
     # Test for time given as number of backups, like 3B
     if _session_regexp.search(timestr):
-        return _time_from_session(int(timestr[:-1]), rp)
+        return _time_from_session(int(timestr[:-1]), rp, session_times)
 
     # Try for long time, like "Mon Jun 5 11:00:23 1990"
     t = prettytotime(timestr)
@@ -213,7 +255,7 @@ the day).""" % timestr)
         return t
 
     try:  # test for an interval, like "2 days ago"
-        return curtime - _intervalstr_to_seconds(timestr)
+        return ref_time - _intervalstr_to_seconds(timestr)
     except TimeException:
         pass
 
@@ -233,7 +275,9 @@ the day).""" % timestr)
 
 
 def _intervalstr_to_seconds(interval_string):
-    """Convert a string expressing an interval (e.g. "4D2s") to seconds"""
+    """
+    Convert a string expressing an interval (e.g. "4D2s") to seconds
+    """
 
     def error():
         raise TimeException("""Bad interval string "%s"
@@ -260,13 +304,13 @@ page for more information.
 
 
 def _get_tzd(timeinseconds=None):
-    """Return w3's timezone identification string.
+    """
+    Return w3's timezone identification string.
 
     Expressed as [+/-]hh:mm.  For instance, PDT is -07:00 during
     dayling savings and -08:00 otherwise.  Zone coincides with what
     localtime(), etc., use.  If no argument given, use the current
     time.
-
     """
     if timeinseconds is None:
         timeinseconds = time.time()
@@ -295,8 +339,10 @@ def _get_tzd(timeinseconds=None):
 
 
 def _tzd_to_seconds(tzd):
-    """Given w3c compliant TZD, return how far ahead UTC is, else raise
-    ValueError exception."""
+    """
+    Given w3c compliant TZD, return how far ahead UTC is, else raise
+    ValueError exception.
+    """
     if tzd == "Z":
         return 0
     if not (len(tzd) == 6
@@ -308,16 +354,19 @@ def _tzd_to_seconds(tzd):
     return -60 * (60 * int(tzd[:3]) + int(tzd[4:]))
 
 
-def _time_from_session(session_num, rp=None):
-    """Return time in seconds of given backup
+def _time_from_session(session_num, rp=None, session_times=None):
+    """
+    Return time in seconds of given backup
 
     The current mirror is session_num 0, the next oldest increment has
-    number 1, etc.  Requires that the Globals.rbdir directory be set.
+    number 1, etc.  Requires that the Globals.rbdir directory be set by default.
 
+    session_times is assumed to be a pre-sorted list of times as epochs.
     """
-    session_times = Globals.rbdir.conn.restore.MirrorStruct \
-        .get_increment_times()
-    session_times.sort()
+    if session_times is None:  # compat200
+        if rp is None:
+            rp = Globals.rbdir
+        session_times = rp.conn.restore.MirrorStruct.get_increment_times()
     if len(session_times) <= session_num:
         return session_times[0]  # Use oldest if too few backups
     return session_times[-session_num - 1]

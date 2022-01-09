@@ -805,8 +805,8 @@ class SetGlobals:
     def set_compatible_timestamps(self):
         if Globals.chars_to_quote.find(b":") > -1:
             Globals.set_all('use_compatible_timestamps', 1)
-            Time.setcurtime(
-                Time.curtime)  # update Time.curtimestr on all conns
+            # Update the current time string to new timestamp format
+            Time.set_current_time(Time.getcurtime())
             log.Log("Enabled use_compatible_timestamps", log.INFO)
 
 

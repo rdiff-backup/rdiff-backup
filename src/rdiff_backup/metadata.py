@@ -604,7 +604,7 @@ class Manager:
     def _writer_helper(self, prefix, flatfileclass, typestr, time):
         """Used in the get_xx_writer functions, returns a writer class"""
         if time is None:
-            timestr = Time.curtimestr
+            timestr = Time.getcurtimestr()
         else:
             timestr = Time.timetobytes(time)
         triple = map(os.fsencode, (prefix, timestr, typestr))

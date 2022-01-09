@@ -63,6 +63,8 @@ class ActionRegressTest(unittest.TestCase):
         fileset.create_fileset(self.base_dir, self.from3_struct)
         fileset.create_fileset(self.base_dir, self.from4_struct)
         fileset.remove_fileset(self.base_dir, {"bak": {}})
+        fileset.remove_fileset(self.base_dir, {"to2": {}})
+        fileset.remove_fileset(self.base_dir, {"to4": {}})
         self.bak_path = os.path.join(self.base_dir, b"bak")
         self.to2_path = os.path.join(self.base_dir, b"to2")
         self.to4_path = os.path.join(self.base_dir, b"to4")

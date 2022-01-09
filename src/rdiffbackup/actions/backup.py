@@ -111,10 +111,10 @@ class BackupAction(actions.BaseAction):
                                                  self.repo.base_dir.conn)
             self.repo.base_dir.conn.fs_abilities.backup_set_globals(
                 self.dir.base_dir, self.values.force)
-            self.repo.init_quoting()
+            self.repo.setup_quoting()
 
         previous_time = self.repo.get_mirror_time()
-        if previous_time >= Time.curtime:
+        if previous_time >= Time.getcurtime():
             log.Log("The last backup is not in the past. Aborting.",
                     log.ERROR)
             return 1
@@ -126,7 +126,8 @@ class BackupAction(actions.BaseAction):
                 log.Log("Unable to open logfile due to '{ex}'".format(
                     ex=exc), log.ERROR)
                 return 1
-        log.ErrorLog.open(Time.curtimestr, compress=self.values.compression)
+        log.ErrorLog.open(Time.getcurtimestr(),
+                          compress=self.values.compression)
 
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
@@ -141,15 +142,15 @@ class BackupAction(actions.BaseAction):
         if self._operate_regress():
             # regress was necessary and failed
             return 1
-        previous_time = self.repo.get_mirror_time()
-        if previous_time < 0 or previous_time >= Time.curtime:
+        previous_time = self.repo.get_mirror_time(refresh=True)
+        if previous_time < 0 or previous_time >= Time.getcurtime():
             log.Log("Either there is more than one current_mirror or "
                     "the last backup is not in the past. Aborting.",
                     log.ERROR)
             return 1
         if Globals.get_api_version() < 201:  # compat200
             if previous_time:
-                Time.setprevtime(previous_time)
+                Time.setprevtime_compat200(previous_time)
                 self.repo.base_dir.conn.Main.backup_touch_curmirror_local(
                     self.dir.base_dir, self.repo.base_dir)
                 backup.mirror_and_increment_compat200(
@@ -163,8 +164,6 @@ class BackupAction(actions.BaseAction):
                     self.dir.base_dir, self.repo.base_dir)
             self.repo.base_dir.conn.Main.backup_close_statistics(time.time())
         else:  # API 201 and higher
-            if previous_time:
-                Time.setprevtime(previous_time)
             self._operate_backup(previous_time)
 
         return 0
@@ -179,7 +178,7 @@ class BackupAction(actions.BaseAction):
                                dp=self.repo.base_dir), log.NOTE)
 
         if previous_time:
-            self.repo.touch_current_mirror(Time.curtimestr)
+            self.repo.touch_current_mirror(Time.getcurtimestr())
 
         source_rpiter = self.dir.get_select()
         self.repo.set_rorp_cache(source_rpiter, previous_time)
@@ -190,7 +189,7 @@ class BackupAction(actions.BaseAction):
         if previous_time:
             self.repo.remove_current_mirror()
         else:
-            self.repo.touch_current_mirror(Time.curtimestr)
+            self.repo.touch_current_mirror(Time.getcurtimestr())
 
         self.repo.close_statistics(time.time())
 

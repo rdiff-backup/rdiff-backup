@@ -276,6 +276,12 @@ remote_tempdir = None
 # and pre-regress
 do_fsync = True
 
+# This is the current time, either as integer (epoch) or formatted string.
+# It is set once at the beginning of the program and defines the backup's
+# date and time
+current_time = None
+current_time_string = None
+
 # This represents the pickle protocol used by rdiff-backup over the connection
 # https://docs.python.org/3/library/pickle.html#pickle-protocols
 # Note that the receiving end will automatically recognize the protocol used so

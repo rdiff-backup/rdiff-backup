@@ -281,7 +281,7 @@ class StatFileObj(StatsObj):
         for attr in self._stat_file_attrs:
             self.set_stat(attr, 0)
         if start_time is None:
-            start_time = Time.curtime
+            start_time = Time.getcurtime()
         self.StartTime = start_time
         self.Errors = 0
 
@@ -343,7 +343,7 @@ class FileStats:
             "FileStats has already been initialized.")
         rpbase = Globals.rbdir.append(b"file_statistics")
         suffix = Globals.compression and 'data.gz' or 'data'
-        cls._rp = increment.get_inc(rpbase, suffix, Time.curtime)
+        cls._rp = increment.get_inc(rpbase, suffix, Time.getcurtime())
         assert not cls._rp.lstat(), (
             "Path '{rp}' shouldn't be existing.".format(rp=cls._rp))
         cls._fileobj = cls._rp.open("wb", compress=Globals.compression)
@@ -443,7 +443,7 @@ def write_active_statfileobj(end_time=None):
     global _active_statfileobj
     assert _active_statfileobj, "Stats object must be set before writing."
     rp_base = Globals.rbdir.append(b"session_statistics")
-    session_stats_rp = increment.get_inc(rp_base, 'data', Time.curtime)
+    session_stats_rp = increment.get_inc(rp_base, 'data', Time.getcurtime())
     _active_statfileobj.finish(end_time)
     _active_statfileobj.write_stats_to_rp(session_stats_rp)
     _active_statfileobj = None

@@ -127,7 +127,7 @@ class RestoreAction(actions.BaseAction):
         if Globals.get_api_version() < 201:  # compat200
             self.dir.base_dir.conn.fs_abilities.restore_set_globals(
                 self.dir.base_dir)
-            self.repo.init_quoting()
+            self.repo.setup_quoting()
 
         if log.Log.verbosity > 0:
             try:  # the source repository could be read-only
