@@ -45,7 +45,7 @@
 * `fs_abilities.single_set_globals` **deprecated**
 * `Globals.get`
 * `Globals.postset_regexp_local`  **deprecated**
-* `Globals.set`
+* `Globals.set`  **deprecated**
 * `Globals.set_api_version`  **new**
 * `Globals.set_local`
 * `Hardlink.initialize_dictionaries`  **deprecated**

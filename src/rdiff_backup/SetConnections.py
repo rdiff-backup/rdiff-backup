@@ -135,8 +135,8 @@ def add_redirected_conn(conn_number):
 
 def BackupInitConnections(reading_conn, writing_conn):  # compat200
     """Backup specific connection initialization"""
-    reading_conn.Globals.set("isbackup_reader", True)
-    writing_conn.Globals.set("isbackup_writer", True)
+    reading_conn.Globals.set_local("isbackup_reader", True)
+    writing_conn.Globals.set_local("isbackup_writer", True)
     Globals.set_all("backup_reader", reading_conn)
     Globals.set_all("backup_writer", writing_conn)
 
@@ -459,7 +459,7 @@ def _init_connection_settings(conn):
     conn.log.Log.setverbosity(log.Log.verbosity)
     conn.log.Log.setterm_verbosity(log.Log.term_verbosity)
     for setting_name in Globals.changed_settings:
-        conn.Globals.set(setting_name, Globals.get(setting_name))
+        conn.Globals.set_local(setting_name, Globals.get(setting_name))
 
 
 def _test_connection(conn_number, rp):

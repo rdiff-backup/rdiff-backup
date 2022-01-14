@@ -297,15 +297,17 @@ def get(name):
     return globals()[name]
 
 
-# @API(set, 200)
+# @API(set, 200, 200)
 def set(name, val):
     """
-    Set the value of something in this module
+    Set the value of something in this module on this connection and, delayed,
+    on all others
 
     Use this instead of writing the values directly if the setting
     matters to remote sides.  This function updates the
-    changed_settings list, so other connections know to copy the
-    changes.
+    changed_settings list, so other connections know to copy the changes
+    during connection initiation. After the connection has been initiated,
+    use C<set_all> instead.
     """
     changed_settings.append(name)
     globals()[name] = val

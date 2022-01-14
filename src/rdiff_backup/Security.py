@@ -77,8 +77,9 @@ _file_requests = {
 
 # functions to set global values
 _globals_requests = {
+    "Globals.set_local",
+    # API < 201
     "Globals.set",
-    "Globals.set_local"
 }
 
 
