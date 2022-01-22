@@ -460,7 +460,7 @@ class BaseAction:
 
         # once the connection is set, we can define "now" as being the current
         # time, unless the user defined a fixed a current time.
-        Time.setcurtime(self.values.current_time)
+        Time.set_current_time(self.values.current_time)
 
         return self
 
@@ -524,7 +524,11 @@ class BaseAction:
         number of past backups.
         """
         try:
-            return Time.genstrtotime(timestr, rp=ref_rp)
+            if Globals.get_api_version() < 201:  # compat200
+                return Time.genstrtotime(timestr, rp=ref_rp)
+            else:
+                sessions = self.repo.get_increment_times(ref_rp)
+                return Time.genstrtotime(timestr, session_times=sessions)
         except Time.TimeException as exc:
             log.Log("Time string '{ts}' couldn't be parsed "
                     "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)

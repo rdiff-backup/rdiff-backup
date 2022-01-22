@@ -227,13 +227,15 @@ def _set_allowed_requests(sec_class, sec_level):
         "log.Log.log_to_file",
         "robust.install_signal_handlers",
         "SetConnections.add_redirected_conn",
-        "Time.setcurtime_local",
         # System
         # "gzip.GzipFile",  # ??? perhaps covered by VirtualFile
         # "open",  # ??? perhaps covered by VirtualFile
         "sys.stdout.write",
         # API < 201
         "FilenameMapping.set_init_quote_vals_local",
+        "Time.setcurtime_local",
+        # API >= 201
+        "_repo_shadow.RepoShadow.setup_paths",
     }
     if (sec_level == "read-only" or sec_level == "update-only"
             or sec_level == "read-write"):
@@ -372,9 +374,9 @@ def _set_allowed_requests(sec_class, sec_level):
             "log.Log.setverbosity",
             "log.Log.setterm_verbosity",
             "SetConnections.init_connection_remote",
-            "Time.setprevtime_local",
             # API < 201
             "Globals.postset_regexp_local",
+            "Time.setprevtime_local",
             "user_group.init_user_mapping",
             "user_group.init_group_mapping",
             # API >= 201

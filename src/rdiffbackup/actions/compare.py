@@ -95,7 +95,7 @@ class CompareAction(actions.BaseAction):
         if Globals.get_api_version() < 201:  # compat200
             self.repo.base_dir.conn.fs_abilities.single_set_globals(
                 self.repo.base_dir, 1)  # read_only=True
-            self.repo.init_quoting()
+            self.repo.setup_quoting()
 
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)

@@ -24,7 +24,7 @@ class TimeTest(unittest.TestCase):
 
     def testConversion(self):
         """test timetostring and stringtotime"""
-        Time.setcurtime()
+        Time.set_current_time()
         self.assertIsInstance(Time.curtime, (float, int))
         self.assertIsInstance(Time.curtimestr, str)
         self.assertTrue(

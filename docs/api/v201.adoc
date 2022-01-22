@@ -91,8 +91,8 @@
 * `SetConnections.add_redirected_conn`
 * `SetConnections.init_connection_remote`
 * `statistics.record_error`
-* `Time.setcurtime_local`
-* `Time.setprevtime_local`
+* `Time.setcurtime_local`  **deprecated**
+* `Time.setprevtime_local`  **deprecated**
 * `user_group.init_group_mapping`  **deprecated**
 * `user_group.init_user_mapping`  **deprecated**
 
@@ -138,6 +138,7 @@
 ** `.set_config`
 ** `.set_rorp_cache`
 ** `.set_select`
+** `.setup_paths`
 ** `.touch_current_mirror`
 ** `.update_quoting`
 ** `.verify`

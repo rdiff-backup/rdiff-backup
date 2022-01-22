@@ -65,16 +65,27 @@ class RepoShadow:
         "special_escapes": {"type": set},
     }
 
+    # @API(RepoShadow.setup_paths, 201)
+    @classmethod
+    def setup_paths(cls, base_dir, data_dir, incs_dir):
+        """
+        Setup the base, data and increments directories for further use
+        """
+        cls._base_dir = base_dir
+        cls._data_dir = data_dir
+        cls._incs_dir = incs_dir
+
     # @API(RepoShadow.set_rorp_cache, 201)
     @classmethod
-    def set_rorp_cache(cls, baserp, source_iter, use_increment):
+    def set_rorp_cache(cls, baserp, source_iter, previous_time):
         """
         Initialize cls.CCPP, the destination rorp cache
 
-        use_increment should be true if we are mirror+incrementing,
-        false if we are just mirroring.
+        previous_time should be true (>0) if we are mirror+incrementing,
+        representing the epoch in seconds of the previous backup,
+        false (==0) if we are just mirroring.
         """
-        dest_iter = cls._get_dest_select(baserp, use_increment)
+        dest_iter = cls._get_dest_select(baserp, previous_time)
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
         cls.CCPP = _CacheCollatedPostProcess(
             collated, Globals.pipeline_max_length * 4, baserp)
@@ -121,10 +132,12 @@ class RepoShadow:
 
     # @API(RepoShadow.patch_and_increment, 201)
     @classmethod
-    def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
+    def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath,
+                            previous_time):
         """Patch dest_rpath with rorpiter of diffs and write increments"""
-        ITR = rorpiter.IterTreeReducer(_RepoIncrementITRB,
-                                       [dest_rpath, inc_rpath, cls.CCPP])
+        ITR = rorpiter.IterTreeReducer(
+            _RepoIncrementITRB,
+            [dest_rpath, inc_rpath, cls.CCPP, previous_time])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
             log.Log("Processing changed file {cf}".format(cf=diff), log.INFO)
             ITR(diff.index, diff)
@@ -133,14 +146,12 @@ class RepoShadow:
         dest_rpath.setdata()
 
     @classmethod
-    def _get_dest_select(cls, rpath, use_metadata=True):
+    def _get_dest_select(cls, rpath, previous_time):
         """
-
         Return destination select rorpath iterator
 
         If metadata file doesn't exist, select all files on
         destination except rdiff-backup-data directory.
-
         """
 
         def get_iter_from_fs():
@@ -150,8 +161,8 @@ class RepoShadow:
             return sel.set_iter()
 
         metadata.SetManager()
-        if use_metadata:
-            rorp_iter = metadata.ManagerObj.GetAtTime(Time.prevtime)
+        if previous_time:  # it's an increment, not the first mirror
+            rorp_iter = metadata.ManagerObj.GetAtTime(previous_time)
             if rorp_iter:
                 return rorp_iter
         return get_iter_from_fs()
@@ -278,27 +289,44 @@ class RepoShadow:
         cls._set_restore_time(restore_to_time)
         # it's a bit ugly to set the values to another class, but less than
         # the other way around as it used to be
-        _RestoreFile.initialize(cls._restore_time, cls.get_mirror_time())
+        _RestoreFile.initialize(cls._restore_time,
+                                cls.get_mirror_time(must_exist=True))
 
     # @API(RepoShadow.get_mirror_time, 201)
     @classmethod
-    def get_mirror_time(cls):
+    def get_mirror_time(cls, must_exist=False, refresh=False):
         """
         Return time (in seconds) of latest mirror
 
         Cache the mirror time for performance reasons
+
+        must_exist defines if there must already be (at least) one mirror or not.
+        If True, the function will fail if there is no mirror and return the last
+        time if there is more than one (the regress case).
+        If False, the default, the function will return 0 if there is no mirror,
+        and -1 if there is more than one.
         """
         # this function is only used internally (for now) but it might change
         # hence it looks like an external function potentially called remotely
-        if not cls._mirror_time:
+        if cls._mirror_time is None or refresh:
             cur_mirror_incs = cls._data_dir.append(
                 b"current_mirror").get_incfiles_list()
             if not cur_mirror_incs:
-                log.Log.FatalError("Could not get time of current mirror")
+                if must_exist:
+                    log.Log.FatalError("Could not get time of current mirror")
+                else:
+                    cls._mirror_time = 0
             elif len(cur_mirror_incs) > 1:
-                log.Log("Two different times for current mirror found",
+                log.Log("Two different times for current mirror were found, "
+                        "it seems that the last backup failed, "
+                        "you most probably want to regress the repository",
                         log.WARNING)
-            cls._mirror_time = cur_mirror_incs[0].getinctime()
+                if must_exist:
+                    cls._mirror_time = cur_mirror_incs[0].getinctime()
+                else:
+                    cls._mirror_time = -1
+            else:
+                cls._mirror_time = cur_mirror_incs[0].getinctime()
         return cls._mirror_time
 
     # @API(RepoShadow.get_increment_times, 201)
@@ -310,17 +338,16 @@ class RepoShadow:
         Take the total list of times from the increments.<time>.dir
         file and the mirror_metadata file.  Sorted ascending.
         """
-        # use dictionary to remove dups
-        d = {cls.get_mirror_time(): None}
+        # use set to remove duplicate times between increments and metadata
+        times_set = {cls.get_mirror_time(must_exist=True)}
         if not rp or not rp.index:
             rp = cls._data_dir.append(b"increments")
         for inc in rp.get_incfiles_list():
-            d[inc.getinctime()] = None
+            times_set.add(inc.getinctime())
         mirror_meta_rp = cls._data_dir.append(b"mirror_metadata")
         for inc in mirror_meta_rp.get_incfiles_list():
-            d[inc.getinctime()] = None
-        return_list = list(d.keys())
-        return_list.sort()
+            times_set.add(inc.getinctime())
+        return_list = sorted(times_set)
         return return_list
 
     # @API(RepoShadow.initialize_rf_cache, 201)
@@ -496,7 +523,8 @@ class RepoShadow:
         cls.initialize_rf_cache(mirror_rp, inc_rp)
 
         old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
-        cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(), True)
+        cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(must_exist=True),
+                                             True)
         collated = rorpiter.Collate2Iters(old_iter, cur_iter)
         for old_rorp, cur_rorp in collated:
             if not old_rorp:
@@ -1542,8 +1570,9 @@ class _RepoIncrementITRB(_RepoPatchITRB):
     Like _RepoPatchITRB, but this time also write increments.
     """
 
-    def __init__(self, basis_root_rp, inc_root_rp, rorp_cache):
+    def __init__(self, basis_root_rp, inc_root_rp, rorp_cache, previous_time):
         self.inc_root_rp = inc_root_rp
+        self.previous_time = previous_time
         _RepoPatchITRB.__init__(self, basis_root_rp, rorp_cache)
 
     def fast_process_file(self, index, diff_rorp):
@@ -1552,9 +1581,9 @@ class _RepoIncrementITRB(_RepoPatchITRB):
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
         tf = mirror_rp.get_temp_rpath(sibling=True)
         if self._patch_to_temp(mirror_rp, diff_rorp, tf):
-            inc = robust.check_common_error(self.error_handler,
-                                            increment.Increment,
-                                            (tf, mirror_rp, inc_prefix))
+            inc = robust.check_common_error(
+                self.error_handler, increment.Increment,
+                (tf, mirror_rp, inc_prefix, self.previous_time))
             if inc is not None and not isinstance(inc, int):
                 self.CCPP.set_inc(index, inc)
                 if inc.isreg():
@@ -1583,14 +1612,15 @@ class _RepoIncrementITRB(_RepoPatchITRB):
             "Either diff '{ipath!r}' or base '{bpath!r}' "
             "must be a directory".format(ipath=diff_rorp, bpath=self.base_rp))
         if diff_rorp.isdir():
-            inc = increment.Increment(diff_rorp, self.base_rp, inc_prefix)
+            inc = increment.Increment(diff_rorp, self.base_rp,
+                                      inc_prefix, self.previous_time)
             if inc and inc.isreg():
                 inc.fsync_with_dir()  # must write inc before rp changed
             self.base_rp.setdata()  # in case written by increment above
             self._prepare_dir(diff_rorp, self.base_rp)
         elif self._set_dir_replacement(diff_rorp, self.base_rp):
             inc = increment.Increment(self.dir_replacement, self.base_rp,
-                                      inc_prefix)
+                                      inc_prefix, self.previous_time)
             if inc:
                 self.CCPP.set_inc(index, inc)
                 self.CCPP.flag_success(index)
