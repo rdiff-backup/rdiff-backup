@@ -127,7 +127,7 @@ class Repo(locations.Location):
                 # FIXME this shouldn't be necessary, and the setting of variable
                 # across the connection should happen through the shadow
                 Globals.set_all("backup_writer", self.base_dir.conn)
-                self.base_dir.conn.Globals.set("isbackup_writer", True)
+                self.base_dir.conn.Globals.set_local("isbackup_writer", True)
                 # this is the new way, more dedicated but not sufficient yet
                 self.remote_transfer = (src_dir.base_dir.conn
                                         is not self.base_dir.conn)
