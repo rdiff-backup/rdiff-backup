@@ -199,5 +199,5 @@ class ListAction(actions.BaseAction):
             print(str(rorp))
 
 
-def get_action_class():
+def get_plugin_class():
     return ListAction

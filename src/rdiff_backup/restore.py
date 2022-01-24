@@ -21,6 +21,7 @@
 import tempfile
 import io
 from rdiff_backup import rorpiter
+from rdiffbackup import meta_mgr
 
 
 class RestoreError(Exception):
@@ -111,9 +112,9 @@ class MirrorStruct:
         if rest_time is None:
             rest_time = cls._rest_time
 
-        metadata.SetManager()
-        rorp_iter = metadata.ManagerObj.GetAtTime(rest_time,
-                                                  cls.mirror_base.index)
+        meta_manager = meta_mgr.get_meta_manager(True)
+        rorp_iter = meta_manager.get_metas_at_time(rest_time,
+                                                   cls.mirror_base.index)
         if not rorp_iter:
             if require_metadata:
                 log.Log.FatalError("Mirror metadata not found")
@@ -852,5 +853,5 @@ def ListAtTime(mirror_rp, inc_rp, time):
 
 from . import (  # noqa: E402
     Globals, Rdiff, Hardlink, selection, rpath,
-    log, robust, metadata, hash, longname
+    log, robust, hash, longname
 )

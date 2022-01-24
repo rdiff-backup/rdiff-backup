@@ -3,13 +3,15 @@ Can be called also directly to setup the test environment"""
 import os
 import sys
 import code
+import shlex
 import shutil
 import subprocess
 from rdiff_backup import (
-    eas_acls, Globals, Hardlink, hash, log, Main, rorpiter, rpath,
+    Globals, Hardlink, hash, log, Main, rorpiter, rpath,
     Security, selection, SetConnections
 )
 from rdiffbackup import actions
+from rdiffbackup.meta import ea, acl_posix
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
@@ -125,7 +127,7 @@ def rdiff_backup(source_local,
     if dest_dir:
         cmdargs.append(dest_dir)
     cmdline = b" ".join(cmdargs)
-    print("Executing: ", cmdline)
+    print("Executing: ", " ".join(map(shlex.quote, map(os.fsdecode, cmdargs))))
     ret_val = os_system(cmdline, input=input, universal_newlines=False)
     if check_return_val:
         # the construct is needed because return code seemingly doesn't
@@ -172,7 +174,7 @@ def rdiff_backup_action(source_local, dest_local,
         cmdargs.append(src_dir)
     if dest_dir:
         cmdargs.append(dest_dir)
-    print("Executing: ", cmdargs)
+    print("Executing: ", " ".join(map(shlex.quote, map(os.fsdecode, cmdargs))))
     if return_stdout:
         try:
             ret_val = subprocess.check_output(cmdargs, input=std_input,
@@ -397,18 +399,18 @@ def _hardlink_rorp_eq(src_rorp, dest_rorp):
 
 def _ea_compare_rps(rp1, rp2):
     """Return true if rp1 and rp2 have same extended attributes."""
-    ea1 = eas_acls.ExtendedAttributes(rp1.index)
+    ea1 = ea.ExtendedAttributes(rp1.index)
     ea1.read_from_rp(rp1)
-    ea2 = eas_acls.ExtendedAttributes(rp2.index)
+    ea2 = ea.ExtendedAttributes(rp2.index)
     ea2.read_from_rp(rp2)
     return ea1 == ea2
 
 
 def _acl_compare_rps(rp1, rp2):
     """Return true if rp1 and rp2 have same acl information."""
-    acl1 = eas_acls.AccessControlLists(rp1.index)
+    acl1 = acl_posix.AccessControlLists(rp1.index)
     acl1.read_from_rp(rp1)
-    acl2 = eas_acls.AccessControlLists(rp2.index)
+    acl2 = acl_posix.AccessControlLists(rp2.index)
     acl2.read_from_rp(rp2)
     return acl1 == acl2
 

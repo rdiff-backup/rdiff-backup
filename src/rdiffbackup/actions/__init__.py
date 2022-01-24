@@ -290,14 +290,15 @@ class BaseAction:
         return cls.name
 
     @classmethod
-    def get_security_class(cls):
+    def get_desc(cls):
         """
-        Return the security class of the Action class.
+        Return the human readable name of the Action class.
 
-        Children classes only need to define the class member 'security',
-        with one of the values 'backup', 'restore', 'server' or 'validate'.
+        Children classes only need to define the class member 'name',
+        this function returns the capitalized version to satisfy the plugin
+        interface.
         """
-        return cls.security
+        return cls.name.capitalize()
 
     @classmethod
     def get_version(cls):
@@ -307,6 +308,16 @@ class BaseAction:
         Children classes only need to define the class member '__version__'.
         """
         return cls.__version__
+
+    @classmethod
+    def get_security_class(cls):
+        """
+        Return the security class of the Action class.
+
+        Children classes only need to define the class member 'security',
+        with one of the values 'backup', 'restore', 'server' or 'validate'.
+        """
+        return cls.security
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
@@ -595,7 +606,7 @@ class BaseAction:
         return 0  # all is good
 
 
-def get_action_class():
+def get_plugin_class():
     """
     Pre-defined function returning the Action class of the current module.
 

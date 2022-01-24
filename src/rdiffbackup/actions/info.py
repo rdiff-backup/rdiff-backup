@@ -48,5 +48,5 @@ class InfoAction(actions.BaseAction):
         return 0
 
 
-def get_action_class():
+def get_plugin_class():
     return InfoAction

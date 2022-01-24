@@ -222,5 +222,5 @@ class BackupAction(actions.BaseAction):
                     td=rpout, sd=rpin), log.WARNING)
 
 
-def get_action_class():
+def get_plugin_class():
     return BackupAction
