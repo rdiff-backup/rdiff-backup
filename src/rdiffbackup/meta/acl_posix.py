@@ -306,9 +306,15 @@ class AccessControlListFile(meta.FlatFile):
             rorp.set_acl(acl)
             yield rorp
 
-    def write_object(self, rorp):
+    def write_object(self, rorp, force_empty=False):
+        """
+        write RORPath' metadata to file
+
+        The force_empty parameter is for test purposes only to even write
+        empty metadata
+        """
         acl_meta = rorp.get_acl()
-        if acl_meta.is_basic():
+        if acl_meta.is_basic() and not force_empty:
             return None
         else:
             return super().write_object(acl_meta)

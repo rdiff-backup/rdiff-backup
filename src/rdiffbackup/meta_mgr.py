@@ -214,17 +214,6 @@ class PatchDiffMan(Manager):
     """
     max_diff_chain = 9  # After this many diffs, make a new snapshot
 
-    def _get_diffiter(self, new_iter, old_iter):
-        """
-        Iterate meta diffs of new_iter -> old_iter
-        """
-        for new_rorp, old_rorp in rorpiter.Collate2Iters(new_iter, old_iter):
-            if not old_rorp:
-                yield rpath.RORPath(new_rorp.index)
-            elif not new_rorp or new_rorp.data != old_rorp.data:
-                # exact compare here, can't use == on rorps
-                yield old_rorp
-
     def sorted_prefix_inclist(self, prefix, min_time=0):
         """
         Return reverse sorted (by time) list of incs with given prefix
@@ -278,6 +267,17 @@ class PatchDiffMan(Manager):
             diff_writer.write_object(diff_rorp)
         diff_writer.close()  # includes sync
         oldrp.delete()
+
+    def _get_diffiter(self, new_iter, old_iter):
+        """
+        Iterate meta diffs of new_iter -> old_iter
+        """
+        for new_rorp, old_rorp in rorpiter.Collate2Iters(new_iter, old_iter):
+            if not old_rorp:
+                yield rpath.RORPath(new_rorp.index)
+            elif not new_rorp or new_rorp.data != old_rorp.data:
+                # exact compare here, can't use == on rorps
+                yield old_rorp
 
     def _check_needs_diff(self):
         """

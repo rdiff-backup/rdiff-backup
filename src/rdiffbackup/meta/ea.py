@@ -256,9 +256,15 @@ class ExtendedAttributesFile(meta.FlatFile):
             rorp.set_ea(ea)
             yield rorp
 
-    def write_object(self, rorp):
+    def write_object(self, rorp, force_empty=False):
+        """
+        write RORPath' metadata to file
+
+        The force_empty parameter is for test purposes only to even write
+        empty metadata
+        """
         ea_meta = rorp.get_ea()
-        if ea_meta.is_empty():
+        if ea_meta.is_empty() and not force_empty:
             return None
         else:
             return super().write_object(ea_meta)

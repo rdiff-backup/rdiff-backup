@@ -179,7 +179,8 @@ user.empty
         writer = man._writer_helper('snapshot', 10000,
                                     ea.get_plugin_class(), force=True)
         for rp in [self.ea_test1_rpath, rp1, rp2, rp3]:
-            writer.write_object(rp)
+            # without enforcing, rp3 might have no EA and not be saved
+            writer.write_object(rp, force_empty=True)
         writer.close()
 
         # Read back records and compare
