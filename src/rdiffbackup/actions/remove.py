@@ -165,5 +165,5 @@ class RemoveAction(actions.BaseAction):
         return times_in_secs[-1] + 1
 
 
-def get_action_class():
+def get_plugin_class():
     return RemoveAction

@@ -1,0 +1,43 @@
+= Plugins structure of rdiff-backup
+:sectnums:
+:toc:
+
+Believing that a clear plug-in structure helps newcomers to participate in the code base of a product, we strive to offer such a low-entry plugin API.
+
+It is currently far from perfect as it has been added once the code was already existing, but it should be the direction.
+
+== Plugin module discovery
+
+The module `rdiffbackup.utils.plugins` offers the function `get_discovered_plugins` to... discover plugin modules and classes.
+
+It relies on plugin modules to:
+
+. belong to a certain namespace, typically something like `rdiffbackup.PLUGTYPE`,
+. or be named with a certain prefix, typically `rdb_PLUGTYPE_`.
+
+== Plugin module interface
+
+Each plugin module is deemed having a main class, typically derived from a base class helping scaffolding.
+This main class can be gathered using the module function `get_plugin_class()`, which simply returns this main class, non-instantiated.
+
+== Plugin class interface
+
+Beside plugin type specific functions, each plugin class must offer the following functions:
+
+* the class method `cls.get_name()` returns the unique short name of the plug-in, usable a dictionary key.
+Only this name will be used in the code, and it doesn't need to be aligned with the name of the module or of the class (but it should).
+* the class method `cls.get_desc()` returns the human readable name of the plugin handled, to be used for user messages.
+* the class method `cls.get_version()` returns the version of the plug-in as a string.
+The version `0.0.0` is reserved for plugins delivered with the main program, to avoid having to maintain too many versions in the main code.
+
+== Plugin type manager interface
+
+Each plugin type should have its manager module, typically named `rdiffbackup.PLUGTYPE_mgr`.
+All plugin interaction should happen through this manager, so that all other parts of the program don't rely on a specific set of plugins but use the manager to get a list.
+
+The interface of the plugin type manager is specific to each type, and described in the following chapter.
+
+== Plugin types specifics
+
+include::actions.adoc[leveloffset=+2]
+include::meta.adoc[leveloffset=+2]

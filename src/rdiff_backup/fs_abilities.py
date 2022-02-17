@@ -30,8 +30,9 @@ FSAbilities object describing it.
 import errno
 import os
 from rdiff_backup import (
-    FilenameMapping, Globals, log, robust, selection, Time, win_acls
+    FilenameMapping, Globals, log, robust, selection, Time
 )
+from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 
 
 class FSAbilities:
@@ -477,7 +478,7 @@ class FSAbilities:
             return
 
         try:
-            win_acls.init_acls()
+            acl_win.init_acls()  # FIXME there should be no cross-dependency
         except (OSError, AttributeError, pywintypes.error):
             log.Log("Unable to init win_acls. Windows ACLs not supported by "
                     "filesystem at path {pa}".format(pa=dir_rp), log.INFO)

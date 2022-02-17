@@ -22,7 +22,7 @@ import re
 import os
 import platform
 import sys
-from . import log
+from rdiff_backup import log
 
 # The current version of rdiff-backup
 # Get it from package info or fall back to DEV version.

@@ -105,5 +105,5 @@ class VerifyAction(actions.BaseAction):
             return self.repo.verify(self.action_time)
 
 
-def get_action_class():
+def get_plugin_class():
     return VerifyAction

@@ -205,5 +205,5 @@ class RestoreAction(actions.BaseAction):
         self.repo.close_rf_cache()
 
 
-def get_action_class():
+def get_plugin_class():
     return RestoreAction

@@ -45,6 +45,7 @@ import time
 from rdiff_backup import Globals, Time, log, C
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
+from rdiffbackup.meta import acl_posix, acl_win, ea
 
 try:
     import win32api
@@ -454,29 +455,29 @@ class RORPath:
             self.file.close()
             self.file_already_open = None
 
-    def set_acl(self, acl):
+    def set_acl(self, acl_meta):
         """Record access control list in dictionary.  Does not write"""
-        self.data['acl'] = acl
+        self.data['acl'] = acl_meta
 
     def get_acl(self):
         """Return access control list object from dictionary"""
         try:
             return self.data['acl']
         except KeyError:
-            acl = self.data['acl'] = get_blank_acl(self.index)
-            return acl
+            acl_meta = self.data['acl'] = acl_posix.get_blank_meta(self.index)
+            return acl_meta
 
-    def set_ea(self, ea):
+    def set_ea(self, ea_meta):
         """Record extended attributes in dictionary.  Does not write"""
-        self.data['ea'] = ea
+        self.data['ea'] = ea_meta
 
     def get_ea(self):
         """Return extended attributes object"""
         try:
             return self.data['ea']
         except KeyError:
-            ea = self.data['ea'] = get_blank_ea(self.index)
-            return ea
+            ea_meta = self.data['ea'] = ea.get_blank_meta(self.index)
+            return ea_meta
 
     def has_carbonfile(self):
         """True if rpath has a carbonfile parameter"""
@@ -502,17 +503,17 @@ class RORPath:
         """Record resource fork in dictionary.  Does not write"""
         self.data['resourcefork'] = rfork
 
-    def set_win_acl(self, acl):
+    def set_win_acl(self, acl_meta):
         """Record Windows access control list in dictionary. Does not write"""
-        self.data['win_acl'] = acl
+        self.data['win_acl'] = acl_meta
 
     def get_win_acl(self):
         """Return access control list object from dictionary"""
         try:
             return self.data['win_acl']
         except KeyError:
-            acl = self.data['win_acl'] = get_blank_win_acl(self.index)
-            return acl
+            acl_meta = self.data['win_acl'] = acl_win.get_blank_meta(self.index)
+            return acl_meta
 
     def has_alt_mirror_name(self):
         """True if rorp has an alternate mirror name specified"""
@@ -1317,32 +1318,32 @@ class RPath(RORPath):
     def get_acl(self):
         """Return access control list object, setting if necessary"""
         try:
-            acl = self.data['acl']
+            acl_meta = self.data['acl']
         except KeyError:
-            acl = self.data['acl'] = acl_get(self)
-        return acl
+            acl_meta = self.data['acl'] = acl_posix.get_meta(self)
+        return acl_meta
 
-    def write_acl(self, acl, map_names=1):
+    def write_acl(self, acl_meta, map_names=1):
         """Change access control list of rp
 
         If map_names is true, map the ids in acl by user/group names.
 
         """
-        acl.write_to_rp(self, map_names)
-        self.data['acl'] = acl
+        acl_meta.write_to_rp(self, map_names)
+        self.data['acl'] = acl_meta
 
     def get_ea(self):
         """Return extended attributes object, setting if necessary"""
         try:
-            ea = self.data['ea']
+            ea_meta = self.data['ea']
         except KeyError:
-            ea = self.data['ea'] = ea_get(self)
-        return ea
+            ea_meta = self.data['ea'] = ea.get_meta(self)
+        return ea_meta
 
-    def write_ea(self, ea):
+    def write_ea(self, ea_meta):
         """Change extended attributes of rp"""
-        ea.write_to_rp(self)
-        self.data['ea'] = ea
+        ea_meta.write_to_rp(self)
+        self.data['ea'] = ea_meta
 
     def write_carbonfile(self, cfile):
         """Write new carbon data to self."""
@@ -1401,15 +1402,15 @@ class RPath(RORPath):
     def get_win_acl(self):
         """Return Windows access control list, setting if necessary"""
         try:
-            acl = self.data['win_acl']
+            acl_meta = self.data['win_acl']
         except KeyError:
-            acl = self.data['win_acl'] = win_acl_get(self)
-        return acl
+            acl_meta = self.data['win_acl'] = acl_win.get_meta(self)
+        return acl_meta
 
-    def write_win_acl(self, acl):
+    def write_win_acl(self, acl_meta):
         """Change access control list of rp"""
-        write_win_acl(self, acl)
-        self.data['win_acl'] = acl
+        acl_win.write_meta(self, acl_meta)
+        self.data['win_acl'] = acl_meta
 
     def _debug_consistency(self):
         """Raise an error if consistency of rp broken
@@ -1930,11 +1931,11 @@ def setdata_local(rpath):
     rpath.data['uname'] = usrgrp.uid2uname(rpath.data['uid'])
     rpath.data['gname'] = usrgrp.gid2gname(rpath.data['gid'])
     if Globals.eas_conn:
-        rpath.data['ea'] = ea_get(rpath)
+        rpath.data['ea'] = ea.get_meta(rpath)
     if Globals.acls_conn:
-        rpath.data['acl'] = acl_get(rpath)
+        rpath.data['acl'] = acl_posix.get_meta(rpath)
     if Globals.win_acls_conn:
-        rpath.data['win_acl'] = win_acl_get(rpath)
+        rpath.data['win_acl'] = acl_win.get_meta(rpath)
     if Globals.resource_forks_conn and rpath.isreg():
         rpath.get_resource_fork()
     if Globals.carbonfile_conn and rpath.isreg():
@@ -2016,33 +2017,3 @@ def _check_for_files(*rps):
     for rp in rps:
         if not rp.lstat():
             raise RPathException("File {rp} does not exist".format(rp=rp))
-
-
-# These functions are overwritten by the eas_acls.py module.  We can't
-# import that module directly because of circular dependency problems.
-def acl_get(rp):
-    raise NotImplementedError()
-
-
-def get_blank_acl(index):
-    raise NotImplementedError()
-
-
-def ea_get(rp):
-    raise NotImplementedError()
-
-
-def get_blank_ea(index):
-    raise NotImplementedError()
-
-
-def win_acl_get(rp):
-    raise NotImplementedError()
-
-
-def write_win_acl(rp):
-    raise NotImplementedError()
-
-
-def get_blank_win_acl():
-    raise NotImplementedError()

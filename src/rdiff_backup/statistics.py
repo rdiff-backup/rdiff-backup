@@ -20,7 +20,8 @@
 
 import time
 from functools import reduce
-from . import Globals, Time, increment, log, metadata
+from rdiff_backup import Globals, increment, log, Time
+from rdiffbackup.utils import quoting
 
 
 _active_statfileobj = None
@@ -359,7 +360,7 @@ class FileStats:
             filename = source_rorp.get_indexpath()
         else:
             filename = dest_rorp.get_indexpath()
-        filename = metadata.quote_path(filename)
+        filename = quoting.quote_path(filename)
 
         size_list = list(map(cls._get_size, [source_rorp, dest_rorp, inc]))
         line = b" ".join([filename, str(changed).encode()] + size_list)

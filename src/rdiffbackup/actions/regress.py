@@ -111,5 +111,5 @@ class RegressAction(actions.BaseAction):
         return self._operate_regress(noticeable=True)
 
 
-def get_action_class():
+def get_plugin_class():
     return RegressAction

@@ -19,9 +19,10 @@
 """High level functions for mirroring and mirror+incrementing"""
 
 import errno
-from . import Globals, metadata, rorpiter, Hardlink, robust, \
+from rdiff_backup import Globals, rorpiter, Hardlink, robust, \
     increment, rpath, log, selection, Time, Rdiff, statistics, iterfile, \
     hash, longname
+from rdiffbackup import meta_mgr
 
 
 def mirror_compat200(src_rpath, dest_rpath):
@@ -149,12 +150,10 @@ class DestinationStruct:
     @classmethod
     def set_rorp_cache(cls, baserp, source_iter, for_increment):
         """
-
         Initialize cls.CCPP, the destination rorp cache
 
         for_increment should be true if we are mirror+incrementing,
         false if we are just mirroring.
-
         """
         dest_iter = cls._get_dest_select(baserp, for_increment)
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
@@ -217,12 +216,10 @@ class DestinationStruct:
     @classmethod
     def _get_dest_select(cls, rpath, use_metadata=1):
         """
-
         Return destination select rorpath iterator
 
         If metadata file doesn't exist, select all files on
         destination except rdiff-backup-data directory.
-
         """
 
         def get_iter_from_fs():
@@ -231,9 +228,9 @@ class DestinationStruct:
             sel.parse_rbdir_exclude()
             return sel.set_iter()
 
-        metadata.SetManager()
+        meta_manager = meta_mgr.get_meta_manager(True)
         if use_metadata:
-            rorp_iter = metadata.ManagerObj.GetAtTime(Time.prevtime)
+            rorp_iter = meta_manager.get_metas_at_time(Time.prevtime)
             if rorp_iter:
                 return rorp_iter
         return get_iter_from_fs()
@@ -332,7 +329,7 @@ class CacheCollatedPostProcess:
         self.statfileobj = statistics.init_statfileobj()
         if Globals.file_statistics:
             statistics.FileStats.init()
-        self.metawriter = metadata.ManagerObj.GetWriter()
+        self.metawriter = meta_mgr.get_meta_manager().get_writer()
 
         # the following should map indices to lists
         # [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -437,7 +434,7 @@ class CacheCollatedPostProcess:
             dir_rp, perms = self.dir_perms_list.pop()
             dir_rp.chmod(perms)
         self.metawriter.close()
-        metadata.ManagerObj.ConvertMetaToDiff()
+        meta_mgr.get_meta_manager().convert_meta_main_to_diff()
 
     def _pre_process(self, source_rorp, dest_rorp):
         """Do initial processing on source_rorp and dest_rorp
