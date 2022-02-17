@@ -1,0 +1,39 @@
+---
+- name: Build rdiff-backup on a prepared Windows like the GitHub Pipeline
+  hosts: windows_builders
+  gather_facts: false
+  vars:
+    win_architectures:
+      - x86
+      - x64
+  tasks:
+    - name: make sure working directory {{ working_dir }} exists
+      win_file:
+        state: directory
+        path: "{{ working_dir }}"
+    - name: clone the rdiff-backup sources from Git
+      win_command: >
+        git.exe clone
+        {% if rdiff_version_tag is defined %}--branch {{ rdiff_version_tag }}{% endif %}
+        {{ rdiffbackup_git_repo }}
+        "{{ rdiffbackup_dir }}"
+      args:
+        creates: "{{ rdiffbackup_dir }}"
+    - name: build librsync
+      win_command: >
+        "{{ git_bash_exe }}" tools/win_build_librsync.sh
+        {{ win_arch | default('x64') }} v{{ librsync_version }}
+      args:
+        chdir: "{{ rdiffbackup_dir }}"
+    - name: Build rdiff-backup
+      win_command: >
+        "{{ git_bash_exe }}" tools/win_build_rdiffbackup.sh
+        {{ win_arch | default('x64') }} {{ python_version_full }}
+      args:
+        chdir: "{{ rdiffbackup_dir }}"
+    - name: Package rdiff-backup
+      win_command: >
+        "{{ git_bash_exe }}" tools/win_package_rdiffbackup.sh
+        {{ win_arch | default('x64') }}
+      args:
+        chdir: "{{ rdiffbackup_dir }}"

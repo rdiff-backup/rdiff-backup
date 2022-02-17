@@ -1,4 +1,4 @@
-= Windows development environment
+= Windows development environment (on Linux)
 :sectnums:
 :toc:
 
@@ -10,18 +10,20 @@ Install Vagrant, ruby-devel and libvirt-devel as root and the necessary plug-ins
 * winrm
 * winrm-elevated
 
+Also install ansible(-core) in version 2.12 or higher, and call the following to get the necessary collections installed:
+
+----
+ansible-galaxy collection install -r collections/requirements.yml
+----
+
 A simple `vagrant up` should now do, using a default Windows image, and you'll get in the best case a fully workable rdiff-backup development environment on Windows.
 
-____
-*NOTE:* Starting from https://github.com/redhat-cop/automate-windows/tree/master/vagrant-libvirt-image, 	you can create your own Windows VM usable by Ansible (any other alternative 	approach to a such VM is of course valid).
-____
+NOTE: Starting from https://github.com/redhat-cop/automate-windows/tree/master/vagrant-libvirt-image,  you can create your own Windows VM usable by Ansible (any other alternative  approach to a such VM is of course valid).
 
 You can re-apply the changes using `vagrant provision` or direcly apply the playbook `playbook-provision-windows.yml` using Ansible to the Windows you've just created to create the necessary development environment.
 
-____
-*IMPORTANT:* The current state of the automation isn't very satisfying, the more complex packages need to be installed manually from the command line with something like `choco install <packagename>` and the playbook restarted.
+IMPORTANT: The current state of the automation isn't very satisfying, the more complex packages need to be installed manually from the command line with something like `choco install <packagename>` and the playbook restarted.
 A few reboots in-between might be necessary.
-____
 
 If you already have a Windows VM/PC/laptop/server, you'd like to use for rdiff-backup development, you don't need to use Vagrant, you can directly use Ansible:
 
@@ -31,6 +33,7 @@ If you already have a Windows VM/PC/laptop/server, you'd like to use for rdiff-b
 
 Your inventory should look as follows, depending on your exact Windows setup, replacing at least the `MY*` placeholders (some level of Ansible knowledge doesn't hurt here):
 
+[source, ini]
 ----
 [windows_ansible]
 MYWINDOWSHOST ansible_host=192.168.1.MYIP ansible_user='MYUSER' ansible_password='MYPASSWORD'
@@ -41,10 +44,7 @@ ansible_port=5986
 ansible_winrm_server_cert_validation=ignore
 ----
 
-____
-*TIP:* with the newest version of Windows, you can even connect to the VM using SSH e.g.
-with `vagrant ssh`.
-____
+TIP: with the newest version of Windows, you can even connect to the VM using SSH e.g. with `vagrant ssh`.
 
 == Build librsync and rdiff-backup
 
@@ -55,9 +55,7 @@ ansible-playbook playbook-build-librsync.yml
 ansible-playbook playbook-build-rdiff-backup.yml
 ----
 
-____
-*NOTE:* you can use the variables under `group_vars/all` to steer the build process, check the comments there for more details.
-____
+NOTE: you can use the variables under `group_vars/all` to steer the build process, check the comments there for more details.
 
 == Develop and try under Windows
 
@@ -74,9 +72,7 @@ python -m pdb .\build\scripts-3.9\rdiff-backup sourcedir targetdir
 
 If you do changes to the source code, just rebuild using one or both playbooks and try again.
 
-____
-*NOTE*: If you do changes outside of the VM, you'll need to do `git pull` on your own, the playbooks doesn't (yet) take care of it for you.
-____
+NOTE: If you do changes outside of the VM, you'll need to do `git pull` on your own, the playbooks doesn't (yet) take care of it for you.
 
 == Samba server
 
