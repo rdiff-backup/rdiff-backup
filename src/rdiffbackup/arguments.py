@@ -363,7 +363,7 @@ if __name__ == "__main__":
     Call `python3 arguments.py [--new] --help` for usage.
     """
     from rdiffbackup import actions_mgr
-    disc_actions = actions_mgr.get_discovered_actions()
+    disc_actions = actions_mgr.get_actions_dict()
     values = parse(sys.argv[1:], "british-agent 0.0.7",
                    actions_mgr.get_generic_parsers(),
                    actions_mgr.get_parent_parsers_compat200(),

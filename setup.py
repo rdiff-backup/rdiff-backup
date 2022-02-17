@@ -241,7 +241,7 @@ setup(
     python_requires='~=3.6',
     platforms=['linux', 'win32'],
     packages=["rdiff_backup", "rdiffbackup",
-              "rdiffbackup.actions", "rdiffbackup.utils",
+              "rdiffbackup.actions", "rdiffbackup.utils", "rdiffbackup.meta",
               "rdiffbackup.locations", "rdiffbackup.locations.map"],
     package_dir={"": "src"},  # tell distutils packages are under src
     ext_modules=[

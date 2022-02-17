@@ -76,5 +76,5 @@ class TestAction(actions.BaseAction):
         return result
 
 
-def get_action_class():
+def get_plugin_class():
     return TestAction

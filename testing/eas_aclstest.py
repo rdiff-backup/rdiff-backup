@@ -3,10 +3,9 @@ import os
 import io
 import pwd
 import grp
-from rdiff_backup.eas_acls import metadata, \
-    AccessControlLists, ACLExtractor, AccessControlListFile, \
-    ExtendedAttributes, EAExtractor, ExtendedAttributesFile
 from rdiff_backup import Globals, rpath, user_group
+from rdiffbackup import meta_mgr
+from rdiffbackup.meta import acl_posix, ea
 from commontest import rdiff_backup, abs_test_dir, abs_output_dir, \
     abs_restore_dir, BackupRestoreSeries, compare_recursive
 
@@ -18,7 +17,7 @@ restore_dir = rpath.RPath(Globals.local_connection, abs_restore_dir)
 
 class EATest(unittest.TestCase):
     """Test extended attributes"""
-    sample_ea = ExtendedAttributes(
+    sample_ea = ea.ExtendedAttributes(
         (), {
             b'user.empty':
             b'',
@@ -33,14 +32,14 @@ class EATest(unittest.TestCase):
                 Encoding it will require several lines of
                 base64.""" + bytes((177, ) * 300)
         })
-    empty_ea = ExtendedAttributes(())
-    ea1 = ExtendedAttributes(('e1', ), sample_ea.attr_dict.copy())
+    empty_ea = ea.ExtendedAttributes(())
+    ea1 = ea.ExtendedAttributes(('e1', ), sample_ea.attr_dict.copy())
     ea1.delete(b'user.not_empty')
-    ea2 = ExtendedAttributes(('e2', ), sample_ea.attr_dict.copy())
+    ea2 = ea.ExtendedAttributes(('e2', ), sample_ea.attr_dict.copy())
     ea2.set(b'user.third', b'Another random attribute')
-    ea3 = ExtendedAttributes(('e3', ))
-    ea4 = ExtendedAttributes(('e4', ),
-                             {b'user.deleted': b'File to be deleted'})
+    ea3 = ea.ExtendedAttributes(('e3', ))
+    ea4 = ea.ExtendedAttributes(('e4', ),
+                                {b'user.deleted': b'File to be deleted'})
     ea_test1_dir = os.path.join(abs_test_dir, b'ea_test1')
     ea_test1_rpath = rpath.RPath(Globals.local_connection, ea_test1_dir)
     ea_test2_dir = os.path.join(abs_test_dir, b'ea_test2')
@@ -61,7 +60,7 @@ class EATest(unittest.TestCase):
     def testBasic(self):
         """Test basic writing and reading of extended attributes"""
         self.make_temp_out_dirs()
-        new_ea = ExtendedAttributes(())
+        new_ea = ea.ExtendedAttributes(())
         new_ea.read_from_rp(tempdir)
         # we ignore SELinux extended attributes for comparison
         if new_ea.attr_dict:
@@ -82,8 +81,8 @@ class EATest(unittest.TestCase):
 
     def testRecord(self):
         """Test writing a record and reading it back"""
-        record = ExtendedAttributesFile._object_to_record(self.sample_ea)
-        new_ea = EAExtractor._record_to_object(record)
+        record = ea.ExtendedAttributesFile._object_to_record(self.sample_ea)
+        new_ea = ea.EAExtractor._record_to_object(record)
         if not new_ea == self.sample_ea:
             new_list = list(new_ea.attr_dict.keys())
             sample_list = list(self.sample_ea.attr_dict.keys())
@@ -111,7 +110,7 @@ user.empty
 # file: 2foo/\\012
 user.empty
 """
-        extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
+        extractor = ea.EAExtractor(io.BytesIO(os.fsencode(record_list)))
         ea_iter = extractor._iterate_starting_with(())
         first = next(ea_iter)
         self.assertEqual(first.index, (b'0foo', ))
@@ -123,7 +122,7 @@ user.empty
                                msg="Too many elements in iterator"):
             next(ea_iter)
 
-        extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
+        extractor = ea.EAExtractor(io.BytesIO(os.fsencode(record_list)))
         ea_iter = extractor._iterate_starting_with((b'1foo', b'bar'))
         self.assertEqual(next(ea_iter).index, (b'1foo', b'bar', b'baz'))
         with self.assertRaises(StopIteration,
@@ -176,16 +175,16 @@ user.empty
 
         # Now write records corresponding to above rps into file
         Globals.rbdir = tempdir
-        man = metadata.PatchDiffMan()
-        writer = man._get_ea_writer('snapshot', 10000)
+        man = meta_mgr.PatchDiffMan()
+        writer = man._writer_helper('snapshot', 10000,
+                                    ea.get_plugin_class(), force=True)
         for rp in [self.ea_test1_rpath, rp1, rp2, rp3]:
-            ea = ExtendedAttributes(rp.index)
-            ea.read_from_rp(rp)
-            writer.write_object(ea)
+            # without enforcing, rp3 might have no EA and not be saved
+            writer.write_object(rp, force_empty=True)
         writer.close()
 
         # Read back records and compare
-        ea_iter = man._get_eas_at_time(10000, None)
+        ea_iter = man._iter_helper(10000, None, ea.get_plugin_class())
         self.assertTrue(ea_iter, "No extended_attributes.<time> file found")
         sample_ea_reread = next(ea_iter)
         # we ignore SELinux extended attributes for comparison
@@ -262,13 +261,13 @@ class ACLTest(unittest.TestCase):
     current_user = os.getenv('RDIFF_TEST_USER', pwd.getpwuid(os.getuid()).pw_name)
     current_group = os.getenv('RDIFF_TEST_GROUP', grp.getgrgid(os.getgid()).gr_name)
 
-    sample_acl = AccessControlLists((), """user::rwx
+    sample_acl = acl_posix.AccessControlLists((), """user::rwx
 user:root:rwx
 group::r-x
 group:root:r-x
 mask::r-x
 other::---""")
-    dir_acl = AccessControlLists((), """user::rwx
+    dir_acl = acl_posix.AccessControlLists((), """user::rwx
 user:root:rwx
 group::r-x
 group:root:r-x
@@ -279,23 +278,24 @@ default:user:root:---
 default:group::r-x
 default:mask::r-x
 default:other::---""")
-    acl1 = AccessControlLists((b'a1', ), """user::r--
+    acl1 = acl_posix.AccessControlLists((b'a1', ), """user::r--
 user:{0}:---
 group::---
 group:root:---
 mask::---
 other::---""".format(current_user))
-    acl2 = AccessControlLists((b'a2', ), """user::rwx
+    acl2 = acl_posix.AccessControlLists((b'a2', ), """user::rwx
 group::r-x
 group:{0}:rwx
 mask::---
 other::---""".format(current_group))
-    acl3 = AccessControlLists((b'a3', ), """user::rwx
+    acl3 = acl_posix.AccessControlLists((b'a3', ), """user::rwx
 user:root:---
 group::r-x
 mask::---
 other::---""")
-    empty_acl = AccessControlLists((), "user::rwx\ngroup::---\nother::---")
+    empty_acl = acl_posix.AccessControlLists(
+        (), "user::rwx\ngroup::---\nother::---")
     acl_test1_dir = os.path.join(abs_test_dir, b'acl_test1')
     acl_test1_rpath = rpath.RPath(Globals.local_connection, acl_test1_dir)
     acl_test2_dir = os.path.join(abs_test_dir, b'acl_test2')
@@ -316,7 +316,7 @@ other::---""")
     def testBasic(self):
         """Test basic writing and reading of ACLs"""
         self.make_temp_out_dirs()
-        new_acl = AccessControlLists(())
+        new_acl = acl_posix.AccessControlLists(())
         tempdir.chmod(0o700)
         new_acl.read_from_rp(tempdir)
         self.assertTrue(new_acl.is_basic())
@@ -331,7 +331,7 @@ other::---""")
     def testBasicDir(self):
         """Test reading and writing of ACL w/ defaults to directory"""
         self.make_temp_out_dirs()
-        new_acl = AccessControlLists(())
+        new_acl = acl_posix.AccessControlLists(())
         new_acl.read_from_rp(tempdir)
         self.assertTrue(new_acl.is_basic())
         self.assertNotEqual(new_acl, self.dir_acl)
@@ -345,8 +345,9 @@ other::---""")
 
     def testRecord(self):
         """Test writing a record and reading it back"""
-        record = AccessControlListFile._object_to_record(self.sample_acl)
-        new_acl = ACLExtractor._record_to_object(record)
+        record = acl_posix.AccessControlListFile._object_to_record(
+            self.sample_acl)
+        new_acl = acl_posix.ACLExtractor._record_to_object(record)
         self.assertEqual(new_acl, self.sample_acl,
                          "New_acl {new.entry_list}\n"
                          "sample_acl {sample.entry_list}\n"
@@ -354,8 +355,9 @@ other::---""")
                          "Sample acl text {sample!s}".format(
                              new=new_acl, sample=self.sample_acl))
 
-        record2 = AccessControlListFile._object_to_record(self.dir_acl)
-        new_acl2 = ACLExtractor._record_to_object(record2)
+        record2 = acl_posix.AccessControlListFile._object_to_record(
+            self.dir_acl)
+        new_acl2 = acl_posix.ACLExtractor._record_to_object(record2)
         if not new_acl2 == self.dir_acl:
             self.assertTrue(new_acl2._eq_verbose(self.dir_acl))
             self.assertFalse("Shouldn't be here---eq != _eq_verbose?")
@@ -384,7 +386,7 @@ group:root:---
 mask::---
 other::---
 """.format(self.current_user)
-        extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
+        extractor = acl_posix.ACLExtractor(io.BytesIO(os.fsencode(record_list)))
         acl_iter = extractor._iterate_starting_with(())
         first = next(acl_iter)
         self.assertEqual(first.index, (b'0foo', ))
@@ -396,7 +398,7 @@ other::---
                                msg="Too many elements in iterator"):
             next(acl_iter)
 
-        extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
+        extractor = acl_posix.ACLExtractor(io.BytesIO(os.fsencode(record_list)))
         acl_iter = extractor._iterate_starting_with((b'1foo', b'bar'))
         self.assertEqual(next(acl_iter).index, (b'1foo', b'bar', b'baz'))
         with self.assertRaises(StopIteration,
@@ -443,16 +445,15 @@ other::---
 
         # Now write records corresponding to above rps into file
         Globals.rbdir = tempdir
-        man = metadata.PatchDiffMan()
-        writer = man._get_acl_writer('snapshot', 10000)
+        man = meta_mgr.PatchDiffMan()
+        writer = man._writer_helper('snapshot', 10000,
+                                    acl_posix.get_plugin_class(), force=True)
         for rp in [self.acl_test1_rpath, rp1, rp2, rp3]:
-            acl = AccessControlLists(rp.index)
-            acl.read_from_rp(rp)
-            writer.write_object(acl)
+            writer.write_object(rp)
         writer.close()
 
         # Read back records and compare
-        acl_iter = man._get_acls_at_time(10000, None)
+        acl_iter = man._iter_helper(10000, None, acl_posix.get_plugin_class())
         self.assertTrue(acl_iter, "No acl file found")
         dir_acl_reread = next(acl_iter)
         self.assertEqual(dir_acl_reread, self.dir_acl)
@@ -532,7 +533,7 @@ other::---
             rootrp.mkdir()
             rp = rootrp.append('a1')
             rp.touch()
-            acl = AccessControlLists(('a1', ), """user::rwx
+            acl = acl_posix.AccessControlLists(('a1', ), """user::rwx
 user:root:rwx
 user:{0}:---
 user:bin:r--
@@ -589,7 +590,7 @@ other::---""".format(self.current_user, self.current_group))
         """ben uses a dvorak keyboard, and these sequences are
         analogous to asdfsjkd for a qwerty user... these
         users and groups are not expected to exist. -dean"""
-        acl = AccessControlLists(('a1', ), """user::rwx
+        acl = acl_posix.AccessControlLists(('a1', ), """user::rwx
 user:aoensutheu:r--
 group::r-x
 group:aeuai:r-x
@@ -597,7 +598,7 @@ group:enutohnh:-w-
 other::---""")
         rp.write_acl(acl)
         rp2 = tempdir.append('a1')
-        acl2 = AccessControlLists(('a1', ))
+        acl2 = acl_posix.AccessControlLists(('a1', ))
         acl2.read_from_rp(rp2)
         self.assertTrue(acl2.is_basic())
         Globals.never_drop_acls = 1

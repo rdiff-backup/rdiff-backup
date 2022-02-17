@@ -30,9 +30,10 @@ import os
 import re
 import tempfile
 from rdiff_backup import (
-    C, Globals, hash, increment, iterfile, log, metadata,
+    C, Globals, hash, increment, iterfile, log,
     Rdiff, robust, rorpiter, rpath, selection, statistics, Time,
 )
+from rdiffbackup import meta_mgr
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
@@ -160,9 +161,9 @@ class RepoShadow:
             sel.parse_rbdir_exclude()
             return sel.set_iter()
 
-        metadata.SetManager()
+        meta_manager = meta_mgr.get_meta_manager(True)
         if previous_time:  # it's an increment, not the first mirror
-            rorp_iter = metadata.ManagerObj.GetAtTime(previous_time)
+            rorp_iter = meta_manager.get_metas_at_time(previous_time)
             if rorp_iter:
                 return rorp_iter
         return get_iter_from_fs()
@@ -380,9 +381,9 @@ class RepoShadow:
         if rest_time is None:
             rest_time = cls._restore_time
 
-        metadata.SetManager()
-        rorp_iter = metadata.ManagerObj.GetAtTime(rest_time,
-                                                  cls.mirror_base.index)
+        meta_manager = meta_mgr.get_meta_manager(True)
+        rorp_iter = meta_manager.get_metas_at_time(rest_time,
+                                                   cls.mirror_base.index)
         if not rorp_iter:
             if require_metadata:
                 log.Log.FatalError("Mirror metadata not found")
@@ -824,9 +825,9 @@ information in it.
             "Mirror and increments paths must be directories")
         assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection, (
             "Regress must happen locally.")
-        manager, former_current_mirror_rp = cls._set_regress_time()
+        meta_manager, former_current_mirror_rp = cls._set_regress_time()
         cls._set_restore_times()
-        cls._regress_rbdir(manager)
+        cls._regress_rbdir(meta_manager)
         ITR = rorpiter.IterTreeReducer(_RepoRegressITRB, [])
         for rf in cls._iterate_meta_rfs(mirror_rp, inc_rpath):
             ITR(rf.index, rf)
@@ -839,14 +840,14 @@ information in it.
 
     @classmethod
     def _set_regress_time(cls):
-        """Set regress_time to previous successful backup
+        """
+        Set regress_time to previous successful backup
 
         If there are two current_mirror increments, then the last one
         corresponds to a backup session that failed.
-
         """
-        manager = metadata.SetManager()
-        curmir_incs = manager.sorted_prefix_inclist(b'current_mirror')
+        meta_manager = meta_mgr.get_meta_manager(True)
+        curmir_incs = meta_manager.sorted_prefix_inclist(b'current_mirror')
         assert len(curmir_incs) == 2, (
             "Found {ilen} current_mirror flags, expected 2".format(
                 ilen=len(curmir_incs)))
@@ -855,15 +856,15 @@ information in it.
         cls._unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
         log.Log("Regressing to date/time {dt}".format(
             dt=Time.timetopretty(cls._regress_time)), log.NOTE)
-        return manager, mirror_rp_to_delete
+        return meta_manager, mirror_rp_to_delete
 
     @classmethod
     def _set_restore_times(cls):
-        """Set _rest_time and _mirror_time in the restore module
+        """
+        Set _rest_time and _mirror_time in the restore module
 
         _rest_time (restore time) corresponds to the last successful
         backup time.  _mirror_time is the unsuccessful backup time.
-
         """
         cls._mirror_time = cls._unsuccessful_backup_time
         cls._restore_time = cls._regress_time
@@ -895,7 +896,7 @@ information in it.
                         "'snapshot' or 'diff', not {mtype}.".format(
                             mtype=old_rp.getinctype()))
         if meta_diffs and not meta_snaps:
-            cls._recreate_meta(meta_manager)
+            meta_manager.recreate_attr(cls._regress_time)
 
         for new_rp in meta_manager.timerpmap[cls._unsuccessful_backup_time]:
             if new_rp.getincbase_bname() != b'current_mirror':
@@ -904,35 +905,6 @@ information in it.
 
         for rp in meta_diffs:
             rp.delete()
-
-    @classmethod
-    def _recreate_meta(cls, meta_manager):
-        """Make regress_time mirror_metadata snapshot by patching
-
-        We write to a tempfile first.  Otherwise, in case of a crash, it
-        would seem we would have an intact snapshot and partial diff, not
-        the reverse.
-
-        """
-        temprp = [Globals.rbdir.get_temp_rpath()]
-
-        def callback(rp):
-            temprp[0] = rp
-
-        writer = metadata.MetadataFile(
-            temprp[0], 'wb', check_path=0, callback=callback)
-        for rorp in meta_manager.get_meta_at_time(cls._regress_time, None):
-            writer.write_object(rorp)
-        writer.close()
-
-        finalrp = Globals.rbdir.append(
-            b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(
-                cls._regress_time))
-        assert not finalrp.lstat(), (
-            "Metadata path '{mrp}' shouldn't exist.".format(mrp=finalrp))
-        rpath.rename(temprp[0], finalrp)
-        if Globals.fsync_directories:
-            Globals.rbdir.fsync()
 
     @classmethod
     def _iterate_raw_rfs(cls, mirror_rp, inc_rp):
@@ -962,12 +934,12 @@ information in it.
 
     @classmethod
     def _iterate_meta_rfs(cls, mirror_rp, inc_rp):
-        """Yield _RegressFile objects with extra metadata information added
+        """
+        Yield _RegressFile objects with extra metadata information added
 
         Each _RegressFile will have an extra object variable .metadata_rorp
         which will contain the metadata attributes of the mirror file at
         cls._regress_time.
-
         """
         raw_rfs = cls._iterate_raw_rfs(mirror_rp, inc_rp)
         collated = rorpiter.Collate2Iters(raw_rfs, cls._yield_metadata())
@@ -984,9 +956,11 @@ information in it.
 
     @classmethod
     def _yield_metadata(cls):
-        """Iterate rorps from metadata file, if any are available"""
-        metadata.SetManager()
-        metadata_iter = metadata.ManagerObj.GetAtTime(cls._regress_time)
+        """
+        Iterate rorps from metadata file, if any are available
+        """
+        meta_manager = meta_mgr.get_meta_manager(True)
+        metadata_iter = meta_manager.get_metas_at_time(cls._regress_time)
         if metadata_iter:
             return metadata_iter
         log.Log.FatalError(
@@ -1108,7 +1082,7 @@ class _CacheCollatedPostProcess:
         self.statfileobj = statistics.init_statfileobj()
         if Globals.file_statistics:
             statistics.FileStats.init()
-        self.metawriter = metadata.ManagerObj.GetWriter()
+        self.metawriter = meta_mgr.get_meta_manager().get_writer()
 
         # the following should map indices to lists
         # [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -1213,7 +1187,7 @@ class _CacheCollatedPostProcess:
             dir_rp, perms = self.dir_perms_list.pop()
             dir_rp.chmod(perms)
         self.metawriter.close()
-        metadata.ManagerObj.ConvertMetaToDiff()
+        meta_mgr.get_meta_manager().convert_meta_main_to_diff()
 
     def _pre_process(self, source_rorp, dest_rorp):
         """Do initial processing on source_rorp and dest_rorp
@@ -1423,11 +1397,11 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
                 rpath.rename(self.dir_replacement, self.base_rp)
 
     def _patch_to_temp(self, basis_rp, diff_rorp, new):
-        """Patch basis_rp, writing output in new, which doesn't exist yet
+        """
+        Patch basis_rp, writing output in new, which doesn't exist yet
 
         Returns true if able to write new as desired, false if
         UpdateError or similar gets in the way.
-
         """
         if diff_rorp.isflaglinked():
             self._patch_hardlink_to_temp(diff_rorp, new)
@@ -1442,18 +1416,18 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         if new.lstat():
             if diff_rorp.isflaglinked():
                 if Globals.eas_write:
-                    """ `isflaglinked() == True` implies that we are processing
-                    the 2nd (or later) file in a group of files linked to an
-                    inode.  As such, we don't need to perform the usual
-                    `copy_attribs(diff_rorp, new)` for the inode because that
-                    was already done when the 1st file in the group was
-                    processed.  Nonetheless, we still must perform the following
-                    task (which would have normally been performed by
-                    `copy_attribs()`).  Otherwise, the subsequent call to
-                    `_matches_cached_rorp(diff_rorp, new)` will fail because the
-                    new rorp's metadata would be missing the extended attribute
-                    data.
-                    """
+                    # `isflaglinked() == True` implies that we are processing
+                    # the 2nd (or later) file in a group of files linked to an
+                    # inode.  As such, we don't need to perform the usual
+                    # `copy_attribs(diff_rorp, new)` for the inode because
+                    # that was already done when the 1st file in the group was
+                    # processed.
+                    # Nonetheless, we still must perform the following task
+                    # (which would have normally been performed by
+                    # `copy_attribs()`).  Otherwise, the subsequent call to
+                    # `_matches_cached_rorp(diff_rorp, new)` will fail because
+                    # the new rorp's metadata would be missing the extended
+                    # attribute data.
                     new.data['ea'] = diff_rorp.get_ea()
             else:
                 rpath.copy_attribs(diff_rorp, new)

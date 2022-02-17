@@ -1,0 +1,60 @@
+= Meta plugins
+:sectnums:
+:toc:
+
+== Naming convention and meta manager
+
+An action plug-in is:
+
+. either in the `rdiffbackup.meta` namespace, with any module name (this is how built-in action modules are packaged),
+. or a top-level module with a name `rdb_meta_[...].py`.
+
+All those plug-ins are found by the meta manager module `rdiffbackup.meta_mgr` and used internally by the `Manager` class, itself parent class of the class `PatchDiffMan`.
+Such a `PatchDiffMan` object is returned by the function `get_meta_manager`.
+
+The discovered plug-in classes are returned either:
+- as key-value pair by the function `get_meta_dict`:
+** key is the name returned by the Metadata class
+** value is the Metadata class itself, as returned by the `get_plugin_class` function of the meta plug-in module.
+- as sorted list by the function `get_meta_list`, where the first item is the main meta class.
+
+NOTE: more information is provided with `pydoc rdiffbackup.meta_mgr`.
+
+== Module interface
+
+Each meta plug-in module contains one single Metadata File-class.
+This meta-file class is returned by the function `get_plugin_class` of the module.
+How the meta-file class is named and of which hierarchy it descends is irrelevant (though it makes sense to derive it from the rdiffbackup.meta.FlatFile class).
+
+All further meta-file plug-in interactions are executed through the interface of this single class.
+
+IMPORTANT: at time of writing, the `meta_mgr` module respects the interface of the meta plugins but other modules do access directly the meta plugins, like `fs_abilities` and `rpath`.
+The reason is historical and because fixing this in the current state of the code would rather add more complexity than simplify things.
+
+== Meta-file class interface
+
+The meta-file class has the following interface, in addition to the generic plugin class requirements:
+
+* the class method `cls.get_prefix()` returns the prefix of the filename.
+Make it short and usable on any filesystem (only letters and underscore).
+* the class method `cls.is_active()` tells if the metadata can be stored on the given file system.
+* the class method `cls.is_main_meta()` tells if the metadata is the main metadata, always stored.
+There can be only _one_ main meta-file plugin, and it is always active.
++
+IMPORTANT: the "main" class (hosted in `meta.attr`) is mostly a historical concept, due to the old structure of the code, without plugin concept, and the fact that basic file attributes aren't handled separately and actually represent the file itself (`RORPath` or `RPath`, with attributes like size or access rights).
+The `meta_mgr` module does still handle quite a lot of the "main" functionality, especially as the main class is the only one being "diff-ed".
+Also note that the carbon files and resource forks attributes are also still handled by the main class, at anything else would require a change to the repository structure.
+
+* the class method `cls.join_iter()` (not required to be implemented by the main class), allows to intermangle an iterator of `RORPath` objects with the corresponding iterator of metadata.
+This allows to handle all metadata in one iterator.
+* the class can be instantiated (through the `__init__` class), effectively opening the underlying metadata-file.
+* the method `self.write_object()` can then be used to write an object representing the metadata.
+The metadata-class is also defined within the plugin-module but must be stable because it is transferred through the connection!
+* the method `self.get_objects()` returns an iterator of objects read from the underlying file.
+* and finally, the method `self.close()` closes the underlying file.
+
+CAUTION: the main meta class has more methods, and some of them are embedded in the manager's code, but cleaning this up would rather complexify the code in its current state.
+
+== Pseudo-code
+
+NOTE: this will need to be clarified, the code isn't clear enough yet.

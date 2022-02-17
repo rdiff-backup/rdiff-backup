@@ -1,10 +1,13 @@
 import os
 import unittest
 import time
-from commontest import abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir, \
-    compare_recursive, BackupRestoreSeries, InternalBackup, InternalRestore, \
+from commontest import (
+    abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir,
+    compare_recursive, BackupRestoreSeries, InternalBackup, InternalRestore,
     MakeOutputDir, reset_hardlink_dicts, xcopytree
-from rdiff_backup import Globals, Hardlink, selection, rpath, metadata
+)
+from rdiff_backup import Globals, Hardlink, rpath, selection
+from rdiffbackup.meta import attr
 
 
 class HardlinkTest(unittest.TestCase):
@@ -161,7 +164,7 @@ class HardlinkTest(unittest.TestCase):
         hashes = []
         link_counts = []
         comp = metadata_rp.isinccompressed()
-        extractor = metadata.RorpExtractor(metadata_rp.open("r", comp))
+        extractor = attr.AttrExtractor(metadata_rp.open("r", comp))
         for rorp in extractor.iterate():
             link_counts.append(rorp.getnumlinks())
             if rorp.has_sha1():

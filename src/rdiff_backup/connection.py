@@ -641,14 +641,10 @@ from rdiff_backup import (  # noqa: E402,F401
     Main, rorpiter, selection, increment, statistics, manage,
     iterfile, rpath, robust, restore, backup,
     SetConnections, librsync, log, regress, fs_abilities,
-    eas_acls, user_group, compare
+    user_group, compare
 )
 from rdiffbackup.locations import _dir_shadow, _repo_shadow  # noqa: E402,F401
 from rdiffbackup.locations.map import filenames as map_filenames  # noqa: E402,F401
-try:
-    from . import win_acls  # noqa: F401
-except ImportError:
-    pass
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

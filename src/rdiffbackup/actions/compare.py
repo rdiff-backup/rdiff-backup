@@ -203,5 +203,5 @@ class CompareAction(actions.BaseAction):
             return 1
 
 
-def get_action_class():
+def get_plugin_class():
     return CompareAction

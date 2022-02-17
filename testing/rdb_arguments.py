@@ -23,7 +23,7 @@ class ArgumentsTest(unittest.TestCase):
         """
         - verify that the --version option exits and make a few more smoke tests of the parse option
         """
-        disc_actions = actions_mgr.get_discovered_actions()
+        disc_actions = actions_mgr.get_actions_dict()
 
         # verify that the --version option exits the program
         with self.assertRaises(SystemExit):

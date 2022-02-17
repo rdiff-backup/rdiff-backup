@@ -48,7 +48,7 @@ def _main_run(arglist, security_override=False):
     """
 
     # get a dictionary of discovered action plugins
-    discovered_actions = actions_mgr.get_discovered_actions()
+    discovered_actions = actions_mgr.get_actions_dict()
 
     # parse accordingly the arguments
     parsed_args = arguments.parse(
