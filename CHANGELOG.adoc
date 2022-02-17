@@ -10,6 +10,95 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * **DOC**umentation and *WEB*-site changes are marked as such.
 * And **DEV**elopment changes are only of interest for developers and testers.
 
+== New in v2.1.0a2
+
+=== Changes
+
+* CHG: all messages have a proper prefix corresponding to their 
+       severity (ERROR, WARNING, etc...)
+* CHG: human readable list of increments with size has slightly changed 
+       and is in the same order as the list _without_ size for consistency
+* CHG: placeholder for version parts in remote schema are Vx, Vy and Vz 
+       to align with -V for --version (and reserve small v for verbosity)
+* CHG: rdiff-backup-delete: improve performance on gzip files by 
+       directly using gzip command
+* CHG: remove the possibility to change chars-to-quote between backup 
+       calls, this feature never really worked properly anyway
+* CHG: requoting a repository can be enforced using --chars-to-quote, 
+       use with care
+* DEV: Added patch for Python 3.11 as per bpo-39573 to replace Py_TYPE 
+       with Py_SET_TYPE, closes #633
+* DEV: align more actions and meta plugins interfaces, add generic 
+       plugins module
+* DEV: change default version string to make it parsable
+* DEV: documented how to get information about missing code lines in 
+       coverage
+* DEV: for API 201, the fs_abilities module moved to locations as they 
+       are only used from repositories and directories
+* DEV: generic user/group functions have been moved to utils/usrgrp
+* DEV: improved execution output during tests so that commands can be 
+       more easily reused
+* DEV: improve plugins documentation and add meta plugins docs
+* DEV: mapping modules (filenames quoting, hardlinks, longnames and 
+       owners users/groups) have been moved to locations/map package for 
+       better encapsulation
+* DEV: new test function commontest.rdiff_backup_action using the new 
+       CLI interface
+* DEV: remote functions in Main and backup are deprecated from the API 
+       and replaced by class methods in _repo_shadow and _dir_shadow
+* DEV: RORPath and RPath classes are now PathAlike and can be safely 
+       output as string, closes #84
+* DEV: server process can be remotely debugged using rpdb and netcat
+* DEV: the restrict mode and path options are specific to the server 
+       action, and not generic
+* DEV: Windows is now part of the test pipeline even if tests are 
+       limited, closes #347
+* DOC: add FAQ regarding support of too slow file systems like exFAT 
+       and ZFS on SMB, closes #595
+* DOC: add FAQ to document GUI and WebUI for rdiff-backup, closes #594
+* DOC: Convert documentation from Markdown to AsciiDoc, closes #537
+* DOC: docs/DEVELOP.md link in readme was 404.
+* DOC: updated installation and migration instructions for CentOS, RHEL 
+       & Co using COPR or EPEL
+* DOC: updated Windows developer guide for python 3.9 and x64, linking 
+       error explained, thanks to @rstarkov
+* FIX: backslashes were removed too eagerly in locations, making the 
+       use of Windows paths impossible, closes #585
+* FIX: calling with remote-schema containing the new server action 
+       would fail with NoneType not being iterable, closes #565
+* FIX: catch properly long name errors under Windows, closes #558
+* FIX: describe implications of undetected case sensitivity and 
+       trailing space/period and reduce severity, closes #583
+* FIX: do not return an error if no increment is old enough to be 
+       removed, closes #616
+* FIX: exclude symlinks in first place under Windows to avoid symlink 
+       not being of correct type, closes #608
+* FIX: handling of RDIFF_BACKUP_VERBOSITY was broken after recent 
+       changes
+* FIX: ignore bad file descriptor (errno 9/EBADF) error impacting a 
+       single file, closes #611
+* FIX: improve handling of connection errors with clearer message, 
+       closes #564
+* FIX: issues with trailing spaces/periods on NTFS file system under 
+       Linux are now properly detected and such characters quoted, closes #579
+* FIX: rdiff-backup-delete: delete metadata from 
+       win_access_control_lists
+* FIX: rdiff-backup-delete: permissions error when trying to delete 
+       file or folder
+* NEW: output runtime information with parsed arguments in debug mode, 
+       to help support
+* NEW: parsable list of increments is in YAML format for easier parsing
+* NEW: parsable output in YAML for the compare action
+
+=== Authors
+
+* Eric L
+* Frank Crawford
+* Patrik Dufresne
+* Roman Starkov
+* ToM
+* user-na
+
 == New in v2.1.0a1 (2021-04-10)
 
 === Changes
