@@ -11,15 +11,14 @@ RELTAG="${1}"
 
 echo "(make sure the version is the next correct one)" >&2
 echo
-echo "New in v$($(dirname $0)/../setup.py --version) ($(date -I))"
-echo "----------------------------"
+echo "== New in v$($(dirname $0)/../setup.py --version) ($(date -I))"
 
-echo -e "\n## Changes\n"
+echo -e "\n=== Changes\n"
 git log ${RELTAG}.. |
 	sed -n '/^ *[A-Z][A-Z][A-Z]: / s/^ */* /p' | sort \
 	| fold -w 72 -s | sed 's/^\([^*]\)/       \1/'
 
-echo -e "\n## Authors\n"
+echo -e "\n=== Authors\n"
 git log ${RELTAG}.. |
 	awk -F': *| *<' '$1 == "Author" { print "* " $2 }' | sort -u
 
