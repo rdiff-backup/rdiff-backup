@@ -33,6 +33,7 @@ ver_name=rdiff-backup-$(${PYEXE} setup.py --version)
 py_ver_brief=${PYTHON_VERSION%.[0-9]}
 
 ${PYEXE} setup.py bdist_wheel
+# add hook file to hooks-dir for each new plugin manager!
 ${PYINST} --onefile --distpath build/${ver_name}-${bits} \
 	--paths=build/lib.${py_win_bits}-${py_ver_brief} \
         --paths=${LIBRSYNC_DIR}/lib \

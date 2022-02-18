@@ -26,6 +26,7 @@
       set_fact:
         wheel_pkg: "{{ bdist_wheel.stdout | regex_search('rdiff_backup-[^ ]*.whl') }}"
     - name: compile rdiff-backup into an executable using pyinstaller
+      # add hook file to hooks-dir for each new plugin manager!
       win_command: >
         pyinstaller --onefile
         --paths=build/lib.{{ python_win_bits }}-{{ python_version }}
