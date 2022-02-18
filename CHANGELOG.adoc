@@ -26,6 +26,7 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
        calls, this feature never really worked properly anyway
 * CHG: requoting a repository can be enforced using --chars-to-quote, 
        use with care
+* DEV: align Windows Vagrant build pipeline with GitHub build pipeline
 * DEV: Added patch for Python 3.11 as per bpo-39573 to replace Py_TYPE 
        with Py_SET_TYPE, closes #633
 * DEV: align more actions and meta plugins interfaces, add generic 
@@ -51,6 +52,8 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * DEV: server process can be remotely debugged using rpdb and netcat
 * DEV: the restrict mode and path options are specific to the server 
        action, and not generic
+* DEV: Vagrant / Ansible build pipeline relies on ansible-core 2.12 and
+       collections
 * DEV: Windows is now part of the test pipeline even if tests are 
        limited, closes #347
 * DOC: add FAQ regarding support of too slow file systems like exFAT 
