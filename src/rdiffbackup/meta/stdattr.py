@@ -141,8 +141,8 @@ class AttrExtractor(meta.FlatExtractor):
 
 class AttrFile(meta.FlatFile):
     """Store/retrieve metadata from mirror_metadata as rorps"""
-    _name = "attr"
-    _description = "File Attributes"
+    _name = "stdattr"
+    _description = "Standard File Attributes"
     _prefix = b"mirror_metadata"
     _extractor = AttrExtractor
     _is_main = True
