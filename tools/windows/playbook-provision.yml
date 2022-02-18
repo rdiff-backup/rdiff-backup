@@ -4,28 +4,33 @@
   gather_facts: false
   tasks:
   - name: enable running chocolatey scripts without confirmation
-    win_chocolatey_feature:
+    chocolatey.chocolatey.win_chocolatey_feature:
       name: allowGlobalConfirmation
       state: enabled
   - name: install basis development tools via chocolatey
-    win_chocolatey:
+    chocolatey.chocolatey.win_chocolatey:
       name:
       #- virtio-drivers
       - git
       - cygwin
       - cyg-get  # depends on cygwin
-      - cmake
       - 7zip
       - vscode # Visual Studio Code (editor)
       state: present
+  - name: install cmake via chocolatey reachable from system
+    chocolatey.chocolatey.win_chocolatey:
+      name:
+        - cmake
+      install_args: "ADD_CMAKE_TO_PATH=System"
+      state: present
   - name: install python via chocolatey
-    win_chocolatey:
+    chocolatey.chocolatey.win_chocolatey:
       name: "python3"
       version: "{{ python_version_full }}"
       state: present
       package_params: /InstallDir:C:\Python64 /InstallDir32:C:\Python32
   - name: install dependencies, allows for reboot in-between
-    win_chocolatey:
+    chocolatey.chocolatey.win_chocolatey:
       name:
       - ruby  # dependency of asciidoctor, requires reboot
       - dotnetfx
@@ -33,10 +38,10 @@
       state: present
     register: vs_deps
   - name: execute reboot if something has changed to VS dependencies
-    win_reboot:
+    ansible.windows.win_reboot:
     when: vs_deps is changed
   - name: install visual studio tools via chocolatey
-    win_chocolatey:
+    chocolatey.chocolatey.win_chocolatey:
       name:  # VC 2017 is the version available on Travis CI
       - visualstudio2017buildtools
       - visualstudio2017-workload-python
@@ -44,11 +49,11 @@
       state: present
     register: vs
   - name: execute reboot if something has been changed to visual studio
-    win_reboot:
+    ansible.windows.win_reboot:
     when: vs is changed
 
   - name: install necessary python libraries
-    win_command: "\\{{ item }}\\Scripts\\pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML"
+    ansible.windows.win_command: "\\{{ item }}\\Scripts\\pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML"
     register: pipcmd
     changed_when: "'Successfully installed ' in pipcmd.stdout"
     # pylibacl and pyxattr aren't supported under Windows
@@ -64,16 +69,16 @@
 
   - name: Install NuGet to overcome issue 50332 in Ansible
     # https://github.com/ansible/ansible/issues/50332
-    win_shell: Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+    ansible.windows.win_shell: Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
   - name: install the Powershell Community Extensions for win_unzip
-    win_psmodule:
+    community.windows.win_psmodule:
       name: Pscx
       state: present
       allow_clobber: true
   - name: refresh the environment variables as we need gem in the PATH
-    win_command: refreshenv.cmd
+    ansible.windows.win_command: refreshenv.cmd
   - name: install asciidoctor gem
-    win_command: gem.cmd install asciidoctor
+    ansible.windows.win_command: gem.cmd install asciidoctor
 
 - name: Prepare Linux to be used as Samba server
   hosts: samba_servers

@@ -7,7 +7,7 @@ from commontest import (
     MakeOutputDir, reset_hardlink_dicts, xcopytree
 )
 from rdiff_backup import Globals, Hardlink, rpath, selection
-from rdiffbackup.meta import attr
+from rdiffbackup.meta import stdattr
 
 
 class HardlinkTest(unittest.TestCase):
@@ -164,7 +164,7 @@ class HardlinkTest(unittest.TestCase):
         hashes = []
         link_counts = []
         comp = metadata_rp.isinccompressed()
-        extractor = attr.AttrExtractor(metadata_rp.open("r", comp))
+        extractor = stdattr.AttrExtractor(metadata_rp.open("r", comp))
         for rorp in extractor.iterate():
             link_counts.append(rorp.getnumlinks())
             if rorp.has_sha1():

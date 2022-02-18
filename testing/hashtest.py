@@ -7,7 +7,7 @@ import os
 from commontest import abs_test_dir, re_init_rpath_dir, Myrm, \
     abs_output_dir, rdiff_backup, abs_testing_dir, MakeOutputDir
 from rdiff_backup import hash, rpath, Globals, Security, SetConnections
-from rdiffbackup.meta import attr
+from rdiffbackup.meta import stdattr
 
 
 class HashTest(unittest.TestCase):
@@ -74,7 +74,7 @@ class HashTest(unittest.TestCase):
         """Return list of hashes in the metadata_rp"""
         result = []
         comp = metadata_rp.isinccompressed()
-        extractor = attr.AttrExtractor(metadata_rp.open("r", comp))
+        extractor = stdattr.AttrExtractor(metadata_rp.open("r", comp))
         for rorp in extractor.iterate():
             if rorp.has_sha1():
                 result.append(rorp.get_sha1())

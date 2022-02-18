@@ -368,6 +368,9 @@ def get_meta_dict():
     if not hasattr(get_meta_dict, 'plugins'):
         get_meta_dict.plugins = plugins.get_discovered_plugins(
             rdiffbackup.meta, "rdb_meta_")
+        log.Log("Found meta plugins: {mp}".format(mp=get_meta_dict.plugins),
+                log.DEBUG)
+
     return get_meta_dict.plugins
 
 

@@ -5,7 +5,7 @@ import time
 from commontest import old_test_dir, abs_output_dir, iter_equal, xcopytree
 from rdiff_backup import rpath, Globals, selection
 from rdiffbackup import meta_mgr
-from rdiffbackup.meta import attr
+from rdiffbackup.meta import stdattr
 from rdiffbackup.utils import quoting
 
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
@@ -45,8 +45,8 @@ class MetadataTest(unittest.TestCase):
     def testRORP2Record(self):
         """Test turning RORPs into records and back again"""
         for rp in self.get_rpaths():
-            record = attr.AttrFile._object_to_record(rp)
-            new_rorp = attr.AttrExtractor._record_to_object(record)
+            record = stdattr.AttrFile._object_to_record(rp)
+            new_rorp = stdattr.AttrExtractor._record_to_object(record)
             self.assertEqual(new_rorp, rp)
 
     def testIterator(self):
@@ -54,7 +54,7 @@ class MetadataTest(unittest.TestCase):
 
         def write_rorp_iter_to_file(rorp_iter, file):
             for rorp in rorp_iter:
-                file.write(attr.AttrFile._object_to_record(rorp))
+                file.write(stdattr.AttrFile._object_to_record(rorp))
 
         rplist = self.get_rpaths()
         fp = io.BytesIO()
@@ -62,7 +62,7 @@ class MetadataTest(unittest.TestCase):
         fp.seek(0)
         fp.read()
         fp.seek(0)
-        outlist = list(attr.AttrExtractor(fp).iterate())
+        outlist = list(stdattr.AttrExtractor(fp).iterate())
         self.assertEqual(len(rplist), len(outlist))
         for i in range(len(rplist)):
             self.assertTrue(rplist[i]._equal_verbose(outlist[i]))
@@ -82,7 +82,7 @@ class MetadataTest(unittest.TestCase):
         rpath_iter = selection.Select(rootrp).set_iter()
 
         start_time = time.time()
-        mf = attr.AttrFile(temprp, 'w')
+        mf = stdattr.AttrFile(temprp, 'w')
         for rp in rpath_iter:
             mf.write_object(rp)
         mf.close()
@@ -92,7 +92,7 @@ class MetadataTest(unittest.TestCase):
     def testSpeed(self):
         """Test testIterator on 10000 files"""
         temprp = self.write_metadata_to_temp()
-        mf = attr.AttrFile(temprp, 'r')
+        mf = stdattr.AttrFile(temprp, 'r')
 
         start_time = time.time()
         i = 0
@@ -119,7 +119,7 @@ class MetadataTest(unittest.TestCase):
 
         """
         temprp = self.write_metadata_to_temp()
-        mf = attr.AttrFile(temprp, 'rb')
+        mf = stdattr.AttrFile(temprp, 'rb')
         start_time = time.time()
         i = 0
         for rorp in mf.get_objects((b"subdir3", b"subdir10")):
@@ -145,13 +145,13 @@ class MetadataTest(unittest.TestCase):
         rps = list(sel.set_iter())
 
         self.assertFalse(temprp.lstat())
-        write_mf = attr.AttrFile(temprp, 'w')
+        write_mf = stdattr.AttrFile(temprp, 'w')
         for rp in rps:
             write_mf.write_object(rp)
         write_mf.close()
         self.assertTrue(temprp.lstat())
 
-        reread_rps = list(attr.AttrFile(temprp, 'r').get_objects())
+        reread_rps = list(stdattr.AttrFile(temprp, 'r').get_objects())
         self.assertEqual(len(reread_rps), len(rps))
         for i in range(len(reread_rps)):
             self.assertEqual(reread_rps[i], rps[i])
@@ -193,7 +193,7 @@ class MetadataTest(unittest.TestCase):
         def write_dir_to_meta(manager, rp, time):
             """Record the metadata under rp to a mirror_metadata file"""
             metawriter = man._writer_helper(b'snapshot', time,
-                                            attr.get_plugin_class())
+                                            stdattr.get_plugin_class())
             sel = selection.Select(rp)
             sel.parse_selection_args((), ())  # make sure incorrect files are filtered out
             for rorp in sel.set_iter():
