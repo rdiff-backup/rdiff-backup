@@ -110,26 +110,25 @@ class Logger:
     def log_to_term(self, message, verbosity):
         """Write message to stdout/stderr"""
         if verbosity <= 2 or Globals.server:
-            termfp = sys.stderr.buffer
+            termfp = sys.stderr
         else:
-            termfp = sys.stdout.buffer
+            termfp = sys.stdout
         if Globals.get_api_version() < 201:  # compat200
             tmpstr = self._format(message, self.term_verbosity)
-            termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
+            termfp.write(tmpstr)
         else:
             tmpstr = self._format(message, self.term_verbosity, verbosity)
             # if the verbosity is below 9 and the string isn't deemed
             # pre-formatted by newlines (we ignore the last character)
             if self.verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
-                termfp.write(_to_bytes(
+                termfp.write(
                     textwrap.fill(
                         tmpstr, subsequent_indent=" " * 9,
                         break_long_words=False,
                         break_on_hyphens=False,
-                        width=shutil.get_terminal_size().columns - 1) + "\n",
-                    encoding=sys.stdout.encoding))
+                        width=shutil.get_terminal_size().columns - 1) + "\n")
             else:
-                termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
+                termfp.write(tmpstr)
 
     def conn(self, direction, result, req_num):
         """Log some data on the connection
