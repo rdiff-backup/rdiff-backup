@@ -16,7 +16,8 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Operations on Iterators of Read Only Remote Paths
+"""
+Operations on Iterators of Read Only Remote Paths
 
 The main structure will be an iterator that yields RORPaths.
 Every RORPath has a "raw" form that makes it more amenable to
@@ -24,11 +25,10 @@ being turned into a file.  The raw form of the iterator yields
 each RORPath in the form of the tuple (index, data_dictionary,
 files), where files is the number of files attached (usually 1 or
 0).  After that, if a file is attached, it yields that file.
-
 """
 
 import collections
-from . import log
+from rdiff_backup import log
 
 
 class IndexedTuple(collections.UserList):
@@ -369,13 +369,13 @@ def Collate2Iters(riter1, riter2):
 
 
 def FillInIter(rpiter, rootrp):
-    """Given ordered rpiter and rootrp, fill in missing indices with rpaths
+    """
+    Given ordered rpiter and rootrp, fill in missing indices with rpaths
 
     For instance, suppose rpiter contains rpaths with indices (),
     (1,2), (2,5).  Then return iter with rpaths (), (1,), (1,2), (2,),
     (2,5).  This is used when we need to process directories before or
     after processing a file in that directory.
-
     """
     # Handle first element as special case
     try:
@@ -392,7 +392,7 @@ def FillInIter(rpiter, rootrp):
     # Now do all the other elements
     for rp in rpiter:
         cur_index = rp.index
-        if not cur_index[:-1] == old_index[:-1]:  # Handle special case quickly
+        if cur_index[:-1] != old_index[:-1]:  # Handle special case quickly
             for i in range(1, len(cur_index)):  # i==0 case already handled
                 if cur_index[:i] != old_index[:i]:
                     filler_rp = rootrp.new_index(cur_index[:i])
