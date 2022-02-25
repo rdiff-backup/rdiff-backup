@@ -88,17 +88,19 @@ class FillTest(unittest.TestCase):
         rootrp = rpath.RPath(Globals.local_connection, abs_output_dir)
 
         def get_rpiter():
-            for int_index in [(1, 2), (1, 3), (1, 4), (2, ), (2, 1), (3, 4, 5),
-                              (3, 6)]:
-                index = tuple([str(i) for i in int_index])
+            for index in [('a', 'b'), ('a', 'c'), ('a', 'd'),
+                          ('b', ), ('b', 'a'), ('c', 'd', 'e'), ('c', 'f')]:
                 yield rootrp.new_index(index)
 
         filled_in = rorpiter.FillInIter(get_rpiter(), rootrp)
-        rp_list = list(filled_in)
-        index_list = [tuple(map(int, rp.index)) for rp in rp_list]
+        # rpath index is a bytes tuple, needs to be converted to strings.
+        # FillInIter complains about non existing directory 'c' and 'c/d',
+        # this is normal because indeed the directories don't exist.
+        index_list = [tuple(map(os.fsdecode, rp.index)) for rp in filled_in]
         self.assertEqual(index_list,
-                         [(), (1, ), (1, 2), (1, 3), (1, 4), (2, ), (2, 1),
-                             (3, ), (3, 4), (3, 4, 5), (3, 6)])
+                         [(), ('a', ), ('a', 'b'), ('a', 'c'), ('a', 'd'),
+                          ('b', ), ('b', 'a'),
+                          ('c', ), ('c', 'd'), ('c', 'd', 'e'), ('c', 'f')])
 
 
 class ITRBadder(rorpiter.ITRBranch):
