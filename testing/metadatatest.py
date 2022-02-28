@@ -79,7 +79,7 @@ class MetadataTest(unittest.TestCase):
         self.make_temp()
         rootrp = rpath.RPath(Globals.local_connection,
                              os.path.join(old_test_dir, b"bigdir"))
-        rpath_iter = selection.Select(rootrp).set_iter()
+        rpath_iter = selection.Select(rootrp).get_select_iter()
 
         start_time = time.time()
         mf = stdattr.AttrFile(temprp, 'w')
@@ -142,7 +142,7 @@ class MetadataTest(unittest.TestCase):
         # the following 3 lines make sure that we ignore incorrect files
         sel = selection.Select(rootrp)
         sel.parse_selection_args((), ())
-        rps = list(sel.set_iter())
+        rps = list(sel.get_select_iter())
 
         self.assertFalse(temprp.lstat())
         write_mf = stdattr.AttrFile(temprp, 'w')
@@ -196,7 +196,7 @@ class MetadataTest(unittest.TestCase):
                                             stdattr.get_plugin_class())
             sel = selection.Select(rp)
             sel.parse_selection_args((), ())  # make sure incorrect files are filtered out
-            for rorp in sel.set_iter():
+            for rorp in sel.get_select_iter():
                 metawriter.write_object(rorp)
             metawriter.close()
 
@@ -204,7 +204,7 @@ class MetadataTest(unittest.TestCase):
             sel = selection.Select(rootrp)
             sel.parse_selection_args((), ())  # make sure incorrect files are filtered out
             self.assertTrue(iter_equal(
-                sel.set_iter(), man._get_meta_main_at_time(time, None)))
+                sel.get_select_iter(), man._get_meta_main_at_time(time, None)))
 
         self.make_temp()
         Globals.rbdir = tempdir

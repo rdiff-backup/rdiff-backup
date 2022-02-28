@@ -238,10 +238,6 @@ print_statistics = None
 # rdiff-backup-data dir.  These can sometimes take up a lot of space.
 file_statistics = 1
 
-# On the writer connection, the following will be set to the mirror
-# Select iterator.
-select_mirror = None
-
 # On the backup writer connection, holds the root incrementing branch
 # object.  Access is provided to increment error counts.
 ITRB = None

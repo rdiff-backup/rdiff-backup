@@ -16,11 +16,11 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Iterate exactly the requested files in a directory
+"""
+Iterate exactly the requested files in a directory
 
 Parses includes and excludes to yield correct files.  More
 documentation on what this code does can be found on the man page.
-
 """
 
 import os
@@ -98,18 +98,16 @@ class Select:
         self.prefixindex = tuple([x for x in self.prefix.split(b"/") if x])
         self._init_parsing_mapping()
 
-    def set_iter(self, sel_func=None):
-        """Initialize more variables, get ready to iterate
+    def get_select_iter(self):
+        """
+        Initialize more variables, get ready to iterate
 
         Selection function sel_func is called on each rpath and is
         usually self.select_default.  Returns self.iter just for convenience.
-
         """
-        if not sel_func:
-            sel_func = self.select_default
         self.rpath.setdata()  # this may have changed since Select init
-        self.iter = self._Iterate_fast(self.rpath, sel_func)
-        return self.iter
+        select_iter = self._iterate_rpath(self.rpath, self.select_default)
+        return select_iter
 
     def select_default(self, rp):
         """Run through the selection functions and return dominant val 0/1/2"""
@@ -125,7 +123,8 @@ class Select:
         return 1
 
     def parse_selection_args(self, argtuples, filelists):
-        """Create selection functions based on list of tuples
+        """
+        Create selection functions based on list of tuples
 
         The tuples have the form (option string, additional argument)
         and are created when the initial commandline arguments are
@@ -134,7 +133,6 @@ class Select:
         the selection functions need to be on the backup reader or
         writer side.  When the initial arguments are parsed the right
         information is sent over the link.
-
         """
         filelists_index = 0
         try:
@@ -175,8 +173,10 @@ class Select:
             self._glob_get_tuple_sf((b"rdiff-backup-data", ), 0), 1)
 
     def _init_parsing_mapping(self):
-        """Initiates the mapping dictionaries necessary to map command line arguments
-        to selection functions"""
+        """
+        Initiates the mapping dictionaries necessary to map command line
+        arguments to selection functions
+        """
 
         self._sel_noargs_mapping = {
             "--exclude-special-files": (self._special_get_sf, Select.EXCLUDE),
@@ -206,8 +206,13 @@ class Select:
             "--include-globbing-filelist": Select.INCLUDE,
         }
 
-    def _Iterate_fast(self, rpath, sel_func):
-        """Like Iterate, but don't recur, saving time"""
+    def _iterate_rpath(self, rpath, sel_func):
+        """
+        Return iterator yielding rpaths in rpath
+
+        sel_func is the selection function to use on the rpaths.
+        It is usually self.Select.
+        """
 
         def error_handler(exc, filename):
             log.ErrorLog.write_if_open("ListError", rpath.index + (filename, ),
@@ -215,12 +220,12 @@ class Select:
             return None
 
         def diryield(rpath):
-            """Generate relevant files in directory rpath
+            """
+            Generate relevant files in directory rpath
 
             Returns (rpath, num) where num == 0 means rpath should be
             generated normally, num == 1 means the rpath is a directory
             and should be included iff something inside is included.
-
             """
             for filename in self._listdir_sorted(rpath):
                 new_rpath = robust.check_common_error(

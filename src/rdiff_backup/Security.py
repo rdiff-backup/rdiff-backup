@@ -325,7 +325,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.RepoShadow.patch_and_increment",
             "_repo_shadow.RepoShadow.remove_current_mirror",
             "_repo_shadow.RepoShadow.set_config",
-            "_repo_shadow.RepoShadow.set_rorp_cache",
             "_repo_shadow.RepoShadow.touch_current_mirror",
             "_repo_shadow.RepoShadow.update_quoting",
         ])

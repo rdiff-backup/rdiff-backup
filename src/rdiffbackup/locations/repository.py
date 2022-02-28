@@ -293,18 +293,12 @@ information in it.
                 self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
                     target_rp, select_opts, *list(map(io.BytesIO, select_data)))
 
-    def set_rorp_cache(self, source_iter, use_increment):
-        """
-        Shadow function for RepoShadow.set_rorp_cache
-        """
-        return self._shadow.set_rorp_cache(self.base_dir, source_iter,
-                                           use_increment)
-
-    def get_sigs(self):
+    def get_sigs(self, source_iter, use_increment):
         """
         Shadow function for RepoShadow.get_sigs
         """
-        return self._shadow.get_sigs(self.base_dir, self.remote_transfer)
+        return self._shadow.get_sigs(self.base_dir, source_iter,
+                                     use_increment, self.remote_transfer)
 
     def patch_or_increment(self, source_diffiter, previous_time):
         """
@@ -314,8 +308,7 @@ information in it.
             return self._shadow.patch_and_increment(
                 self.base_dir, source_diffiter, self.incs_dir, previous_time)
         else:
-            return self._shadow.patch(
-                self.base_dir, source_diffiter)
+            return self._shadow.patch(self.base_dir, source_diffiter)
 
     def touch_current_mirror(self, current_time_str):
         """
@@ -438,7 +431,7 @@ information in it.
             mirror_select = selection.Select(mirror_base)
             if not self.restore_index:  # must exclude rdiff-backup-directory
                 mirror_select.parse_rbdir_exclude()
-            return mirror_select.set_iter()
+            return mirror_select.get_select_iter()
 
         def get_inc_select():
             """Return iterator of increment rpaths"""
@@ -447,7 +440,7 @@ information in it.
             for base_inc in inc_base.get_incfiles_list():
                 yield base_inc
             if inc_base.isdir():
-                inc_select = selection.Select(inc_base).set_iter()
+                inc_select = selection.Select(inc_base).get_select_iter()
                 for inc in inc_select:
                     yield inc
 

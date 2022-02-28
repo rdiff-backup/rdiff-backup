@@ -32,11 +32,11 @@ from rdiff_backup import log
 
 
 class IndexedTuple(collections.UserList):
-    """Like a tuple, but has .index
+    """
+    Like a tuple, but has .index
 
-    This is used by CollateIterator above, and can be passed to the
+    This is used by CollateIterators, and can be passed to the
     IterTreeReducer.
-
     """
 
     def __init__(self, index, sequence):
@@ -90,7 +90,8 @@ class IndexedTuple(collections.UserList):
 
 
 class IterTreeReducer:
-    """Tree style reducer object for iterator
+    """
+    Tree style reducer object for iterator
 
     The indices of a RORPIter form a tree type structure.  This class
     can be used on each element of an iter in sequence and the result
@@ -98,7 +99,6 @@ class IterTreeReducer:
     bridge the gap between the tree nature of directories, and the
     iterator nature of the connection between hosts and the temporal
     order in which the files are processed.
-
     """
 
     def __init__(self, branch_class, branch_args):
@@ -111,7 +111,8 @@ class IterTreeReducer:
         self.root_fast_processed = None
 
     def __call__(self, *args):
-        """Process args, where args[0] is current position in iterator
+        """
+        Process args, where args[0] is current position in iterator
 
         Returns true if args successfully processed, false if index is
         not in the current tree and thus the final result is
@@ -119,7 +120,6 @@ class IterTreeReducer:
 
         Also note below we set self.index after doing the necessary
         start processing, in case there is a crash in the middle.
-
         """
         index = args[0]
         if self.index is None:
@@ -130,7 +130,7 @@ class IterTreeReducer:
             else:
                 self.root_branch.start_process_directory(*args)
             self.index = index
-            return 1
+            return True
         if index == self.index:
             log.Log("Repeated index {ri}, bad filesystem?".format(ri=index),
                     log.WARNING)
@@ -139,8 +139,8 @@ class IterTreeReducer:
                 "Bad index order: {sidx} should be lower than {idx}.".format(
                     sidx=self.index, idx=index))
         else:  # normal case: index > self.index
-            if self._finish_branches(index) is None:
-                return None  # We are no longer in the main tree
+            if self._finish_branches(index):
+                return False  # We are no longer in the main tree
             last_branch = self.branches[-1]
             if last_branch.can_fast_process(*args):
                 last_branch.fast_process_file(*args)
@@ -149,7 +149,7 @@ class IterTreeReducer:
                 branch.start_process_directory(*args)
 
         self.index = index
-        return 1
+        return True
 
     def finish_processing(self):
         """Call at end of sequence to tie everything up"""
@@ -163,27 +163,26 @@ class IterTreeReducer:
             self.branches[-1].gather_from_child(to_be_finished)
 
     def _finish_branches(self, index):
-        """Run Finish() on all branches index has passed
+        """
+        Run end_process_directory() on all branches index has passed
 
         When we pass out of a branch, delete it and process it with
         the parent.  The innermost branches will be the last in the
-        list.  Return None if we are out of the entire tree, and 1
+        list.  Return True if we are out of the entire tree, and False
         otherwise.
-
         """
-        branches = self.branches
         while 1:
-            to_be_finished = branches[-1]
+            to_be_finished = self.branches[-1]
             base_index = to_be_finished.base_index
             if base_index != index[:len(base_index)]:
                 # out of the tree, finish with to_be_finished
                 to_be_finished.end_process_directory()
-                del branches[-1]
-                if not branches:
-                    return None
-                branches[-1].gather_from_child(to_be_finished)
+                del self.branches[-1]
+                if not self.branches:
+                    return True
+                self.branches[-1].gather_from_child(to_be_finished)
             else:
-                return 1
+                return False
 
     def _add_branch(self, index):
         """Return branch of type self.branch_class, add to branch list"""
@@ -194,35 +193,49 @@ class IterTreeReducer:
 
 
 class ITRBranch:
-    """Helper class for IterTreeReducer above
+    """
+    Interface class for IterTreeReducer above, representing a branch/directory
+    in the tree being walked through. As the name suggests, the object
+    instantiated from the class is always a branch, and never a leaf/file.
 
     There are five stub functions below:
     start_process_directory, end_process_directory,
     gather_from_child, can_fast_process, and fast_process_file.
-    A class that subclasses this one will probably fill in these functions to do
-    more.
+    A class that subclasses this one will probably fill in these functions
+    to do more.
 
+    Note that gather_from_child is currently only used for test purposes.
     """
-    base_index = index = None
+    base_index = None
 
     def start_process_directory(self, *args):
-        """Do some initial processing (stub)"""
+        """
+        Do some initial processing (stub)
+        """
         pass
 
     def end_process_directory(self):
-        """Do any final processing before leaving branch (stub)"""
+        """
+        Do any final processing before leaving branch (stub)
+        """
         pass
 
     def gather_from_child(self, sub_branch):
-        """Gather results from a child branch right after it is finished (stub)"""
+        """
+        Gather results from a child branch right after it is finished (stub)
+        """
         pass
 
     def can_fast_process(self, *args):
-        """True if object can be processed without new branch (stub)"""
+        """
+        True if object is a leaf and can be processed without new branch (stub)
+        """
         return None
 
     def fast_process_file(self, *args):
-        """Process args without new child branch (stub)"""
+        """
+        Process leaf's args without new child branch (stub)
+        """
         pass
 
 
@@ -327,12 +340,12 @@ def CollateIterators(*rorp_iters):
 
 
 def Collate2Iters(riter1, riter2):
-    """Special case of CollateIterators with 2 arguments
+    """
+    Special case of CollateIterators with 2 arguments
 
     This does the same thing but is faster because it doesn't have
     to consider the >2 iterator case.  Profiler says speed is
     important here.
-
     """
     relem1, relem2 = None, None
     while 1:

@@ -76,53 +76,23 @@ class RepoShadow:
         cls._data_dir = data_dir
         cls._incs_dir = incs_dir
 
-    # @API(RepoShadow.set_rorp_cache, 201)
-    @classmethod
-    def set_rorp_cache(cls, baserp, source_iter, previous_time):
-        """
-        Initialize cls.CCPP, the destination rorp cache
-
-        previous_time should be true (>0) if we are mirror+incrementing,
-        representing the epoch in seconds of the previous backup,
-        false (==0) if we are just mirroring.
-        """
-        dest_iter = cls._get_dest_select(baserp, previous_time)
-        collated = rorpiter.Collate2Iters(source_iter, dest_iter)
-        cls.CCPP = _CacheCollatedPostProcess(
-            collated, Globals.pipeline_max_length * 4, baserp)
-        # pipeline len adds some leeway over just*3 (to and from and back)
-
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
-    def get_sigs(cls, dest_base_rpath, is_remote_transfer):
+    def get_sigs(cls, baserp, source_iter, previous_time, is_remote):
         """
-        Yield signatures of any changed destination files
+        Setup cache and return a signatures iterator
         """
-        flush_threshold = Globals.pipeline_max_length - 2
-        num_rorps_seen = 0
-        for src_rorp, dest_rorp in cls.CCPP:
-            # If we are backing up across a pipe, we must flush the pipeline
-            # every so often so it doesn't get congested on destination end.
-            if is_remote_transfer:
-                num_rorps_seen += 1
-                if (num_rorps_seen > flush_threshold):
-                    num_rorps_seen = 0
-                    yield iterfile.MiscIterFlushRepeat
-            if not (src_rorp and dest_rorp and src_rorp == dest_rorp
-                    and (not Globals.preserve_hardlinks
-                         or map_hardlinks.rorp_eq(src_rorp, dest_rorp))):
-
-                index = src_rorp and src_rorp.index or dest_rorp.index
-                sig = cls._get_one_sig(dest_base_rpath, index, src_rorp,
-                                       dest_rorp)
-                if sig:
-                    cls.CCPP.flag_changed(index)
-                    yield sig
+        cls._set_rorp_cache(baserp, source_iter, previous_time)
+        return cls._sigs_iterator(baserp, is_remote)
 
     # @API(RepoShadow.patch, 201)
     @classmethod
-    def patch(cls, dest_rpath, source_diffiter, start_index=()):
-        """Patch dest_rpath with an rorpiter of diffs"""
+    def patch(cls, dest_rpath, source_diffiter):
+        """
+        Patch dest_rpath with an rorpiter of diffs
+
+        This function is used for the first backup within a repository.
+        """
         ITR = rorpiter.IterTreeReducer(_RepoPatchITRB, [dest_rpath, cls.CCPP])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
             log.Log("Processing file {cf}".format(cf=diff), log.INFO)
@@ -135,7 +105,11 @@ class RepoShadow:
     @classmethod
     def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath,
                             previous_time):
-        """Patch dest_rpath with rorpiter of diffs and write increments"""
+        """
+        Patch dest_rpath with rorpiter of diffs and write increments
+
+        This function is used for follow-up backups within a repository.
+        """
         ITR = rorpiter.IterTreeReducer(
             _RepoIncrementITRB,
             [dest_rpath, inc_rpath, cls.CCPP, previous_time])
@@ -159,7 +133,7 @@ class RepoShadow:
             """Get the combined iterator from the filesystem"""
             sel = selection.Select(rpath)
             sel.parse_rbdir_exclude()
-            return sel.set_iter()
+            return sel.get_select_iter()
 
         meta_manager = meta_mgr.get_meta_manager(True)
         if previous_time:  # it's an increment, not the first mirror
@@ -169,7 +143,47 @@ class RepoShadow:
         return get_iter_from_fs()
 
     @classmethod
-    def _get_one_sig(cls, dest_base_rpath, index, src_rorp, dest_rorp):
+    def _set_rorp_cache(cls, baserp, source_iter, previous_time):
+        """
+        Initialize cls.CCPP, the destination rorp cache
+
+        previous_time should be true (>0) if we are mirror+incrementing,
+        representing the epoch in seconds of the previous backup,
+        false (==0) if we are just mirroring.
+        """
+        dest_iter = cls._get_dest_select(baserp, previous_time)
+        collated = rorpiter.Collate2Iters(source_iter, dest_iter)
+        cls.CCPP = _CacheCollatedPostProcess(
+            collated, Globals.pipeline_max_length * 4, baserp)
+        # pipeline len adds some leeway over just*3 (to and from and back)
+
+    @classmethod
+    def _sigs_iterator(cls, baserp, is_remote):
+        """
+        Yield signatures of any changed destination files
+        """
+        flush_threshold = Globals.pipeline_max_length - 2
+        num_rorps_seen = 0
+        for src_rorp, dest_rorp in cls.CCPP:
+            # If we are backing up across a pipe, we must flush the pipeline
+            # every so often so it doesn't get congested on destination end.
+            if is_remote:
+                num_rorps_seen += 1
+                if (num_rorps_seen > flush_threshold):
+                    num_rorps_seen = 0
+                    yield iterfile.MiscIterFlushRepeat
+            if not (src_rorp and dest_rorp and src_rorp == dest_rorp
+                    and (not Globals.preserve_hardlinks
+                         or map_hardlinks.rorp_eq(src_rorp, dest_rorp))):
+
+                index = src_rorp and src_rorp.index or dest_rorp.index
+                sig = cls._get_one_sig(baserp, index, src_rorp, dest_rorp)
+                if sig:
+                    cls.CCPP.flag_changed(index)
+                    yield sig
+
+    @classmethod
+    def _get_one_sig(cls, baserp, index, src_rorp, dest_rorp):
         """Return a signature given source and destination rorps"""
         if (Globals.preserve_hardlinks and src_rorp
                 and map_hardlinks.is_linked(src_rorp)):
@@ -178,8 +192,7 @@ class RepoShadow:
         elif dest_rorp:
             dest_sig = dest_rorp.getRORPath()
             if dest_rorp.isreg():
-                dest_rp = map_longnames.get_mirror_rp(dest_base_rpath,
-                                                      dest_rorp)
+                dest_rp = map_longnames.get_mirror_rp(baserp, dest_rorp)
                 sig_fp = cls._get_one_sig_fp(dest_rp)
                 if sig_fp is None:
                     return None
@@ -1168,8 +1181,18 @@ class _CacheCollatedPostProcess:
             return self._get_parent_rorps(index)[1]
 
     def update_hash(self, index, sha1sum):
-        """Update the source rorp's SHA1 hash"""
+        """
+        Update the source rorp's SHA1 hash.
+
+        Return True if modified, else False.
+        """
+        target_rorp = self.get_mirror_rorp(index)
+        if target_rorp and target_rorp.has_sha1():
+            old_sha1 = target_rorp.get_sha1()
+        else:
+            old_sha1 = None
         self.get_source_rorp(index).set_sha1(sha1sum)
+        return old_sha1 != sha1sum
 
     def update_hardlink_hash(self, diff_rorp):
         """Tag associated source_rorp with same hash diff_rorp points to"""
@@ -1190,25 +1213,28 @@ class _CacheCollatedPostProcess:
         meta_mgr.get_meta_manager().convert_meta_main_to_diff()
 
     def _pre_process(self, source_rorp, dest_rorp):
-        """Do initial processing on source_rorp and dest_rorp
+        """
+        Do initial processing on source_rorp and dest_rorp
 
         It will not be clear whether source_rorp and dest_rorp have
         errors at this point, so don't do anything which assumes they
         will be backed up correctly.
-
         """
-        if Globals.preserve_hardlinks and source_rorp:
-            map_hardlinks.add_rorp(source_rorp, dest_rorp)
+        if Globals.preserve_hardlinks:
+            if source_rorp:
+                map_hardlinks.add_rorp(source_rorp, dest_rorp)
+            else:
+                map_hardlinks.add_old_rorp(dest_rorp)
         if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
                 and dest_rorp.getperms() % 0o1000 < 0o700):
             self._unreadable_dir_init(source_rorp, dest_rorp)
 
     def _unreadable_dir_init(self, source_rorp, dest_rorp):
-        """Initialize an unreadable dir.
+        """
+        Initialize an unreadable dir.
 
         Make it readable, and if necessary, store the old permissions
         in self.dir_perms_list so the old perms can be restored.
-
         """
         dest_rp = self.dest_root_rp.new_index(dest_rorp.index)
         dest_rp.chmod(0o700 | dest_rorp.getperms())
@@ -1234,14 +1260,14 @@ class _CacheCollatedPostProcess:
         self._update_parent_list(first_index, old_source_rorp, old_dest_rorp)
 
     def _update_parent_list(self, index, src_rorp, dest_rorp):
-        """Update the parent cache with the recently expired main cache entry
+        """
+        Update the parent cache with the recently expired main cache entry
 
         This method keeps parent directories in the secondary parent
         cache until all their children have expired from the main
         cache.  This is necessary because we may realize we need a
         parent directory's information after we have processed many
         subfiles.
-
         """
         if not (src_rorp and src_rorp.isdir()
                 or dest_rorp and dest_rorp.isdir()):
@@ -1268,14 +1294,14 @@ class _CacheCollatedPostProcess:
         self.parent_list.append((index, (src_rorp, dest_rorp)))
 
     def _post_process(self, source_rorp, dest_rorp, changed, success, inc):
-        """Post process source_rorp and dest_rorp.
+        """
+        Post process source_rorp and dest_rorp.
 
         The point of this is to write statistics and metadata.
 
         changed will be true if the files have changed.  success will
         be true if the files have been successfully updated (this is
         always false for un-changed files).
-
         """
         if Globals.preserve_hardlinks and source_rorp:
             map_hardlinks.del_rorp(source_rorp)
@@ -1316,15 +1342,20 @@ class _CacheCollatedPostProcess:
 
 
 class _RepoPatchITRB(rorpiter.ITRBranch):
-    """Patch an rpath with the given diff iters (use with IterTreeReducer)
+    """
+    Patch an rpath with the given diff iters (use with IterTreeReducer)
 
     The main complication here involves directories.  We have to
     finish processing the directory after what's in the directory, as
     the directory may have inappropriate permissions to alter the
     contents or the dir's mtime could change as we change the
     contents.
-
     """
+
+    FAILED = 0  # something went wrong
+    DONE = 1  # successfully done
+    SPECIAL = 2  # special file
+    UNCHANGED = 4  # unchanged content (hash the same)
 
     def __init__(self, basis_root_rp, CCPP):
         """Set basis_root_rp, the base of the tree to be incremented"""
@@ -1351,20 +1382,22 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         assert not mirror_rp.isdir(), (
             "Mirror path '{rp}' points to a directory.".format(rp=mirror_rp))
         tf = mirror_rp.get_temp_rpath(sibling=True)
-        if self._patch_to_temp(mirror_rp, diff_rorp, tf):
+        result = self._patch_to_temp(mirror_rp, diff_rorp, tf)
+        if result == self.UNCHANGED:
+            rpath.copy_attribs(diff_rorp, mirror_rp)
+            self.CCPP.flag_success(index)
+        elif result:
             if tf.lstat():
                 if robust.check_common_error(self.error_handler, rpath.rename,
                                              (tf, mirror_rp)) is None:
                     self.CCPP.flag_success(index)
-                else:
-                    tf.delete()
             elif mirror_rp and mirror_rp.lstat():
                 mirror_rp.delete()
                 self.CCPP.flag_deleted(index)
-        else:
-            tf.setdata()
-            if tf.lstat():
-                tf.delete()
+        # final clean-up
+        tf.setdata()
+        if tf.lstat():
+            tf.delete()
 
     def start_process_directory(self, index, diff_rorp):
         """Start processing directory - record information for later"""
@@ -1400,19 +1433,19 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         """
         Patch basis_rp, writing output in new, which doesn't exist yet
 
-        Returns true if able to write new as desired, false if
+        Returns True if able to write new as desired, False if
         UpdateError or similar gets in the way.
         """
         if diff_rorp.isflaglinked():
             self._patch_hardlink_to_temp(diff_rorp, new)
         elif diff_rorp.get_attached_filetype() == 'snapshot':
             result = self._patch_snapshot_to_temp(diff_rorp, new)
-            if not result:
-                return 0
-            elif result == 2:
-                return 1  # SpecialFile
-        elif not self._patch_diff_to_temp(basis_rp, diff_rorp, new):
-            return 0
+            if result == self.FAILED or result == self.SPECIAL:
+                return result
+        else:
+            result = self._patch_diff_to_temp(basis_rp, diff_rorp, new)
+            if result == self.FAILED or result == self.UNCHANGED:
+                return result
         if new.lstat():
             if diff_rorp.isflaglinked():
                 if Globals.eas_write:
@@ -1439,25 +1472,29 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         self.CCPP.update_hardlink_hash(diff_rorp)
 
     def _patch_snapshot_to_temp(self, diff_rorp, new):
-        """Write diff_rorp to new, return true if successful
+        """
+        Write diff_rorp to new, return true if successful
 
         Returns 1 if normal success, 2 if special file is written,
         whether or not it is successful.  This is because special
         files either fail with a SpecialFileError, or don't need to be
         compared.
-
         """
         if diff_rorp.isspecial():
             self._write_special(diff_rorp, new)
             rpath.copy_attribs(diff_rorp, new)
-            return 2
+            return self.SPECIAL
 
         report = robust.check_common_error(self.error_handler, rpath.copy,
                                            (diff_rorp, new))
         if isinstance(report, hash.Report):
             self.CCPP.update_hash(diff_rorp.index, report.sha1_digest)
-            return 1
-        return report != 0  # if == 0, error_handler caught something
+            return self.DONE  # FIXME hash always different, no need to check?
+        elif report == 0:
+            # if == 0, error_handler caught something
+            return self.FAILED
+        else:
+            return self.DONE
 
     def _patch_diff_to_temp(self, basis_rp, diff_rorp, new):
         """Apply diff_rorp to basis_rp, write output in new"""
@@ -1468,28 +1505,34 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         report = robust.check_common_error(
             self.error_handler, Rdiff.patch_local, (basis_rp, diff_rorp, new))
         if isinstance(report, hash.Report):
-            self.CCPP.update_hash(diff_rorp.index, report.sha1_digest)
-            return 1
-        return report != 0  # if report == 0, error
+            if self.CCPP.update_hash(diff_rorp.index, report.sha1_digest):
+                return self.DONE
+            else:
+                return self.UNCHANGED  # hash didn't change
+        elif report == 0:
+            # if == 0, error_handler caught something
+            return self.FAILED
+        else:
+            return self.DONE
 
     def _matches_cached_rorp(self, diff_rorp, new_rp):
-        """Return true if new_rp matches cached src rorp
+        """
+        Return self.DONE if new_rp matches cached src rorp else self.FAILED
 
         This is a final check to make sure the temp file just written
         matches the stats which we got earlier.  If it doesn't it
         could confuse the regress operation.  This is only necessary
         for regular files.
-
         """
         if not new_rp.isreg():
-            return 1
+            return self.DONE
         cached_rorp = self.CCPP.get_source_rorp(diff_rorp.index)
         if cached_rorp and cached_rorp.equal_loose(new_rp):
-            return 1
+            return self.DONE
         log.ErrorLog.write_if_open(
             "UpdateError", diff_rorp, "Updated mirror "
             "temp file '{tf}' does not match source".format(tf=new_rp))
-        return 0
+        return self.FAILED
 
     def _write_special(self, diff_rorp, new):
         """Write diff_rorp (which holds special file) to new"""
@@ -1501,11 +1544,11 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             new.touch()
 
     def _set_dir_replacement(self, diff_rorp, base_rp):
-        """Set self.dir_replacement, which holds data until done with dir
+        """
+        Set self.dir_replacement, which holds data until done with dir
 
         This is used when base_rp is a dir, and diff_rorp is not.
-        Returns 1 for success or 0 for failure
-
+        Returns True for success or False for failure
         """
         assert diff_rorp.get_attached_filetype() == 'snapshot', (
             "Type attached to '{rp}' isn't '{exp}' but '{att}'.".format(
@@ -1519,9 +1562,9 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             rpath.copy_with_attribs(
                 self.CCPP.get_mirror_rorp(diff_rorp.index),
                 self.dir_replacement)
-            return 0
+            return False
         else:
-            return 1
+            return True
 
     def _prepare_dir(self, diff_rorp, base_rp):
         """Prepare base_rp to be a directory"""
@@ -1554,7 +1597,11 @@ class _RepoIncrementITRB(_RepoPatchITRB):
         mirror_rp, inc_prefix = map_longnames.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
         tf = mirror_rp.get_temp_rpath(sibling=True)
-        if self._patch_to_temp(mirror_rp, diff_rorp, tf):
+        result = self._patch_to_temp(mirror_rp, diff_rorp, tf)
+        if result == self.UNCHANGED:
+            rpath.copy_attribs(diff_rorp, mirror_rp)
+            self.CCPP.flag_success(index)
+        elif result:
             inc = robust.check_common_error(
                 self.error_handler, increment.Increment,
                 (tf, mirror_rp, inc_prefix, self.previous_time))
@@ -1567,12 +1614,10 @@ class _RepoIncrementITRB(_RepoPatchITRB):
                                                  rpath.rename,
                                                  (tf, mirror_rp)) is None:
                         self.CCPP.flag_success(index)
-                    else:
-                        tf.delete()
                 elif mirror_rp.lstat():
                     mirror_rp.delete()
                     self.CCPP.flag_deleted(index)
-                return  # normal return, otherwise error occurred
+        # final clean-up
         tf.setdata()
         if tf.lstat():
             tf.delete()
