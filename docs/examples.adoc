@@ -6,7 +6,7 @@
 
 == Old vs. New Command Line Interface
 
-* Starting with `rdiff-backup` version 2.1, there have been two separate syntaxes for the command line interface, differentiated by the `--new` flag. Legacy CLI commands follow the syntax `rdiff-backup [options…​] [source…​] [destination…​]`, while the new CLI uses the syntax `rdiff-backup [options…​] action [sub-options…​] [locations…​]`. The functionality of the commands are the same, but for completeness the examples in this document will be given in both the old and new syntax side-by-side.
+* Starting with `rdiff-backup` version 2.1, there have been two separate syntaxes for the command line interface, differentiated by the `--new` flag. Legacy CLI commands follow the syntax `rdiff-backup [options…] [source…] [destination…]`, while the new CLI uses the syntax `rdiff-backup [global options…] action [action-specific options…] [locations…]`. The functionality of the commands are the same, but for completeness the examples in this document will be given in both the old and new syntax side-by-side.
 
 == Backing up
 
