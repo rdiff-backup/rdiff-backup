@@ -4,6 +4,10 @@
 :toc:
 :toc-title: Sections
 
+== Old vs. New Command Line Interface
+
+* Starting with `rdiff-backup` version 2.1, there have been two separate syntaxes for the command line interface, differentiated by the `--new` flag. Legacy CLI commands follow the syntax `rdiff-backup [options…​] [source…​] [destination…​]`, while the new CLI uses the syntax `rdiff-backup [options…​] action [sub-options…​] [locations…​]`. The functionality of the commands are the same, but for completeness the examples in this document will be given in both the old and new syntax side-by-side.
+
 == Backing up
 
 * Simplest case---backup local directory `foo` to local directory `bar`.
@@ -11,14 +15,18 @@
 
 ____
 `rdiff-backup foo bar`
+
+`rdiff-backup backup foo bar`
 ____
 
 * Simple remote case---backup directory `/some/local-dir` to the directory `/whatever/remote-dir` on the machine hostname.net.
 It uses ssh to open the necessary pipe to the remote copy of rdiff-backup.
-Just like the above except one directory is on a remove computer.
+Just like the above except one directory is on a remote computer.
 
 ____
 `rdiff-backup /some/local-dir hostname.net::/whatever/remote-dir`
+
+`rdiff-backup backup /some/local-dir hostname.net::/whatever/remote-dir`
 ____
 
 * This time the source directory is remote and the destination is local.
@@ -26,6 +34,8 @@ Also, we have specified the username on the remote host (by default ssh will att
 
 ____
 `rdiff-backup user@hostname.net::/remote-dir local-dir`
+
+`rdiff-backup backup user@hostname.net::/remote-dir local-dir`
 ____
 
 * It is even possible for both the source and destination directories to be on other machines.
@@ -33,6 +43,8 @@ Below we have also added the `-v5` switch for greater verbosity (verbosity setti
 
 ____
 `rdiff-backup -v5 --print-statistics user1@host1::/source-dir user2@host2::/dest-dir`
+
+`rdiff-backup -v5 --print-statistics backup user1@host1::/source-dir user2@host2::/dest-dir`
 ____
 
 == Restoring
@@ -54,15 +66,21 @@ We can get rdiff-backup to restore the current version of that file using either
 
 ____
 `rdiff-backup --restore-as-of now host.net::/remote-dir/file local-dir/filerdiff-backup -r now host.net::/remote-dir/file local-dir/file`
+
+`rdiff-backup -r now host.net::/remote-dir/file local-dir/file`
+
+`rdiff-backup restore --at now host.net::/remote-dir/file local-dir/filerdiff-backup host.net::/remote-dir/file local-dir/file`
 ____
 
-The `--restore-as-of` (or `-r` for short) switch tells rdiff-backup to restore instead of back up, and the `now` option indicates the current time.
+The `--restore-as-of` (or `-r` for short) switch (`restore` action on the new CLI) tells rdiff-backup to restore instead of back up, and the `now` option indicates the current time.
 
 * But the main advantage of rdiff-backup is that it keeps version history.
 This command restores `host.net::/remote-dir/file` as it was 10 days ago into a new location `/tmp/file`.
 
 ____
 `rdiff-backup -r 10D host.net::/remote-dir/file /tmp/file`
+
+`rdiff-backup restore --at 10D host.net::/remote-dir/file /tmp/file`
 ____
 
 Other acceptable time strings include `5m4s` (5 minutes and 4 seconds) and `2002-03-05` (March 5th, 2002).
@@ -74,6 +92,8 @@ If you specify one directly:
 
 ____
 `rdiff-backup host.net::/remote-dir/rdiff-backup-data/increments/file.2003-03-05T12:21:41-07:00.diff.gz local-dir/file`
+
+`rdiff-backup restore host.net::/remote-dir/rdiff-backup-data/increments/file.2003-03-05T12:21:41-07:00.diff.gz local-dir/file`
 ____
 
 rdiff-backup will tell from the filename that it is an rdiff-backup increment file and thus enter restore mode.
@@ -90,6 +110,8 @@ This section assumes that rdiff-backup has been used in the past to back up to `
 
 ____
 `rdiff-backup --remove-older-than 2W host.net::/remote-dir`
+
+`rdiff-backup remove increments --older-than 2W host.net::/remote-dir`
 ____
 
 Note that an existing file which hasn't changed for a year will still be preserved.
@@ -101,6 +123,8 @@ The `20B` below tells rdiff-backup to only preserve information from the last 20
 
 ____
 `rdiff-backup --remove-older-than 20B host.net::/remote-dir`
+
+`rdiff-backup remove increments --older-than 20B host.net::/remote-dir`
 ____
 
 == File selection with include/exclude options
@@ -113,6 +137,8 @@ See the man page for a list of all the options and their definitions.
 
 ____
 `rdiff-backup --exclude /mnt/backup / /mnt/backup`
+
+`rdiff-backup backup --exclude /mnt/backup / /mnt/backup`
 ____
 
 (Actually rdiff-backup can automatically detect simple loops like the one above.) This is just an example, in reality it would be important to exclude `/proc` as well.
@@ -124,6 +150,8 @@ Also, the source directory happens to be remote.
 
 ____
 `rdiff-backup --exclude /tmp --exclude /mnt --exclude /proc user@host.net::/ /backup/host.net`
+
+`rdiff-backup backup --exclude /tmp --exclude /mnt --exclude /proc user@host.net::/ /backup/host.net`
 ____
 
 * Multiple include and exclude options take precedence in the order they are given.
@@ -131,6 +159,8 @@ The following command would back up `/usr/local/bin` but not `/usr/bin`.
 
 ____
 `rdiff-backup --include /usr/local --exclude /usr / host.net::/backup`
+
+`rdiff-backup backup --include /usr/local --exclude /usr / host.net::/backup`
 ____
 
 * rdiff-backup uses rsync-like wildcards, where `**` matches any path and `*` matches any path without a `/` in it.
@@ -138,6 +168,8 @@ Thus this command:
 
 ____
 `rdiff-backup --include /usr/local --include /var --exclude '**' / /backup`
+
+`rdiff-backup backup --include /usr/local --include /var --exclude '**' / /backup`
 ____
 
 backs up only the `/usr/local` and `/var` directories.
@@ -147,6 +179,8 @@ The single quotes `''` are not part of rdiff-backup and are only used because ma
 
 ____
 `rdiff-backup --include '**txt' --exclude /usr/local/games --include /usr/local --exclude /usr --exclude /backup --exclude /proc / /backup`
+
+`rdiff-backup backup --include '**txt' --exclude /usr/local/games --include /usr/local --exclude /usr --exclude /backup --exclude /proc / /backup`
 ____
 
 The above command will back up any file ending in `txt`, even `/usr/local/games/pong/scores.txt` because that include has highest precedence.
@@ -164,6 +198,8 @@ Then this command:
 
 ____
 `rdiff-backup --include-filelist include-list --exclude '**' / /backup`
+
+`rdiff-backup backup --include-filelist include-list --exclude '**' / /backup`
 ____
 
 would only back up the files `/var`, `/usr`, `/usr/bin`, and `/usr/bin/gzip`, but not `/var/log` or `/usr/bin/gunzip`.
@@ -185,6 +221,8 @@ Then the following command will do exactly the same thing as the complicated exa
 
 ____
 `rdiff-backup --include-globbing-filelist include-list / /backup`
+
+`rdiff-backup backup --include-globbing-filelist include-list / /backup`
 ____
 
 Above we have used `--include-globbing-filelist` instead of `--include-filelist` so that the lines would be interpreted as if they were specified on the command line.
@@ -207,12 +245,16 @@ It may be useful if you need to restore an older version of `in-dir/file` but ar
 
 ____
 `rdiff-backup --list-increments out-dir/filerdiff-backup -l out-dir/file`
+
+`rdiff-backup list increments out-dir/filerdiff-backup -l out-dir/file`
 ____
 
 * The following command lists all the files under `out-dir/subdir` which has changed in the last 5 days.
 
 ____
 `rdiff-backup --list-changed-since 5D out-dir/subdir`
+
+`rdiff-backup list files --changed-since 5D out-dir/subdir`
 ____
 
 * This command lists all the files that were present in `out-dir/subdir` 5 days ago.
@@ -220,6 +262,8 @@ This includes files that have not changed recently as well as those that have be
 
 ____
 `rdiff-backup --list-at-time 5D out-dir/subdir`
+
+`rdiff-backup list files --at 5D out-dir/subdir`
 ____
 
 * rdiff-backup writes one statistics file per session to the `out-dir/rdiff-backup-data` directory.
@@ -227,6 +271,8 @@ An average of the files can be displayed using the `--calculate-average` option 
 
 ____
 `rdiff-backup --calculate-average out-dir/rdiff-backup-data/session_statistics*`
+
+`rdiff-backup calculate --method average out-dir/rdiff-backup-data/session_statistics*`
 ____
 
 == Miscellaneous other commands
@@ -236,4 +282,6 @@ This command simply verifies that there is a working rdiff-backup server on the 
 
 ____
 `rdiff-backup --test-server hostname.net::/ignored`
+
+`rdiff-backup test hostname.net::/ignored`
 ____
