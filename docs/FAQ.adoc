@@ -373,3 +373,18 @@ The list might grow but issues are currently known with especially slow combinat
 
 * Fuse-exFAT (the newer kernel version seems fine though)
 * "complex" file systems on a NAS (e.g. ZFS on SMB or NFS)
+* SSHFS
+
+== How to backup safely from case aware to case aware file system?
+
+File systems like VFAT or NTFS are what I call case aware file systems:
+they are "officially" case insensitive but they store file names in a case sensitive manner.
+
+This becomes a https://github.com/rdiff-backup/rdiff-backup/issues/11[problem for rdiff-backup if a file is renamed in a case sensitive manner] (e.g. from `MyFile` to `mYfIlE`) because it doesn't recognize them as the same file, but the target file system doesn't accept both files next to each other.
+
+You can either:
+
+. make sure that files are not renamed in such a manner (this doesn't happen that often)
+. or you backup _from the beginning_ using the option `--override-chars-to-quote 'A-Z-"*/:<>?\\|;'`, which makes sure that capital letters (and other "strange" characters) are quoted so that there is no name collision on the file system.
++
+CAUTION: remember that you can't change the quoting once a backup repository has been setup, so that you might need to create a new one.
