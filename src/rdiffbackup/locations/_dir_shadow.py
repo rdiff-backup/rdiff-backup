@@ -57,10 +57,15 @@ class ReadDirShadow:
         """
         sel = selection.Select(rp)
         sel.parse_selection_args(tuplelist, filelists)
-        sel_iter = sel.set_iter()
+        sel_iter = sel.get_select_iter()
         cache_size = Globals.pipeline_max_length * 3  # to and from+leeway
         cls._select = rorpiter.CacheIndexable(sel_iter, cache_size)
-        Globals.set('select_mirror', sel_iter)
+        # FIXME do we really need the cache? It can be removed if we remove
+        # cls._select.get
+
+    # FIXME set_select for Read- and WriteDirShadow have a different meaning,
+    # where get_select and get_initial_iter have the same function.
+    # both return selection.Select.get_select_iter
 
     # @API(ReadDirShadow.get_select, 201)
     @classmethod
@@ -76,7 +81,6 @@ class ReadDirShadow:
         """
         Return diffs of any files with signature in dest_sigiter
         """
-        source_rps = cls._select
         error_handler = robust.get_error_handler("ListError")
 
         def attach_snapshot(diff_rorp, src_rp):
@@ -104,7 +108,7 @@ class ReadDirShadow:
             if dest_sig is iterfile.MiscIterFlushRepeat:
                 yield iterfile.MiscIterFlush  # Flush buffer when get_sigs does
                 continue
-            src_rp = (source_rps.get(dest_sig.index)
+            src_rp = (cls._select.get(dest_sig.index)
                       or rpath.RORPath(dest_sig.index))
             diff_rorp = src_rp.getRORPath()
             if dest_sig.isflaglinked():
@@ -278,11 +282,11 @@ class WriteDirShadow:
     # @API(WriteDirShadow.get_initial_iter, 201)
     @classmethod
     def get_initial_iter(cls, target):
-        """Return selector previously set with set_initial_iter"""
+        """Return selector previously set with set_select"""
         if cls._select:
-            return cls._select.set_iter()
+            return cls._select.get_select_iter()
         else:
-            return selection.Select(target).set_iter()
+            return selection.Select(target).get_select_iter()
 
     # @API(WriteDirShadow.patch, 201)
     @classmethod
@@ -315,7 +319,8 @@ class WriteDirShadow:
 
 
 class _DirPatchITRB(rorpiter.ITRBranch):
-    """Patch an rpath with the given diff iters (use with IterTreeReducer)
+    """
+    Patch an rpath with the given diff iters (use with IterTreeReducer)
 
     The main complication here involves directories.  We have to
     finish processing the directory after what's in the directory, as

@@ -24,7 +24,7 @@ which is written in C.  The goal was to use C as little as possible...
 """
 
 import array
-from . import _librsync
+from rdiff_backup import _librsync
 
 blocksize = _librsync.RSM_JOB_BLOCKSIZE
 
@@ -117,11 +117,11 @@ class SigFile(LikeFile):
     """File-like object which incrementally generates a librsync signature"""
 
     def __init__(self, infile, blocksize=_librsync.RS_DEFAULT_BLOCK_LEN):
-        """SigFile initializer - takes basis file
+        """
+        SigFile initializer - takes basis file
 
         basis file only needs to have read() and close() methods.  It
         will be closed when we come to the end of the signature.
-
         """
         LikeFile.__init__(self, infile)
         try:

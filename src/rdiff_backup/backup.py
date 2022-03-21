@@ -74,10 +74,9 @@ class SourceStruct:
         """
         sel = selection.Select(rpath)
         sel.parse_selection_args(tuplelist, filelists)
-        sel_iter = sel.set_iter()
+        sel_iter = sel.get_select_iter()
         cache_size = Globals.pipeline_max_length * 3  # to and from+leeway
         cls._source_select = rorpiter.CacheIndexable(sel_iter, cache_size)
-        Globals.set('select_mirror', sel_iter)
 
     # @API(SourceStruct.get_source_select, 200, 200)
     @classmethod
@@ -226,7 +225,7 @@ class DestinationStruct:
             """Get the combined iterator from the filesystem"""
             sel = selection.Select(rpath)
             sel.parse_rbdir_exclude()
-            return sel.set_iter()
+            return sel.get_select_iter()
 
         meta_manager = meta_mgr.get_meta_manager(True)
         if use_metadata:

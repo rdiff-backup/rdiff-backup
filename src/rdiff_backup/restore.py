@@ -254,9 +254,9 @@ class TargetStruct:
     def get_initial_iter(cls, target):
         """Return selector previously set with set_initial_iter"""
         if cls._select:
-            return cls._select.set_iter()
+            return cls._select.get_select_iter()
         else:
-            return selection.Select(target).set_iter()
+            return selection.Select(target).get_select_iter()
 
     # @API(TargetStruct.patch, 200, 200)
     @classmethod
