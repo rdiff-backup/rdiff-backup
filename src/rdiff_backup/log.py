@@ -20,6 +20,7 @@
 
 import datetime
 import os  # needed to grab verbosity as environment variable
+import re
 import shutil
 import sys
 import textwrap
@@ -343,12 +344,12 @@ class ErrorLog:
     @classmethod
     # @API(ErrorLog.write_if_open, 200)
     def write_if_open(cls, error_type, rp, exc):
-        """Call cls.write(...) if error log open, only log otherwise"""
+        """Call cls._write(...) if error log open, only log otherwise"""
         if not Globals.isbackup_writer and Globals.backup_writer:
             return Globals.backup_writer.log.ErrorLog.write_if_open(
                 error_type, rp, exc)
         if cls.isopen():
-            cls.write(error_type, rp, exc)
+            cls._write(error_type, rp, exc)
         else:
             Log(cls._get_log_string(error_type, rp, exc), WARNING)
 
@@ -369,6 +370,18 @@ class ErrorLog:
                 or error_type == "SpecialFileError"), (
             "Unknown error type {et}".format(et=error_type))
         return "{et}: '{rp}' {ex}".format(et=error_type, rp=rp, ex=exc)
+
+    @classmethod
+    def _write(cls, error_type, rp, exc):
+        """Add line to log file indicating error exc with file rp"""
+        logstr = cls._get_log_string(error_type, rp, exc)
+        Log(logstr, WARNING)
+        if Globals.null_separator:
+            logstr += "\0"
+        else:
+            logstr = re.sub("\n", " ", logstr)
+            logstr += "\n"
+        cls._log_fileobj.write(_to_bytes(logstr))
 
 
 def _to_bytes(logline, encoding=LOGFILE_ENCODING):
