@@ -43,7 +43,7 @@ if os.name == "nt":
 def Myrm(dirstring):
     """Run myrm on given directory string"""
     root_rp = rpath.RPath(Globals.local_connection, dirstring)
-    for rp in selection.Select(root_rp).set_iter():
+    for rp in selection.Select(root_rp).get_select_iter():
         if rp.isdir():
             rp.chmod(0o700)  # otherwise may not be able to remove
     path = root_rp.path
@@ -467,7 +467,7 @@ def _get_selection_functions(src_rp, dest_rp,
         src_select.parse_rbdir_exclude()
         dest_select.parse_rbdir_exclude()
 
-    return src_select.set_iter(), dest_select.set_iter()
+    return src_select.get_select_iter(), dest_select.get_select_iter()
 
 
 def compare_recursive(src_rp, dest_rp,

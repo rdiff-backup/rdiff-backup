@@ -40,7 +40,7 @@ class HardlinkTest(unittest.TestCase):
         """See if the partial inode dictionary is correct"""
         Globals.preserve_hardlinks = 1
         reset_hardlink_dicts()
-        for dsrp in selection.Select(self.hlinks_rp3).set_iter():
+        for dsrp in selection.Select(self.hlinks_rp3).get_select_iter():
             Hardlink.add_rorp(dsrp)
 
         self.assertEqual(len(list(Hardlink._inode_index.keys())), 3)
@@ -48,13 +48,13 @@ class HardlinkTest(unittest.TestCase):
     def testCompletedDict(self):
         """See if the hardlink dictionaries are built correctly"""
         reset_hardlink_dicts()
-        for dsrp in selection.Select(self.hlinks_rp1).set_iter():
+        for dsrp in selection.Select(self.hlinks_rp1).get_select_iter():
             Hardlink.add_rorp(dsrp)
             Hardlink.del_rorp(dsrp)
         self.assertEqual(Hardlink._inode_index, {})
 
         reset_hardlink_dicts()
-        for dsrp in selection.Select(self.hlinks_rp2).set_iter():
+        for dsrp in selection.Select(self.hlinks_rp2).get_select_iter():
             Hardlink.add_rorp(dsrp)
             Hardlink.del_rorp(dsrp)
         self.assertEqual(Hardlink._inode_index, {})

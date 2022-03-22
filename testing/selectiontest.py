@@ -348,7 +348,7 @@ class ParseSelectionArgsTest(unittest.TestCase):
         self.Select.parse_selection_args(tuplelist, self.remake_filelists(filelists))
         self.assertTrue(
             iter_equal(iter_map(lambda dsrp: dsrp.index,
-                                self.Select.set_iter()),
+                                self.Select.get_select_iter()),
                        map(tuple_fsencode, indices), verbose=1))
 
     def remake_filelists(self, filelist):

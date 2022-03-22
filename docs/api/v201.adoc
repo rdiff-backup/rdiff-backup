@@ -136,7 +136,6 @@
 ** `.regress`
 ** `.remove_current_mirror`
 ** `.set_config`
-** `.set_rorp_cache`
 ** `.set_select`
 ** `.setup_paths`
 ** `.touch_current_mirror`

@@ -581,7 +581,7 @@ class FSAbilities:
         regular file is found, resource_fork support will be turned
         off by default.
         """
-        for rp in selection.Select(dir_rp).set_iter():
+        for rp in selection.Select(dir_rp).get_select_iter():
             if rp.isreg():
                 try:
                     rfork = rp.append(b'..namedfork', b'rsrc')

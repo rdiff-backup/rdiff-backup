@@ -279,7 +279,7 @@ class Final(PathSetter):
 
         def delete_long(base_rp, length=100):
             """Delete filenames longer than length given"""
-            for rp in selection.Select(base_rp).set_iter():
+            for rp in selection.Select(base_rp).get_select_iter():
                 if len(rp.dirsplit()[1]) > length:
                     rp.delete()
 

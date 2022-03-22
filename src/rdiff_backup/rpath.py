@@ -386,10 +386,10 @@ class RORPath:
         assert file and not self.file, "Can't assign twice a file."
 
         def closing_hook():
-            self.file_already_open = None
+            self._file_already_open = False
 
         self.file = _RPathFileHook(file, closing_hook)
-        self.file_already_open = None
+        self._file_already_open = False
 
     def get_safeindex(self):
         """Return index as a tuple of strings with safe decoding
@@ -442,9 +442,9 @@ class RORPath:
         """Return file type object if any was given using self.setfile"""
         if mode != "rb":
             raise RPathException("Bad mode %s" % mode)
-        if self.file_already_open:
+        if self._file_already_open:
             raise RPathException("Attempt to open same file twice")
-        self.file_already_open = 1
+        self._file_already_open = True
         return self.file
 
     def close_if_necessary(self):
@@ -453,7 +453,7 @@ class RORPath:
             while self.file.read(Globals.blocksize):
                 pass
             self.file.close()
-            self.file_already_open = None
+            self._file_already_open = False
 
     def set_acl(self, acl_meta):
         """Record access control list in dictionary.  Does not write"""
@@ -560,8 +560,14 @@ class RORPath:
         return self.data['sha1']
 
     def set_sha1(self, digest):
-        """Set sha1 hash (should be in hexdecimal)"""
+        """
+        Set sha1 hash (should be in hexdecimal)
+
+        Return True if modified, else False.
+        """
+        old_digest = self.data.get('sha1')
         self.data['sha1'] = digest
+        return old_digest != digest
 
     def _equal_verbose(self,
                        other,
@@ -620,20 +626,21 @@ class RORPath:
 
 
 class RPath(RORPath):
-    """Remote Path class - wrapper around a possibly non-local pathname
+    """
+    Remote Path class - wrapper around a possibly non-local pathname
 
     This class contains a dictionary called "data" which should
     contain all the information about the file sufficient for
     identification (i.e. if two files have the the same (==) data
     dictionary, they are the same file).
-
     """
     _regex_chars_to_quote = re.compile(b"[\\\\\\\"\\$`]")
     # class index to make temporary files unique, see get_temp_rpath
     _temp_file_index = 0
 
     def __init__(self, connection, base, index=(), data=None):
-        """RPath constructor
+        """
+        RPath constructor
 
         connection = self.conn is the Connection the RPath will use to
         make system calls, and index is the name of the rpath used for
@@ -644,7 +651,6 @@ class RPath(RORPath):
 
         For the root directory "/", the index is empty and the base is
         "/".
-
         """
         super().__init__(index, data)
         self.conn = connection

@@ -125,9 +125,9 @@ class ITRBadder2(rorpiter.ITRBranch):
 
     def can_fast_process(self, index):
         if len(index) == 3:
-            return 1
+            return True
         else:
-            return None
+            return False
 
     def fast_process_file(self, index):
         self.total += index[0] + index[1] + index[2]
