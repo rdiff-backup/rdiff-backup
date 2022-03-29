@@ -703,21 +703,16 @@ class RepoShadow:
         Checks if the repository contains a previously failed backup and needs
         to be regressed
 
-        Return None if the repository can't be found,
+        Note that this function won't catch an initial failed backup, this
+        needs to be done during the repository creation phase.
+
+        Return None if the repository can't be found or is new,
         True if it needs regressing, False otherwise.
         """
-        if not base_dir.isdir() or not data_dir.isdir():
+        # detect an initial repository which doesn't need a regression
+        if not (base_dir.isdir() and data_dir.isdir()
+                and incs_dir.isdir() and incs_dir.listdir()):
             return None
-        for filename in data_dir.listdir():
-            # check if we can find any file of importance
-            if filename not in [
-                    b'chars_to_quote', b'special_escapes',
-                    b'backup.log', b'increments'
-            ]:
-                break
-        else:  # This may happen the first backup just after we test for quoting
-            if not incs_dir.isdir() or not incs_dir.listdir():
-                return None
         curmirroot = data_dir.append(b"current_mirror")
         curmir_incs = curmirroot.get_incfiles_list()
         if not curmir_incs:
