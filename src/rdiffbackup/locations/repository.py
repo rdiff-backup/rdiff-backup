@@ -31,7 +31,6 @@ from rdiff_backup import (
     FilenameMapping,
     Globals,
     log,
-    rpath,
     selection,
     Security,
 )
@@ -206,21 +205,16 @@ class Repo(locations.Location):
         Checks if the repository contains a previously failed backup and needs
         to be regressed
 
-        Return None if the repository can't be found,
+        Note that this function won't catch an initial failed backup, this
+        needs to be done during the repository creation phase.
+
+        Return None if the repository can't be found or is new,
         True if it needs regressing, False otherwise.
         """
-        if not self.base_dir.isdir() or not self.data_dir.isdir():
+        # detect an initial repository which doesn't need a regression
+        if not (self.base_dir.isdir() and self.data_dir.isdir()
+                and self.incs_dir.isdir() and self.incs_dir.listdir()):
             return None
-        for filename in self.data_dir.listdir():
-            # check if we can find any file of importance
-            if filename not in [
-                    b'chars_to_quote', b'special_escapes',
-                    b'backup.log', b'increments'
-            ]:
-                break
-        else:  # This may happen the first backup just after we test for quoting
-            if not self.incs_dir.isdir() or not self.incs_dir.listdir():
-                return None
         curmirroot = self.data_dir.append(b"current_mirror")
         curmir_incs = curmirroot.get_incfiles_list()
         if not curmir_incs:
@@ -578,6 +572,11 @@ information in it.
         if not super()._create():
             return False
 
+        if self._is_failed_initial_backup():
+            log.Log("Found interrupted initial backup in data directory {dd}. "
+                    "Removing...".format(dd=self.data_dir), log.NOTE)
+            self._clean_failed_initial_backup()
+
         # define a few essential subdirectories
         if not self.data_dir.lstat():
             try:
@@ -588,8 +587,6 @@ information in it.
                         "Please fix the access rights and retry.".format(
                             bd=self.base_dir, ex=exc), log.ERROR)
                 return False
-        elif self._is_failed_initial_backup():
-            self._fix_failed_initial_backup()
         if not self.incs_dir.lstat():
             try:
                 self.incs_dir.mkdir()
@@ -616,42 +613,19 @@ information in it.
             metadata_mirrors = [
                 x for x in rbdir_files if x.startswith(b"mirror_metadata")
             ]
-            # If we have no current_mirror marker, and the increments directory
-            # is empty, we most likely have a failed backup.
+            # If we have no current_mirror marker, and one or less error logs
+            # and metadata files, we most likely have a failed backup.
             return not mirror_markers and len(error_logs) <= 1 and \
                 len(metadata_mirrors) <= 1
         return False
 
-    def _fix_failed_initial_backup(self):
+    def _clean_failed_initial_backup(self):
         """
         Clear the given rdiff-backup-data if possible, it's faster than
         trying to do a regression, which would probably anyway fail.
         """
-        log.Log("Found interrupted initial backup in data directory {dd}. "
-                "Removing...".format(dd=self.data_dir), log.NOTE)
-        rbdir_files = self.data_dir.listdir()
-
-        # Try to delete the increments dir first
-        if b'increments' in rbdir_files:
-            rbdir_files.remove(b'increments')
-            rp = self.data_dir.append(b'increments')
-            # FIXME I don't really understand the logic here: either it's
-            # a failed initial backup and we can remove everything, or we
-            # should fail and not continue.
-            try:
-                rp.conn.rpath.delete_dir_no_files(rp)
-            except rpath.RPathException:
-                log.Log("Increments dir contains files", log.INFO)
-                return
-            except Security.Violation:
-                log.Log("Server doesn't support resuming", log.WARNING)
-                return
-
-        # then delete all remaining files
-        for file_name in rbdir_files:
-            rp = self.data_dir.append_path(file_name)
-            if not rp.isdir():  # Only remove files, not folders
-                rp.delete()
+        self.data_dir.delete()  # setdata is implicit
+        self.incs_dir.setdata()
 
     @classmethod
     def _get_inc_type(cls, inc):
