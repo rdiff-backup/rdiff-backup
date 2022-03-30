@@ -68,11 +68,13 @@ class MetadataTest(unittest.TestCase):
             self.assertTrue(rplist[i]._equal_verbose(outlist[i]))
         fp.close()
 
-    def write_metadata_to_temp(self):
+    def write_metadata_to_temp(self, compress):
         """If necessary, write metadata of bigdir to file metadata.gz"""
         global tempdir
-        temprp = tempdir.append(
-            "mirror_metadata.2005-11-03T14:51:06-06:00.snapshot.gz")
+        meta_file_name = "mirror_metadata.2005-11-03T14:51:06-06:00.snapshot"
+        if compress:
+            meta_file_name += ".gz"
+        temprp = tempdir.append(meta_file_name)
         if temprp.lstat():
             return temprp
 
@@ -82,57 +84,81 @@ class MetadataTest(unittest.TestCase):
         rpath_iter = selection.Select(rootrp).get_select_iter()
 
         start_time = time.time()
-        mf = stdattr.AttrFile(temprp, 'w')
+        mf = stdattr.AttrFile(temprp, 'w', compress=compress)
         for rp in rpath_iter:
             mf.write_object(rp)
         mf.close()
         print("Writing metadata took %s seconds" % (time.time() - start_time))
         return temprp
 
-    def testSpeed(self):
-        """Test testIterator on 10000 files"""
-        temprp = self.write_metadata_to_temp()
+    def helper_speed(self, compress):
+        temprp = self.write_metadata_to_temp(compress=compress)
         mf = stdattr.AttrFile(temprp, 'r')
 
         start_time = time.time()
         i = 0
         for rorp in mf.get_objects():
             i += 1
-        print("Reading %s metadata entries took %s seconds." %
-              (i, time.time() - start_time))
+        print("Reading %s metadata entries took %s seconds (compressed=%s)." %
+              (i, time.time() - start_time, compress))
 
         start_time = time.time()
         blocksize = 32 * 1024
-        with temprp.open("rb", compress=1) as tempfp:
+        with temprp.open("rb", compress=compress) as tempfp:
             while 1:
                 buf = tempfp.read(blocksize)
                 if not buf:
                     break
-        print("Simply decompressing metadata file took %s seconds" %
-              (time.time() - start_time))
+        print("Simply decompressing metadata file took %s seconds "
+              "(compressed=%s)" % (time.time() - start_time, compress))
 
-    def testIterate_restricted(self):
-        """Test getting rorps restricted to certain index
+    def test_speed_compressed(self):
+        """
+        Test testIterator on 10000 files with compressed metadata
+        """
+        return self.helper_speed(compress=True)
+
+    def test_speed_uncompressed(self):
+        """
+        Test testIterator on 10000 files with uncompressed metadata
+        """
+        return self.helper_speed(compress=False)
+
+    def helper_iterate_restricted(self, compress):
+        """
+        Test getting rorps restricted to certain index
 
         In this case, get assume subdir (subdir3, subdir10) has 50
         files in it.
-
         """
-        temprp = self.write_metadata_to_temp()
+        temprp = self.write_metadata_to_temp(compress=compress)
         mf = stdattr.AttrFile(temprp, 'rb')
         start_time = time.time()
         i = 0
         for rorp in mf.get_objects((b"subdir3", b"subdir10")):
             i += 1
-        print("Reading %s metadata entries took %s seconds." %
-              (i, time.time() - start_time))
+        print("Reading %s metadata entries took %s seconds (compressed=%s)." %
+              (i, time.time() - start_time, compress))
         self.assertEqual(i, 51)
 
-    def test_write(self):
-        """Test writing to metadata file, then reading back contents"""
+    def test_iterate_restricted_compressed(self):
+        """
+        Test getting rorps restricted to certain index from compressed file
+        """
+        return self.helper_iterate_restricted(compress=True)
+
+    def test_iterate_restricted_uncompressed(self):
+        """
+        Test getting rorps restricted to certain index from uncompressed file
+        """
+        return self.helper_iterate_restricted(compress=False)
+
+    def helper_write(self, compress):
         global tempdir
-        temprp = tempdir.append(
-            "mirror_metadata.2005-11-03T12:51:06-06:00.snapshot.gz")
+        meta_file_name = "mirror_metadata.2005-11-03T12:51:06-06:00.snapshot"
+        if compress:
+            meta_file_name += ".gz"
+        temprp = tempdir.append(meta_file_name)
         if temprp.lstat():
             temprp.delete()
 
@@ -145,7 +171,7 @@ class MetadataTest(unittest.TestCase):
         rps = list(sel.get_select_iter())
 
         self.assertFalse(temprp.lstat())
-        write_mf = stdattr.AttrFile(temprp, 'w')
+        write_mf = stdattr.AttrFile(temprp, 'w', compress=compress)
         for rp in rps:
             write_mf.write_object(rp)
         write_mf.close()
@@ -155,6 +181,18 @@ class MetadataTest(unittest.TestCase):
         self.assertEqual(len(reread_rps), len(rps))
         for i in range(len(reread_rps)):
             self.assertEqual(reread_rps[i], rps[i])
+
+    def test_write_compressed(self):
+        """
+        Test writing to compressed metadata file, then reading back
+        """
+        return self.helper_write(compress=True)
+
+    def test_write_uncompressed(self):
+        """
+        Test writing to uncompressed metadata file, then reading back
+        """
+        return self.helper_write(compress=False)
 
     def test_patch(self):
         """Test combining 3 iters of metadata rorps"""

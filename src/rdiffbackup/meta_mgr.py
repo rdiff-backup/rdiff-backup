@@ -123,8 +123,12 @@ class Manager:
         def callback(rp):
             temprp[0] = rp
 
+        # Before API 201, metafiles couldn't be compressed
         writer = self._meta_main_class(
-            temprp[0], 'wb', check_path=0, callback=callback)
+            temprp[0], 'wb',
+            compress=(Globals.compression
+                      or Globals.get_api_version() < 201),
+            check_path=0, callback=callback)
         for rorp in self._get_meta_main_at_time(regress_time, None):
             writer.write_object(rorp)
         writer.close()
@@ -191,7 +195,11 @@ class Manager:
         assert rp.isincfile(), (
             "Path '{irp}' must be an increment file.".format(irp=rp))
         if meta_class.is_active() or force:
-            return meta_class(rp, 'w', callback=self._add_incrp)
+            # Before API 201, metafiles couldn't be compressed
+            return meta_class(rp, 'w',
+                              compress=(Globals.compression
+                                        or Globals.get_api_version() < 201),
+                              callback=self._add_incrp)
         else:
             return None
 

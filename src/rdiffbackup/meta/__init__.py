@@ -208,7 +208,8 @@ class FlatFile:
         """
         return cls._is_main
 
-    def __init__(self, rp_base, mode, check_path=1, compress=1, callback=None):
+    def __init__(self, rp_base, mode, check_path=1,
+                 compress=None, callback=None):
         """
         Open rp (or rp+'.gz') for reading ('r') or writing ('w')
 
@@ -219,14 +220,17 @@ class FlatFile:
         self.callback = callback
         self._record_buffer = []
         if check_path:
-            if (rp_base.isincfile()
+            if not (rp_base.isincfile()
                     and rp_base.getincbase_bname() == self._prefix):
-                compress = 1
-            else:
                 log.Log.FatalError(
                     "Checking the path '{pa}' went wrong.".format(pa=rp_base))
         if mode == 'r' or mode == 'rb':
             self.rp = rp_base
+            if compress is None:
+                if self.rp.isinccompressed():
+                    compress = True
+                else:
+                    compress = False
             self.fileobj = self.rp.open("rb", compress)
         elif mode == 'w' or mode == 'wb':
             if compress and check_path and not rp_base.isinccompressed():
