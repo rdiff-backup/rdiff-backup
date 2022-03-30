@@ -398,6 +398,8 @@ class BaseAction:
         Returns False to propagate potential exception, else True.
         """
         log.Log("Cleaning up", log.INFO)
+        if hasattr(self, 'repo'):
+            self.repo.exit()
         if self.security != "server":
             log.ErrorLog.close()
             log.Log.close_logfile()

@@ -56,10 +56,6 @@ class BackupAction(actions.BaseAction):
             help="locations of SOURCE_DIR and to which REPOSITORY to backup")
         return subparser
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.repo.exit()
-        return super().__exit__(exc_type, exc_val, exc_tb)
-
     def connect(self):
         conn_value = super().connect()
         if conn_value:

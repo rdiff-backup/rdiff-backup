@@ -107,22 +107,11 @@ class Repo(locations.Location):
                 self._shadow = _repo_shadow.RepoShadow
             else:
                 self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
-            already_locked = self.is_locked()
+
             if self.must_be_writable:
-                if already_locked:
-                    log.Log("Repository is locked by file {lf}, another "
-                            "action is probably on-going. Either wait, remove "
-                            "the lock or use the --force option".format(
-                                lf=self.lockfile), log.ERROR)
-                    return 1
                 self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
                     self.base_dir)
             else:
-                if already_locked:
-                    log.Log("Repository is locked by file {lf}, another "
-                            "action is probably on-going. Continuing in "
-                            "read-only mode".format(lf=self.lockfile),
-                            log.WARNING)
                 self.fs_abilities = self._shadow.get_fs_abilities_readonly(
                     self.base_dir)
             if not self.fs_abilities:
@@ -130,6 +119,18 @@ class Repo(locations.Location):
             else:
                 log.Log("--- Repository file system capabilities ---\n"
                         + str(self.fs_abilities), log.INFO)
+            if not self.lock():
+                if self.force:
+                    log.Log("Repository is locked by file {lf}, another "
+                            "action is probably on-going. Enforcing anyway "
+                            "at your own risk".format(lf=self.lockfile),
+                            log.WARNING)
+                else:
+                    log.Log("Repository is locked by file {lf}, another "
+                            "action is probably on-going. Either wait, remove "
+                            "the lock or use the --force option".format(
+                                lf=self.lockfile), log.ERROR)
+                    return 1
 
             if src_dir is None:
                 self.remote_transfer = None  # just in case
@@ -155,19 +156,13 @@ class Repo(locations.Location):
             if ret_code != 0:
                 return ret_code
 
-        if Globals.get_api_version() >= 201 and self.must_be_writable:
-            if self.lock():
-                self.has_been_locked = True
-            else:
-                return 1
-
         return 0  # all is good
 
     def exit(self):
         """
         Close the repository, mainly unlock it if it's been previously locked
         """
-        if self.has_been_locked:
+        if hasattr(self, '_shadow'):
             self.unlock()
 
     def get_mirror_time(self, must_exist=False, refresh=False):
@@ -224,19 +219,19 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.is_locked
         """
-        return self._shadow.is_locked(self.lockfile, self.force)
+        return self._shadow.is_locked(self.lockfile, self.must_be_writable)
 
     def lock(self):
         """
         Shadow function for RepoShadow.lock
         """
-        return self._shadow.lock(self.lockfile, self.force)
+        return self._shadow.lock(self.lockfile, self.must_be_writable)
 
     def unlock(self):
         """
         Shadow function for RepoShadow.unlock
         """
-        return self._shadow.unlock(self.lockfile)
+        return self._shadow.unlock(self.lockfile, self.must_be_writable)
 
     def needs_regress(self):
         """

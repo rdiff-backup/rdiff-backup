@@ -25,11 +25,12 @@ be instantiated.
 """
 
 import errno
+import fcntl
 import io
 import os
 import re
+import socket
 import tempfile
-import time
 import yaml
 from rdiff_backup import (
     C, Globals, hash, increment, iterfile, log,
@@ -64,9 +65,18 @@ class RepoShadow:
     # This should be set to the latest unsuccessful backup time
     _unsuccessful_backup_time = None
 
+    # keep the lock file open until the lock can be released
+    _lockfd = None
+
     _configs = {
         "chars_to_quote": {"type": bytes},
         "special_escapes": {"type": set},
+    }
+
+    LOCK_MODE = {
+        True: {"open": "r+", "truncate": "w",
+               "lock": fcntl.LOCK_EX | fcntl.LOCK_NB},
+        False: {"open": "r", "lock": fcntl.LOCK_SH | fcntl.LOCK_NB},
     }
 
     # @API(RepoShadow.setup_paths, 201)
@@ -473,7 +483,7 @@ class RepoShadow:
         older one.
         """
         inctimes = cls.get_increment_times()
-        older_times = [time for time in inctimes if time <= restore_to_time]
+        older_times = [otime for otime in inctimes if otime <= restore_to_time]
         if older_times:
             cls._restore_time = max(older_times)
         else:  # restore time older than oldest increment, just return that
@@ -558,7 +568,7 @@ class RepoShadow:
 
     # @API(RepoShadow.list_files_at_time, 201)
     @classmethod
-    def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, time):
+    def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, reftime):
         """
         List the files in archive at the given time
 
@@ -566,7 +576,7 @@ class RepoShadow:
         See list_files_changed_since for details.
         """
         assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.initialize_restore(data_dir, time)
+        cls.initialize_restore(data_dir, reftime)
         cls.initialize_rf_cache(mirror_rp, inc_rp)
         old_iter = cls._get_mirror_rorp_iter()
         for rorp in old_iter:
@@ -577,7 +587,7 @@ class RepoShadow:
 
     # @API(RepoShadow.remove_increments_older_than, 201)
     @classmethod
-    def remove_increments_older_than(cls, baserp, time):
+    def remove_increments_older_than(cls, baserp, reftime):
         """
         Remove increments older than the given time
         """
@@ -593,7 +603,7 @@ class RepoShadow:
             yield rp
 
         for rp in yield_files(baserp):
-            if ((rp.isincfile() and rp.getinctime() < time)
+            if ((rp.isincfile() and rp.getinctime() < reftime)
                     or (rp.isdir() and not rp.listdir())):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
@@ -1055,41 +1065,27 @@ information in it.
 
     # @API(RepoShadow.is_locked, 201)
     @classmethod
-    def is_locked(cls, lockfile, force=False, remove=False):
+    def is_locked(cls, lockfile, exclusive):
         """
         Validate if the repository is locked or not by the file
         'rdiff-backup-data/lock.yml'
 
-        Returns True if the file exists, else returns False
+        Returns True if the file exists and is locked, else returns False
         """
         # we need to make sure we have the last state of the lock
         lockfile.setdata()
-        if lockfile.lstat():
+        if not lockfile.lstat():
+            return False  # if the file doesn't exist, it can't be locked
+        with open(lockfile, cls.LOCK_MODE[exclusive]["open"]) as lockfd:
             try:
-                lock_id = yaml.safe_load(lockfile.get_string())
-            except yaml.scanner.ScannerError:
-                lock_id = {}
-            if 'pid' in lock_id:
-                cmd = psutil.get_pid_name(lock_id['pid'])
-                if cmd and cmd == lock_id.get('cmd'):
-                    if force:
-                        log.Log("Repository is locked but forcing action "
-                                "nevertheless", log.WARNING)
-                        if remove:
-                            lockfile.delete()
-                        return False
-                    else:
-                        return True
-            # the lock is stale in some way
-            log.Log("Lockfile {lf} is stale and being ignored/removed".format(
-                lf=lockfile), log.WARNING)
-            lockfile.delete()
-        else:
-            return False
+                fcntl.flock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+                return False
+            except BlockingIOError:
+                return True
 
     # @API(RepoShadow.lock, 201)
     @classmethod
-    def lock(cls, lockfile, force=False):
+    def lock(cls, lockfile, exclusive, force=False):
         """
         Write a specific file 'rdiff-backup-data/lock.yml' to grab the lock,
         and verify that no other process took the lock by comparing its
@@ -1097,58 +1093,55 @@ information in it.
 
         Return True if the lock could be taken, False else.
         """
+        if cls._lockfd:  # we already opened the lockfile
+            return False
         pid = os.getpid()
-        cmd = psutil.get_pid_name(pid)
         identifier = {
             'timestamp': Globals.current_time_string,
             'pid': pid,
-            'cmd': cmd,
+            'cmd': psutil.get_pid_name(pid),
+            'hostname': socket.gethostname(),
         }
-        if cls.is_locked(lockfile, force, remove=True):
-            log.Log("Repository is locked by file {lf}, another action is "
-                    "probably on-going. Either wait, remove the lock or "
-                    "use the --force option".format(lf=lockfile),
-                    log.ERROR)
-            return False
+        id_yaml = yaml.safe_dump(identifier)
+        lockfile.setdata()
+        if not lockfile.lstat():
+            if exclusive:
+                open_mode = cls.LOCK_MODE[exclusive]["truncate"]
+            else:
+                # we can't take the lock if the file doesn't exist
+                return False
         else:
-            try:
-                lockfile.write_string(yaml.safe_dump(identifier))
-                time.sleep(0.1)  # in case another concurring process runs
-                try:
-                    read_back = yaml.safe_load(lockfile.get_string())
-                except yaml.scanner.ScannerError:
-                    read_back = {}
-            except AssertionError:
-                return False
-            except OSError as exc:
-                log.Log("Couldn't create lock file '{lf}' due to "
-                        "exception '{ex}'".format(lf=lockfile, ex=exc),
-                        log.ERROR)
-                return False
-        # we now compare strings to make sure no other process "stole" the lock
-        if read_back == identifier:
+            open_mode = cls.LOCK_MODE[exclusive]["open"]
+        try:
+            lockfd = open(lockfile, open_mode)
+            fcntl.flock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+            if exclusive:  # let's keep a trace of who's writing
+                lockfd.seek(0)
+                lockfd.truncate()
+                lockfd.write(id_yaml)
+                lockfd.flush()
+            cls._lockfd = lockfd
             return True
-        else:
-            log.Log("Lock was stolen by another process {op}".format(
-                op=read_back), log.ERROR)
+        except BlockingIOError:
+            if lockfd:
+                lockfd.close()
             return False
 
     # @API(RepoShadow.unlock, 201)
     @classmethod
-    def unlock(cls, lockfile):
+    def unlock(cls, lockfile, exclusive):
         """
         Remove any lock existing.
 
         We don't check for any content because we have the lock and should be
         the only process running on this repository.
         """
-        lockfile.setdata()
-        if lockfile.lstat():
-            lockfile.delete()
-        else:
-            log.Log("Something is strange, the lock file '{lf}' was created "
-                    "but it doesn't exist at removal time".format(
-                        lf=lockfile), log.WARNING)
+        if cls._lockfd:
+            if exclusive:  # empty the file without removing it
+                cls._lockfd.seek(0)
+                cls._lockfd.truncate()
+            cls._lockfd.close()
+            cls._lockfd = None
 
 
 class _CacheCollatedPostProcess:
