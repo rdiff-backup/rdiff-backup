@@ -108,17 +108,6 @@ class Repo(locations.Location):
             else:
                 self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
 
-            if self.must_be_writable:
-                self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
-                    self.base_dir)
-            else:
-                self.fs_abilities = self._shadow.get_fs_abilities_readonly(
-                    self.base_dir)
-            if not self.fs_abilities:
-                return 1  # something was wrong
-            else:
-                log.Log("--- Repository file system capabilities ---\n"
-                        + str(self.fs_abilities), log.INFO)
             if not self.lock():
                 if self.force:
                     log.Log("Repository is locked by file {lf}, another "
@@ -131,6 +120,18 @@ class Repo(locations.Location):
                             "the lock or use the --force option".format(
                                 lf=self.lockfile), log.ERROR)
                     return 1
+
+            if self.must_be_writable:
+                self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
+                    self.base_dir)
+            else:
+                self.fs_abilities = self._shadow.get_fs_abilities_readonly(
+                    self.base_dir)
+            if not self.fs_abilities:
+                return 1  # something was wrong
+            else:
+                log.Log("--- Repository file system capabilities ---\n"
+                        + str(self.fs_abilities), log.INFO)
 
             if src_dir is None:
                 self.remote_transfer = None  # just in case
@@ -613,6 +614,23 @@ information in it.
             return False
 
         if self._is_failed_initial_backup():
+            # poor man's locking mechanism to protect starting backup
+            # independently from the API version
+            self.lockfile.setdata()
+            if self.lockfile.lstat():
+                if self.force:
+                    log.Log("An initial backup in a strange state with "
+                            "lockfile {lf}. Enforcing continuation, "
+                            "hopefully you know what you're doing".format(
+                                lf=self.lockfile), log.WARNING)
+                else:
+                    log.Log("An initial backup in a strange state with "
+                            "lockfile {lf}. Either it's just an initial backup "
+                            "running, wait a bit and try again later, or "
+                            "something is really wrong. --force will remove "
+                            "the complete repo, at your own risk".format(
+                                lf=self.lockfile), log.ERROR)
+                    return False
             log.Log("Found interrupted initial backup in data directory {dd}. "
                     "Removing...".format(dd=self.data_dir), log.NOTE)
             self._clean_failed_initial_backup()

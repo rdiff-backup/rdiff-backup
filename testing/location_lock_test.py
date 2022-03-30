@@ -54,6 +54,7 @@ class LocationLockTest(unittest.TestCase):
         verify that shared locking (read-only) is possible
         """
         # make sure the lockfile doesn't exist
+        self.lockfile.setdata()
         if self.lockfile.lstat():
             self.lockfile.delete()
         self.assertFalse(

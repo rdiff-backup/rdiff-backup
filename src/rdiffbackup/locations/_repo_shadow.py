@@ -25,7 +25,6 @@ be instantiated.
 """
 
 import errno
-import fcntl
 import io
 import os
 import re
@@ -42,7 +41,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.locations.map import owners as map_owners
-from rdiffbackup.utils import psutil
+from rdiffbackup.utils import locking, psutil
 
 # ### COPIED FROM BACKUP ####
 
@@ -75,8 +74,8 @@ class RepoShadow:
 
     LOCK_MODE = {
         True: {"open": "r+", "truncate": "w",
-               "lock": fcntl.LOCK_EX | fcntl.LOCK_NB},
-        False: {"open": "r", "lock": fcntl.LOCK_SH | fcntl.LOCK_NB},
+               "lock": locking.LOCK_EX | locking.LOCK_NB},
+        False: {"open": "r", "lock": locking.LOCK_SH | locking.LOCK_NB},
     }
 
     # @API(RepoShadow.setup_paths, 201)
@@ -1078,7 +1077,7 @@ information in it.
             return False  # if the file doesn't exist, it can't be locked
         with open(lockfile, cls.LOCK_MODE[exclusive]["open"]) as lockfd:
             try:
-                fcntl.flock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+                locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
                 return False
             except BlockingIOError:
                 return True
@@ -1114,7 +1113,7 @@ information in it.
             open_mode = cls.LOCK_MODE[exclusive]["open"]
         try:
             lockfd = open(lockfile, open_mode)
-            fcntl.flock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+            locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
             if exclusive:  # let's keep a trace of who's writing
                 lockfd.seek(0)
                 lockfd.truncate()
