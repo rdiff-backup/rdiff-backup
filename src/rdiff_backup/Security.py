@@ -184,8 +184,8 @@ def _set_security_level(security_class, security_level, restrict_path,
         elif islocal(cp1):
             sec_level = "read-only"
             rp1 = rpath.RPath(Globals.local_connection, getpath(cp1))
-            (base_dir, restore_index, restore_type) = rp1.get_repository_dirs()
-            if restore_type is None:
+            (base_dir, ref_index, ref_type) = rp1.get_repository_dirs()
+            if ref_type is None:
                 # the error will be catched later more cleanly, so that the
                 # connections can be properly closed
                 log.Log("Invalid restore directory '{rd}'".format(
@@ -329,7 +329,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.RepoShadow.set_config",
             "_repo_shadow.RepoShadow.touch_current_mirror",
             "_repo_shadow.RepoShadow.unlock",
-            "_repo_shadow.RepoShadow.update_quoting",
         ])
     if sec_level == "read-write":
         requests.update([

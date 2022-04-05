@@ -711,7 +711,8 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         return list(map(self._glob_to_re, prefixes))
 
     def _glob_to_re(self, pat):
-        """Returned regular expression equivalent to shell glob pat
+        """
+        Returned regular expression equivalent to shell glob pat
 
         Currently only the ?, *, [], and ** expressions are supported.
         Ranges like [a-z] are also currently unsupported.  These special
@@ -719,7 +720,6 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
         This function taken with minor modifications from efnmatch.py
         by Donovan Baarda.
-
         """
         # trying to analyze bytes would be quite complicated hence back to str
         str_pat = os.fsdecode(pat)
@@ -762,12 +762,12 @@ class FilterIter:
     """Filter rorp_iter using a Select object, removing excluded rorps"""
 
     def __init__(self, select, rorp_iter):
-        """Constructor
+        """
+        Constructor for FilterIter
 
         Input is the Select object to use and the iter of rorps to be
-        filtered.  The rorps will be converted to rps using the Select
+        filtered. The rorps will be converted to rps using the Select
         base.
-
         """
         self.rorp_iter = rorp_iter
         self.base_rp = select.rpath

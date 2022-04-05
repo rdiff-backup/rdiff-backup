@@ -388,3 +388,9 @@ You can either:
 . or you backup _from the beginning_ using the option `--override-chars-to-quote 'A-Z-"*/:<>?\\|;'`, which makes sure that capital letters (and other "strange" characters) are quoted so that there is no name collision on the file system.
 +
 CAUTION: remember that you can't change the quoting once a backup repository has been setup, so that you might need to create a new one.
+
+== How to work around the limitation to mix file selection and sub-path restore?
+
+Since rdiff-backup 2.1+, a command like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo/subdir myrestore/subdir` isn't possible anymore, because it could lead to https://github.com/rdiff-backup/rdiff-backup/issues/463[data loss].
+Such calls are anyway equivalent to something like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo myrestore`.
+This means that the new limitation doesn't imply a loss in feature, it only enforces a new approach without risk of losing data.
