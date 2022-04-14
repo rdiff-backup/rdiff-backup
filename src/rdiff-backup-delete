@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (C) 2020 Patrik Dufresne<info@patrikdufresne.com>
 #
@@ -36,29 +36,21 @@ import sys
 from distutils import spawn
 
 
-PY2 = sys.version_info < (3,)
-PY26 = sys.version_info > (2, 6) and sys.version_info < (2, 7)
-PY3 = sys.version_info > (3,)
-
 # List of suffixes for increments
 SUFFIXES = [b".missing", b".snapshot.gz", b".snapshot",
             b".diff.gz", b".data.gz", b".data", b".dir", b".diff"]
 
 
 def _bytes(value):
-    if isinstance(value, bytes if PY3 else str):  # noqa: F821
+    if isinstance(value, bytes):
         return value
-    if PY3:
-        return value.encode('utf8', errors='surrogateescape')
     else:
-        return value.encode('utf8')
+        return value.encode('utf8', errors='surrogateescape')
 
 
 def _str(value):
-    if isinstance(value, str if PY3 else unicode):  # noqa: F821
+    if isinstance(value, str):
         return value
-    if PY26:
-        return value.decode('utf-8')
     else:
         return value.decode('utf-8', errors='replace')
 
@@ -360,11 +352,10 @@ def _acl_quote(s):
     _meta_quote_map = {}
     for i in range(1, 256):
         c = struct.pack('B', i)
-        k = i if PY3 else c
         if c in _safe:
-            _meta_quote_map[k] = c
+            _meta_quote_map[i] = c
         else:
-            _meta_quote_map[k] = '\\{0:03o}'.format(i).encode('ascii')
+            _meta_quote_map[i] = '\\{0:03o}'.format(i).encode('ascii')
     return b''.join(map(_meta_quote_map.__getitem__, s))
 
 
@@ -406,11 +397,11 @@ class RepoPath():
     def __init__(self, root, relpath):
         # assert is kind of OK as everything is also checked in _parse_options
         assert root
-        assert isinstance(root, bytes if PY3 else str)
+        assert isinstance(root, bytes)
         assert os.path.isdir(root)
         assert os.path.isdir(os.path.join(root, b'rdiff-backup-data'))
         assert relpath
-        assert isinstance(relpath, bytes if PY3 else str)
+        assert isinstance(relpath, bytes)
         assert relpath != b'rdiff-backup-data'
 
         self.repo = Repo(root)
