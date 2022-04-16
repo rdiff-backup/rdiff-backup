@@ -888,11 +888,12 @@ class BackupSetGlobals(SetGlobals):
                 actual_ctq = suggested_ctq
             else:
                 actual_ctq = Globals.chars_to_quote
-                log.Log("File system at '{fs}' suggested quoting '{sq}' but "
-                        "override quoting '{oq}' will be used. "
-                        "Assuming you know what you are doing".format(
-                            fs=ctq_rp, sq=suggested_ctq, oq=actual_ctq),
-                        log.NOTE)
+                if actual_ctq != suggested_ctq:
+                    log.Log("File system at '{fs}' suggested quoting '{sq}' "
+                            "but override quoting '{oq}' will be used. "
+                            "Assuming you know what you are doing".format(
+                                fs=ctq_rp, sq=suggested_ctq, oq=actual_ctq),
+                            log.NOTE)
             ctq_rp.write_bytes(actual_ctq)
             return actual_ctq
 
@@ -911,8 +912,8 @@ class BackupSetGlobals(SetGlobals):
         else:
             actual_ctq = Globals.chars_to_quote  # Globals override
             if actual_ctq != suggested_ctq:
-                log.Log("File system at '{fs}' suggested quoting '{sq}' but "
-                        "override quoting '{oq}' will be used. "
+                log.Log("File system at '{fs}' suggested quoting '{sq}' "
+                        "but override quoting '{oq}' will be used. "
                         "Assuming you know what you are doing".format(
                             fs=ctq_rp, sq=suggested_ctq, oq=actual_ctq),
                         log.NOTE)
