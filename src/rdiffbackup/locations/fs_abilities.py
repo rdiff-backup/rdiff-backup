@@ -957,11 +957,12 @@ class Dir2RepoSetGlobals(SetGlobals):
                 actual_ctq = suggested_ctq
             else:
                 actual_ctq = Globals.chars_to_quote
-                log.Log("File system at '{fs}' suggested quoting '{sq}' but "
-                        "override quoting '{oq}' will be used. "
-                        "Assuming you know what you are doing".format(
-                            fs=repo, sq=suggested_ctq, oq=actual_ctq),
-                        log.NOTE)
+                if actual_ctq != suggested_ctq:
+                    log.Log("File system at '{fs}' suggested quoting '{sq}' "
+                            "but override quoting '{oq}' will be used. "
+                            "Assuming you know what you are doing".format(
+                                fs=repo, sq=suggested_ctq, oq=actual_ctq),
+                            log.NOTE)
             repo.set_chars_to_quote(actual_ctq)
             return actual_ctq
 
@@ -978,8 +979,8 @@ class Dir2RepoSetGlobals(SetGlobals):
         else:
             actual_ctq = Globals.chars_to_quote  # Globals override
             if actual_ctq != suggested_ctq:
-                log.Log("File system at '{fs}' suggested quoting '{sq}' but "
-                        "override quoting '{oq}' will be used. "
+                log.Log("File system at '{fs}' suggested quoting '{sq}' "
+                        "but override quoting '{oq}' will be used. "
                         "Assuming you know what you are doing".format(
                             fs=repo, sq=suggested_ctq, oq=actual_ctq),
                         log.NOTE)
