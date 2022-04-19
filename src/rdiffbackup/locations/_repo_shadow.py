@@ -41,7 +41,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.locations.map import owners as map_owners
-from rdiffbackup.utils import locking, psutil
+from rdiffbackup.utils import locking, simpleps
 
 # ### COPIED FROM BACKUP ####
 
@@ -1098,7 +1098,7 @@ information in it.
         identifier = {
             'timestamp': Globals.current_time_string,
             'pid': pid,
-            'cmd': psutil.get_pid_name(pid),
+            'cmd': simpleps.get_pid_name(pid),
             'hostname': socket.gethostname(),
         }
         id_yaml = yaml.safe_dump(identifier)

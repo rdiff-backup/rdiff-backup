@@ -19,6 +19,7 @@ PyYAML  # for rdiff-backup >= 2.1
 pylibacl
 pyxattr
 # or xattr under SuSE Linux & Co
+psutil
 
 # for Windows
 py2exe
