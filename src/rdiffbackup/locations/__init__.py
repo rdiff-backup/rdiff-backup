@@ -26,6 +26,9 @@ All those classes should be considered abstract and not instantiated directly.
 import os
 from rdiff_backup import Globals, log
 
+# name of the lockfile for repositories
+LOCK = b"lock.yml"
+
 
 class Location():
     """
@@ -62,6 +65,12 @@ class Location():
                                              preserve_num_ids)
 
         return 0  # all is good
+
+    def exit(self):
+        """
+        Put the location in a consistent state before leaving it
+        """
+        pass
 
     def _is_existing(self):
         """
@@ -125,12 +134,22 @@ class ReadLocation(Location):
     """
 
     def check(self):
+        """
+        Check anything which can be checked about the location
+
+        Returns 0 if everything is OK, else 1 as error code
+        """
         if self._is_existing():
             return 0
         else:
             return 1
 
     def setup(self):
+        """
+        Setup the location, preparing it for usage
+
+        Returns 0 if everything is OK, else 1 as error code
+        """
         return 0
 
 
@@ -144,12 +163,22 @@ class WriteLocation(Location):
         self.create_full_path = create_full_path
 
     def check(self):
+        """
+        Check anything which can be checked about the location
+
+        Returns 0 if everything is OK, else 1 as error code
+        """
         if self._is_writable():
             return 0
         else:
             return 1
 
     def setup(self):
+        """
+        Setup the location, preparing it for usage
+
+        Returns 0 if everything is OK, else 1 as error code
+        """
         # make sure the target directory is present
         if self._create():
             return 0

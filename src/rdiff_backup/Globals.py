@@ -55,10 +55,6 @@ api_version = {
     "actual": 0
 }
 
-# If this is set, use this value in seconds as the current time
-# instead of reading it from the clock.
-current_time = None
-
 # This determines how many bytes to read at a time when copying
 blocksize = 131072
 

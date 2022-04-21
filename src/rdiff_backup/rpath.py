@@ -1167,15 +1167,17 @@ class RPath(RORPath):
     def write_string(self, s, compress=None):
         """Write string s into rpath"""
         assert not self.lstat(), "File '{rp!r}' already exists".format(rp=self)
-        with self.open("w", compress=compress) as outfp:
-            outfp.write(s)
+        outfp = self.open("w", compress=compress)
+        outfp.write(s)
+        outfp.close()
         self.setdata()
 
     def write_bytes(self, s, compress=None):
         """Write data s into rpath"""
         assert not self.lstat(), "File '{rp!r}' already exists".format(rp=self)
-        with self.open("wb", compress=compress) as outfp:
-            outfp.write(s)
+        outfp = self.open("wb", compress=compress)
+        outfp.write(s)
+        outfp.close()
         self.setdata()
 
     def isincfile(self):

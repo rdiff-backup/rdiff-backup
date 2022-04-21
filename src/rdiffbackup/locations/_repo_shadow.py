@@ -28,7 +28,9 @@ import errno
 import io
 import os
 import re
+import socket
 import tempfile
+import yaml
 from rdiff_backup import (
     C, Globals, hash, increment, iterfile, log,
     Rdiff, robust, rorpiter, rpath, selection, statistics, Time,
@@ -39,6 +41,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.locations.map import owners as map_owners
+from rdiffbackup.utils import locking, simpleps
 
 # ### COPIED FROM BACKUP ####
 
@@ -61,9 +64,18 @@ class RepoShadow:
     # This should be set to the latest unsuccessful backup time
     _unsuccessful_backup_time = None
 
+    # keep the lock file open until the lock can be released
+    _lockfd = None
+
     _configs = {
         "chars_to_quote": {"type": bytes},
         "special_escapes": {"type": set},
+    }
+
+    LOCK_MODE = {
+        True: {"open": "r+", "truncate": "w",
+               "lock": locking.LOCK_EX | locking.LOCK_NB},
+        False: {"open": "r", "lock": locking.LOCK_SH | locking.LOCK_NB},
     }
 
     # @API(RepoShadow.setup_paths, 201)
@@ -470,7 +482,7 @@ class RepoShadow:
         older one.
         """
         inctimes = cls.get_increment_times()
-        older_times = [time for time in inctimes if time <= restore_to_time]
+        older_times = [otime for otime in inctimes if otime <= restore_to_time]
         if older_times:
             cls._restore_time = max(older_times)
         else:  # restore time older than oldest increment, just return that
@@ -555,7 +567,7 @@ class RepoShadow:
 
     # @API(RepoShadow.list_files_at_time, 201)
     @classmethod
-    def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, time):
+    def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, reftime):
         """
         List the files in archive at the given time
 
@@ -563,7 +575,7 @@ class RepoShadow:
         See list_files_changed_since for details.
         """
         assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.initialize_restore(data_dir, time)
+        cls.initialize_restore(data_dir, reftime)
         cls.initialize_rf_cache(mirror_rp, inc_rp)
         old_iter = cls._get_mirror_rorp_iter()
         for rorp in old_iter:
@@ -574,7 +586,7 @@ class RepoShadow:
 
     # @API(RepoShadow.remove_increments_older_than, 201)
     @classmethod
-    def remove_increments_older_than(cls, baserp, time):
+    def remove_increments_older_than(cls, baserp, reftime):
         """
         Remove increments older than the given time
         """
@@ -590,7 +602,7 @@ class RepoShadow:
             yield rp
 
         for rp in yield_files(baserp):
-            if ((rp.isincfile() and rp.getinctime() < time)
+            if ((rp.isincfile() and rp.getinctime() < reftime)
                     or (rp.isdir() and not rp.listdir())):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
@@ -1047,6 +1059,88 @@ information in it.
     def init_owners_mapping(cls, users_map, groups_map, preserve_num_ids):
         map_owners.init_users_mapping(users_map, preserve_num_ids)
         map_owners.init_groups_mapping(groups_map, preserve_num_ids)
+
+# ### LOCKING ####
+
+    # @API(RepoShadow.is_locked, 201)
+    @classmethod
+    def is_locked(cls, lockfile, exclusive):
+        """
+        Validate if the repository is locked or not by the file
+        'rdiff-backup-data/lock.yml'
+
+        Returns True if the file exists and is locked, else returns False
+        """
+        # we need to make sure we have the last state of the lock
+        lockfile.setdata()
+        if not lockfile.lstat():
+            return False  # if the file doesn't exist, it can't be locked
+        with open(lockfile, cls.LOCK_MODE[exclusive]["open"]) as lockfd:
+            try:
+                locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+                return False
+            except BlockingIOError:
+                return True
+
+    # @API(RepoShadow.lock, 201)
+    @classmethod
+    def lock(cls, lockfile, exclusive, force=False):
+        """
+        Write a specific file 'rdiff-backup-data/lock.yml' to grab the lock,
+        and verify that no other process took the lock by comparing its
+        content.
+
+        Return True if the lock could be taken, False else.
+        """
+        if cls._lockfd:  # we already opened the lockfile
+            return False
+        pid = os.getpid()
+        identifier = {
+            'timestamp': Globals.current_time_string,
+            'pid': pid,
+            'cmd': simpleps.get_pid_name(pid),
+            'hostname': socket.gethostname(),
+        }
+        id_yaml = yaml.safe_dump(identifier)
+        lockfile.setdata()
+        if not lockfile.lstat():
+            if exclusive:
+                open_mode = cls.LOCK_MODE[exclusive]["truncate"]
+            else:
+                # we can't take the lock if the file doesn't exist
+                return False
+        else:
+            open_mode = cls.LOCK_MODE[exclusive]["open"]
+        try:
+            lockfd = open(lockfile, open_mode)
+            locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+            if exclusive:  # let's keep a trace of who's writing
+                lockfd.seek(0)
+                lockfd.truncate()
+                lockfd.write(id_yaml)
+                lockfd.flush()
+            cls._lockfd = lockfd
+            return True
+        except BlockingIOError:
+            if lockfd:
+                lockfd.close()
+            return False
+
+    # @API(RepoShadow.unlock, 201)
+    @classmethod
+    def unlock(cls, lockfile, exclusive):
+        """
+        Remove any lock existing.
+
+        We don't check for any content because we have the lock and should be
+        the only process running on this repository.
+        """
+        if cls._lockfd:
+            if exclusive:  # empty the file without removing it
+                cls._lockfd.seek(0)
+                cls._lockfd.truncate()
+            cls._lockfd.close()
+            cls._lockfd = None
 
 
 class _CacheCollatedPostProcess:
@@ -1795,9 +1889,9 @@ class _RestoreFile:
         """
         incpairs = []
         for inc in self.inc_list:
-            time = inc.getinctime()
-            if time >= self._restore_time:
-                incpairs.append((time, inc))
+            inc_time = inc.getinctime()
+            if inc_time >= self._restore_time:
+                incpairs.append((inc_time, inc))
         incpairs.sort()
         return [pair[1] for pair in incpairs]
 
@@ -2160,12 +2254,12 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
             rf.regress_inc.delete()
 
     def _restore_orig_regfile(self, rf):
-        """Restore original regular file
+        """
+        Restore original regular file
 
         This is the trickiest case for avoiding information loss,
         because we don't want to delete the increment before the
         mirror is fully written.
-
         """
         assert rf.metadata_rorp.isreg(), (
             "Metadata path '{mp}' can only be regular file.".format(

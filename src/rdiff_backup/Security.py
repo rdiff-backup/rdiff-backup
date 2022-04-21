@@ -20,7 +20,7 @@
 
 import os
 import tempfile
-from . import Globals, log, rpath
+from rdiff_backup import Globals, log, rpath
 
 
 class Violation(Exception):
@@ -236,6 +236,7 @@ def _set_allowed_requests(sec_class, sec_level):
         "FilenameMapping.set_init_quote_vals_local",
         "Time.setcurtime_local",
         # API >= 201
+        "_repo_shadow.RepoShadow.is_locked",
         "_repo_shadow.RepoShadow.setup_paths",
     }
     if (sec_level == "read-only" or sec_level == "update-only"
@@ -321,11 +322,13 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.RepoShadow.close_statistics",
             "_repo_shadow.RepoShadow.get_fs_abilities_readwrite",
             "_repo_shadow.RepoShadow.get_sigs",
+            "_repo_shadow.RepoShadow.lock",
             "_repo_shadow.RepoShadow.needs_regress",
             "_repo_shadow.RepoShadow.patch_and_increment",
             "_repo_shadow.RepoShadow.remove_current_mirror",
             "_repo_shadow.RepoShadow.set_config",
             "_repo_shadow.RepoShadow.touch_current_mirror",
+            "_repo_shadow.RepoShadow.unlock",
             "_repo_shadow.RepoShadow.update_quoting",
         ])
     if sec_level == "read-write":

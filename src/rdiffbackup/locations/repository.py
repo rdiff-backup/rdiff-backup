@@ -70,6 +70,8 @@ class Repo(locations.Location):
         self.can_be_sub_path = can_be_sub_path
         self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
         self.incs_dir = self.data_dir.append_path(b"increments")
+        self.lockfile = self.data_dir.append(locations.LOCK)
+        self.has_been_locked = False
 
     def check(self):
         if self.can_be_sub_path and self.restore_type is None:
@@ -105,6 +107,20 @@ class Repo(locations.Location):
                 self._shadow = _repo_shadow.RepoShadow
             else:
                 self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
+
+            if not self.lock():
+                if self.force:
+                    log.Log("Repository is locked by file {lf}, another "
+                            "action is probably on-going. Enforcing anyway "
+                            "at your own risk".format(lf=self.lockfile),
+                            log.WARNING)
+                else:
+                    log.Log("Repository is locked by file {lf}, another "
+                            "action is probably on-going. Either wait, remove "
+                            "the lock or use the --force option".format(
+                                lf=self.lockfile), log.ERROR)
+                    return 1
+
             if self.must_be_writable:
                 self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
                     self.base_dir)
@@ -142,6 +158,13 @@ class Repo(locations.Location):
                 return ret_code
 
         return 0  # all is good
+
+    def exit(self):
+        """
+        Close the repository, mainly unlock it if it's been previously locked
+        """
+        if hasattr(self, '_shadow'):
+            self.unlock()
 
     def get_mirror_time(self, must_exist=False, refresh=False):
         """
@@ -192,6 +215,24 @@ class Repo(locations.Location):
         """
         return self._shadow.setup_paths(
             self.base_dir, self.data_dir, self.incs_dir)
+
+    def is_locked(self):
+        """
+        Shadow function for RepoShadow.is_locked
+        """
+        return self._shadow.is_locked(self.lockfile, self.must_be_writable)
+
+    def lock(self):
+        """
+        Shadow function for RepoShadow.lock
+        """
+        return self._shadow.lock(self.lockfile, self.must_be_writable)
+
+    def unlock(self):
+        """
+        Shadow function for RepoShadow.unlock
+        """
+        return self._shadow.unlock(self.lockfile, self.must_be_writable)
 
     def needs_regress(self):
         """
@@ -348,25 +389,25 @@ information in it.
         """
         return self._shadow.get_diffs(target_iter)
 
-    def remove_increments_older_than(self, time):
+    def remove_increments_older_than(self, reftime):
         """
         Shadow function for RepoShadow.remove_increments_older_than
         """
-        return self._shadow.remove_increments_older_than(self.base_dir, time)
+        return self._shadow.remove_increments_older_than(self.base_dir, reftime)
 
-    def list_files_changed_since(self, time):
+    def list_files_changed_since(self, reftime):
         """
         Shadow function for RepoShadow.list_files_changed_since
         """
         return self._shadow.list_files_changed_since(
-            self.base_dir, self.incs_dir, self.data_dir, time)
+            self.base_dir, self.incs_dir, self.data_dir, reftime)
 
-    def list_files_at_time(self, time):
+    def list_files_at_time(self, reftime):
         """
         Shadow function for RepoShadow.list_files_at_time
         """
         return self._shadow.list_files_at_time(
-            self.base_dir, self.incs_dir, self.data_dir, time)
+            self.base_dir, self.incs_dir, self.data_dir, reftime)
 
     def get_increments(self):
         """
@@ -573,6 +614,23 @@ information in it.
             return False
 
         if self._is_failed_initial_backup():
+            # poor man's locking mechanism to protect starting backup
+            # independently from the API version
+            self.lockfile.setdata()
+            if self.lockfile.lstat():
+                if self.force:
+                    log.Log("An initial backup in a strange state with "
+                            "lockfile {lf}. Enforcing continuation, "
+                            "hopefully you know what you're doing".format(
+                                lf=self.lockfile), log.WARNING)
+                else:
+                    log.Log("An initial backup in a strange state with "
+                            "lockfile {lf}. Either it's just an initial backup "
+                            "running, wait a bit and try again later, or "
+                            "something is really wrong. --force will remove "
+                            "the complete repo, at your own risk".format(
+                                lf=self.lockfile), log.ERROR)
+                    return False
             log.Log("Found interrupted initial backup in data directory {dd}. "
                     "Removing...".format(dd=self.data_dir), log.NOTE)
             self._clean_failed_initial_backup()
