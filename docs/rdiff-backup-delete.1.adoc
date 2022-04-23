@@ -1,0 +1,47 @@
+= RDIFF-BACKUP-DELETE(1)
+:doctype: manpage
+:docdate: {revdate}
+:man source: rdiff-backup-delete
+:man version: {revnumber}
+:man manual: Rdiff-Backup-Delete Manual {revnumber}
+
+== NAME
+
+rdiff-backup-delete - deletes a file and its whole history from a repository
+
+== SYNOPSIS
+
+*rdiff-backup-delete* [*--dry-run*] [*--help*] _repository-sub-path_
+
+== DESCRIPTION
+
+*rdiff-backup-delete* removes a file or directory from a repository created
+by '[.code]``rdiff-backup``', together with its complete history.
+
+The required argument is the pathname of the sub-directory or file within an rdiff-backup repository.
+
+For example, after a backup with '[.code]``rdiff-backup backup source repo``', potentially called multiple times, you can remove a file and its whole history with '[.code]``rdiff-backup-delete repo/somefile``'.
+
+The utility is best used to remove too big or secret files erroneously backed-up.
+Beware that no trace of the file will remain in the repository after its deletion.
+
+== OPTIONS
+
+--dry-run::
+Only show what would happen but don't actually delete anything.
+
+-h, --help::
+Output a short usage description and exit.
+
+== BUGS
+
+None known.
+
+== AUTHOR
+
+Patrik Dufresne link:mailto:info@patrikdufresne.com[info@patrikdufresne.com]
+
+== SEE ALSO
+
+*rdiff-backup*(1), *python*(1).
+The rdiff-backup web page is at https://rdiff-backup.net/[https://rdiff-backup.net/].
