@@ -260,6 +260,7 @@ setup(
     data_files=[
         ("share/man/man1", ["build/rdiff-backup.1",
                             "build/rdiff-backup-old.1",
+                            "build/rdiff-backup-delete.1",
                             "build/rdiff-backup-statistics.1"]),
         (
             "share/doc/rdiff-backup", [
@@ -293,6 +294,10 @@ setup(
              "-a revnumber=\"{ver}\" -o {outfile} {infile}",
              ("docs", "rdiff-backup-statistics.1.adoc"),
              ("build", "rdiff-backup-statistics.1")),
+            ("asciidoctor -b manpage -a revdate=\"{date}\" "
+             "-a revnumber=\"{ver}\" -o {outfile} {infile}",
+             ("docs", "rdiff-backup-delete.1.adoc"),
+             ("build", "rdiff-backup-delete.1")),
         ]},
     },
     cmdclass={
