@@ -375,6 +375,9 @@ The list might grow but issues are currently known with especially slow combinat
 * "complex" file systems on a NAS (e.g. ZFS on SMB or NFS)
 * SSHFS
 
+NOTE: using a Samba/SMB/CIFS share in version `vers=1.0` also causes issues, because features, like ACL support, are not properly detected.
+If you get a lot of exceptions '[Errno 13] Permission denied' with info verbosity, you're probably impacted and might want to change the protocol version.
+
 == How to backup safely from case aware to case aware file system?
 
 File systems like VFAT or NTFS are what I call case aware file systems:

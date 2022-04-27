@@ -334,13 +334,10 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     try:
         acl.applyto(rp.path)
     except OSError as exc:
-        if exc.errno == errno.EOPNOTSUPP:
-            log.Log(
-                "Unable to set ACL on path {pa} due to exception '{ex}'".format(
-                    pa=rp, ex=exc), log.INFO)
-            return
-        else:
-            raise
+        log.Log(
+            "Unable to set ACL on path {pa} due to exception '{ex}'".format(
+                pa=rp, ex=exc), log.INFO)
+        return
 
     if rp.isdir():
         if default_entry_list:

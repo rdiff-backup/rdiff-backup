@@ -1239,13 +1239,11 @@ class RPath(RORPath):
         try:
             self.conn.os.mknod(self.path, mode,
                                self.conn.os.makedev(major, minor))
-        except (OSError, AttributeError) as e:
-            if isinstance(e, AttributeError) or e.errno == errno.EPERM:
-                # AttributeError will be raised by Python 2.2, which
-                # doesn't have os.mknod
-                log.Log("unable to mknod device file {df} - "
-                        "using touch instead".format(df=self), log.INFO)
-                self.touch()
+        except OSError as exc:
+            log.Log("Unable to mknod device file '{df}' due to "
+                    "exception '{ex}', using touch instead".format(
+                        df=self, ex=exc), log.INFO)
+            self.touch()
         self.setdata()
 
     def fsync(self, fp=None):
