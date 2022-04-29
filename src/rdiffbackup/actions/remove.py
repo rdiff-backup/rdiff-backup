@@ -67,7 +67,7 @@ class RemoveAction(actions.BaseAction):
 
         # the source directory must directly point at the base directory of
         # the repository
-        if self.repo.restore_index:
+        if self.repo.ref_index:
             log.Log("Increments for sub-directory '{sd}' cannot be removed "
                     "separately. "
                     "Instead run on entire directory '{ed}'.".format(

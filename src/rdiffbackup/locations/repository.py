@@ -53,14 +53,14 @@ class Repo(locations.Location):
         # base directory of the repository
         if can_be_sub_path:
             self.orig_path = base_dir
-            (base_dir, restore_index, restore_type) = \
-                base_dir.get_repository_dirs()
-            self.restore_index = restore_index
-            self.restore_type = restore_type
-            # we delay the error handling until the check step
+            (base_dir, ref_index, ref_type) = base_dir.get_repository_dirs()
+            self.ref_index = ref_index
+            self.ref_type = ref_type
+            # we delay the error handling until the check step,
+            # and as well the definition of ref_path and ref_inc
         else:
-            self.restore_index = None
-            self.restore_type = None
+            self.ref_index = None
+            self.ref_type = None
 
         # Finish the initialization with the identified base_dir
         super().__init__(base_dir, force)
@@ -74,9 +74,14 @@ class Repo(locations.Location):
         self.has_been_locked = False
 
     def check(self):
-        if self.can_be_sub_path and self.restore_type is None:
-            # there is nothing to save, the user must first give a correct path
-            return 1
+        if self.can_be_sub_path:
+            if self.ref_type is None:
+                # nothing to save, the user must first give a correct path
+                return 1
+            else:
+                self.ref_path = self.base_dir.new_index(self.ref_index)
+                self.ref_inc = self.data_dir.append_path(b'increments',
+                                                         self.ref_index)
         else:
             log.Log("Using repository '{re}'".format(re=self.base_dir),
                     log.INFO)
@@ -200,10 +205,16 @@ class Repo(locations.Location):
             self.base_dir = FilenameMapping.get_quotedrpath(self.base_dir)
             self.data_dir = FilenameMapping.get_quotedrpath(self.data_dir)
             self.incs_dir = FilenameMapping.get_quotedrpath(self.incs_dir)
+            if self.ref_type:
+                self.ref_path = FilenameMapping.get_quotedrpath(self.ref_path)
+                self.ref_inc = FilenameMapping.get_quotedrpath(self.ref_inc)
         else:
             self.base_dir = map_filenames.get_quotedrpath(self.base_dir)
             self.data_dir = map_filenames.get_quotedrpath(self.data_dir)
             self.incs_dir = map_filenames.get_quotedrpath(self.incs_dir)
+            if self.ref_type:
+                self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
+                self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
 
         Globals.set_all('rbdir', self.data_dir)  # compat200
 
@@ -374,8 +385,7 @@ information in it.
         """
         Shadow function for RepoShadow.initialize_rf_cache
         """
-        return self._shadow.initialize_rf_cache(
-            self.base_dir.new_index(self.restore_index), inc_rpath)
+        return self._shadow.initialize_rf_cache(self.ref_path, inc_rpath)
 
     def close_rf_cache(self):
         """
@@ -417,8 +427,7 @@ information in it.
         The list is sorted by increasing time stamp, meaning that the mirror
         is last in the list
         """
-        inc_base = self.data_dir.append_path(b'increments', self.restore_index)
-        incs_list = inc_base.get_incfiles_list()
+        incs_list = self.ref_inc.get_incfiles_list()
         incs = [{"time": inc.getinctime(),
                  "type": self._get_inc_type(inc),
                  "base": inc.dirsplit()[1].decode(errors="replace")}
@@ -426,11 +435,10 @@ information in it.
 
         # append the mirror itself
         mirror_time = self.get_mirror_time(must_exist=True)
-        mirror_path = self.base_dir.new_index(self.restore_index)
         incs.append({
             "time": mirror_time,
-            "type": self._get_file_type(mirror_path),
-            "base": mirror_path.dirsplit()[1].decode(errors="replace")})
+            "type": self._get_file_type(self.ref_path),
+            "base": self.ref_path.dirsplit()[1].decode(errors="replace")})
 
         return sorted(incs, key=lambda x: x["time"])
 
@@ -462,20 +470,17 @@ information in it.
 
         def get_mirror_select():
             """Return iterator of mirror rpaths"""
-            mirror_base = self.base_dir.new_index(self.restore_index)
-            mirror_select = selection.Select(mirror_base)
-            if not self.restore_index:  # must exclude rdiff-backup-directory
+            mirror_select = selection.Select(self.ref_path)
+            if not self.ref_index:  # must exclude rdiff-backup-directory
                 mirror_select.parse_rbdir_exclude()
             return mirror_select.get_select_iter()
 
         def get_inc_select():
             """Return iterator of increment rpaths"""
-            inc_base = self.data_dir.append_path(b'increments',
-                                                 self.restore_index)
-            for base_inc in inc_base.get_incfiles_list():
+            for base_inc in self.ref_inc.get_incfiles_list():
                 yield base_inc
-            if inc_base.isdir():
-                inc_select = selection.Select(inc_base).get_select_iter()
+            if self.ref_inc.isdir():
+                inc_select = selection.Select(self.ref_inc).get_select_iter()
                 for inc in inc_select:
                     yield inc
 
@@ -515,28 +520,23 @@ information in it.
         """
         Shadow function for RepoShadow.init_and_get_iter
         """
-        mirror_rp = self.base_dir.new_index(self.restore_index)
-        inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
-        return self._shadow.init_and_get_iter(self.data_dir, mirror_rp, inc_rp,
-                                              compare_time)
+        return self._shadow.init_and_get_iter(self.data_dir, self.ref_path,
+                                              self.ref_inc, compare_time)
 
     def attach_files(self, src_iter, compare_time):
         """
         Shadow function for RepoShadow.attach_files
         """
-        mirror_rp = self.base_dir.new_index(self.restore_index)
-        inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
         return self._shadow.attach_files(self.data_dir, src_iter,
-                                         mirror_rp, inc_rp, compare_time)
+                                         self.ref_path, self.ref_inc,
+                                         compare_time)
 
     def verify(self, verify_time):
         """
         Shadow function for RepoShadow.verify
         """
-        mirror_rp = self.base_dir.new_index(self.restore_index)
-        inc_rp = self.data_dir.append_path(b'increments', self.restore_index)
-        return self._shadow.verify(self.data_dir, mirror_rp, inc_rp,
-                                   verify_time)
+        return self._shadow.verify(self.data_dir, self.ref_path,
+                                   self.ref_inc, verify_time)
 
     def get_chars_to_quote(self):
         """
@@ -563,12 +563,6 @@ information in it.
         """
         return self._shadow.set_config(self.data_dir, "special_escapes",
                                        special_escapes)
-
-    def update_quoting(self):
-        """
-        Shadow function for RepoShadow.update_quoting
-        """
-        return self._shadow.update_quoting(self.base_dir)
 
     def _is_existing(self):
         # check first that the directory itself exists

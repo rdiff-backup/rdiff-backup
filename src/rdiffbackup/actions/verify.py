@@ -84,14 +84,10 @@ class VerifyAction(actions.BaseAction):
             self.repo.base_dir.conn.fs_abilities.single_set_globals(
                 self.repo.base_dir, 1)  # read_only=True
             self.repo.setup_quoting()
-            self.mirror_rpath = self.repo.base_dir.new_index(
-                self.repo.restore_index)
-        self.inc_rpath = self.repo.data_dir.append_path(
-            b'increments', self.repo.restore_index)
 
-        # FIXME move method _get_parsed_time to Repo and remove inc_rpath?
+        # FIXME move method _get_parsed_time to Repo?
         self.action_time = self._get_parsed_time(self.values.at,
-                                                 ref_rp=self.inc_rpath)
+                                                 ref_rp=self.repo.ref_inc)
         if self.action_time is None:
             return 1
 
@@ -100,7 +96,7 @@ class VerifyAction(actions.BaseAction):
     def run(self):
         if Globals.get_api_version() < 201:  # compat200
             return self.repo.base_dir.conn.compare.Verify(
-                self.mirror_rpath, self.inc_rpath, self.action_time)
+                self.repo.ref_path, self.repo.ref_inc, self.action_time)
         else:
             return self.repo.verify(self.action_time)
 

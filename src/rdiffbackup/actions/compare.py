@@ -101,15 +101,9 @@ class CompareAction(actions.BaseAction):
             self.values.selections)
         self.dir.set_select(select_opts, select_data)
 
-        if Globals.get_api_version() < 201:  # compat200
-            self.mirror_rpath = self.repo.base_dir.new_index(
-                self.repo.restore_index)
-        self.inc_rpath = self.repo.data_dir.append_path(
-            b'increments', self.repo.restore_index)
-
-        # FIXME move method _get_parsed_time to Repo and remove inc_rpath?
+        # FIXME move method _get_parsed_time to Repo?
         self.action_time = self._get_parsed_time(self.values.at,
-                                                 ref_rp=self.inc_rpath)
+                                                 ref_rp=self.repo.ref_inc)
         if self.action_time is None:
             return 1
 
@@ -124,8 +118,8 @@ class CompareAction(actions.BaseAction):
                 "full": compare.Compare_full
             }
             ret_code = compare_funcs[self.values.method](self.dir.base_dir,
-                                                         self.mirror_rpath,
-                                                         self.inc_rpath,
+                                                         self.repo.ref_path,
+                                                         self.repo.ref_inc,
                                                          self.action_time)
         else:
             compare_funcs = {
