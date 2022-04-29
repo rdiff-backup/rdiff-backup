@@ -431,16 +431,16 @@ class BaseAction:
             log.Log("Action value '{av}' doesn't fit name of action class "
                     "'{ac}'.".format(av=self.values.action, ac=self.name),
                     log.ERROR)
-            return_code |= 1
+            return_code |= Globals.RET_CODE_ERR
         if self.values.tempdir and not os.path.isdir(self.values.tempdir):
             log.Log("Temporary directory '{td}' doesn't exist.".format(
                     td=self.values.tempdir), log.ERROR)
-            return_code |= 1
+            return_code |= Globals.RET_CODE_ERR
         if (self.security is None
                 and "locations" in self.values and self.values.locations):
             log.Log("Action '{ac}' must have a security class to handle "
                     "locations".format(ac=self.name), log.ERROR)
-            return_code |= 1
+            return_code |= Globals.RET_CODE_ERR
         return return_code
 
     def connect(self):
@@ -484,7 +484,7 @@ class BaseAction:
         Whatever can be checked without changing anything to the environment.
         Return 0 if everything looked good, else an error code.
         """
-        return_code = 0
+        return_code = Globals.RET_CODE_OK
 
         if 'locations' not in self.values:
             return return_code
@@ -494,7 +494,7 @@ class BaseAction:
             if conn is None:
                 log.Log("Location '{lo}' couldn't be connected.".format(
                     lo=loc), log.ERROR)
-                return_code |= 1
+                return_code |= Globals.RET_CODE_ERR
 
         return return_code
 
@@ -517,7 +517,7 @@ class BaseAction:
             conn.robust.install_signal_handlers()
             conn.Hardlink.initialize_dictionaries()  # compat200
 
-        return 0
+        return Globals.RET_CODE_OK
 
     def run(self):
         """
@@ -525,7 +525,7 @@ class BaseAction:
 
         Return 0 if everything looked good, else an error code.
         """
-        return 0
+        return Globals.RET_CODE_OK
 
     def _get_parsed_time(self, timestr, ref_rp=None):
         """
@@ -547,9 +547,12 @@ class BaseAction:
                     "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
             return None
 
-    def _operate_regress(self, try_regress=True, noticeable=False):
+    def _operate_regress(self, try_regress=True,
+                         noticeable=False, force=False):
         """
         Check the given repository and regress it if necessary
+
+        Parameter force enforces a regress even if the repo doesn't need it.
         """
         if noticeable:
             regress_verbosity = log.NOTE
@@ -558,33 +561,42 @@ class BaseAction:
         if Globals.get_api_version() < 201:  # compat200
             if self.repo.needs_regress_compat200():
                 if not try_regress:
-                    return 1
+                    return Globals.RET_CODE_ERR
                 log.Log("Previous backup seems to have failed, regressing "
                         "destination now", log.WARNING)
                 try:
                     self.repo.base_dir.conn.regress.Regress(self.repo.base_dir)
-                    return 0
+                    return Globals.RET_CODE_OK
                 except Security.Violation:
                     log.Log(
                         "Security violation while attempting to regress "
                         "destination, perhaps due to --restrict-read-only or "
                         "--restrict-update-only", log.ERROR)
-                    return 1
+                    return Globals.RET_CODE_ERR
             else:
                 log.Log("Given repository doesn't need to be regressed",
                         regress_verbosity)
-                return 0  # all is good
+                return Globals.RET_CODE_OK
         else:
             if self.repo.needs_regress():
                 if not try_regress:
-                    return 1
+                    return Globals.RET_CODE_ERR
                 log.Log("Previous backup seems to have failed, regressing "
                         "destination now", log.WARNING)
                 return self.repo.regress()
+            elif force:
+                if self.repo.force_regress():
+                    log.Log("Given repository doesn't need to be regressed, "
+                            "but enforcing regression", log.WARNING)
+                    return self.repo.regress()
+                else:
+                    log.Log("Given repository doesn't need and can't be "
+                            "regressed even if forced", log.WARNING)
+                    return Globals.RET_CODE_WARN
             else:
                 log.Log("Given repository doesn't need to be regressed",
                         regress_verbosity)
-                return 0  # all is good
+                return Globals.RET_CODE_OK
 
     def _set_no_compression_regexp(self):
         """
@@ -601,11 +613,11 @@ class BaseAction:
         except re.error:
             log.Log("No compression regular expression '{ex}' doesn't "
                     "compile".format(ex=no_compression_string), log.ERROR)
-            return 1
+            return Globals.RET_CODE_ERR
 
         Globals.set_all('no_compression_regexp', no_compression_regexp)
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
 
 def get_plugin_class():

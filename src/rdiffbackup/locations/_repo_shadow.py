@@ -325,11 +325,11 @@ class RepoShadow:
 
         Cache the mirror time for performance reasons
 
-        must_exist defines if there must already be (at least) one mirror or not.
-        If True, the function will fail if there is no mirror and return the last
-        time if there is more than one (the regress case).
-        If False, the default, the function will return 0 if there is no mirror,
-        and -1 if there is more than one.
+        must_exist defines if there must already be (at least) one mirror or
+        not. If True, the function will fail if there is no mirror and return
+        the last time if there is more than one (the regress case).
+        If False, the default, the function will return 0 if there is no
+        mirror, and -1 if there is more than one.
         """
         # this function is only used internally (for now) but it might change
         # hence it looks like an external function potentially called remotely
@@ -828,27 +828,26 @@ information in it.
 
     # @API(RepoShadow.regress, 201)
     @classmethod
-    def regress(cls, mirror_rp):
+    def regress(cls, base_rp, incs_rp):
         """
         Bring mirror and inc directory back to regress_to_time
 
-        Also affects the rdiff-backup-data directory, so Globals.rbdir
-        should be set.  Regress should only work one step at a time
-        (i.e. don't "regress" through two separate backup sets.  This
-        function should be run locally to the rdiff-backup-data directory.
+        Regress should only work one step at a time (i.e. don't "regress"
+        through two separate backup sets.  This function should be run
+        locally to the rdiff-backup-data directory.
         """
-        inc_rpath = Globals.rbdir.append_path(b"increments")
-        assert mirror_rp.index == () and inc_rpath.index == (), (
+        assert base_rp.index == () and incs_rp.index == (), (
             "Mirror and increment paths must have an empty index")
-        assert mirror_rp.isdir() and inc_rpath.isdir(), (
+        assert base_rp.isdir() and incs_rp.isdir(), (
             "Mirror and increments paths must be directories")
-        assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection, (
+        assert base_rp.conn is incs_rp.conn is Globals.local_connection, (
             "Regress must happen locally.")
         meta_manager, former_current_mirror_rp = cls._set_regress_time()
         cls._set_restore_times()
+        _RegressFile.initialize(cls._restore_time, cls._mirror_time)
         cls._regress_rbdir(meta_manager)
         ITR = rorpiter.IterTreeReducer(_RepoRegressITRB, [])
-        for rf in cls._iterate_meta_rfs(mirror_rp, inc_rpath):
+        for rf in cls._iterate_meta_rfs(base_rp, incs_rp):
             ITR(rf.index, rf)
         ITR.finish_processing()
         if former_current_mirror_rp:
@@ -880,9 +879,9 @@ information in it.
     @classmethod
     def _set_restore_times(cls):
         """
-        Set _rest_time and _mirror_time in the restore module
+        Set _restore_time and _mirror_time in the restore module
 
-        _rest_time (restore time) corresponds to the last successful
+        _restore_time (restore time) corresponds to the last successful
         backup time.  _mirror_time is the unsuccessful backup time.
         """
         cls._mirror_time = cls._unsuccessful_backup_time
@@ -926,6 +925,28 @@ information in it.
             rp.delete()
 
     @classmethod
+    def _iterate_meta_rfs(cls, mirror_rp, inc_rp):
+        """
+        Yield _RegressFile objects with extra metadata information added
+
+        Each _RegressFile will have an extra object variable .metadata_rorp
+        which will contain the metadata attributes of the mirror file at
+        cls._regress_time.
+        """
+        raw_rfs = cls._iterate_raw_rfs(mirror_rp, inc_rp)
+        collated = rorpiter.Collate2Iters(raw_rfs, cls._yield_metadata())
+        for raw_rf, metadata_rorp in collated:
+            raw_rf = map_longnames.update_rf(raw_rf, metadata_rorp, mirror_rp,
+                                             _RegressFile)
+            if not raw_rf:
+                log.Log("Warning, metadata file has entry for path {pa}, "
+                        "but there are no associated files.".format(
+                            pa=metadata_rorp), log.WARNING)
+                continue
+            raw_rf.set_metadata_rorp(metadata_rorp)
+            yield raw_rf
+
+    @classmethod
     def _iterate_raw_rfs(cls, mirror_rp, inc_rp):
         """Iterate all _RegressFile objects in mirror/inc directory
 
@@ -950,28 +971,6 @@ information in it.
                         yield sub_sub_rf
 
         return helper(root_rf)
-
-    @classmethod
-    def _iterate_meta_rfs(cls, mirror_rp, inc_rp):
-        """
-        Yield _RegressFile objects with extra metadata information added
-
-        Each _RegressFile will have an extra object variable .metadata_rorp
-        which will contain the metadata attributes of the mirror file at
-        cls._regress_time.
-        """
-        raw_rfs = cls._iterate_raw_rfs(mirror_rp, inc_rp)
-        collated = rorpiter.Collate2Iters(raw_rfs, cls._yield_metadata())
-        for raw_rf, metadata_rorp in collated:
-            raw_rf = map_longnames.update_rf(raw_rf, metadata_rorp, mirror_rp,
-                                             _RegressFile)
-            if not raw_rf:
-                log.Log("Warning, metadata file has entry for path {pa}, "
-                        "but there are no associated files.".format(
-                            pa=metadata_rorp), log.WARNING)
-                continue
-            raw_rf.set_metadata_rorp(metadata_rorp)
-            yield raw_rf
 
     @classmethod
     def _yield_metadata(cls):

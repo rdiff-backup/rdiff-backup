@@ -55,6 +55,14 @@ api_version = {
     "actual": 0
 }
 
+# Pre-defined return codes, they must be potence of 2 so that they can be
+# combined.
+# FIXME consistent implementation of return codes isn't yet done
+RET_CODE_OK = 0  # everything is fine
+RET_CODE_ERR = 1  # some fatal error happened, the whole action failed
+RET_CODE_WARN = 2  # any kind of unexpected issue without complete failure
+RET_CODE_FILE = 4  # a single file (or more) failure
+
 # This determines how many bytes to read at a time when copying
 blocksize = 131072
 

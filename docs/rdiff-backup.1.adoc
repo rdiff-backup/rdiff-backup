@@ -182,6 +182,7 @@ sizes of that directory will be shown.
 regress [<<_compression_options,COMPRESSION OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [<<_timestamp_options,TIMESTAMP OPTIONS>>] _repository_::
 If an rdiff-backup session fails, this action will undo the failed directory.
 This happens automatically if you attempt to back-up to a directory and the last backup failed.
+You can use the *--force* option to undo the last backup even if it wasn't failed.
 
 remove *increments* *--older-than* _time_:: Remove the incremental backup information in the destination directory that has been around longer than the given time, or the oldest one if no time is provided.
 +
@@ -681,16 +682,26 @@ RDIFF_BACKUP_DEBUG=[_address_][:__port__]::
 set a non-default listening address and/or port (default is `127.0.0.1:4444`) for  rpdb.
 Valid values are _address_, _address:port_ or _:port_.
 
+== RETURN CODES
+
+The following return codes have not been fully implemented so test before you rely on them.
+Also note that they can be combined, so that for example a return code 3 might be returned if a warning was found, then an error.
+
+0 - OK:: the action was completely successful
+1 - ERROR:: something fatal happened, the whole action failed
+2 - WARNING:: any kind of unexpected behavior without complete failure
+4 - FILE:: the action failed on a single file (or more), but it succeeded overall
+
 == BUGS
 
-See GitHub issues::: https://github.com/rdiff-backup/rdiff-backup/issues
+See GitHub issues:: https://github.com/rdiff-backup/rdiff-backup/issues
 
-In doubt subscribe to and ask the mailing list::: https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users
+In doubt subscribe to and ask the mailing list:: https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users
 
 == AUTHORS
 
-* Ben Escoto link:mailto:ben@emerose.org[ben@emerose.org]
-* Eric Lavarde <ewl+rdiffbackup@lavar.de> ...
+* Ben Escoto link:mailto:ben@emerose.org[ben@emerose.org] (retired)
+* Eric Lavarde <ewl+rdiffbackup@lavar.de> (active)
 
 == SEE ALSO
 

@@ -73,7 +73,7 @@ class RemoveAction(actions.BaseAction):
                     "Instead run on entire directory '{ed}'.".format(
                         sd=self.repo.orig_path,
                         ed=self.repo.base_dir), log.ERROR)
-            return_code |= 1
+            return_code |= Globals.RET_CODE_ERR
 
         return return_code
 
@@ -81,11 +81,11 @@ class RemoveAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         return_code = super().setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self.repo.setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         # set the filesystem properties of the repository
@@ -103,9 +103,9 @@ class RemoveAction(actions.BaseAction):
             except (log.LoggerError, Security.Violation) as exc:
                 log.Log("Unable to open logfile due to exception '{ex}'".format(
                     ex=exc), log.ERROR)
-                return 1
+                return Globals.RET_CODE_ERR
 
-        return 0
+        return Globals.RET_CODE_OK
 
     def run(self):
         """
@@ -114,15 +114,15 @@ class RemoveAction(actions.BaseAction):
 
         action_time = self._get_parsed_time(self.values.older_than)
         if action_time is None:
-            return 1
+            return Globals.RET_CODE_ERR
         elif action_time < 0:  # no increment is old enough
-            return 0
+            return Globals.RET_CODE_OK
         if Globals.get_api_version() < 201:
             manage.delete_earlier_than(self.repo.base_dir, action_time)
         else:
             self.repo.remove_increments_older_than(action_time)
 
-        return 0
+        return Globals.RET_CODE_OK
 
     def _get_parsed_time(self, time_string):
         """

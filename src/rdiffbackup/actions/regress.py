@@ -69,11 +69,11 @@ class RegressAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         return_code = super().setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self._set_no_compression_regexp()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         owners_map = {
@@ -82,7 +82,7 @@ class RegressAction(actions.BaseAction):
             "preserve_num_ids": self.values.preserve_numerical_ids
         }
         return_code = self.repo.setup(owners_map=owners_map)
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         # set the filesystem properties of the repository
@@ -100,15 +100,15 @@ class RegressAction(actions.BaseAction):
             except (log.LoggerError, Security.Violation) as exc:
                 log.Log("Unable to open logfile due to exception '{ex}'".format(
                     ex=exc), log.ERROR)
-                return 1
+                return Globals.RET_CODE_ERR
 
-        return 0
+        return Globals.RET_CODE_OK
 
     def run(self):
         """
         Check the given repository and regress it if necessary
         """
-        return self._operate_regress(noticeable=True)
+        return self._operate_regress(noticeable=True, force=self.values.force)
 
 
 def get_plugin_class():
