@@ -100,18 +100,13 @@ class ListAction(actions.BaseAction):
                 self.repo.base_dir, 1)  # read_only=True
             self.repo.setup_quoting()
 
-        self.mirror_rpath = self.repo.base_dir.new_index(
-            self.repo.restore_index)
-        self.inc_rpath = self.repo.data_dir.append_path(
-            b'increments', self.repo.restore_index)
-
         if self.values.entity == "files":
             if self.values.changed_since:
                 self.action_time = self._get_parsed_time(
-                    self.values.changed_since, ref_rp=self.inc_rpath)
+                    self.values.changed_since, ref_rp=self.repo.ref_inc)
             elif self.values.at:
                 self.action_time = self._get_parsed_time(
-                    self.values.at, ref_rp=self.inc_rpath)
+                    self.values.at, ref_rp=self.repo.ref_inc)
             if self.action_time is None:
                 return 1
 
@@ -181,7 +176,7 @@ class ListAction(actions.BaseAction):
         """List all the files under rp that have changed since restoretime"""
         if Globals.get_api_version() < 201:
             rorp_iter = self.repo.base_dir.conn.restore.ListChangedSince(
-                self.mirror_rpath, self.inc_rpath, self.action_time)
+                self.repo.ref_path, self.repo.ref_inc, self.action_time)
         else:
             rorp_iter = self.repo.list_files_changed_since(self.action_time)
         for rorp in rorp_iter:
@@ -192,7 +187,7 @@ class ListAction(actions.BaseAction):
         """List files in archive under rp that are present at restoretime"""
         if Globals.get_api_version() < 201:
             rorp_iter = self.repo.base_dir.conn.restore.ListAtTime(
-                self.mirror_rpath, self.inc_rpath, self.action_time)
+                self.repo.ref_path, self.repo.ref_inc, self.action_time)
         else:
             rorp_iter = self.repo.list_files_at_time(self.action_time)
         for rorp in rorp_iter:

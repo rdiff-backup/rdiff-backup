@@ -375,6 +375,9 @@ The list might grow but issues are currently known with especially slow combinat
 * "complex" file systems on a NAS (e.g. ZFS on SMB or NFS)
 * SSHFS
 
+NOTE: using a Samba/SMB/CIFS share in version `vers=1.0` also causes issues, because features, like ACL support, are not properly detected.
+If you get a lot of exceptions '[Errno 13] Permission denied' with info verbosity, you're probably impacted and might want to change the protocol version.
+
 == How to backup safely from case aware to case aware file system?
 
 File systems like VFAT or NTFS are what I call case aware file systems:
@@ -388,3 +391,9 @@ You can either:
 . or you backup _from the beginning_ using the option `--override-chars-to-quote 'A-Z-"*/:<>?\\|;'`, which makes sure that capital letters (and other "strange" characters) are quoted so that there is no name collision on the file system.
 +
 CAUTION: remember that you can't change the quoting once a backup repository has been setup, so that you might need to create a new one.
+
+== How to work around the limitation to mix file selection and sub-path restore?
+
+Since rdiff-backup 2.1+, a command like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo/subdir myrestore/subdir` isn't possible anymore, because it could lead to https://github.com/rdiff-backup/rdiff-backup/issues/463[data loss].
+Such calls are anyway equivalent to something like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo myrestore`.
+This means that the new limitation doesn't imply a loss in feature, it only enforces a new approach without risk of losing data.

@@ -990,7 +990,7 @@ class RPath(RORPath):
         Return a tuple made of (the identified base directory, a path index,
         the recovery type). The path index is the split relative path of the
         sub-directory to restore (or of the path corresponding to the
-        increment). The type is either 'base', 'subdir', 'inc' or None if the
+        increment). The type is either 'base', 'subpath', 'inc' or None if the
         given rpath couldn't be properly analyzed.
 
         Note that the current path can be relative but must still
@@ -1003,7 +1003,7 @@ class RPath(RORPath):
                 log.Log("Path '{pa}' looks like an increment but doesn't "
                         "have 'rdiff-backup-data' in its path".format(
                             pa=self), log.ERROR)
-                return (self, [], None)
+                return (self, (), None)
             else:
                 data_idx = path_list.index(b"rdiff-backup-data")
                 if b"increments" in path_list:
@@ -1022,26 +1022,26 @@ class RPath(RORPath):
                     log.Log("Path '{pa}' looks like an increment but "
                             "doesn't have 'rdiff-backup-data/increments' "
                             "in its path.".format(pa=self), log.ERROR)
-                    return (self, [], None)
+                    return (self, (), None)
                 # base_dir is the directory above the data directory
                 base_dir = RPath(self.conn, b"/".join(path_list[:data_idx]))
-                return (base_dir, base_index, "inc")
+                return (base_dir, tuple(base_index), "inc")
         else:
             # rpath is either the base directory itself or a sub-dir of it
             if (self.lstat() and self.isdir()
                     and b"rdiff-backup-data" in self.listdir()):
                 # it's a base directory, simple case...
-                return (self, [], "base")
+                return (self, (), "base")
             parent_rp = self
             for element in range(1, len(path_list)):
                 parent_rp = parent_rp.get_parent_rp()
                 if (parent_rp.lstat() and parent_rp.isdir()
                         and b"rdiff-backup-data" in parent_rp.listdir()):
-                    return (parent_rp, path_list[-element:], "subdir")
+                    return (parent_rp, tuple(path_list[-element:]), "subpath")
             log.Log("Path '{pa}' couldn't be identified as being within "
                     "an existing backup repository".format(pa=self),
                     log.ERROR)
-            return (self, [], None)
+            return (self, (), None)
 
     def get_incfiles_list(self):
         """
@@ -1239,13 +1239,11 @@ class RPath(RORPath):
         try:
             self.conn.os.mknod(self.path, mode,
                                self.conn.os.makedev(major, minor))
-        except (OSError, AttributeError) as e:
-            if isinstance(e, AttributeError) or e.errno == errno.EPERM:
-                # AttributeError will be raised by Python 2.2, which
-                # doesn't have os.mknod
-                log.Log("unable to mknod device file {df} - "
-                        "using touch instead".format(df=self), log.INFO)
-                self.touch()
+        except OSError as exc:
+            log.Log("Unable to mknod device file '{df}' due to "
+                    "exception '{ex}', using touch instead".format(
+                        df=self, ex=exc), log.INFO)
+            self.touch()
         self.setdata()
 
     def fsync(self, fp=None):

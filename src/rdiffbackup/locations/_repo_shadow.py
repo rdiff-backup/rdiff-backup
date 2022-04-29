@@ -37,7 +37,6 @@ from rdiff_backup import (
 )
 from rdiffbackup import meta_mgr
 from rdiffbackup.locations import fs_abilities
-from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.locations.map import owners as map_owners
@@ -1043,16 +1042,7 @@ information in it.
         if old_value is None:  # there was no old value
             return None
         else:
-            # TODO call update_quoting(data_dir) ???
             return True
-
-    # @API(RepoShadow.update_quoting, 201)
-    @classmethod
-    def update_quoting(cls, base_dir):
-        """
-        Update the quoting of the repo after it has changed
-        """
-        return map_filenames.update_quoting(base_dir)
 
     # @API(RepoShadow.init_owners_mapping, 201)
     @classmethod
