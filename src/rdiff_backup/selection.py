@@ -572,7 +572,7 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
             else:
                 return ((rp.getsize() >= size) and None)
 
-        sel_func.exclude = Select.EXCLUDE
+        sel_func.exclude = True  # min/max-file-size are exclusions
         sel_func.name = "%s size %d" % (min_max and "Maximum" or "Minimum",
                                         size)
         return sel_func
