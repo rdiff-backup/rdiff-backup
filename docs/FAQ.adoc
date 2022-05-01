@@ -350,11 +350,12 @@ After the text "Bad index order", the error message will indicate which files ha
 
 If you get this message for an unrelated reason, try contacting the mailing list.
 
-== How can rdiff-backup use UTC as the timezone?
+== How can rdiff-backup use a specific timezone, like UTC?
 
 Like other Unix and Python programs, rdiff-backup respects the `TZ` environment variable, which can be used to temporarily change the timezone.
-On Unix, simply set `TZ=UTC` either in your shell, or on the command line used to run rdiff-backup.
-On Windows, the command `USE TZ=UTC` sets the `%TZ%` environment variable, and can be used either in a batch script, or at the DOS prompt.
+On Unix, for UTC, simply set `TZ=UTC` in your shell, or prepend ``TZ=UTC `` to the command line used to run rdiff-backup.
+On Windows, set the `TZ` environment variable with the `set TZ=UTC` command in the `Cmd.exe` command interpreter (or in a batch script), or with `$env:TZ='UTC'` in PowerShell.
+If you want to use a different timezone than UTC, you can refer to the https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/tzset#remarks[`_tzset` CRT documentation] which describes in detail the format Windows expects for the value of the `TZ` variable.
 
 == I've done a blunder in my last backup, how to roll-back?
 
