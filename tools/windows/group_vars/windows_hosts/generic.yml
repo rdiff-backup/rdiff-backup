@@ -5,3 +5,13 @@ working_dir: "C:/Users/{{ ansible_user }}/Develop"
 # full path to CMake command
 cmake_exe: "C:/Program Files/CMake/bin/cmake.exe"
 git_bash_exe: "C:/Program Files/Git/bin/bash.exe"
+
+# 32 or 64, as string
+win_bits: '64'
+# x86 or x64
+win_arch: "{{ (win_bits == '64') | ternary('x64', 'x86') }}"
+# Bits to be used for compiling librsync, win32 or win-amd64
+win_python_arch: "{{ (win_bits == '64') | ternary('win-amd64', 'win32') }}"
+
+python_version: "3.10"
+python_version_full: "{{ python_version }}.4"

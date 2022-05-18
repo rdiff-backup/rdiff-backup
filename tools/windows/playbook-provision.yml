@@ -42,10 +42,10 @@
     when: vs_deps is changed
   - name: install visual studio tools via chocolatey
     chocolatey.chocolatey.win_chocolatey:
-      name:  # VC 2017 is the version available on Travis CI
-      - visualstudio2017buildtools
-      - visualstudio2017-workload-python
-      - visualstudio2017-workload-vctools
+      name:  # VC 2022 is the version available on GitHub actions
+      - visualstudio2022buildtools
+      - visualstudio2022-workload-python
+      - visualstudio2022-workload-vctools
       state: present
     register: vs
   - name: execute reboot if something has been changed to visual studio
