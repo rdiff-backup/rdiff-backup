@@ -1,9 +1,0 @@
----
-- name: clone the librsync sources from Git
-  win_command: >
-    git.exe clone
-    {% if librsync_git_ref is defined %}--branch {{ librsync_git_ref }}{% endif %}
-    {{ librsync_git_repo }}
-    "{{ librsync_dir }}"
-  args:
-    creates: "{{ librsync_dir }}"

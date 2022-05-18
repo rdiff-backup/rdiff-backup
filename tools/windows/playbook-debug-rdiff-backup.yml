@@ -1,0 +1,25 @@
+---
+- name: Prepare rdiff-backup on a prepared Windows for easier debug
+  hosts: windows_builders
+  gather_facts: false
+  tasks:
+    - name: copy rsync.dll to build directory to call rdiff-backup from repo
+      win_copy:  # newer versions of rsync.dll are installed in bin not lib
+        src: "{{ librsync_install_dir }}/bin/rsync.dll"
+        remote_src: true  # file is already on the Windows machine
+        dest: "{{ rdiffbackup_dir }}/build/lib.{{ win_python_arch }}-{{ python_version }}/rdiff_backup/"
+    - name: prepare variable backquote to avoid quoting issues
+      set_fact:
+        bq: \
+    - name: create a simple setup script to call rdiff-backup from the repo
+      win_copy:
+        content: |
+          REM call this script to get the right environment variable and examples
+          SET PYTHONPATH={{ rdiffbackup_dir }}/build/lib.{{ win_python_arch }}-{{ python_version }}
+          SET PATH={{ rdiffbackup_dir | replace('/', bq) }}\build\scripts-{{ python_version }};%PATH%
+          SET LIBRSYNC_DIR={{ librsync_install_dir | replace('/', bq) }}
+        dest: "{{ rdiffbackup_dir }}/build/setup-rdiff-backup.bat"
+    - name: create a wrapper script to call rdiff-backup from the repo
+      win_copy:
+        src: ../rdiff-backup.bat
+        dest: "{{ rdiffbackup_dir }}/build/scripts-{{ python_version }}/rdiff-backup.bat"
