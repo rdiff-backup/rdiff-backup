@@ -690,7 +690,8 @@ Also note that they can be combined, so that for example a return code 3 might b
 0 - OK:: the action was completely successful
 1 - ERROR:: something fatal happened, the whole action failed
 2 - WARNING:: any kind of unexpected behavior without complete failure
-4 - FILE:: the action failed on a single file (or more), but it succeeded overall
+4 - FILE ERROR:: the action failed on a single file (or more), but it wasn't the reason for a complete failure
+8 - FILE WARNING:: the action stumbled on a single file (or more), or detected differences in a comparaison
 
 == BUGS
 
