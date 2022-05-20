@@ -63,9 +63,11 @@ class ActionRegressTest(unittest.TestCase):
         fileset.create_fileset(self.base_dir, self.from3_struct)
         fileset.create_fileset(self.base_dir, self.from4_struct)
         fileset.remove_fileset(self.base_dir, {"bak": {}})
+        fileset.remove_fileset(self.base_dir, {"to1": {}})
         fileset.remove_fileset(self.base_dir, {"to2": {}})
         fileset.remove_fileset(self.base_dir, {"to4": {}})
         self.bak_path = os.path.join(self.base_dir, b"bak")
+        self.to1_path = os.path.join(self.base_dir, b"to1")
         self.to2_path = os.path.join(self.base_dir, b"to2")
         self.to4_path = os.path.join(self.base_dir, b"to4")
         # we backup to the same backup repository at different times
@@ -137,6 +139,33 @@ class ActionRegressTest(unittest.TestCase):
         # all tests were successful
         self.success = True
 
+    def test_forced_regress(self):
+        """test different ways of regressing even if not necessary"""
+        # regressing a successful backup with force simply removes it
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, None, self.bak_path, None,
+            ("--api-version", "201", "--force"),
+            b"regress", ()), 0)
+        # we do it twice
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, None, self.bak_path, None,
+            ("--api-version", "201", "--force"),
+            b"regress", ()), 0)
+        # we restore and compare
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, self.to1_path,
+            ("--api-version", "201"),
+            b"restore", ()), 0)
+        self.assertFalse(fileset.compare_paths(self.from1_path, self.to1_path))
+        # the last tentative to regress forcefully ends with a warning
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, None, self.bak_path, None,
+            ("--api-version", "201", "--force"),
+            b"regress", ()), 2)
+
+        # all tests were successful
+        self.success = True
+
     def tearDown(self):
         # we clean-up only if the test was successful
         if self.success:
@@ -145,6 +174,7 @@ class ActionRegressTest(unittest.TestCase):
             fileset.remove_fileset(self.base_dir, self.from3_struct)
             fileset.remove_fileset(self.base_dir, self.from4_struct)
             fileset.remove_fileset(self.base_dir, {"bak": {}})
+            fileset.remove_fileset(self.base_dir, {"to1": {}})
             fileset.remove_fileset(self.base_dir, {"to2": {}})
             fileset.remove_fileset(self.base_dir, {"to4": {}})
 

@@ -87,11 +87,11 @@ class ListAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         return_code = super().setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self.repo.setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         # set the filesystem properties of the repository
@@ -108,9 +108,9 @@ class ListAction(actions.BaseAction):
                 self.action_time = self._get_parsed_time(
                     self.values.at, ref_rp=self.repo.ref_inc)
             if self.action_time is None:
-                return 1
+                return Globals.RET_CODE_ERR
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def run(self):
         if self.values.entity == "increments":
@@ -123,7 +123,7 @@ class ListAction(actions.BaseAction):
                 self._list_files_changed_since()
             elif self.values.at:
                 self._list_files_at_time()
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def _list_increments_sizes(self):
         """

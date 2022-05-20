@@ -84,15 +84,15 @@ class BackupAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         return_code = super().setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self._set_no_compression_regexp()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self.dir.setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         owners_map = {
@@ -101,7 +101,7 @@ class BackupAction(actions.BaseAction):
             "preserve_num_ids": self.values.preserve_numerical_ids
         }
         return_code = self.repo.setup(self.dir, owners_map=owners_map)
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         # TODO validate how much of the following lines and methods
@@ -117,7 +117,7 @@ class BackupAction(actions.BaseAction):
         if previous_time >= Time.getcurtime():
             log.Log("The last backup is not in the past. Aborting.",
                     log.ERROR)
-            return 1
+            return Globals.RET_CODE_ERR
         if log.Log.verbosity > 0:
             try:  # the target repository must be writable
                 log.Log.open_logfile(
@@ -125,7 +125,7 @@ class BackupAction(actions.BaseAction):
             except (log.LoggerError, Security.Violation) as exc:
                 log.Log("Unable to open logfile due to '{ex}'".format(
                     ex=exc), log.ERROR)
-                return 1
+                return Globals.RET_CODE_ERR
         log.ErrorLog.open(Time.getcurtimestr(),
                           compress=self.values.compression)
 
@@ -135,19 +135,19 @@ class BackupAction(actions.BaseAction):
         self._warn_if_infinite_recursion(self.dir.base_dir,
                                          self.repo.base_dir)
 
-        return 0
+        return Globals.RET_CODE_OK
 
     def run(self):
         # do regress the target directory if necessary
         if self._operate_regress():
             # regress was necessary and failed
-            return 1
+            return Globals.RET_CODE_ERR
         previous_time = self.repo.get_mirror_time(refresh=True)
         if previous_time < 0 or previous_time >= Time.getcurtime():
             log.Log("Either there is more than one current_mirror or "
                     "the last backup is not in the past. Aborting.",
                     log.ERROR)
-            return 1
+            return Globals.RET_CODE_ERR
         if Globals.get_api_version() < 201:  # compat200
             if previous_time:
                 Time.setprevtime_compat200(previous_time)
@@ -166,7 +166,7 @@ class BackupAction(actions.BaseAction):
         else:  # API 201 and higher
             self._operate_backup(previous_time)
 
-        return 0
+        return Globals.RET_CODE_OK
 
     def _operate_backup(self, previous_time=None):
         """

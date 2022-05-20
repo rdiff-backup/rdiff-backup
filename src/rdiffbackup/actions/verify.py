@@ -72,11 +72,11 @@ class VerifyAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         return_code = super().setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self.repo.setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         if Globals.get_api_version() < 201:  # compat200
@@ -89,9 +89,9 @@ class VerifyAction(actions.BaseAction):
         self.action_time = self._get_parsed_time(self.values.at,
                                                  ref_rp=self.repo.ref_inc)
         if self.action_time is None:
-            return 1
+            return Globals.RET_CODE_ERR
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def run(self):
         if Globals.get_api_version() < 201:  # compat200

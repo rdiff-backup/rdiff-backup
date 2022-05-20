@@ -74,7 +74,7 @@ def _main_run(arglist, security_override=False):
 
     # validate that everything looks good before really starting
     ret_val = action.pre_check()
-    if ret_val != 0:
+    if ret_val & Globals.RET_CODE_ERR:
         log.Log("Action {ac} failed on step {st}".format(
             ac=parsed_args.action, st="pre_check"), log.ERROR)
         return ret_val
@@ -88,30 +88,41 @@ def _main_run(arglist, security_override=False):
             from rdiff_backup import Security
             Security._security_level = "override"
 
-        ret_val = conn_act.check()
-        if ret_val != 0:
+        ret_val |= conn_act.check()
+        if ret_val & Globals.RET_CODE_ERR:
             log.Log("Action {ac} failed on step {st}".format(
                 ac=parsed_args.action, st="check"), log.ERROR)
             return ret_val
 
-        ret_val = conn_act.setup()
-        if ret_val != 0:
+        ret_val |= conn_act.setup()
+        if ret_val & Globals.RET_CODE_ERR:
             log.Log("Action {ac} failed on step {st}".format(
                 ac=parsed_args.action, st="setup"), log.ERROR)
             return ret_val
 
-        ret_val = conn_act.run()
-        if ret_val != 0:
+        ret_val |= conn_act.run()
+        if ret_val & Globals.RET_CODE_ERR:
             log.Log("Action {ac} failed on step {st}".format(
                 ac=parsed_args.action, st="run"), log.ERROR)
             return ret_val
+
+    # Give a final summary of what might have happened to the user
+    if ret_val & Globals.RET_CODE_WARN:
+        log.Log("Action {ac} emitted warnings, "
+                "see previous messages for details".format(
+                    ac=parsed_args.action), log.WARNING)
+    if ret_val & Globals.RET_CODE_FILE:
+        log.Log("Action {ac} failed on one or more files, "
+                "see previous messages for details".format(
+                    ac=parsed_args.action), log.WARNING)
 
     return ret_val
 
 
 # @API(backup_touch_curmirror_local, 200, 200)
 def backup_touch_curmirror_local(rpin, rpout):
-    """Make a file like current_mirror.time.data to record time
+    """
+    Make a file like current_mirror.time.data to record time
 
     When doing an incremental backup, this should happen before any
     other writes, and the file should be removed after all writes.
@@ -120,7 +131,6 @@ def backup_touch_curmirror_local(rpin, rpout):
 
     When doing the initial full backup, the file can be created after
     everything else is in place.
-
     """
     mirrorrp = Globals.rbdir.append(b'.'.join(
         map(os.fsencode, (b"current_mirror", Time.getcurtimestr(), "data"))))

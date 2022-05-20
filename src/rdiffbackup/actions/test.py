@@ -25,7 +25,7 @@ usable for a back-up.
 """
 
 from rdiffbackup import actions
-from rdiff_backup import log, SetConnections
+from rdiff_backup import Globals, log, SetConnections
 
 
 class TestAction(actions.BaseAction):
@@ -50,11 +50,11 @@ class TestAction(actions.BaseAction):
             (file_host, file_path, err) = SetConnections.parse_location(location)
             if err:
                 log.Log(err, log.ERROR)
-                return_code |= 1  # binary 'or' to always get 1
+                return_code |= Globals.RET_CODE_ERR
             elif not file_host:
                 log.Log("Only remote locations can be tested but location "
                         "'{lo}' isn't remote".format(lo=location), log.ERROR)
-                return_code |= 1  # binary 'or' to always get 1
+                return_code |= Globals.RET_CODE_ERR
 
         return return_code
 
@@ -67,7 +67,7 @@ class TestAction(actions.BaseAction):
         self.connected_locations = list(filter(None, self.connected_locations))
         if self.connected_locations:
             # at least one location is apparently valid
-            return 0
+            return Globals.RET_CODE_OK
         else:
             return return_code
 

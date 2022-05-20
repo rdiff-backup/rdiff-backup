@@ -79,14 +79,14 @@ class RestoreAction(actions.BaseAction):
             if self.values.at:
                 log.Log("You can't give an increment file and a time to "
                         "restore at the same time.", log.ERROR)
-                return_code |= 1
+                return_code |= Globals.RET_CODE_ERR
             elif not self.values.increment:
                 self.values.increment = True
         elif self.repo.ref_type in ("base", "subpath"):
             if self.values.increment:
                 log.Log("You can't use the --increment option and _not_ "
                         "give an increment file", log.ERROR)
-                return_code |= 1
+                return_code |= Globals.RET_CODE_ERR
             elif not self.values.at:
                 self.values.at = "now"
 
@@ -120,15 +120,15 @@ class RestoreAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         return_code = super().setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self._set_no_compression_regexp()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         return_code = self.repo.setup()
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         owners_map = {
@@ -137,7 +137,7 @@ class RestoreAction(actions.BaseAction):
             "preserve_num_ids": self.values.preserve_numerical_ids
         }
         return_code = self.dir.setup(self.repo, owners_map=owners_map)
-        if return_code != 0:
+        if return_code & Globals.RET_CODE_ERR:
             return return_code
 
         # TODO validate how much of the following lines and methods
@@ -162,13 +162,13 @@ class RestoreAction(actions.BaseAction):
             self.action_time = self._get_parsed_time(self.values.at,
                                                      ref_rp=self.repo.ref_inc)
             if self.action_time is None:
-                return 1
+                return Globals.RET_CODE_ERR
         elif self.values.increment:
             self.action_time = self.repo.orig_path.getinctime()
         else:  # this should have been catched in the check method
             log.Log("This shouldn't happen but neither restore time nor "
                     "an increment have been identified so far", log.ERROR)
-            return 1
+            return Globals.RET_CODE_ERR
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
         # We must set both sides because restore filtering is different from
@@ -177,7 +177,7 @@ class RestoreAction(actions.BaseAction):
         self.repo.set_select(select_opts, select_data, self.dir.base_dir)
         self.dir.set_select(select_opts, select_data)
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def run(self):
 
@@ -189,7 +189,7 @@ class RestoreAction(actions.BaseAction):
                     "Use rdiff-backup to 'regress' first the failed backup, "
                     "then try again to restore".format(
                         rp=self.repo.base_dir), log.ERROR)
-            return 1
+            return Globals.RET_CODE_ERR
         try:
             if Globals.get_api_version() < 201:  # compat200
                 restore.Restore(self.repo.ref_path, self.repo.ref_inc,
@@ -199,10 +199,10 @@ class RestoreAction(actions.BaseAction):
         except OSError as exc:
             log.Log("Could not complete restore due to exception '{ex}'".format(
                 ex=exc), log.ERROR)
-            return 1
+            return Globals.RET_CODE_ERR
         else:
             log.Log("Restore successfully finished", log.INFO)
-            return 0
+            return Globals.RET_CODE_OK
 
     def _operate_restore(self):
         """

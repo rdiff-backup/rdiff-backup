@@ -39,13 +39,13 @@ class InfoAction(actions.BaseAction):
 
     def setup(self):
         # there is nothing to setup for the info action
-        return 0
+        return Globals.RET_CODE_OK
 
     def run(self):
         runtime_info = Globals.get_runtime_info()
         print(yaml.safe_dump(runtime_info,
                              explicit_start=True, explicit_end=True))
-        return 0
+        return Globals.RET_CODE_OK
 
 
 def get_plugin_class():

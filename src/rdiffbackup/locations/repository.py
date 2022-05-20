@@ -28,11 +28,7 @@ from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import filenames as map_filenames
 
 from rdiff_backup import (
-    FilenameMapping,
-    Globals,
-    log,
-    selection,
-    Security,
+    FilenameMapping, Globals, log, selection, Security, Time,
 )
 
 
@@ -77,7 +73,7 @@ class Repo(locations.Location):
         if self.can_be_sub_path:
             if self.ref_type is None:
                 # nothing to save, the user must first give a correct path
-                return 1
+                return Globals.RET_CODE_ERR
             else:
                 self.ref_path = self.base_dir.new_index(self.ref_index)
                 self.ref_inc = self.data_dir.append_path(b'increments',
@@ -85,19 +81,19 @@ class Repo(locations.Location):
         else:
             log.Log("Using repository '{re}'".format(re=self.base_dir),
                     log.INFO)
-        ret_code = 0
+        ret_code = Globals.RET_CODE_OK
 
         if self.must_exist and not self._is_existing():
-            ret_code |= 1
+            ret_code |= Globals.RET_CODE_ERR
 
         if self.must_be_writable and not self._is_writable():
-            ret_code |= 1
+            ret_code |= Globals.RET_CODE_ERR
 
         return ret_code
 
     def setup(self, src_dir=None, owners_map=None):
         if self.must_be_writable and not self._create():
-            return 1
+            return Globals.RET_CODE_ERR
 
         if (self.can_be_sub_path
                 and self.base_dir.conn is Globals.local_connection):
@@ -124,7 +120,7 @@ class Repo(locations.Location):
                             "action is probably on-going. Either wait, remove "
                             "the lock or use the --force option".format(
                                 lf=self.lockfile), log.ERROR)
-                    return 1
+                    return Globals.RET_CODE_ERR
 
             if self.must_be_writable:
                 self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
@@ -133,7 +129,7 @@ class Repo(locations.Location):
                 self.fs_abilities = self._shadow.get_fs_abilities_readonly(
                     self.base_dir)
             if not self.fs_abilities:
-                return 1  # something was wrong
+                return Globals.RET_CODE_ERR
             else:
                 log.Log("--- Repository file system capabilities ---\n"
                         + str(self.fs_abilities), log.INFO)
@@ -162,7 +158,7 @@ class Repo(locations.Location):
             if ret_code != 0:
                 return ret_code
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def exit(self):
         """
@@ -184,7 +180,7 @@ class Repo(locations.Location):
                 else:  # there is a failed backup and 2+ current_mirror files
                     return -1
             else:  # it's the first backup
-                return 0  # is always in the past
+                return Globals.RET_CODE_OK
         else:
             return self._shadow.get_mirror_time(must_exist, refresh)
 
@@ -300,6 +296,30 @@ information in it.
                     ci=self.data_dir))
             return True
 
+    def force_regress(self):
+        """
+        Try to fake a failed backup to force a regress
+
+        Return True if the fake was succesful, else False, e.g. if the
+        repository contains only the mirror and no increment.
+        """
+        inc_times = self.get_increment_times()
+        if len(inc_times) < 2:
+            log.Log(
+                "Repository with only a mirror can't be forced to regress, "
+                "just remove it and start from scratch",
+                log.WARNING)
+            return False
+        mirror_time = self.get_mirror_time()
+        if inc_times[-1] != mirror_time:
+            log.Log(
+                "Repository's increment times are inconsistent, "
+                "it's too dangerous to force a regress",
+                log.WARNING)
+            return False
+        self.touch_current_mirror(Time.timetostring(inc_times[-2]))
+        return True
+
     def regress(self):
         """
         Regress the backup repository in case the last backup failed
@@ -308,14 +328,14 @@ information in it.
         with a clean state.
         """
         try:
-            self.base_dir.conn.regress.Regress(self.base_dir)
-            return 0
+            self._shadow.regress(self.base_dir, self.incs_dir)
+            return Globals.RET_CODE_OK
         except Security.Violation:
             log.Log(
                 "Security violation while attempting to regress destination, "
                 "perhaps due to --restrict-read-only or "
                 "--restrict-update-only", log.ERROR)
-            return 1
+            return Globals.RET_CODE_ERR
 
     def set_select(self, select_opts, select_data, target_rp):
         """
