@@ -398,3 +398,20 @@ CAUTION: remember that you can't change the quoting once a backup repository has
 Since rdiff-backup 2.1+, a command like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo/subdir myrestore/subdir` isn't possible anymore, because it could lead to https://github.com/rdiff-backup/rdiff-backup/issues/463[data loss].
 Such calls are anyway equivalent to something like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo myrestore`.
 This means that the new limitation doesn't imply a loss in feature, it only enforces a new approach without risk of losing data.
+
+== How can I integrate the rdiff-backup functionality in my own program?
+
+It can be as easy as importing the `rdiffbackup.run` module and starting the function `rdiffbackup.run.main_run` with the usual command line parameters as list parameter.
+
+The `rdiff-backup` script itself doesn't do it much differently and looks in a simplified manner like this:
+
+[source,python]
+----
+import rdiffbackup.run
+if __name__ == "__main__":
+    sys.exit(rdiffbackup.run.main_run(sys.argv[:1]))
+----
+
+CAUTION: there is no guarantee as this stage that the `main_run` function can be called more than once in the same program.
+The risk is mainly because it makes extensive use of global variables.
+Pull requests are more than welcome to fix the issue and make integration easier.

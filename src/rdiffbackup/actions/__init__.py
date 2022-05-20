@@ -35,7 +35,7 @@ from rdiff_backup import (
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
 # The default regexp for not compressing those files
-# compat200: it is also used by Main.py to avoid having a 2nd default
+# compat200: it is also used by run.py parsing to avoid having a 2nd default
 DEFAULT_NOT_COMPRESSED_REGEXP = (
     "(?i).*\\.("
     "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"

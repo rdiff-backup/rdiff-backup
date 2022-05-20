@@ -19,7 +19,7 @@
 """Provides functions and *ITR classes, for writing increment files"""
 
 import os
-from . import Globals, Time, rpath, Rdiff, log, statistics, robust
+from rdiff_backup import Globals, log, Rdiff, robust, rpath, statistics, Time
 
 
 def Increment(new, mirror, incpref, inc_time=None):

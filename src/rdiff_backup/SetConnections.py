@@ -28,7 +28,7 @@ import os
 import re
 import sys
 import subprocess
-from . import Globals, connection, log, rpath
+from rdiff_backup import connection, Globals, log, rpath
 
 # This is a list of remote commands used to start the connections.
 # The first is None because it is the local connection.
