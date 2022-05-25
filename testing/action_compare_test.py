@@ -7,6 +7,8 @@ import unittest
 import commontest as comtst
 import fileset
 
+from rdiff_backup import Globals
+
 
 class ActionCompareTest(unittest.TestCase):
     """
@@ -58,10 +60,10 @@ class ActionCompareTest(unittest.TestCase):
     def test_action_compare(self):
         """test different ways of comparing directories"""
         # first try without date
-        self.assertNotEqual(comtst.rdiff_backup_action(
+        self.assertEqual(comtst.rdiff_backup_action(
             False, True, self.from1_path, self.bak_path,
             ("--api-version", "201"),
-            b"compare", ("--method", "meta")), 0)
+            b"compare", ("--method", "meta")), Globals.RET_CODE_FILE_WARN)
         self.assertEqual(comtst.rdiff_backup_action(
             True, False, self.from2_path, self.bak_path,
             ("--api-version", "201"),
@@ -74,16 +76,16 @@ class ActionCompareTest(unittest.TestCase):
             False, True, self.from1_path, self.bak_path,
             ("--api-version", "201"),
             b"compare", ("--at", "10000")), 0)
-        self.assertNotEqual(comtst.rdiff_backup_action(
+        self.assertEqual(comtst.rdiff_backup_action(
             True, False, self.from2_path, self.bak_path,
             ("--api-version", "201"),
-            b"compare", ("--at", "15000")), 0)
+            b"compare", ("--at", "15000")), Globals.RET_CODE_FILE_WARN)
 
         # then try to compare with hashes
-        self.assertNotEqual(comtst.rdiff_backup_action(
+        self.assertEqual(comtst.rdiff_backup_action(
             False, True, self.from1_path, self.bak_path,
             ("--api-version", "201"),
-            b"compare", ("--method", "hash")), 0)
+            b"compare", ("--method", "hash")), Globals.RET_CODE_FILE_WARN)
         self.assertEqual(comtst.rdiff_backup_action(
             True, False, self.from2_path, self.bak_path,
             ("--api-version", "201"),
@@ -100,10 +102,10 @@ class ActionCompareTest(unittest.TestCase):
 """)
 
         # then try to compare full
-        self.assertNotEqual(comtst.rdiff_backup_action(
+        self.assertEqual(comtst.rdiff_backup_action(
             False, True, self.from1_path, self.bak_path,
             ("--api-version", "201"),
-            b"compare", ("--method", "full")), 0)
+            b"compare", ("--method", "full")), Globals.RET_CODE_FILE_WARN)
         self.assertEqual(comtst.rdiff_backup_action(
             True, False, self.from1_path, self.bak_path,
             ("--api-version", "201"),

@@ -931,7 +931,8 @@ class Dir2RepoSetGlobals(SetGlobals):
 
         if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
             ctq.append(b"A-Z")  # Quote upper case
-        if not self.dest_fsa.extended_filenames:
+        # on a read-only file system, the variable would be None, to be ignored
+        if self.dest_fsa.extended_filenames is False:
             ctq.append(b'\000-\037')  # Quote 0 - 31
             ctq.append(b'\200-\377')  # Quote non-ASCII characters 0x80 - 0xFF
         if self.dest_fsa.win_reserved_filenames:

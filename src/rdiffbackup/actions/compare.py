@@ -87,7 +87,7 @@ class CompareAction(actions.BaseAction):
         if return_code & Globals.RET_CODE_ERR:
             return return_code
 
-        return_code = self.repo.setup()
+        return_code = self.repo.setup(self.dir)
         if return_code & Globals.RET_CODE_ERR:
             return return_code
 
@@ -190,11 +190,11 @@ class CompareAction(actions.BaseAction):
                                  explicit_start=True, explicit_end=True))
         if not changed_files_found:
             log.Log("No changes found. Directory matches backup data", log.NOTE)
-            return 0
+            return Globals.RET_CODE_OK
         else:
             log.Log("Directory has {fd} file differences to backup".format(
                 fd=changed_files_found), log.WARNING)
-            return 1
+            return Globals.RET_CODE_FILE_WARN
 
 
 def get_plugin_class():

@@ -61,7 +61,8 @@ api_version = {
 RET_CODE_OK = 0  # everything is fine
 RET_CODE_ERR = 1  # some fatal error happened, the whole action failed
 RET_CODE_WARN = 2  # any kind of unexpected issue without complete failure
-RET_CODE_FILE = 4  # a single file (or more) failure
+RET_CODE_FILE_ERR = 4  # a single file (or more) failure
+RET_CODE_FILE_WARN = 8  # a single file (or more) warning or difference
 
 # This determines how many bytes to read at a time when copying
 blocksize = 131072

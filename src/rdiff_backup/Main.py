@@ -111,8 +111,12 @@ def _main_run(arglist, security_override=False):
         log.Log("Action {ac} emitted warnings, "
                 "see previous messages for details".format(
                     ac=parsed_args.action), log.WARNING)
-    if ret_val & Globals.RET_CODE_FILE:
+    if ret_val & Globals.RET_CODE_FILE_ERR:
         log.Log("Action {ac} failed on one or more files, "
+                "see previous messages for details".format(
+                    ac=parsed_args.action), log.WARNING)
+    if ret_val & Globals.RET_CODE_FILE_WARN:
+        log.Log("Action {ac} emitted warnings on one or more files, "
                 "see previous messages for details".format(
                     ac=parsed_args.action), log.WARNING)
 
