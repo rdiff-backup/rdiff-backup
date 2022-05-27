@@ -10,7 +10,7 @@ from rdiff_backup import (
     Globals, Hardlink, hash, log, Main, rorpiter, rpath,
     Security, selection, SetConnections
 )
-from rdiffbackup import actions
+from rdiffbackup import actions, run
 from rdiffbackup.meta import ea, acl_posix
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
@@ -270,7 +270,7 @@ def InternalBackup(source_local,
 
     args.extend(_get_locations(source_local, dest_local, src_dir, dest_dir))
 
-    Main._main_run(args, security_override=True)
+    run.main_run(args, security_override=True)
 
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
@@ -327,7 +327,7 @@ def InternalRestore(mirror_local,
 
     args.extend(_get_locations(mirror_local, dest_local, mirror_dir, dest_dir))
 
-    Main._main_run(args, security_override=True)
+    run.main_run(args, security_override=True)
 
 
 def get_increment_rp(mirror_rp, time):
