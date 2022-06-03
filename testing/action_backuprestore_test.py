@@ -44,9 +44,9 @@ class ActionBackupRestoreTest(unittest.TestCase):
         self.from2_path = os.path.join(self.base_dir, b"from2")
         fileset.create_fileset(self.base_dir, self.from1_struct)
         fileset.create_fileset(self.base_dir, self.from2_struct)
-        fileset.remove_fileset(self.base_dir, {"bak": {}})
-        fileset.remove_fileset(self.base_dir, {"to1": {}})
-        fileset.remove_fileset(self.base_dir, {"to2": {}})
+        fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
+        fileset.remove_fileset(self.base_dir, {"to1": {"type": "dir"}})
+        fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
         self.bak_path = os.path.join(self.base_dir, b"bak")
         self.to1_path = os.path.join(self.base_dir, b"to1")
         self.to2_path = os.path.join(self.base_dir, b"to2")
@@ -85,9 +85,9 @@ class ActionBackupRestoreTest(unittest.TestCase):
         if self.success:
             fileset.remove_fileset(self.base_dir, self.from1_struct)
             fileset.remove_fileset(self.base_dir, self.from2_struct)
-            fileset.remove_fileset(self.base_dir, {"bak": {}})
-            fileset.remove_fileset(self.base_dir, {"to1": {}})
-            fileset.remove_fileset(self.base_dir, {"to2": {}})
+            fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
+            fileset.remove_fileset(self.base_dir, {"to1": {"type": "dir"}})
+            fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
 
 
 if __name__ == "__main__":

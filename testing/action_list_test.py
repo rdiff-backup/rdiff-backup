@@ -33,7 +33,7 @@ class ActionListTest(unittest.TestCase):
         self.from2_path = os.path.join(self.base_dir, b"from2")
         fileset.create_fileset(self.base_dir, self.from1_struct)
         fileset.create_fileset(self.base_dir, self.from2_struct)
-        fileset.remove_fileset(self.base_dir, {"bak": {}})
+        fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
         self.bak_path = os.path.join(self.base_dir, b"bak")
         self.success = False
         # we backup twice to the same backup repository at different times
@@ -133,7 +133,7 @@ deleted fileOld
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", ), return_stdout=True),
             b"""---
-- base: increments.1970-01-0[12]T[0-9][0-9]:[14]6:40.*.dir
+- base: increments.1970-01-0[12]T[0-9][0-9][:-][14]6[:-]40.*.dir
   time: 10000
   type: directory
 - base: bak
@@ -167,7 +167,7 @@ deleted fileOld
         if self.success:
             fileset.remove_fileset(self.base_dir, self.from1_struct)
             fileset.remove_fileset(self.base_dir, self.from2_struct)
-            fileset.remove_fileset(self.base_dir, {"bak": {}})
+            fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
 
 
 if __name__ == "__main__":
