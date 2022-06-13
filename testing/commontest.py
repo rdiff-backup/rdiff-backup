@@ -158,14 +158,17 @@ def rdiff_backup_action(source_local, dest_local,
     The std_input parameter is optional and used to provide the call to
     rdiff-backup with pre-defined input.
     """
-    if src_dir and not source_local:
-        src_dir = (b"cd %s; %s server::%s" %
-                   (abs_remote1_dir, RBBin, src_dir))
-    if dest_dir and not dest_local:
-        dest_dir = (b"cd %s; %s server::%s" %
-                    (abs_remote2_dir, RBBin, dest_dir))
+    if os.name == "nt":
+        remote_exec = b"cd %s & %s server::%s"
+    else:
+        remote_exec = b"cd %s ; %s server::%s"
 
-    if source_local is False or dest_local is False:
+    if src_dir and not source_local:
+        src_dir = (remote_exec % (abs_remote1_dir, RBBin, src_dir))
+    if dest_dir and not dest_local:
+        dest_dir = (remote_exec % (abs_remote2_dir, RBBin, dest_dir))
+
+    if not (source_local and dest_local):
         generic_opts = list(generic_opts) + [b"--remote-schema", b"{h}"]
 
     cmdargs = [RBBin] + list(generic_opts) + [action] + list(specific_opts)
@@ -181,6 +184,9 @@ def rdiff_backup_action(source_local, dest_local,
                                               universal_newlines=False)
         except subprocess.CalledProcessError as exc:
             ret_val = exc.output
+        # normalize line endings under Windows
+        if os.name == "nt":
+            ret_val = ret_val.replace(b"\r\n", b"\n")
     else:
         ret_val = os_system(cmdargs, input=std_input, universal_newlines=False)
     return ret_val

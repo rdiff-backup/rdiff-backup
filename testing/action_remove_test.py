@@ -51,7 +51,7 @@ class ActionRemoveTest(unittest.TestCase):
         fileset.create_fileset(self.base_dir, self.from2_struct)
         fileset.create_fileset(self.base_dir, self.from3_struct)
         fileset.create_fileset(self.base_dir, self.from4_struct)
-        fileset.remove_fileset(self.base_dir, {"bak": {}})
+        fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
         self.bak_path = os.path.join(self.base_dir, b"bak")
         self.success = False
         # we backup to the same backup repository at different times
@@ -89,7 +89,7 @@ class ActionRemoveTest(unittest.TestCase):
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", ), return_stdout=True),
             b"""---
-- base: increments.1970-01-0[12]T[0-9][0-9]:[25]0:00.*.dir
+- base: increments.1970-01-0[12]T[0-9][0-9][:-][25]0[:-]00.*.dir
   time: 30000
   type: directory
 - base: bak
@@ -109,7 +109,7 @@ class ActionRemoveTest(unittest.TestCase):
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", ), return_stdout=True),
             b"""---
-- base: increments.1970-01-0[12]T[0-9][0-9]:[25]0:00.*.dir
+- base: increments.1970-01-0[12]T[0-9][0-9][:-][25]0[:-]00.*.dir
   time: 30000
   type: directory
 - base: bak
@@ -163,7 +163,7 @@ class ActionRemoveTest(unittest.TestCase):
             fileset.remove_fileset(self.base_dir, self.from2_struct)
             fileset.remove_fileset(self.base_dir, self.from3_struct)
             fileset.remove_fileset(self.base_dir, self.from4_struct)
-            fileset.remove_fileset(self.base_dir, {"bak": {}})
+            fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
 
 
 if __name__ == "__main__":
