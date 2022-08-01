@@ -163,7 +163,7 @@ rdiff-backup --include /usr/local --exclude /usr / host.net::/backup
 rdiff-backup backup --include /usr/local --exclude /usr / host.net::/backup
 ----
 
-* rdiff-backup uses rsync-like wildcards, where `**` matches any path and `*` matches any path without a `/` in it.
+* rdiff-backup uses rsync-like wildcards, where `+**+` matches any path and `+*+` matches any path without a `/` in it.
 Thus this command:
 
 ----
@@ -173,7 +173,7 @@ rdiff-backup backup --include /usr/local --include /var --exclude '**' / /backup
 ----
 
 backs up only the `/usr/local` and `/var` directories.
-The single quotes `''` are not part of rdiff-backup and are only used because many shells will expand `**`.
+The single quotes `+''+` are not part of rdiff-backup and are only used because many shells will expand `+**+`.
 
 * Here is a more complicated example:
 
