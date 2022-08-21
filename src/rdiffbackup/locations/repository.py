@@ -36,6 +36,9 @@ class Repo(locations.Location):
     """
     Represent a Backup Repository as created by rdiff-backup
     """
+    # is there an open logfile to close?
+    logging_to_file = False
+
     def __init__(self, base_dir, force, must_be_writable, must_exist,
                  create_full_path=False, can_be_sub_path=False):
         """
@@ -55,8 +58,7 @@ class Repo(locations.Location):
             # we delay the error handling until the check step,
             # and as well the definition of ref_path and ref_inc
         else:
-            self.ref_index = None
-            self.ref_type = None
+            self.ref_type = self.ref_index = None
 
         # Finish the initialization with the identified base_dir
         super().__init__(base_dir, force)
@@ -79,6 +81,7 @@ class Repo(locations.Location):
                 self.ref_inc = self.data_dir.append_path(b'increments',
                                                          self.ref_index)
         else:
+            self.ref_path = self.ref_inc = None
             log.Log("Using repository '{re}'".format(re=self.base_dir),
                     log.INFO)
         ret_code = Globals.RET_CODE_OK
@@ -91,7 +94,7 @@ class Repo(locations.Location):
 
         return ret_code
 
-    def setup(self, src_dir=None, owners_map=None):
+    def setup(self, src_dir=None, owners_map=None, action_name=None):
         if self.must_be_writable and not self._create():
             return Globals.RET_CODE_ERR
 
@@ -100,6 +103,8 @@ class Repo(locations.Location):
             Security.reset_restrict_path(self.base_dir)
 
         Globals.set_all('rbdir', self.data_dir)  # compat200
+
+        ret_code = Globals.RET_CODE_OK
 
         if Globals.get_api_version() >= 201:  # compat200
             if self.base_dir.conn is Globals.local_connection:
@@ -136,8 +141,8 @@ class Repo(locations.Location):
 
             if src_dir is None:
                 self.remote_transfer = None  # just in case
-                ret_code = fs_abilities.SingleRepoSetGlobals(self)()
-                if ret_code != 0:
+                ret_code |= fs_abilities.SingleRepoSetGlobals(self)()
+                if ret_code & Globals.RET_CODE_ERR:
                     return ret_code
             else:
                 # FIXME this shouldn't be necessary, and the setting of variable
@@ -147,18 +152,23 @@ class Repo(locations.Location):
                 # this is the new way, more dedicated but not sufficient yet
                 self.remote_transfer = (src_dir.base_dir.conn
                                         is not self.base_dir.conn)
-                ret_code = fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
-                if ret_code != 0:
+                ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
+                if ret_code & Globals.RET_CODE_ERR:
                     return ret_code
             self.setup_quoting()
             self.setup_paths()
 
         if owners_map is not None:
-            ret_code = self.init_owners_mapping(**owners_map)
-            if ret_code != 0:
+            ret_code |= self.init_owners_mapping(**owners_map)
+            if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
 
-        return Globals.RET_CODE_OK
+        if log.Log.verbosity > 0 and action_name:
+            ret_code |= self._open_logfile(action_name, self.must_be_writable)
+            if ret_code & Globals.RET_CODE_ERR:
+                return ret_code
+
+        return ret_code
 
     def exit(self):
         """
@@ -166,6 +176,8 @@ class Repo(locations.Location):
         """
         if hasattr(self, '_shadow'):
             self.unlock()
+        if self.logging_to_file:
+            log.Log.close_logfile()
 
     def get_mirror_time(self, must_exist=False, refresh=False):
         """
@@ -395,23 +407,18 @@ information in it.
         """
         return self._shadow.close_statistics(end_time)
 
-    def initialize_restore(self, restore_time):
+    def init_loop(self, restore_time):
         """
-        Shadow function for RepoShadow.initialize_restore
+        Shadow function for RepoShadow.init_loop
         """
-        return self._shadow.initialize_restore(self.data_dir, restore_time)
+        return self._shadow.init_loop(self.data_dir, self.ref_path,
+                                      self.ref_inc, restore_time)
 
-    def initialize_rf_cache(self, inc_rpath):
+    def finish_loop(self):
         """
-        Shadow function for RepoShadow.initialize_rf_cache
+        Shadow function for RepoShadow.finish_loop
         """
-        return self._shadow.initialize_rf_cache(self.ref_path, inc_rpath)
-
-    def close_rf_cache(self):
-        """
-        Shadow function for RepoShadow.close_rf_cache
-        """
-        return self._shadow.close_rf_cache()
+        return self._shadow.finish_loop()
 
     def get_diffs(self, target_iter):
         """
@@ -438,6 +445,26 @@ information in it.
         """
         return self._shadow.list_files_at_time(
             self.base_dir, self.incs_dir, self.data_dir, reftime)
+
+    def get_parsed_time(self, timestr):
+        """
+        Parse time string, potentially using the reference increment as anchor
+
+        Returns None if the time string couldn't be parsed, else the time in
+        seconds.
+        The reference increment is used when the time string consists in a
+        number of past backups.
+        """
+        try:
+            if Globals.get_api_version() < 201:  # compat200
+                return Time.genstrtotime(timestr, rp=self.ref_inc)
+            else:
+                sessions = self.get_increment_times(self.ref_inc)
+                return Time.genstrtotime(timestr, session_times=sessions)
+        except Time.TimeException as exc:
+            log.Log("Time string '{ts}' couldn't be parsed "
+                    "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
+            return None
 
     def get_increments(self):
         """
@@ -536,20 +563,12 @@ information in it.
         """
         return self._shadow.get_increment_times(rp)
 
-    def init_and_get_iter(self, compare_time):
+    def init_and_get_loop(self, compare_time, src_iter=None):
         """
-        Shadow function for RepoShadow.init_and_get_iter
+        Shadow function for RepoShadow.init_and_get_loop
         """
-        return self._shadow.init_and_get_iter(self.data_dir, self.ref_path,
-                                              self.ref_inc, compare_time)
-
-    def attach_files(self, src_iter, compare_time):
-        """
-        Shadow function for RepoShadow.attach_files
-        """
-        return self._shadow.attach_files(self.data_dir, src_iter,
-                                         self.ref_path, self.ref_inc,
-                                         compare_time)
+        return self._shadow.init_and_get_loop(
+            self.data_dir, self.ref_path, self.ref_inc, compare_time, src_iter)
 
     def verify(self, verify_time):
         """
@@ -698,6 +717,26 @@ information in it.
         """
         self.data_dir.delete()  # setdata is implicit
         self.incs_dir.setdata()
+
+    def _open_logfile(self, base_name, must_be_writable):
+        """
+        Open logfile with base name in the repository
+        """
+        try:  # the target repository must be writable
+            logfile = self.data_dir.append(base_name + ".log")
+            log.Log.open_logfile(logfile)
+        except (log.LoggerError, Security.Violation) as exc:
+            if must_be_writable:
+                log.Log("Unable to open logfile '{lf}' due to '{ex}'".format(
+                    lf=logfile, ex=exc), log.ERROR)
+                return Globals.RET_CODE_ERR
+            else:
+                log.Log("Unable to open logfile '{lf}' due to '{ex}'".format(
+                    lf=logfile, ex=exc), log.WARNING)
+                return Globals.RET_CODE_WARN
+        else:
+            self.logging_to_file = True
+        return Globals.RET_CODE_OK
 
     @classmethod
     def _get_inc_type(cls, inc):

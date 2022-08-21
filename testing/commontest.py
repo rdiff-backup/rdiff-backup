@@ -92,8 +92,7 @@ def rdiff_backup(source_local,
                  current_time=None,
                  extra_options=b"",
                  input=None,
-                 check_return_val=1,
-                 expected_ret_val=0):
+                 expected_ret_code=0):
     """Run rdiff-backup with the given options
 
     source_local and dest_local are boolean values.  If either is
@@ -109,6 +108,7 @@ def rdiff_backup(source_local,
 
     extra_options are just added to the command line.
 
+    If expected_ret_code is set to None, no return value comparaison is done.
     """
     if not source_local:
         src_dir = (b'"cd %s; %s server::%s"' %
@@ -129,12 +129,10 @@ def rdiff_backup(source_local,
     cmdline = b" ".join(cmdargs)
     print("Executing: ", " ".join(map(shlex.quote, map(os.fsdecode, cmdargs))))
     ret_val = os_system(cmdline, input=input, universal_newlines=False)
-    if check_return_val:
-        # the construct is needed because return code seemingly doesn't
-        # respect expected return values (FIXME)
-        assert ((expected_ret_val == 0 and ret_val == 0) or (expected_ret_val > 0 and ret_val > 0)), \
+    if expected_ret_code is not None:
+        assert (expected_ret_code == ret_val), \
             "Return code %d of command `%a` isn't as expected %d." % \
-            (ret_val, cmdline, expected_ret_val)
+            (ret_val, cmdline, expected_ret_code)
     return ret_val
 
 

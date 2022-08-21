@@ -25,7 +25,7 @@ import os
 import sys
 
 from rdiffbackup import actions
-from rdiff_backup import (connection, log, Security)
+from rdiff_backup import (connection, Globals, log, Security)
 
 
 class ServerAction(actions.BaseAction):
@@ -58,8 +58,13 @@ class ServerAction(actions.BaseAction):
         return conn_value
 
     def run(self):
-        return connection.PipeConnection(sys.stdin.buffer,
-                                         sys.stdout.buffer).Server()
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
+        ret_code |= connection.PipeConnection(sys.stdin.buffer,
+                                              sys.stdout.buffer).Server()
+        return ret_code
 
     def _set_breakpoint(self):  # pragma: no cover
         """

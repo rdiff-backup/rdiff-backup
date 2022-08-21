@@ -68,28 +68,28 @@ class CompareAction(actions.BaseAction):
         # we try to identify as many potential errors as possible before we
         # return, so we gather all potential issues and return only the final
         # result
-        return_code = super().check()
+        ret_code = super().check()
 
         # we verify that source directory and target repository are correct
-        return_code |= self.dir.check()
-        return_code |= self.repo.check()
+        ret_code |= self.dir.check()
+        ret_code |= self.repo.check()
 
-        return return_code
+        return ret_code
 
     def setup(self):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
-        return_code = super().setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self.dir.setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self.dir.setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self.repo.setup(self.dir)
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self.repo.setup(self.dir)
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         # set the filesystem properties of the repository
         if Globals.get_api_version() < 201:  # compat200
@@ -101,15 +101,17 @@ class CompareAction(actions.BaseAction):
             self.values.selections)
         self.dir.set_select(select_opts, select_data)
 
-        # FIXME move method _get_parsed_time to Repo?
-        self.action_time = self._get_parsed_time(self.values.at,
-                                                 ref_rp=self.repo.ref_inc)
+        self.action_time = self.repo.get_parsed_time(self.values.at)
         if self.action_time is None:
-            return Globals.RET_CODE_ERR
+            return ret_code & Globals.RET_CODE_ERR
 
-        return Globals.RET_CODE_OK
+        return ret_code
 
     def run(self):
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         # call the right comparaison function for the chosen method
         if Globals.get_api_version() < 201:  # compat200
             compare_funcs = {
@@ -117,10 +119,10 @@ class CompareAction(actions.BaseAction):
                 "hash": compare.Compare_hash,
                 "full": compare.Compare_full
             }
-            ret_code = compare_funcs[self.values.method](self.dir.base_dir,
-                                                         self.repo.ref_path,
-                                                         self.repo.ref_inc,
-                                                         self.action_time)
+            ret_code |= compare_funcs[self.values.method](self.dir.base_dir,
+                                                          self.repo.ref_path,
+                                                          self.repo.ref_inc,
+                                                          self.action_time)
         else:
             compare_funcs = {
                 "meta": self._compare_meta,
@@ -128,9 +130,9 @@ class CompareAction(actions.BaseAction):
                 "full": self._compare_full
             }
             reports_iter = compare_funcs[self.values.method](self.action_time)
-            ret_code = self._print_reports(reports_iter,
-                                           self.values.parsable_output)
-            self.repo.close_rf_cache()
+            ret_code |= self._print_reports(reports_iter,
+                                            self.values.parsable_output)
+            self.repo.finish_loop()
 
         return ret_code
 
@@ -138,7 +140,7 @@ class CompareAction(actions.BaseAction):
         """
         Compares metadata in directory with metadata in mirror_rp at time
         """
-        repo_iter = self.repo.init_and_get_iter(compare_time)
+        repo_iter = self.repo.init_and_get_loop(compare_time)
         report_iter = self.dir.compare_meta(repo_iter)
         return report_iter
 
@@ -150,7 +152,7 @@ class CompareAction(actions.BaseAction):
         different.  If two regular files have the same size, hash the
         source and compare to the hash presumably already present in repo.
         """
-        repo_iter = self.repo.init_and_get_iter(compare_time)
+        repo_iter = self.repo.init_and_get_loop(compare_time)
         report_iter = self.dir.compare_hash(repo_iter)
         return report_iter
 
@@ -162,8 +164,8 @@ class CompareAction(actions.BaseAction):
         data over.
         """
         src_iter = self.dir.get_select()
-        attached_repo_iter = self.repo.attach_files(src_iter, compare_time)
-        report_iter = self.dir.compare_full(attached_repo_iter)
+        repo_iter = self.repo.init_and_get_loop(compare_time, src_iter)
+        report_iter = self.dir.compare_full(repo_iter)
         return report_iter
 
     def _print_reports(self, report_iter, parsable=False):

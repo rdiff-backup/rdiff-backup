@@ -153,31 +153,33 @@ def CloseConnections():
     Globals.isbackup_reader = Globals.isbackup_writer = False
 
 
-def TestConnections(rpaths):
-    """Test connections, printing results.
-    Returns 0 if all connections work, 1 if one or more failed,
-    2 if the length of the list of connections isn't correct, most probably
-    because the user called rdiff-backup incorrectly"""
+def test_connections(rpaths):
+    """
+    Test connections, printing results.
+    Returns OK if all connections work, Error if one or more failed,
+    File Error if the length of the list of connections isn't correct,
+    most probably because the user called rdiff-backup incorrectly
+    """
     # the function doesn't use the log functions because it might not have
     # an error or log file to use.
     conn_len = len(Globals.connections)
     if conn_len == 1:
         log.Log("No remote connections specified, only local one available",
                 log.ERROR)
-        return 2
+        return Globals.RET_CODE_FILE_ERR
     elif conn_len != len(rpaths) + 1:
         print("All {pa} parameters must be remote of the form "
               "'server::path'".format(pa=len(rpaths)), log.ERROR)
-        return 2
+        return Globals.RET_CODE_FILE_ERR
 
     # we create a list of all test results, skipping the connection 0, which
     # is the local one.
     results = map(lambda i: _test_connection(i, rpaths[i - 1]),
                   range(1, conn_len))
     if all(results):
-        return 0
+        return Globals.RET_CODE_OK
     else:
-        return 1
+        return Globals.RET_CODE_ERR
 
 
 def parse_location(file_desc):

@@ -49,15 +49,20 @@ class CalculateAction(actions.BaseAction):
         Print out the calculation of the given statistics files, according
         to calculation method.
         """
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         statobjs = [
             statistics.StatsObj().read_stats_from_rp(loc)
             for loc in self.connected_locations
         ]
-        if self.values.method == "average":
+        if self.values.method == "average":  # there is no other right now
             calc_stats = statistics.StatsObj().set_to_average(statobjs)
         print(calc_stats.get_stats_logstring(
             "Average of %d stat files" % len(self.connected_locations)))
-        return Globals.RET_CODE_OK
+
+        return ret_code
 
 
 def get_plugin_class():

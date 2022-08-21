@@ -27,7 +27,6 @@ from rdiff_backup import (
     backup,
     Globals,
     log,
-    Security,
     selection,
     SetConnections,
     Time,
@@ -72,37 +71,38 @@ class BackupAction(actions.BaseAction):
         # we try to identify as many potential errors as possible before we
         # return, so we gather all potential issues and return only the final
         # result
-        return_code = super().check()
+        ret_code = super().check()
 
         # we verify that source directory and target repository are correct
-        return_code |= self.dir.check()
-        return_code |= self.repo.check()
+        ret_code |= self.dir.check()
+        ret_code |= self.repo.check()
 
-        return return_code
+        return ret_code
 
     def setup(self):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
-        return_code = super().setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self._set_no_compression_regexp()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self._set_no_compression_regexp()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self.dir.setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self.dir.setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
             "preserve_num_ids": self.values.preserve_numerical_ids
         }
-        return_code = self.repo.setup(self.dir, owners_map=owners_map)
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self.repo.setup(self.dir, owners_map=owners_map,
+                                   action_name=self.name)
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
@@ -117,37 +117,35 @@ class BackupAction(actions.BaseAction):
         if previous_time >= Time.getcurtime():
             log.Log("The last backup is not in the past. Aborting.",
                     log.ERROR)
-            return Globals.RET_CODE_ERR
-        if log.Log.verbosity > 0:
-            try:  # the target repository must be writable
-                log.Log.open_logfile(
-                    self.repo.data_dir.append("backup.log"))
-            except (log.LoggerError, Security.Violation) as exc:
-                log.Log("Unable to open logfile due to '{ex}'".format(
-                    ex=exc), log.ERROR)
-                return Globals.RET_CODE_ERR
+            return ret_code | Globals.RET_CODE_ERR
+
         log.ErrorLog.open(Time.getcurtimestr(),
                           compress=self.values.compression)
 
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
         self.dir.set_select(select_opts, select_data)
-        self._warn_if_infinite_recursion(self.dir.base_dir,
-                                         self.repo.base_dir)
+        ret_code |= self._warn_if_infinite_recursion(self.dir.base_dir,
+                                                     self.repo.base_dir)
 
-        return Globals.RET_CODE_OK
+        return ret_code
 
     def run(self):
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         # do regress the target directory if necessary
-        if self._operate_regress():
+        ret_code |= self._operate_regress()
+        if ret_code & Globals.RET_CODE_ERR:
             # regress was necessary and failed
-            return Globals.RET_CODE_ERR
+            return ret_code
         previous_time = self.repo.get_mirror_time(refresh=True)
         if previous_time < 0 or previous_time >= Time.getcurtime():
             log.Log("Either there is more than one current_mirror or "
                     "the last backup is not in the past. Aborting.",
                     log.ERROR)
-            return Globals.RET_CODE_ERR
+            return ret_code | Globals.RET_CODE_ERR
         if Globals.get_api_version() < 201:  # compat200
             if previous_time:
                 Time.setprevtime_compat200(previous_time)
@@ -164,9 +162,9 @@ class BackupAction(actions.BaseAction):
                     self.dir.base_dir, self.repo.base_dir)
             self.repo.base_dir.conn.Main.backup_close_statistics(time.time())
         else:  # API 201 and higher
-            self._operate_backup(previous_time)
+            ret_code |= self._operate_backup(previous_time)
 
-        return Globals.RET_CODE_OK
+        return ret_code
 
     def _operate_backup(self, previous_time=None):
         """
@@ -192,17 +190,19 @@ class BackupAction(actions.BaseAction):
 
         self.repo.close_statistics(time.time())
 
+        return Globals.RET_CODE_OK
+
     def _warn_if_infinite_recursion(self, rpin, rpout):
         """
         Warn user if target location is contained in source location
         """
         # Just a few heuristics, we don't have to get every case
         if rpout.conn is not rpin.conn:
-            return
+            return Globals.RET_CODE_OK
         if len(rpout.path) <= len(rpin.path) + 1:
-            return
+            return Globals.RET_CODE_OK
         if rpout.path[:len(rpin.path) + 1] != rpin.path + b'/':
-            return
+            return Globals.RET_CODE_OK
 
         log.Log("The target directory '{td}' may be contained in the "
                 "source directory '{sd}'. "
@@ -210,6 +210,7 @@ class BackupAction(actions.BaseAction):
                 "You may need to use the --exclude option "
                 "(which you might already have done).".format(
                     td=rpout, sd=rpin), log.WARNING)
+        return Globals.RET_CODE_WARN
 
 
 def get_plugin_class():

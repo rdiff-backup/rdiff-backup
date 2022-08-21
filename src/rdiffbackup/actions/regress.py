@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to regress a failed back-up from a
 back-up repository.
 """
 
-from rdiff_backup import (Globals, log, Security)
+from rdiff_backup import Globals
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 
@@ -58,32 +58,33 @@ class RegressAction(actions.BaseAction):
         # we try to identify as many potential errors as possible before we
         # return, so we gather all potential issues and return only the final
         # result
-        return_code = super().check()
+        ret_code = super().check()
 
         # we verify that the source repository is correct
-        return_code |= self.repo.check()
+        ret_code |= self.repo.check()
 
-        return return_code
+        return ret_code
 
     def setup(self):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
-        return_code = super().setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self._set_no_compression_regexp()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self._set_no_compression_regexp()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
             "preserve_num_ids": self.values.preserve_numerical_ids
         }
-        return_code = self.repo.setup(owners_map=owners_map)
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self.repo.setup(owners_map=owners_map,
+                                   action_name=self.name)
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         # set the filesystem properties of the repository
         if Globals.get_api_version() < 201:  # compat200
@@ -91,24 +92,20 @@ class RegressAction(actions.BaseAction):
                 self.repo.base_dir, 0)  # read_only=False
             self.repo.setup_quoting()
 
-        # TODO validate how much of the following lines and methods
-        # should go into the directory/repository modules
-        if log.Log.verbosity > 0:
-            try:  # the source repository must be writable
-                log.Log.open_logfile(
-                    self.repo.data_dir.append(self.name + ".log"))
-            except (log.LoggerError, Security.Violation) as exc:
-                log.Log("Unable to open logfile due to exception '{ex}'".format(
-                    ex=exc), log.ERROR)
-                return Globals.RET_CODE_ERR
-
-        return Globals.RET_CODE_OK
+        return ret_code
 
     def run(self):
         """
         Check the given repository and regress it if necessary
         """
-        return self._operate_regress(noticeable=True, force=self.values.force)
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
+        ret_code |= self._operate_regress(
+            noticeable=True, force=self.values.force)
+
+        return ret_code
 
 
 def get_plugin_class():

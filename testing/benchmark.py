@@ -34,7 +34,7 @@ def run_cmd(cmd):
     print("Running command '%s'" % (full_cmd, ))
     t = time.time()
     rc = os_system(full_cmd)
-    if rc != 0:
+    if rc & Globals.RET_CODE_ERR:
         raise RuntimeError("Return code of '{cmd}' is '{rc}'".format(
             cmd=cmd, rc=rc))
     return time.time() - t

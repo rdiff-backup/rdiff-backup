@@ -6,6 +6,7 @@ import unittest
 
 import commontest as comtst
 import fileset
+from rdiff_backup import Globals
 
 
 class ActionRemoveTest(unittest.TestCase):
@@ -78,11 +79,13 @@ class ActionRemoveTest(unittest.TestCase):
         self.assertNotEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201"),
-            b"remove", ("increments", "--older-than", "1B")), 0)
+            b"remove", ("increments", "--older-than", "1B")),
+            Globals.RET_CODE_OK)
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--force"),  # now forcing!
-            b"remove", ("increments", "--older-than", "1B")), 0)
+            b"remove", ("increments", "--older-than", "1B")),
+            Globals.RET_CODE_OK)
         # then check that only one increment and mirror remain
         self.assertRegex(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
@@ -103,7 +106,8 @@ class ActionRemoveTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--force"),
-            b"remove", ("increments", "--older-than", "30000")), 0)
+            b"remove", ("increments", "--older-than", "30000")),
+            Globals.RET_CODE_WARN)
         self.assertRegex(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--parsable"),
@@ -122,7 +126,8 @@ class ActionRemoveTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", ),
-            b"remove", ("increments", "--older-than", "30001")), 0)
+            b"remove", ("increments", "--older-than", "30001")),
+            Globals.RET_CODE_OK)
         # and check that only the mirror is left
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
@@ -139,7 +144,8 @@ class ActionRemoveTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", ),
-            b"remove", ("increments", "--older-than", "now")), 0)
+            b"remove", ("increments", "--older-than", "now")),
+            Globals.RET_CODE_WARN)
         # and check that it is still there
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,

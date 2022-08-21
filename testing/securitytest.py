@@ -65,7 +65,7 @@ class SecurityTest(unittest.TestCase):
                             in_local,
                             restrict_args,
                             extra_args=b"",
-                            success=1,
+                            expected_ret_code=0,
                             current_time=None):
         """Run rdiff-backup locally, with given restrict settings"""
         if not current_time:
@@ -83,10 +83,8 @@ class SecurityTest(unittest.TestCase):
         cmdline = b"%b %b %b %b" % (prefix, extra_args, in_dir, out_dir)
         print("Executing:", cmdline)
         exit_val = os_system(cmdline)
-        if success:
-            self.assertEqual(exit_val, 0)
-        else:
-            self.assertNotEqual(exit_val, 0)
+        if expected_ret_code is not None:
+            self.assertEqual(exit_val, expected_ret_code)
 
     def test_restrict_positive(self):
         """Test that --restrict switch doesn't get in the way
@@ -122,7 +120,7 @@ class SecurityTest(unittest.TestCase):
                                  output2_dir,
                                  1,
                                  b'--restrict %b' % abs_output_dir,
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
 
         # Restore to wrong directory
         Myrm(abs_output_dir)
@@ -133,7 +131,7 @@ class SecurityTest(unittest.TestCase):
                                  1,
                                  b'--restrict %b' % output2_dir,
                                  extra_args=b'-r now',
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
 
         # Backup from wrong directory
         Myrm(abs_output_dir)
@@ -142,7 +140,7 @@ class SecurityTest(unittest.TestCase):
                                  abs_output_dir,
                                  0,
                                  b'--restrict %b' % wrong_files_dir,
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
 
     def test_restrict_readonly_positive(self):
         """Test that --restrict-read-only switch doesn't impair normal ops"""
@@ -156,7 +154,9 @@ class SecurityTest(unittest.TestCase):
                                  abs_restore_dir,
                                  0,
                                  b'--restrict-read-only %b' % abs_output_dir,
-                                 extra_args=b'-r now')
+                                 extra_args=b'-r now',
+                                 expected_ret_code=Globals.RET_CODE_WARN)
+        # there is a warning because log can't be opened in read-only mode
 
     def test_restrict_readonly_negative(self):
         """Test that --restrict-read-only doesn't allow too much"""
@@ -166,7 +166,7 @@ class SecurityTest(unittest.TestCase):
                                  abs_output_dir,
                                  1,
                                  b'--restrict-read-only %b' % abs_output_dir,
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
 
         # Restore to restricted directory
         Myrm(abs_output_dir)
@@ -177,7 +177,7 @@ class SecurityTest(unittest.TestCase):
                                  1,
                                  b'--restrict-read-only %b' % abs_restore_dir,
                                  extra_args=b'-r now',
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
 
     def test_restrict_updateonly_positive(self):
         """Test that --restrict-update-only allows intended use"""
@@ -197,7 +197,7 @@ class SecurityTest(unittest.TestCase):
                                  abs_output_dir,
                                  1,
                                  b'--restrict-update-only %b' % abs_output_dir,
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
 
         Myrm(abs_output_dir)
         Myrm(abs_restore_dir)
@@ -208,7 +208,7 @@ class SecurityTest(unittest.TestCase):
                                  b'--restrict-update-only %b' %
                                  abs_restore_dir,
                                  extra_args=b'-r now',
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
 
     def test_restrict_bug(self):
         """Test for bug 14209 --- mkdir outside --restrict arg"""
@@ -217,7 +217,7 @@ class SecurityTest(unittest.TestCase):
                                  abs_output_dir,
                                  1,
                                  b'--restrict foobar',
-                                 success=0)
+                                 expected_ret_code=Globals.RET_CODE_ERR)
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
         self.assertFalse(output.lstat())
 

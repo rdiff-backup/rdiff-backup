@@ -402,7 +402,7 @@ class PipeConnection(LowLevelPipeConnection):
         Globals.connections.append(self)
         log.Log("Starting server", log.INFO)
         self._get_response(-1)
-        return 0  # all is well...
+        return Globals.RET_CODE_OK
 
     def reval(self, function_string, *args):
         """

@@ -38,7 +38,7 @@ class ReadDir(Dir, locations.ReadLocation):
 
     def setup(self):
         ret_code = super().setup()
-        if ret_code != 0:
+        if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
         if Globals.get_api_version() >= 201:  # compat200
@@ -50,12 +50,12 @@ class ReadDir(Dir, locations.ReadLocation):
                 self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
             self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
             if not self.fs_abilities:
-                return 1  # something was wrong
+                return ret_code | Globals.RET_CODE_ERR
             else:
                 log.Log("--- Read directory file system capabilities ---\n"
                         + str(self.fs_abilities), log.INFO)
 
-        return 0  # all is good
+        return ret_code
 
     def set_select(self, select_opts, select_data):
         """
@@ -121,7 +121,7 @@ class WriteDir(Dir, locations.WriteLocation):
 
     def setup(self, src_repo, owners_map=None):
         ret_code = super().setup()
-        if ret_code != 0:
+        if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
         if Globals.get_api_version() >= 201:  # compat200
@@ -133,19 +133,19 @@ class WriteDir(Dir, locations.WriteLocation):
                 self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
             self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
             if not self.fs_abilities:
-                return 1  # something was wrong
+                return ret_code | Globals.RET_CODE_ERR
             else:
                 log.Log("--- Write directory file system capabilities ---\n"
                         + str(self.fs_abilities), log.INFO)
 
-            return fs_abilities.Repo2DirSetGlobals(src_repo, self)()
+            return ret_code | fs_abilities.Repo2DirSetGlobals(src_repo, self)()
 
         if owners_map is not None:
-            ret_code = self.init_owners_mapping(**owners_map)
-            if ret_code != 0:
+            ret_code |= self.init_owners_mapping(**owners_map)
+            if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
 
-        return 0  # all is good
+        return ret_code
 
     def check(self):
         ret_code = super().check()
@@ -158,11 +158,12 @@ class WriteDir(Dir, locations.WriteLocation):
                 log.Log("Target path {tp} exists and isn't empty, content "
                         "might be force overwritten by restore".format(
                             tp=self.base_dir), log.WARNING)
+                ret_code |= Globals.RET_CODE_WARN
             else:
                 log.Log("Target path {tp} exists and isn't empty, "
                         "call with '--force' to overwrite".format(
                             tp=self.base_dir), log.ERROR)
-                ret_code |= 1
+                ret_code |= Globals.RET_CODE_ERR
 
         return ret_code
 
@@ -188,11 +189,11 @@ class WriteDir(Dir, locations.WriteLocation):
                     self.base_dir, select_opts,
                     *list(map(io.BytesIO, select_data)))
 
-    def get_initial_iter(self):
+    def get_sigs_select(self):
         """
-        Shadow function for WriteDirShadow.get_initial_iter
+        Shadow function for WriteDirShadow.get_sigs_select
         """
-        return self._shadow.get_initial_iter(self.base_dir)
+        return self._shadow.get_sigs_select(self.base_dir)
 
     def patch(self, source_diff_iter):
         """

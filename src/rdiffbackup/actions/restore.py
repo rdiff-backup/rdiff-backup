@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import (Globals, log, restore, selection, Security)
+from rdiff_backup import (Globals, log, restore, selection)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 
@@ -71,7 +71,7 @@ class RestoreAction(actions.BaseAction):
         # we try to identify as many potential errors as possible before we
         # return, so we gather all potential issues and return only the final
         # result
-        return_code = super().check()
+        ret_code = super().check()
 
         # we validate that the discovered restore type and the given options
         # fit together
@@ -79,14 +79,14 @@ class RestoreAction(actions.BaseAction):
             if self.values.at:
                 log.Log("You can't give an increment file and a time to "
                         "restore at the same time.", log.ERROR)
-                return_code |= Globals.RET_CODE_ERR
+                ret_code |= Globals.RET_CODE_ERR
             elif not self.values.increment:
                 self.values.increment = True
         elif self.repo.ref_type in ("base", "subpath"):
             if self.values.increment:
                 log.Log("You can't use the --increment option and _not_ "
                         "give an increment file", log.ERROR)
-                return_code |= Globals.RET_CODE_ERR
+                ret_code |= Globals.RET_CODE_ERR
             elif not self.values.at:
                 self.values.at = "now"
 
@@ -108,37 +108,37 @@ class RestoreAction(actions.BaseAction):
                 log.Log("You can't combine restoring of a sub-path and file "
                         "selection, result would be unpredictable and "
                         "could lead to data loss", log.ERROR)
-                return_code |= 1
+                ret_code |= Globals.RET_CODE_ERR
 
         # we verify that source directory and target repository are correct
-        return_code |= self.repo.check()
-        return_code |= self.dir.check()
+        ret_code |= self.repo.check()
+        ret_code |= self.dir.check()
 
-        return return_code
+        return ret_code
 
     def setup(self):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
-        return_code = super().setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self._set_no_compression_regexp()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code |= self._set_no_compression_regexp()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self.repo.setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code |= self.repo.setup(action_name=self.name)
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
             "preserve_num_ids": self.values.preserve_numerical_ids
         }
-        return_code = self.dir.setup(self.repo, owners_map=owners_map)
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code |= self.dir.setup(self.repo, owners_map=owners_map)
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
@@ -149,26 +149,16 @@ class RestoreAction(actions.BaseAction):
                 self.dir.base_dir)
             self.repo.setup_quoting()
 
-        if log.Log.verbosity > 0:
-            try:  # the source repository could be read-only
-                log.Log.open_logfile(
-                    self.repo.data_dir.append("restore.log"))
-            except (log.LoggerError, Security.Violation) as exc:
-                log.Log(
-                    "Unable to open logfile due to exception '{ex}'".format(
-                        ex=exc), log.WARNING)
-
         if self.values.at:
-            self.action_time = self._get_parsed_time(self.values.at,
-                                                     ref_rp=self.repo.ref_inc)
+            self.action_time = self.repo.get_parsed_time(self.values.at)
             if self.action_time is None:
-                return Globals.RET_CODE_ERR
+                return ret_code | Globals.RET_CODE_ERR
         elif self.values.increment:
             self.action_time = self.repo.orig_path.getinctime()
         else:  # this should have been catched in the check method
             log.Log("This shouldn't happen but neither restore time nor "
                     "an increment have been identified so far", log.ERROR)
-            return Globals.RET_CODE_ERR
+            return ret_code | Globals.RET_CODE_ERR
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
         # We must set both sides because restore filtering is different from
@@ -177,32 +167,39 @@ class RestoreAction(actions.BaseAction):
         self.repo.set_select(select_opts, select_data, self.dir.base_dir)
         self.dir.set_select(select_opts, select_data)
 
-        return Globals.RET_CODE_OK
+        return ret_code
 
     def run(self):
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         # This is more a check than a part of run, but because backup does
         # the regress in the run section, we also do the check here...
-        if self._operate_regress(try_regress=False):
+        ret_code |= self._operate_regress(try_regress=False)
+        if ret_code & Globals.RET_CODE_ERR:
             # source could be read-only, so we don't try to regress it
             log.Log("Previous backup to {rp} seems to have failed. "
                     "Use rdiff-backup to 'regress' first the failed backup, "
                     "then try again to restore".format(
                         rp=self.repo.base_dir), log.ERROR)
-            return Globals.RET_CODE_ERR
+            return ret_code
         try:
             if Globals.get_api_version() < 201:  # compat200
                 restore.Restore(self.repo.ref_path, self.repo.ref_inc,
                                 self.dir.base_dir, self.action_time)
             else:
-                self._operate_restore()
+                ret_code |= self._operate_restore()
         except OSError as exc:
             log.Log("Could not complete restore due to exception '{ex}'".format(
                 ex=exc), log.ERROR)
-            return Globals.RET_CODE_ERR
+            return ret_code | Globals.RET_CODE_ERR
         else:
-            log.Log("Restore successfully finished", log.INFO)
-            return Globals.RET_CODE_OK
+            if ret_code & Globals.RET_CODE_ERR:
+                log.Log("Restore somehow failed", log.ERROR)
+            else:
+                log.Log("Restore successfully finished", log.INFO)
+            return ret_code
 
     def _operate_restore(self):
         """
@@ -213,12 +210,13 @@ class RestoreAction(actions.BaseAction):
             "path {dp}".format(sp=self.repo.base_dir,
                                dp=self.dir.base_dir), log.NOTE)
 
-        self.repo.initialize_restore(self.action_time)
-        self.repo.initialize_rf_cache(self.repo.ref_inc)
-        target_iter = self.dir.get_initial_iter()
+        self.repo.init_loop(self.action_time)
+        target_iter = self.dir.get_sigs_select()
         src_diff_iter = self.repo.get_diffs(target_iter)
         self.dir.patch(src_diff_iter)
-        self.repo.close_rf_cache()
+        self.repo.finish_loop()
+
+        return Globals.RET_CODE_OK
 
 
 def get_plugin_class():

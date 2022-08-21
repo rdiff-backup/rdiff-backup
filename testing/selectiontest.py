@@ -521,11 +521,9 @@ class CommandTest(unittest.TestCase):
         emptyrp = testrp.append('empty')  # just to have something to backup
         emptyrp.mkdir()
 
-        rdiff_backup(1,
-                     1,
-                     testrp.path,
-                     backuprp.path,
-                     extra_options=b"--exclude %s" % backuprp.path)
+        rdiff_backup(1, 1, testrp.path, backuprp.path,
+                     extra_options=b"--exclude %s" % backuprp.path,
+                     expected_ret_code=Globals.RET_CODE_WARN)
 
         self.assertTrue(
             backuprp.append('rdiff-backup-data').isdir()

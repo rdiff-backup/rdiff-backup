@@ -531,7 +531,7 @@ class FinalMisc(PathSetter):
                      Local.vftrp.path,
                      Local.rpout.path,
                      extra_options=b"--tempdir DoesSurelyNotExist",
-                     expected_ret_val=1)
+                     expected_ret_code=Globals.RET_CODE_ERR)
 
 
 class FinalSelection(PathSetter):
@@ -655,7 +655,8 @@ class FinalSelection(PathSetter):
                      dest_local,
                      Local.rpout.path,
                      Local.rpout1.path,
-                     extra_options=b"--restore-as-of now " + excludes)
+                     extra_options=b"--restore-as-of now " + excludes,
+                     expected_ret_code=Globals.RET_CODE_WARN)
         for rp in (file1_target, file2_target, existing_file):
             rp.setdata()
         self.assertFalse(file1_target.lstat())
@@ -787,7 +788,8 @@ class FinalBugs(PathSetter):
                      Local.rpout.path,
                      None,
                      current_time=30000,
-                     extra_options=b'--check-destination-dir')
+                     extra_options=b'--check-destination-dir',
+                     expected_ret_code=Globals.RET_CODE_WARN)
 
         # Check to see if file still there
         rp1_d_f.setdata()

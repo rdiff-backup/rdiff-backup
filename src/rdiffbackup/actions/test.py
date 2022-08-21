@@ -44,36 +44,44 @@ class TestAction(actions.BaseAction):
         return subparser
 
     def pre_check(self):
-        return_code = super().pre_check()
+        ret_code = super().pre_check()
         # validate that all locations are remote
         for location in self.values.locations:
             (file_host, file_path, err) = SetConnections.parse_location(location)
             if err:
                 log.Log(err, log.ERROR)
-                return_code |= Globals.RET_CODE_ERR
+                ret_code |= Globals.RET_CODE_ERR
             elif not file_host:
                 log.Log("Only remote locations can be tested but location "
                         "'{lo}' isn't remote".format(lo=location), log.ERROR)
-                return_code |= Globals.RET_CODE_ERR
+                ret_code |= Globals.RET_CODE_ERR
 
-        return return_code
+        return ret_code
 
     def check(self):
         # we call the parent check only to output the failed connections
-        return_code = super().check()
+        ret_code = super().check()
 
         # even if some connections are bad, we want to validate the remaining
         # ones later on. The 'None' filter keeps only trueish values.
         self.connected_locations = list(filter(None, self.connected_locations))
-        if self.connected_locations:
-            # at least one location is apparently valid
-            return Globals.RET_CODE_OK
+        if ret_code & Globals.RET_CODE_ERR:
+            # at least one connection has failed
+            if self.connected_locations:
+                # at least one location is apparently valid, so no error
+                return Globals.RET_CODE_WARN
+            else:
+                return ret_code
         else:
-            return return_code
+            return ret_code
 
     def run(self):
-        result = SetConnections.TestConnections(self.connected_locations)
-        return result
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
+        ret_code |= SetConnections.test_connections(self.connected_locations)
+        return ret_code
 
 
 def get_plugin_class():
