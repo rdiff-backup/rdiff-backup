@@ -104,6 +104,7 @@ This is necessary to get rdiff-backup not to use ssh for remote backups, or if, 
 See the <<_remote_operation,REMOTE OPERATION>> section for details.
 
 --remote-tempdir _dirpath_:: use path as temporary directory on the remote side of the connection.
+If set explicitly, remember that "no space left" error messages _might_ apply to this directory.
 
 --ssh-compression, --no-ssh-compression::
 use SSH with or without compression with default remote-schema.
@@ -114,6 +115,7 @@ Compression is on by default.
 Sets the directory that rdiff-backup uses for temporary files to the given path.
 The environment variables TMPDIR, TEMP, and TMP can also be used to set the temporary files directory.
 See the documentation of the Python tempfile module for more information.
+If set explicitly, remember that "no space left" error messages _might_ apply to this directory.
 
 --terminal-verbosity {*0*,*1*,*2*,*3*,*4*,*5*,*6*,*7*,*8*,*9*}:: select which verbosity to use for messages on the terminal, the default is given by *--verbosity*.
 

@@ -463,9 +463,15 @@ class RestoreFile:
                     "Path '{irp!r}' must be of type 'diff'.".format(
                         irp=inc_diff))
                 delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
-                new_fp = tempfile.TemporaryFile()
-                Rdiff.write_patched_fp(current_fp, delta_fp, new_fp)
-                new_fp.seek(0)
+                try:
+                    new_fp = tempfile.TemporaryFile()
+                    Rdiff.write_patched_fp(current_fp, delta_fp, new_fp)
+                    new_fp.seek(0)
+                except OSError:
+                    tmpdir = tempfile.gettempdir()
+                    log.Log("Error while writing to temporary directory "
+                            "{td}".format(td=tmpdir), log.ERROR)
+                    raise
                 current_fp = new_fp
             return current_fp
 
@@ -567,12 +573,18 @@ rdiff-backup destination directory, or a bug in rdiff-backup""".format(
         if not first_inc.isinccompressed():
             return first_inc.open("rb")
 
-        # current_fp must be a real (uncompressed) file
-        current_fp = tempfile.TemporaryFile()
-        fp = first_inc.open("rb", compress=1)
-        rpath.copyfileobj(fp, current_fp)
-        fp.close()
-        current_fp.seek(0)
+        try:
+            # current_fp must be a real (uncompressed) file
+            current_fp = tempfile.TemporaryFile()
+            fp = first_inc.open("rb", compress=1)
+            rpath.copyfileobj(fp, current_fp)
+            fp.close()
+            current_fp.seek(0)
+        except OSError:
+            tmpdir = tempfile.gettempdir()
+            log.Log("Error while writing to temporary directory "
+                    "{td}".format(td=tmpdir), log.ERROR)
+            raise
         return current_fp
 
     def _yield_mirrorrps(self, mirrorrp):
