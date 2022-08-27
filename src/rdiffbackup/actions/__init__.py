@@ -38,10 +38,10 @@ from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 # compat200: it is also used by run.py parsing to avoid having a 2nd default
 DEFAULT_NOT_COMPRESSED_REGEXP = (
     "(?i).*\\.("
-    "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-    "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
-    "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-    "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
+    "7z|gz|z|bz|bz2|pk3|tgz|xz|zip|zst|rpm|deb|"
+    "jpg|jpeg|gif|png|jp2|webp|mp3|mp4|m4v|m4a|aac|ogg|ogv|oga|ogm|opus|wma|avi|wmv|"
+    "bik|flv|mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
+    "docx|gpg|rz|lz4|jsonlz4|mozlz4|lzh|lzma|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
     ")$"
 )
 
