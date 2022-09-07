@@ -121,7 +121,7 @@ sudo python3 get-pip.py+`.
 * librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
 * pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
-* if Python's version is 3.7.x or below, importlib-metadata 1.x (or alternatively setuptools)
+* if Python's version is 3.7.x or below, importlib-metadata (or alternatively setuptools)
 * psutil as an optional dependency (else rdiff-backup uses `ps`/`tasklist`)
 * SSH for remote operations
 

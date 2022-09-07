@@ -307,7 +307,7 @@ setup(
         'clean': clean,
     },
     install_requires=[
-        'importlib-metadata ~= 1.0 ; python_version < "3.8"',
+        'importlib-metadata ; python_version < "3.8"',
         'PyYAML',
     ],
     setup_requires=['setuptools_scm'],

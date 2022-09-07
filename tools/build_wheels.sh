@@ -32,7 +32,7 @@ esac
 # Compile wheels
 for PYBIN in $pybindirs; do
     "${PYBIN}/pip" install --user \
-        'importlib-metadata ~= 1.0 ; python_version < "3.8"' 'PyYAML'
+        'importlib-metadata ; python_version < "3.8"' 'PyYAML'
     "${PYBIN}/pip" wheel ${basedir} -w ${build_dir}/
 done
 
