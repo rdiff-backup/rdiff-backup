@@ -30,6 +30,8 @@ ____
 
 == Additional Issues
 
+=== include and exclude paths
+
 Currently, _rdiff-backup_'s `--include` and `--exclude` options do not support Windows paths with `\` as the directory separator.
 Instead, it is necessary to use `/` which is the Unix directory separator.
 
@@ -53,6 +55,25 @@ Follow this example:
  > rdiff-backup.exe --include c:\\/foo --exclude c:\\/** c:\/ c:\bar
 
 The `\\` is necessary in the `--include` and `--exclude` options because those options permit regular-expressions, and `\` is the escape character in regular-expressions, and thus needs to be escaped itself.
+
+=== Too old version of Windows
+
+If trying to start rdiff-backup, you get a dialog:
+
+____
+The program can't start because api-ms-win-core-path-l1-1-0.dll is missing from your computer.
+Try reinstalling the program to fix this problem.
+____
+
+And then on the command line something like:
+
+____
+Error loading Python DLL 'C:\Users\myuser\AppData\Local\Temp\_MEI395202\python39.dll
+LoadLibrary: The specified module could not be found.
+____
+
+Then you're most probably running a version of Windows not supported by the version of Python embedded in `rdiff-backup.exe`.
+The release notes and/or the installation instructions should give you the necessary information, else check the https://www.python.org/downloads/windows/[Python for Windows download page].
 
 == Troubleshooting
 
