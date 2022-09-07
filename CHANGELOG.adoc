@@ -10,6 +10,94 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * **DOC**umentation and *WEB*-site changes are marked as such.
 * And **DEV**elopment changes are only of interest for developers and testers.
 
+== New in v2.1.2b0 (2022-09-07)
+
+=== Changes
+
+* CHG: (API 201 only) no more increments are created for files where 
+       only metadata changed, this spares some disk space and inodes, thanks 
+       to rknichols for the idea
+* CHG: rdiff-backup is now compiled with Python 3.10.4 and Visual 
+       Studio 2022, users shouldn't notice any difference beside the fact that
+       rdiff-backup doesn't support (or even work) on Windows 7 and older
+* CHG: rdiff-backup with API lower than 201 might fail on unlocked 
+       repository because it doesn't know about the rdiff-backup-data/lock.yml 
+       file
+* CHG: remove support for python v2 from rdiff-backup-delete
+* CHG: return codes have changed and are now more detailed, see 
+       man-page for details
+* CHG: start to introduce more specific return codes (1 for error, 2 
+       for warning, 4 for single file error, etc), which can be combined (e.g. 
+       3 for error _and_ warning), this will take time to introduce everywhere
+* CHG: the Python library psutil has become an optional dependency of 
+       rdiff-backup to implement secure locking
+* DEV: Add psutil feature to utils to gather process information, as 
+       well known psutil wasn't fit for purpose and this avoids an unnecessary 
+       dependency.
+* DEV: get rid of unused RepoShadow.update_quoting function
+* DEV: introduce properly reference path, index, inc and type 
+       (partially renamed from restore_....)
+* DEV: remove RepoShadow.set_rorp_cache from API, make internal to 
+       simplify
+* DEV: split RET_CODE_FILE in RET_CODE_FILE_ERR AND _WARN so that file 
+       warnings can be used to detect comparaison differences
+* DEV: use file system object for two file systems in comparaison 
+       action, closes #643
+* DOC: add a man-page for rdiff-backup-delete, closes #301
+* DOC: add note about old versions of Windows not being supported due 
+       to Python support matrix, closes #715
+* DOC: add workflow of actions and locations to architecture 
+       documentation
+* DOC: Clarify / correct the FAQ instructions on how to set the 
+       timezone for `rdiff-backup` on Windows, and slightly reword the entry, 
+       closes #692
+* DOC: Clarify global options vs. action-specific options in new CLI 
+       syntax in examples, closes #679
+* DOC: document how to backup between case aware file systems (VFAT or 
+       NTFS), closes #11
+* DOC: include more docs in the Windows distribution, see issue #679
+* DOC: new standard for graphics using diagrams.net/draw.io
+* FIX: add message about temporary directory to no space left on 
+       device, this impacts only cases where tempdir isn't explicitly set, 
+       closes #624
+* FIX: allow --buffer option while testing by logging to terminal as 
+       string, closes #546
+* FIX: (API 201 only) do not compress metadata files if the 
+       --no-compression option is given, BEWARE that such a repo can't be read 
+       by rdiff-backup 2.0, closes #402
+* FIX: (API 201 only) when removing the first hardlink and adding a new 
+       one, all hardlinks remain linked together in repo, closes #272
+* FIX: ignore failing creation of a device and applying of ACLs in all 
+       circumstances, makes rdiff-backup more robust on CIFSv1, closes #678
+* FIX: --min/max-file-size options were acting like inclusion functions 
+       where they should be considered exclusion ones, closes #466
+* FIX: rdiff-backup would complain about enforced quoting overriding 
+       suggested quoting even though they were the same
+* FIX: Regression ErrorLog has no attribute write was fixed by 
+       reintroducing the write function (as internal _write method), thanks to 
+       @desseim for reporting, closes #686
+* FIX: regress option in API 201 was actually still using the old API 
+       function
+* FIX: restoring from sub-path while selecting is now forbidden to 
+       avoid data loss, workaround documented in FAQ, closes #463
+* NEW: (API 201 only) regress action can be forced on a sane 
+       repository, i.e. the last backup can be removed, closes #10
+* NEW: (API 201 only) repositories are now locked to avoid concurrent 
+       write actions, i.e. backup, regress and remove, it should work on NFS 
+       as well, closes #415, closes #122
+* NEW: define (imperfect) programmatic usage of rdiff-backup, see FAQ 
+       for details, closes #703
+
+=== Authors
+
+* Eric L
+* fireartist
+* Guillaume Legrand
+* Logan Stromberg
+* maffe
+* rknichols
+
+
 == New in v2.1.1a0
 
 === Changes
