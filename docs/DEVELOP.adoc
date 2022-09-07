@@ -125,6 +125,8 @@ All of those should come packaged with your system or available from https://pyp
 *** tox.ini, tox_root.ini, tox_dist.ini and tox_slow.ini - check for `envlist`
 *** .github/workflows/test_linux.yml - check for `python-version`
 *** .github/workflows/deploy.yml - check for `/opt/python/cp3...` (and possibly `many-linux`)
+*** setup.py - check for `python-requires`
+*** README.adoc - check for Python references
 * Python libraries:
 ** `setup.py`
 ** `requirements.txt`
