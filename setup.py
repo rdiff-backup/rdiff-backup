@@ -238,7 +238,7 @@ setup(
     # maintainer and maintainer_email could be used to differentiate the package owner
     url="https://rdiff-backup.net/",
     download_url="https://github.com/rdiff-backup/rdiff-backup/releases",
-    python_requires='~=3.6',
+    python_requires='~=3.7',
     platforms=['linux', 'win32'],
     packages=["rdiff_backup", "rdiffbackup",
               "rdiffbackup.actions", "rdiffbackup.utils", "rdiffbackup.meta",
@@ -307,7 +307,7 @@ setup(
         'clean': clean,
     },
     install_requires=[
-        'importlib-metadata ~= 1.0 ; python_version < "3.8"',
+        'importlib-metadata ; python_version < "3.8"',
         'PyYAML',
     ],
     setup_requires=['setuptools_scm'],
