@@ -26,11 +26,12 @@ assert user, "Unable to assess name of non-root user to be used for tests"
 
 
 class BaseRootTest(unittest.TestCase):
-    def _run_cmd(self, cmd):
+    def _run_cmd(self, cmd, expect_rc=Globals.RET_CODE_OK):
         print("Running: ", cmd)
         rc = os_system(cmd)
         self.assertEqual(
-            rc, 0, "Command '{cmd}' failed with rc={rc}".format(cmd=cmd, rc=rc))
+            rc, expect_rc,
+            "Command '{cmd}' failed with rc={rc}".format(cmd=cmd, rc=rc))
 
 
 class RootTest(BaseRootTest):
@@ -316,7 +317,7 @@ class HalfRoot(BaseRootTest):
         self.cause_regress(outrp)
         cmd5 = (b'su -c "%s --check-destination-dir %s" %s' %
                 (RBBin, outrp.path, user.encode()))
-        self._run_cmd(cmd5)
+        self._run_cmd(cmd5, Globals.RET_CODE_WARN)
 
 
 class NonRoot(BaseRootTest):

@@ -53,13 +53,16 @@ class BrokenRepoTest(unittest.TestCase):
         # now this should fail
         source_rp.append("file15").touch()
         rdiff_backup(1, 1, source_rp.__fspath__(), target_rp.__fspath__(),
-                     current_time=15 * 10000, expected_ret_val=1)
+                     current_time=15 * 10000,
+                     expected_ret_code=Globals.RET_CODE_ERR)
         # and this should also fail
-        rdiff_backup(1, 1, target_rp.__fspath__(), None, expected_ret_val=1,
-                     extra_options=b"--check-destination-dir")
-        # but this should succeed
         rdiff_backup(1, 1, target_rp.__fspath__(), None,
-                     extra_options=b"--allow-duplicate-timestamps --check-destination-dir")
+                     expected_ret_code=Globals.RET_CODE_ERR,
+                     extra_options=b"--check-destination-dir")
+        # but this should succeed (with a warning)
+        rdiff_backup(1, 1, target_rp.__fspath__(), None,
+                     extra_options=b"--allow-duplicate-timestamps --check-destination-dir",
+                     expected_ret_code=Globals.RET_CODE_WARN)
         # now we can clean-up, getting rid of the duplicate metadata mirrors
         # NOTE: we could have cleaned-up even without checking/fixing the directory
         #       but this shouldn't be the recommended practice.

@@ -695,6 +695,8 @@ Also note that they can be combined, so that for example a return code 3 might b
 4 - FILE ERROR:: the action failed on a single file (or more), but it wasn't the reason for a complete failure
 8 - FILE WARNING:: the action stumbled on a single file (or more), or detected differences in a comparaison
 
+TIP: any other error code can and should be reported as a bug.
+
 == BUGS
 
 See GitHub issues:: https://github.com/rdiff-backup/rdiff-backup/issues

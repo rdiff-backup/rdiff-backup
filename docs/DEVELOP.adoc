@@ -21,7 +21,7 @@ Eventually it will be much easier to merge your change request if the idea and d
 It might provide useful insight why the current state is as it is.
 * Changes can be submitted using the typical Github workflow: clone this repository, make your changes, test and verify, and submit a Pull Request (PR).
 * For all code changes, please remember also to include inline comments and update tests where needed.
-* Follow of course our xref:CODING.adoc[coding guidelines].
+* Follow of course our xref:CODING.adoc[coding] and xref:DOCUMENTATION.adoc[documentation] guidelines.
 
 === License
 

@@ -402,7 +402,6 @@ class BaseAction:
             self.repo.exit()
         if self.security != "server":
             log.ErrorLog.close()
-            log.Log.close_logfile()
             SetConnections.CloseConnections()
 
         return False
@@ -426,22 +425,22 @@ class BaseAction:
         Try to check everything before returning and not force the user to fix
         their entries step by step.
         """
-        return_code = 0
+        ret_code = 0
         if self.values.action != self.name:
             log.Log("Action value '{av}' doesn't fit name of action class "
                     "'{ac}'.".format(av=self.values.action, ac=self.name),
                     log.ERROR)
-            return_code |= Globals.RET_CODE_ERR
+            ret_code |= Globals.RET_CODE_ERR
         if self.values.tempdir and not os.path.isdir(self.values.tempdir):
             log.Log("Temporary directory '{td}' doesn't exist.".format(
                     td=self.values.tempdir), log.ERROR)
-            return_code |= Globals.RET_CODE_ERR
+            ret_code |= Globals.RET_CODE_ERR
         if (self.security is None
                 and "locations" in self.values and self.values.locations):
             log.Log("Action '{ac}' must have a security class to handle "
                     "locations".format(ac=self.name), log.ERROR)
-            return_code |= Globals.RET_CODE_ERR
-        return return_code
+            ret_code |= Globals.RET_CODE_ERR
+        return ret_code
 
     def connect(self):
         """
@@ -484,19 +483,19 @@ class BaseAction:
         Whatever can be checked without changing anything to the environment.
         Return 0 if everything looked good, else an error code.
         """
-        return_code = Globals.RET_CODE_OK
+        ret_code = Globals.RET_CODE_OK
 
         if 'locations' not in self.values:
-            return return_code
+            return ret_code
 
         # if a connection is None, it's an error
         for conn, loc in zip(self.connected_locations, self.values.locations):
             if conn is None:
                 log.Log("Location '{lo}' couldn't be connected.".format(
                     lo=loc), log.ERROR)
-                return_code |= Globals.RET_CODE_ERR
+                ret_code |= Globals.RET_CODE_ERR
 
-        return return_code
+        return ret_code
 
     def setup(self):
         """
@@ -527,26 +526,6 @@ class BaseAction:
         """
         return Globals.RET_CODE_OK
 
-    def _get_parsed_time(self, timestr, ref_rp=None):
-        """
-        Parse time string, potentially using the given remote path as reference
-
-        Returns None if the time string couldn't be parsed, else the time in
-        seconds.
-        The reference remote path is used when the time string consists in a
-        number of past backups.
-        """
-        try:
-            if Globals.get_api_version() < 201:  # compat200
-                return Time.genstrtotime(timestr, rp=ref_rp)
-            else:
-                sessions = self.repo.get_increment_times(ref_rp)
-                return Time.genstrtotime(timestr, session_times=sessions)
-        except Time.TimeException as exc:
-            log.Log("Time string '{ts}' couldn't be parsed "
-                    "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
-            return None
-
     def _operate_regress(self, try_regress=True,
                          noticeable=False, force=False):
         """
@@ -566,7 +545,7 @@ class BaseAction:
                         "destination now", log.WARNING)
                 try:
                     self.repo.base_dir.conn.regress.Regress(self.repo.base_dir)
-                    return Globals.RET_CODE_OK
+                    return Globals.RET_CODE_WARN
                 except Security.Violation:
                     log.Log(
                         "Security violation while attempting to regress "
@@ -583,7 +562,7 @@ class BaseAction:
                     return Globals.RET_CODE_ERR
                 log.Log("Previous backup seems to have failed, regressing "
                         "destination now", log.WARNING)
-                return self.repo.regress()
+                return self.repo.regress() | Globals.RET_CODE_WARN
             elif force:
                 if self.repo.force_regress():
                     log.Log("Given repository doesn't need to be regressed, "

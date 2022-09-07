@@ -42,10 +42,14 @@ class InfoAction(actions.BaseAction):
         return Globals.RET_CODE_OK
 
     def run(self):
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         runtime_info = Globals.get_runtime_info()
         print(yaml.safe_dump(runtime_info,
                              explicit_start=True, explicit_end=True))
-        return Globals.RET_CODE_OK
+        return ret_code
 
 
 def get_plugin_class():

@@ -98,7 +98,8 @@ class RegressTest(unittest.TestCase):
                      False,
                      self.output_rp.path,
                      None,
-                     extra_options=b"--check-destination-dir")
+                     extra_options=b"--check-destination-dir",
+                     expected_ret_code=Globals.RET_CODE_WARN)
 
     def test_local(self):
         """Run regress test locally"""
@@ -127,7 +128,7 @@ class RegressTest(unittest.TestCase):
 
         cmd = b"rdiff-backup --check-destination-dir %s" % self.output_rp.path
         print("Executing:", cmd)
-        self.assertEqual(os_system(cmd), 0)
+        self.assertEqual(os_system(cmd), Globals.RET_CODE_WARN)
 
     def make_unreadable(self):
         """Make unreadable input directory

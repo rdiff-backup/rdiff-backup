@@ -64,7 +64,7 @@ class ReadDirShadow:
         # cls._select.get
 
     # FIXME set_select for Read- and WriteDirShadow have a different meaning,
-    # where get_select and get_initial_iter have the same function.
+    # where get_select and get_sigs_select have the same function.
     # both return selection.Select.get_select_iter
 
     # @API(ReadDirShadow.get_select, 201)
@@ -279,10 +279,12 @@ class WriteDirShadow:
         cls._select = selection.Select(target)
         cls._select.parse_selection_args(select_opts, filelists)
 
-    # @API(WriteDirShadow.get_initial_iter, 201)
+    # @API(WriteDirShadow.get_sigs_select, 201)
     @classmethod
-    def get_initial_iter(cls, target):
-        """Return selector previously set with set_select"""
+    def get_sigs_select(cls, target):
+        """
+        Return selector previously set with set_select
+        """
         if cls._select:
             return cls._select.get_select_iter()
         else:

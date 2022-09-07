@@ -307,16 +307,22 @@ class RepoShadow:
 
 # ### COPIED FROM RESTORE ####
 
-    # @API(RepoShadow.initialize_restore, 201)
+    # @API(RepoShadow.init_loop, 201)
     @classmethod
-    def initialize_restore(cls, data_dir, restore_to_time):
-        """Set class variable _restore_time on mirror conn"""
-        cls._data_dir = data_dir
-        cls._set_restore_time(restore_to_time)
-        # it's a bit ugly to set the values to another class, but less than
-        # the other way around as it used to be
-        _RestoreFile.initialize(cls._restore_time,
-                                cls.get_mirror_time(must_exist=True))
+    def init_loop(cls, data_dir, mirror_base, inc_base, restore_to_time):
+        """
+        Initialize repository for looping through the increments
+        """
+        cls._initialize_restore(data_dir, restore_to_time)
+        cls._initialize_rf_cache(mirror_base, inc_base)
+
+    # @API(RepoShadow.finish_loop, 201)
+    @classmethod
+    def finish_loop(cls):
+        """
+        Run anything remaining on _CachedRF object
+        """
+        cls.rf_cache.close()
 
     # @API(RepoShadow.get_mirror_time, 201)
     @classmethod
@@ -376,21 +382,26 @@ class RepoShadow:
         return_list = sorted(times_set)
         return return_list
 
-    # @API(RepoShadow.initialize_rf_cache, 201)
     @classmethod
-    def initialize_rf_cache(cls, mirror_base, inc_base):
+    def _initialize_restore(cls, data_dir, restore_to_time):
+        """
+        Set class variable _restore_time on mirror conn
+        """
+        cls._data_dir = data_dir
+        cls._set_restore_time(restore_to_time)
+        # it's a bit ugly to set the values to another class, but less than
+        # the other way around as it used to be
+        _RestoreFile.initialize(cls._restore_time,
+                                cls.get_mirror_time(must_exist=True))
+
+    @classmethod
+    def _initialize_rf_cache(cls, mirror_base, inc_base):
         """Set cls.rf_cache to _CachedRF object"""
         inc_list = inc_base.get_incfiles_list()
         rf = _RestoreFile(mirror_base, inc_base, inc_list)
         cls.mirror_base, cls.inc_base = mirror_base, inc_base
         cls.root_rf = rf
         cls.rf_cache = _CachedRF(rf)
-
-    # @API(RepoShadow.close_rf_cache, 201)
-    @classmethod
-    def close_rf_cache(cls):
-        """Run anything remaining on _CachedRF object"""
-        cls.rf_cache.close()
 
     @classmethod
     def _get_mirror_rorp_iter(cls, rest_time=None, require_metadata=None):
@@ -545,8 +556,7 @@ class RepoShadow:
         Encode the lines in the first element of the rorp's index.
         """
         assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.initialize_restore(data_dir, restore_to_time)
-        cls.initialize_rf_cache(mirror_rp, inc_rp)
+        cls.init_loop(data_dir, mirror_rp, inc_rp, restore_to_time)
 
         old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
         cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(must_exist=True),
@@ -563,7 +573,7 @@ class RepoShadow:
                 change = "changed"
             path_desc = (old_rorp and str(old_rorp) or str(cur_rorp))
             yield rpath.RORPath(("%-7s %s" % (change, path_desc), ))
-        cls.close_rf_cache()
+        cls.finish_loop()
 
     # @API(RepoShadow.list_files_at_time, 201)
     @classmethod
@@ -575,12 +585,11 @@ class RepoShadow:
         See list_files_changed_since for details.
         """
         assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.initialize_restore(data_dir, reftime)
-        cls.initialize_rf_cache(mirror_rp, inc_rp)
+        cls.init_loop(data_dir, mirror_rp, inc_rp, reftime)
         old_iter = cls._get_mirror_rorp_iter()
         for rorp in old_iter:
             yield rorp
-        cls.close_rf_cache()
+        cls.finish_loop()
 
 # ### COPIED FROM MANAGE ####
 
@@ -609,18 +618,29 @@ class RepoShadow:
 
 # ### COPIED FROM COMPARE ####
 
-    # @API(RepoShadow.init_and_get_iter, 201)
+    # @API(RepoShadow.init_and_get_loop, 201)
     @classmethod
-    def init_and_get_iter(cls, data_dir, mirror_rp, inc_rp, compare_time):
-        """Return rorp iter at given compare time"""
-        cls.initialize_restore(data_dir, compare_time)
-        cls.initialize_rf_cache(mirror_rp, inc_rp)
-        return cls._subtract_indices(cls.mirror_base.index,
-                                     cls._get_mirror_rorp_iter())
+    def init_and_get_loop(cls, data_dir, mirror_rp, inc_rp, compare_time,
+                          src_iter=None):
+        """
+        Return rorp iter at given compare time
 
-    # @API(RepoShadow.attach_files, 201)
+        Attach necessary file details if src_iter is given
+
+        cls.finish_loop must be called to finish the loop once initialized
+        """
+        cls.init_loop(data_dir, mirror_rp, inc_rp, compare_time)
+        repo_iter = cls._subtract_indices(cls.mirror_base.index,
+                                          cls._get_mirror_rorp_iter())
+        if src_iter is None:
+            return repo_iter
+        else:
+            return cls._attach_files(data_dir, mirror_rp, inc_rp, compare_time,
+                                     src_iter, repo_iter)
+
     @classmethod
-    def attach_files(cls, data_dir, src_iter, mirror_rp, inc_rp, compare_time):
+    def _attach_files(cls, data_dir, mirror_rp, inc_rp, compare_time,
+                      src_iter, repo_iter):
         """
         Attach data to all the files that need checking
 
@@ -628,7 +648,6 @@ class RepoShadow:
         that may have changed, and has the fileobj set on all rorps
         that need it.
         """
-        repo_iter = cls.init_and_get_iter(data_dir, mirror_rp, inc_rp, compare_time)
         base_index = cls.mirror_base.index
         for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
             index = src_rorp and src_rorp.index or mir_rorp.index
@@ -656,11 +675,13 @@ class RepoShadow:
         assert mirror_rp.conn is Globals.local_connection, (
             "Only verify mirror locally, not remotely over '{conn}'.".format(
                 conn=mirror_rp.conn))
-        repo_iter = cls.init_and_get_iter(data_dir, mirror_rp, inc_rp, verify_time)
+        repo_iter = cls.init_and_get_loop(data_dir, mirror_rp, inc_rp,
+                                          verify_time)
         base_index = cls.mirror_base.index
 
         bad_files = 0
         no_hash = 0
+        ret_code = Globals.RET_CODE_OK
         for repo_rorp in repo_iter:
             if not repo_rorp.isreg():
                 continue
@@ -670,6 +691,7 @@ class RepoShadow:
                         "because this feature was added in v1.1.1".format(
                             fi=repo_rorp), log.WARNING)
                 no_hash += 1
+                ret_code |= Globals.RET_CODE_FILE_WARN
                 continue
             fp = cls.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
             computed_hash = hash.compute_sha1_fp(fp)
@@ -682,20 +704,23 @@ class RepoShadow:
                         "doesn't match recorded digest of '{rd}'. "
                         "Your backup repository may be corrupted!".format(
                             fi=repo_rorp, cd=computed_hash, rd=verify_sha1),
-                        log.WARNING)
-        cls.close_rf_cache()
+                        log.ERROR)
+                ret_code |= Globals.RET_CODE_FILE_ERR
+        cls.finish_loop()
         if bad_files:
             log.Log(
                 "Verification found {cf} potentially corrupted files".format(
                     cf=bad_files), log.ERROR)
-            return 2
-        if no_hash:
+            if no_hash:
+                log.Log("Verification also found {fi} files without "
+                        "hash".format(fi=no_hash), log.NOTE)
+        elif no_hash:
             log.Log("Verification found {fi} files without hash, all others "
                     "could be verified successfully".format(fi=no_hash),
                     log.NOTE)
         else:
             log.Log("All files verified successfully", log.NOTE)
-        return 0
+        return ret_code
 
     @classmethod
     def _log_success(cls, src_rorp, mir_rorp=None):

@@ -3,6 +3,7 @@ import sys
 
 from commontest import old_test_dir, abs_test_dir, rdiff_backup
 from distutils import spawn
+from rdiff_backup import Globals
 import subprocess
 import unittest
 
@@ -15,7 +16,8 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     repo = ""
 
     # Lookup for rdiff-backup-delete location.
-    def _rdiff_backup_delete(self, to_delete=None, extra_args=[], expected_ret_val=0, expected_output=None):
+    def _rdiff_backup_delete(self, to_delete=None, extra_args=[],
+                             expected_ret_code=0, expected_output=None):
         bin = spawn.find_executable(u"rdiff-backup-delete")
         self.assertTrue(bin, "can't find rdiff-backup-delete")
         cmdargs = [bin.encode('utf8')]
@@ -28,11 +30,11 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         p = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = p.communicate()
         ret_val = p.poll()
-        if expected_ret_val is not None:
+        if expected_ret_code is not None:
             self.assertEqual(
-                ret_val, expected_ret_val,
+                ret_val, expected_ret_code,
                 "Return code %d of command '%s' doesn't match expected value: %d.\n%s\n%s" %
-                (ret_val, cmdline, expected_ret_val, output, error))
+                (ret_val, cmdline, expected_ret_code, output, error))
         if expected_output is not None:
             self.assertIn(
                 expected_output, output + error,
@@ -84,17 +86,17 @@ class RdiffBackupDeleteTest(unittest.TestCase):
             extra_args=[b'-h'], expected_output=b'Usage:')
         # Call without arguments
         self._rdiff_backup_delete(
-            extra_args=[], expected_ret_val=1,
+            extra_args=[], expected_ret_code=Globals.RET_CODE_ERR,
             expected_output=b'fatal: missing arguments')
         # Call with invalid arguments
         self._rdiff_backup_delete(
-            extra_args=[b'--invalid'], expected_ret_val=1,
+            extra_args=[b'--invalid'], expected_ret_code=Globals.RET_CODE_ERR,
             expected_output=b'fatal: bad command line: option --invalid not recognized')
 
     def test_rdiff_backup_dir(self):
         # without rdiff-backup-dir
         self._rdiff_backup_delete(
-            to_delete=b'somefile', expected_ret_val=1,
+            to_delete=b'somefile', expected_ret_code=Globals.RET_CODE_ERR,
             expected_output=b'fatal: not a rdiff-backup repository (or any parent up to mount point /)')
 
     def test_delete_with_file(self):
@@ -182,8 +184,10 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         with open(current_mirror, 'wb') as f:
             f.write(b'PID 1234')
         self._rdiff_backup_delete(
-            to_delete=os.path.join(self.repo, b'tmp'), expected_ret_val=1,
-            expected_output=b'failed to acquire repository lock. A backup may be running.')
+            to_delete=os.path.join(self.repo, b'tmp'),
+            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_output=b'failed to acquire repository lock. '
+                            b'A backup may be running.')
 
 
 if __name__ == "__main__":

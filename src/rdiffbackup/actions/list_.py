@@ -76,23 +76,23 @@ class ListAction(actions.BaseAction):
         # we try to identify as many potential errors as possible before we
         # return, so we gather all potential issues and return only the final
         # result
-        return_code = super().check()
+        ret_code = super().check()
 
         # we verify that source repository is correct
-        return_code |= self.repo.check()
+        ret_code |= self.repo.check()
 
-        return return_code
+        return ret_code
 
     def setup(self):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
-        return_code = super().setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self.repo.setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self.repo.setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         # set the filesystem properties of the repository
         if Globals.get_api_version() < 201:  # compat200
@@ -101,29 +101,29 @@ class ListAction(actions.BaseAction):
             self.repo.setup_quoting()
 
         if self.values.entity == "files":
-            if self.values.changed_since:
-                self.action_time = self._get_parsed_time(
-                    self.values.changed_since, ref_rp=self.repo.ref_inc)
-            elif self.values.at:
-                self.action_time = self._get_parsed_time(
-                    self.values.at, ref_rp=self.repo.ref_inc)
+            self.action_time = self.repo.get_parsed_time(
+                self.values.changed_since or self.values.at)
             if self.action_time is None:
-                return Globals.RET_CODE_ERR
+                return ret_code | Globals.RET_CODE_ERR
 
-        return Globals.RET_CODE_OK
+        return ret_code
 
     def run(self):
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         if self.values.entity == "increments":
             if self.values.size:
-                self._list_increments_sizes()
+                ret_code |= self._list_increments_sizes()
             else:
-                self._list_increments()
+                ret_code |= self._list_increments()
         elif self.values.entity == "files":
             if self.values.changed_since:
-                self._list_files_changed_since()
+                ret_code |= self._list_files_changed_since()
             elif self.values.at:
-                self._list_files_at_time()
-        return Globals.RET_CODE_OK
+                ret_code |= self._list_files_at_time()
+        return ret_code
 
     def _list_increments_sizes(self):
         """
@@ -151,6 +151,7 @@ class ListAction(actions.BaseAction):
                 Time.timetopretty(triples[-1]["time"]),
                 stat_obj.get_byte_summary_string(triples[-1]["size"]),
                 stat_obj.get_byte_summary_string(triples[-1]["total_size"])))
+        return Globals.RET_CODE_OK
 
     def _list_increments(self):
         """
@@ -171,6 +172,7 @@ class ListAction(actions.BaseAction):
                     ib=inc["base"], ti=Time.timetopretty(inc["time"])))
             print("Current mirror: {ti}".format(
                 ti=Time.timetopretty(incs[-1]["time"])))  # time of the mirror
+        return Globals.RET_CODE_OK
 
     def _list_files_changed_since(self):
         """List all the files under rp that have changed since restoretime"""
@@ -182,6 +184,7 @@ class ListAction(actions.BaseAction):
         for rorp in rorp_iter:
             # This is a hack, see restore.ListChangedSince for rationale
             print(str(rorp))
+        return Globals.RET_CODE_OK
 
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
@@ -192,6 +195,7 @@ class ListAction(actions.BaseAction):
             rorp_iter = self.repo.list_files_at_time(self.action_time)
         for rorp in rorp_iter:
             print(str(rorp))
+        return Globals.RET_CODE_OK
 
 
 def get_plugin_class():

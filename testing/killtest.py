@@ -14,7 +14,8 @@ class Local:
     """Hold some local RPaths"""
 
     def get_local_rp(ext):
-        return rpath.RPath(Globals.local_connection, os.path.join(abs_test_dir, ext))
+        return rpath.RPath(
+            Globals.local_connection, os.path.join(abs_test_dir, ext))
 
     ktrp = []
     for i in range(4):
@@ -55,7 +56,7 @@ class ProcessFuncs(unittest.TestCase):
         # TODO check if following files really need to be deleted:
         # testfiles/vft_out timbar.pyc testfiles/vft2_out
 
-    def exec_rb(self, time, wait, *args):
+    def exec_rb(self, time, wait=None, *args):
         """Run rdiff-backup return pid.  Wait until done if wait is true"""
         arglist = [sys.executable, RBBin]
         if time:
@@ -225,8 +226,9 @@ class KillTest(ProcessFuncs):
             self.exec_and_kill(min_max_time_pair, curtime, input_rp.path,
                                Local.rpout.path)
             result = self.mark_incomplete(curtime, Local.rpout)
-            self.assertFalse(self.exec_rb(None, 1, '--check-destination-dir',
-                                          Local.rpout.path))
+            self.assertEqual(self.exec_rb(None, 1, '--check-destination-dir',
+                                          Local.rpout.path),
+                             Globals.RET_CODE_WARN)
             self.assertTrue(
                 compare_recursive(old_rp, Local.rpout, compare_hardlinks=0))
             return result

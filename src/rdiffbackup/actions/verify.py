@@ -61,23 +61,23 @@ class VerifyAction(actions.BaseAction):
         # we try to identify as many potential errors as possible before we
         # return, so we gather all potential issues and return only the final
         # result
-        return_code = super().check()
+        ret_code = super().check()
 
         # we verify that source repository is correct
-        return_code |= self.repo.check()
+        ret_code |= self.repo.check()
 
-        return return_code
+        return ret_code
 
     def setup(self):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
-        return_code = super().setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
-        return_code = self.repo.setup()
-        if return_code & Globals.RET_CODE_ERR:
-            return return_code
+        ret_code = self.repo.setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         if Globals.get_api_version() < 201:  # compat200
             # set the filesystem properties of the repository
@@ -85,20 +85,24 @@ class VerifyAction(actions.BaseAction):
                 self.repo.base_dir, 1)  # read_only=True
             self.repo.setup_quoting()
 
-        # FIXME move method _get_parsed_time to Repo?
-        self.action_time = self._get_parsed_time(self.values.at,
-                                                 ref_rp=self.repo.ref_inc)
+        self.action_time = self.repo.get_parsed_time(self.values.at)
         if self.action_time is None:
             return Globals.RET_CODE_ERR
 
         return Globals.RET_CODE_OK
 
     def run(self):
+        ret_code = super().run()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         if Globals.get_api_version() < 201:  # compat200
             return self.repo.base_dir.conn.compare.Verify(
                 self.repo.ref_path, self.repo.ref_inc, self.action_time)
         else:
             return self.repo.verify(self.action_time)
+
+        return ret_code
 
 
 def get_plugin_class():

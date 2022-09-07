@@ -91,7 +91,7 @@ class ActionRegressTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201"),
-            b"regress", ()), 0)
+            b"regress", ()), Globals.RET_CODE_OK)
         # we again simulate a crash
         _repo_shadow.RepoShadow.touch_current_mirror(
             rpath.RPath(Globals.local_connection,
@@ -101,17 +101,17 @@ class ActionRegressTest(unittest.TestCase):
         self.assertNotEqual(comtst.rdiff_backup_action(
             True, None, self.bak_path, None,
             ("--api-version", "201"),
-            b"regress", ()), 0)
+            b"regress", ()), Globals.RET_CODE_OK)
         # but it runs with --force
         self.assertEqual(comtst.rdiff_backup_action(
             True, None, self.bak_path, None,
             ("--api-version", "201", "--force"),
-            b"regress", ()), 0)
+            b"regress", ()), Globals.RET_CODE_WARN)
         # we restore and compare
         self.assertEqual(comtst.rdiff_backup_action(
             True, True, self.bak_path, self.to2_path,
             ("--api-version", "201"),
-            b"restore", ()), 0)
+            b"restore", ()), Globals.RET_CODE_OK)
         self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
         # we again simulate a crash
         _repo_shadow.RepoShadow.touch_current_mirror(
@@ -122,18 +122,18 @@ class ActionRegressTest(unittest.TestCase):
         self.assertNotEqual(comtst.rdiff_backup_action(
             True, True, self.from4_path, self.bak_path,
             ("--api-version", "201", "--current-time", "40000"),
-            b"backup", ()), 0)
+            b"backup", ()), Globals.RET_CODE_OK)
         # now with --force, it can't be exactly the same time or it fails
         # on error_log already existing
         self.assertEqual(comtst.rdiff_backup_action(
             True, True, self.from4_path, self.bak_path,
             ("--api-version", "201", "--current-time", "40001", "--force"),
-            b"backup", ()), 0)
+            b"backup", ()), Globals.RET_CODE_WARN)
         # we restore and compare
         self.assertEqual(comtst.rdiff_backup_action(
             True, True, self.bak_path, self.to4_path,
             ("--api-version", "201"),
-            b"restore", ()), 0)
+            b"restore", ()), Globals.RET_CODE_OK)
         self.assertFalse(fileset.compare_paths(self.from4_path, self.to4_path))
 
         # all tests were successful
@@ -145,17 +145,17 @@ class ActionRegressTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--force"),
-            b"regress", ()), 0)
+            b"regress", ()), Globals.RET_CODE_OK)
         # we do it twice
         self.assertEqual(comtst.rdiff_backup_action(
             True, None, self.bak_path, None,
             ("--api-version", "201", "--force"),
-            b"regress", ()), 0)
+            b"regress", ()), Globals.RET_CODE_OK)
         # we restore and compare
         self.assertEqual(comtst.rdiff_backup_action(
             True, True, self.bak_path, self.to1_path,
             ("--api-version", "201"),
-            b"restore", ()), 0)
+            b"restore", ()), Globals.RET_CODE_OK)
         self.assertFalse(fileset.compare_paths(self.from1_path, self.to1_path))
         # the last tentative to regress forcefully ends with a warning
         self.assertEqual(comtst.rdiff_backup_action(

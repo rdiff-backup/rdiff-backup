@@ -24,7 +24,7 @@ class CompareTest(unittest.TestCase):
                                      old_inc2_dir,
                                      self.outdir,
                                      extra_options=compare_option,
-                                     check_return_val=0))
+                                     expected_ret_code=None))
         rdiff_backup(local,
                      local,
                      old_inc2_dir,
@@ -36,7 +36,7 @@ class CompareTest(unittest.TestCase):
                          old_inc3_dir,
                          self.outdir,
                          extra_options=compare_option + b"-at-time 10000",
-                         check_return_val=0))
+                         expected_ret_code=None))
 
     def testBasicLocal(self):
         """Test basic --compare and --compare-at-time modes"""
@@ -75,7 +75,7 @@ class CompareTest(unittest.TestCase):
                          os.path.join(old_inc2_dir, b'increment1'),
                          os.path.join(abs_output_dir, b'increment1'),
                          extra_options=compare_option,
-                         check_return_val=0))
+                         expected_ret_code=None))
 
         rdiff_backup(local,
                      local,
@@ -88,7 +88,7 @@ class CompareTest(unittest.TestCase):
                          os.path.join(old_inc3_dir, b'newdir'),
                          os.path.join(abs_output_dir, b'newdir'),
                          extra_options=compare_option + b"-at-time 10000",
-                         check_return_val=0))
+                         expected_ret_code=None))
 
     def testSelLocal(self):
         """Test basic local compare of single subdirectory"""
@@ -166,7 +166,7 @@ class CompareTest(unittest.TestCase):
                          abs_output_dir,
                          None,
                          extra_options=b"--verify-at-time 10000",
-                         check_return_val=0))
+                         expected_ret_code=None))
         change_file(
             rpath.RPath(Globals.local_connection,
                         os.path.join(abs_output_dir, b'stph_icons.h')))
@@ -176,7 +176,7 @@ class CompareTest(unittest.TestCase):
                          abs_output_dir,
                          None,
                          extra_options=b"--verify",
-                         check_return_val=0))
+                         expected_ret_code=None))
 
     def testVerifyLocal(self):
         """Test --verify of directory, local"""

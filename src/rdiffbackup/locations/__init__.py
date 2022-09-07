@@ -64,7 +64,7 @@ class Location():
             self._shadow.init_owners_mapping(users_map, groups_map,
                                              preserve_num_ids)
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def exit(self):
         """
@@ -137,20 +137,20 @@ class ReadLocation(Location):
         """
         Check anything which can be checked about the location
 
-        Returns 0 if everything is OK, else 1 as error code
+        Returns error codes as defined with Globals.RET_CODE_*
         """
         if self._is_existing():
-            return 0
+            return Globals.RET_CODE_OK
         else:
-            return 1
+            return Globals.RET_CODE_ERR
 
     def setup(self):
         """
         Setup the location, preparing it for usage
 
-        Returns 0 if everything is OK, else 1 as error code
+        Returns error codes as defined with Globals.RET_CODE_*
         """
-        return 0
+        return Globals.RET_CODE_OK
 
 
 class WriteLocation(Location):
@@ -166,21 +166,21 @@ class WriteLocation(Location):
         """
         Check anything which can be checked about the location
 
-        Returns 0 if everything is OK, else 1 as error code
+        Returns error codes as defined with Globals.RET_CODE_*
         """
         if self._is_writable():
-            return 0
+            return Globals.RET_CODE_OK
         else:
-            return 1
+            return Globals.RET_CODE_ERR
 
     def setup(self):
         """
         Setup the location, preparing it for usage
 
-        Returns 0 if everything is OK, else 1 as error code
+        Returns error codes as defined with Globals.RET_CODE_*
         """
         # make sure the target directory is present
         if self._create():
-            return 0
+            return Globals.RET_CODE_OK
         else:
-            return 1
+            return Globals.RET_CODE_ERR

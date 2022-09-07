@@ -28,9 +28,7 @@ FSAbilities object describing it.
 
 import errno
 import os
-from rdiff_backup import (
-    Globals, log, robust, selection, Time
-)
+from rdiff_backup import Globals, log, robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
 
@@ -839,7 +837,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def set_special_escapes(self, repo):
         """
@@ -1026,7 +1024,7 @@ class Repo2DirSetGlobals(SetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def set_special_escapes(self, repo):
         """
@@ -1128,7 +1126,7 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return 0  # all is good
+        return Globals.RET_CODE_OK
 
     def set_eas(self):
         self._update_triple(

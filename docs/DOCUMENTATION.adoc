@@ -1,0 +1,69 @@
+= Guidelines for Documentation
+
+== Text
+
+We use https://projects.eclipse.org/projects/asciidoc[Asciidoc] as it's more standardized than Markdown and richer, but still simple enough.
+
+We follow the https://asciidoctor.org/docs/asciidoc-recommended-practices/[AsciiDoc Recommended Practices],
+
+== Graphics
+
+We standardize on https://diagrams.net[diagrams.net], formerly known as https://draw.io[draw.io], so that we have one standard format, which everybody can edit and adapt for their own needs.
+
+NOTE: exception applies of course for pre-existing graphics (e.g. screenshots) as long as they can be kept in Git and edited with open source tools.
+
+=== Why diagrams.net ?
+
+We decided to use diagrams.net because:
+
+. open source and freely available for anybody
+. it has a graphical user interface, similar to most standard tools, like Visio, OpenDraw or LucidChart, which is important for acceptance
+. easy to install under Linux or even no installation necessary thanks to online service
+. the file can be kept in Git together with the rest of the documentation into Git without need to export/import
+. embedded in a PNG or SVG, it can be shown by GitLab and easily embedded in asciidoc without need for any plugin, while still being editable (SVG would be a better choice for Git, but I noticed some issues with rendering, depending on the tool)
+
+=== How to install draw.io?
+
+The easiest way to use diagrams.net is to use the service at https://app.diagrams.net/.
+
+You can also install draw.io locally:
+
+* https://flathub.org/apps/details/com.jgraph.drawio.desktop[using a FlatPak]
+* https://snapcraft.io/install/drawio/fedora[using a Snap]
+* if you have podman (or docker), it can easily be downloaded and used using a script like:
++
+[source, shell]
+----
+#!/bin/sh
+# a script to pull the draw.io / diagrams.net container image and run it in
+# one's browser
+# Use -p or --pull to force pulling a new version of the image
+
+DRAWIO_STATUS=$(podman ps -a --filter name=drawio --noheading --format '{{.Status}}')
+if [[ -z "${DRAWIO_STATUS}" ]]
+then
+	if [[ "$1" == "--pull" ]] || [[ "$1" == "-p" ]]
+	then
+		podman pull jgraph/drawio
+	fi
+	podman run --rm --name="drawio" --detach -p 8080:8080 -p 8443:8443 jgraph/drawio
+	sleep 1
+elif [[ ${DRAWIO_STATUS} == "Created" ]]
+then
+	podman restart drawio
+	sleep 1
+fi
+xdg-open http://localhost:8080/?offline=1&https=0
+----
+
+* and there are many https://www.diagrams.net/integrations[ways to install diagrams.net], also on Mac and Windows (but we haven't tried them all)
+
+=== Format requirements
+
+Make sure that you save your diagrams as "Editable Bitmap Image (.png)" or "Editable Vector Image (.svg) to Git, so that there is no issue with rendering.
+
+People and tools will be able to see and show your diagram like any other image, but you'll be able to edit it further.
+Keep the default `.drawio.png/svg` extension so that we can make the difference between editable and normal graphics.
+
+CAUTION: do _save_ as, not _export_ as PNG/SVG or you'll get a normal graphic file. 
+And be aware that only the first page of multi-page documents will be shown by standard tools unaware of draw.io.
