@@ -80,6 +80,27 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # all tests were successful
         self.success = True
 
+    def test_action_backuprestore_quoted(self):
+        """
+        test the backup and restore actions with quoted repository
+        """
+        # we backup using a specific chars-to-quote
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, False, self.from1_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "10000",
+             "--chars-to-quote", "A"),
+            b"backup", ()), 0)
+
+        # then we restore once the full repo, once a sub-path
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, False, os.path.join(self.bak_path, b"itemX"), self.to1_path,
+            ("--api-version", "201"),
+            b"restore", ()), 0)
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, self.to2_path,
+            ("--api-version", "201"),
+            b"restore", ()), 0)
+
     def tearDown(self):
         # we clean-up only if the test was successful
         if self.success:
