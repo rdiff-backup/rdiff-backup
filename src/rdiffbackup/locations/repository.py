@@ -114,7 +114,8 @@ class Repo(locations.Location):
             else:
                 self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
 
-            if not self.lock():
+            lock_result = self.lock()
+            if lock_result is False:
                 if self.force:
                     log.Log("Repository is locked by file {lf}, another "
                             "action is probably on-going. Enforcing anyway "
@@ -122,10 +123,16 @@ class Repo(locations.Location):
                             log.WARNING)
                 else:
                     log.Log("Repository is locked by file {lf}, another "
-                            "action is probably on-going. Either wait, remove "
-                            "the lock or use the --force option".format(
+                            "is probably on-going, or something went "
+                            "wrong. Either wait, remove the lock "
+                            "or use the --force option".format(
                                 lf=self.lockfile), log.ERROR)
                     return Globals.RET_CODE_ERR
+            elif lock_result is None:
+                log.Log("Repository couldn't be locked by file {lf}, probably "
+                        "because the repository was never written with "
+                        "API >= 201, ignoring".format(lf=self.lockfile),
+                        log.NOTE)
 
             if self.must_be_writable:
                 self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
