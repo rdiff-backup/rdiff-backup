@@ -114,7 +114,7 @@ sudo pip3 install rdiff-backup
 
 You need to make sure that the following requirements are met:
 
-* Python 3.7 or higher
+* Python 3.7 or higher (Python 3.6 is tolerated on supported platforms, but not regularly tested, and hence not recommended)
 * pip3 e.g.
 installed with `+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py;
 sudo python3 get-pip.py+`.
