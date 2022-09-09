@@ -156,13 +156,13 @@ def get_quotedrpath(rp, separate_basename=0):
     """
     Return quoted version of rpath rp
     """
-    assert not rp.index, (
-        "Trying to start quoting '{rp}' in the middle.".format(rp=rp))
     if separate_basename:
+        assert not rp.index, (
+            "Trying to start quoting '{rp}' in the middle.".format(rp=rp))
         dirname, basename = rp.dirsplit()
         return QuotedRPath(rp.conn, dirname, (unquote(basename), ), rp.data)
     else:
-        return QuotedRPath(rp.conn, rp.base, (), rp.data)
+        return QuotedRPath(rp.conn, rp.base, rp.index, rp.data)
 
 
 def get_quoting_regexps(chars_to_quote, quoting_char):
