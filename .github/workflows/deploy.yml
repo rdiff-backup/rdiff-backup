@@ -83,11 +83,10 @@ jobs:
       with:
         python-version: ${{ env.WIN_PYTHON_VERSION }}
         architecture: ${{ matrix.arch }}
-    # FIXME PyInstaller 5.2 and 5.3 fail to grab all modules
     - name: Install dependencies
       run: |
         python.exe -VV
-        pip.exe install --upgrade pywin32 pyinstaller==5.1 wheel certifi setuptools-scm tox PyYAML
+        pip.exe install --upgrade pywin32 wheel certifi setuptools-scm tox PyYAML
         python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'
         choco install ruby
         gem install asciidoctor

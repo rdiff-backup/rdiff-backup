@@ -18,26 +18,18 @@ else
 fi
 
 PYEXE=python.exe
-PYINST=PyInstaller.exe
+TOXEXE=tox.exe
 if [[ -n ${PYDIRECT} ]]
 then
 	py_dir=C:/Python${bits}
 	PYEXE=${py_dir}/${PYEXE}
-	PYINST=${py_dir}/Scripts/${PYINST}
+	TOXEXE=${py_dir}/Scripts/${TOXEXE}
 fi
 
 LIBRSYNC_DIR=${HOME}/librsync${bits}
 export LIBRSYNC_DIR
 
-ver_name=rdiff-backup-$(${PYEXE} setup.py --version)
-py_ver_brief=${PYTHON_VERSION%.[0-9]}
+RDIFF_BACKUP_VERSION=rdiff-backup-$(${PYEXE} setup.py --version)-${bits}
+export RDIFF_BACKUP_VERSION
 
-${PYEXE} setup.py bdist_wheel
-# add hook file to hooks-dir for each new plugin manager!
-${PYINST} --onefile --distpath build/${ver_name}-${bits} \
-	--paths=build/lib.${py_win_bits}-cpython-${py_ver_brief/./} \
-	--paths=${LIBRSYNC_DIR}/lib \
-	--paths=${LIBRSYNC_DIR}/bin \
-	--additional-hooks-dir=tools \
-	--console build/scripts-${py_ver_brief}/rdiff-backup \
-	--add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info
+${TOXEXE} -c tox_win.ini -e buildexe
