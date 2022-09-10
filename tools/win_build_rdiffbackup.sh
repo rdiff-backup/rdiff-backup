@@ -35,9 +35,9 @@ py_ver_brief=${PYTHON_VERSION%.[0-9]}
 ${PYEXE} setup.py bdist_wheel
 # add hook file to hooks-dir for each new plugin manager!
 ${PYINST} --onefile --distpath build/${ver_name}-${bits} \
-	--paths=build/lib.${py_win_bits}-${py_ver_brief} \
-        --paths=${LIBRSYNC_DIR}/lib \
-        --paths=${LIBRSYNC_DIR}/bin \
+	--paths=build/lib.${py_win_bits}-cpython-${py_ver_brief/./} \
+	--paths=${LIBRSYNC_DIR}/lib \
+	--paths=${LIBRSYNC_DIR}/bin \
 	--additional-hooks-dir=tools \
 	--console build/scripts-${py_ver_brief}/rdiff-backup \
 	--add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info

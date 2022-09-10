@@ -16,9 +16,8 @@ defaults:
   run:
     shell: bash
 
-# FIXME PyInstaller v5.1 doesn't work with 3.10.7
 env:
-  WIN_PYTHON_VERSION: 3.10.5
+  WIN_PYTHON_VERSION: 3.10.7
   WIN_LIBRSYNC_VERSION: v2.3.2
 
 jobs:
