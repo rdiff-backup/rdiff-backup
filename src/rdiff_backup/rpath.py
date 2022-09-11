@@ -1440,13 +1440,13 @@ class RPath(RORPath):
 
 
 class MaybeGzip:
-    """Represent a file object that may or may not be compressed
+    """
+    Represent a file object that may or may not be compressed
 
     We don't want to compress 0 length files.  This class lets us
     delay the opening of the file until either the first write (so we
     know it has data and should be compressed), or close (when there's
     no data).
-
     """
 
     def __init__(self, base_rp, callback=None):
