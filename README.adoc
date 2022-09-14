@@ -51,7 +51,7 @@ sudo apt update
 sudo apt install rdiff-backup
 ----
 
-=== CentOS and RHEL 7 (from EPEL)
+=== CentOS, EuroLinux and RHEL 7 (from EPEL)
 
 ----
 sudo yum install epel-release
@@ -61,7 +61,7 @@ sudo yum install py3libacl pyxattr
 
 NOTE: the last line is optional to get ACLs and EAs support.
 
-=== CentOS, AlmaLinux, Rocky Linux and RHEL 8 (from EPEL)
+=== CentOS, AlmaLinux, EuroLinux, Rocky Linux and RHEL 8 (from EPEL)
 
 ----
 sudo dnf install epel-release
