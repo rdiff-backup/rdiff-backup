@@ -1106,6 +1106,7 @@ information in it.
         content.
 
         Return True if the lock could be taken, False else.
+        Return None if the lock file doesn't exist in non-exclusive mode
         """
         if cls._lockfd:  # we already opened the lockfile
             return False
@@ -1123,7 +1124,7 @@ information in it.
                 open_mode = cls.LOCK_MODE[exclusive]["truncate"]
             else:
                 # we can't take the lock if the file doesn't exist
-                return False
+                return None
         else:
             open_mode = cls.LOCK_MODE[exclusive]["open"]
         try:
