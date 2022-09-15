@@ -20,7 +20,7 @@
 Base module for any metadata class to derive from.
 """
 
-from rdiff_backup import log, rpath
+from rdiff_backup import log
 
 
 class ParsingError(Exception):
@@ -238,6 +238,7 @@ class FlatFile:
                 def callback(rp):
                     self.rp = rp
 
+                from rdiff_backup import rpath  # to avoid a circular dependency
                 self.fileobj = rpath.MaybeGzip(rp_base, callback)
             else:
                 self.rp = rp_base
