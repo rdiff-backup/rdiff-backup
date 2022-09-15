@@ -75,7 +75,7 @@ This installs the Python2 application `rdiff-backup-1` side-by-side with
 any other version `rdiff-backup` also installed.  If you wish this to be know
 as `rdiff-backup` you will need to rename or link it to the required name.
 
-CentOS and RHEL 7 (From COPR)
+RHEL 7 and its replicas (From COPR)
  
 ----
 sudo yum install yum-plugin-copr epel-release
@@ -83,7 +83,7 @@ sudo yum copr enable frankcrawford/python2-rdiff-backup
 sudo yum install python2-rdiff-backup
 ----
  
-CentOS, AlmaLinux, Rocky Linux and RHEL 8 (From COPR)
+RHEL 8 and its replicas (From COPR)
  
 ----
 sudo dnf install dnf-plugins-core epel-release
