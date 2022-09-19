@@ -103,9 +103,37 @@ jobs:
         path: dist/*.*
         if-no-files-found: error
 
+  test-built-windows:
+    runs-on: windows-latest
+    needs: [build-windows]
+    strategy:
+      matrix:
+        arch: [x86, x64]
+    steps:
+    - name: Download artifacts
+      id: download
+      uses: actions/download-artifact@v2
+      with:
+        name: package-artifacts
+        path: .
+    - name: Extract and test Windows binary
+      run: |
+        ls -la
+        if [ ${{ matrix.arch }} == "x86" ]; then bits=32; else bits=64; fi 
+        7z x rdiff-backup-*.win${bits}exe.zip
+        cd rdiff-backup-*-${bits}
+        pwd
+        ls -la
+        ./rdiff-backup.exe --help
+        ./rdiff-backup.exe info
+        ./rdiff-backup.exe -v5 backup . ../bak${bits}
+        ./rdiff-backup.exe -v5 verify ../bak${bits}
+        ./rdiff-backup.exe -v5 restore ../bak${bits} to
+        ls -la to/
+
   release:
     runs-on: ubuntu-latest
-    needs: [build-manylinux, build-sdist, build-windows]
+    needs: [build-manylinux, build-sdist, test-built-windows]
     steps:
     - name: Download artifacts
       id: download
