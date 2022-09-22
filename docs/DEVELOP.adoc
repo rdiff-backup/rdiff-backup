@@ -116,25 +116,27 @@ All of those should come packaged with your system or available from https://pyp
 
 ==== Changing dependencies versions
 
-* Python interpreter:
-** Windows:
-*** .github/workflows/test_windows.yml - check for `WIN_PYTHON_VERSION`
-*** .github/workflows/deploy.yml - check for `WIN_PYTHON_VERSION`
-*** tools/windows/group_vars/windows_hosts/generic.yml - check for `python_version` and `python_version_full` 
-** Linux:
-*** tox.ini, tox_root.ini, tox_dist.ini and tox_slow.ini - check for `envlist`
-*** .github/workflows/test_linux.yml - check for `python-version`
-*** .github/workflows/deploy.yml - check for `/opt/python/cp3...` (and possibly `many-linux`)
-*** setup.py - check for `python-requires`
-*** README.adoc - check for Python references
-* Python libraries:
-** `setup.py`
-** `requirements.txt`
-** `tox*.ini`
-** `.github/workflows/*.yml`
-** `tools/windows/playbook-provision.yml`
-** `tools/*.sh`
-** check documentation
+===== Python interpreter
+
+* Windows:
+** .github/workflows/test_windows.yml - check for `WIN_PYTHON_VERSION`
+** .github/workflows/deploy.yml - check for `WIN_PYTHON_VERSION`
+** tools/windows/group_vars/windows_hosts/generic.yml - check for `python_version` and `python_version_full` 
+* Linux:
+** tox.ini, tox_root.ini, tox_dist.ini and tox_slow.ini - check for `envlist`
+** .github/workflows/test_linux.yml - check for `python-version`
+** .github/workflows/deploy.yml - check for `/opt/python/cp3...` (and possibly `many-linux`)
+** setup.py - check for `python-requires`
+** README.adoc - check for Python references
+
+===== Python libraries and binary dependencies
+
+All Python dependencies have been concentrated into `requirements.txt`, generated from `requs/*.txt` with one file for each purpose.
+Only those files should be used, and maintained, throughout the build/release process.
+
+Binaries are listed in `bindep.txt` (based on the https://docs.opendev.org/opendev/bindep[bindep utility]).
+
+In all cases, a validation of the documentation is also necessary, but the above files should be considered the ultimate source of truth, and correctly maintained.
 
 === Build and install using Makefile
 

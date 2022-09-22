@@ -1,0 +1,6 @@
+
+#--- for Linux only ---
+
+pylibacl
+pyxattr
+# or xattr under SuSE Linux & Co

@@ -37,8 +37,7 @@ jobs:
       if: '!steps.skip-docs.outputs.skip'
       run: |
         sudo apt install librsync-dev libacl1-dev rdiff asciidoctor
-        sudo pip3 install --upgrade pip setuptools-scm
-        sudo pip3 install --upgrade tox pyxattr pylibacl
+        sudo pip3 install --upgrade -r requs/base.txt -r requs/linux.txt -r requs/optional.txt -r requs/test.txt
     - name: Execute tests ${{ matrix.test-step }}
       if: '!steps.skip-docs.outputs.skip'
       run: |

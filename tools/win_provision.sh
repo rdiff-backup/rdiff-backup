@@ -1,16 +1,41 @@
-# provision Python for 32 and 64 bits in given version using Chocolatey
+# provision Python for 32 and/or 64 bits in given version using Chocolatey
 
-PYTHON_VERSION=$1
+if [ "$1" == "asciidoc" ]
+then
+	choco install ruby
+	gem install asciidoctor
+	shift
+fi
 
-choco install python3 \
-	--version ${PYTHON_VERSION} \
-	--params "/InstallDir:C:\Python64 /InstallDir32:C:\Python32"
+if [ "$1" == "python" ]
+then
+	PYTHON_VERSION=$2
 
-for bits in 32 64
-do
-	C:/Python${bits}/python.exe -VV
-	C:/Python${bits}/Scripts/pip.exe install --upgrade \
-		pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML
-	C:/Python${bits}/python.exe -c \
-		'import pywintypes, winnt, win32api, win32security, win32file, win32con'
-done
+	choco install python3 \
+		--version ${PYTHON_VERSION} \
+		--params "/InstallDir:C:\Python64 /InstallDir32:C:\Python32"
+	shift 2
+fi
+
+function install_python_modules() {
+	${PYEXE} -VV
+	${PIPEXE} install --upgrade -r requs/base.txt \
+		-r requs/windows.txt -r requs/optional.txt \
+		-r requs/build.txt -r requs/test.txt
+	${PYEXE} -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'
+}
+
+if [ -n "$*" ]
+then
+	for bits in "${@}"
+	do
+		if [[ ${bits} == *64 ]]; then bits=64; else bits=32; fi
+		PYEXE="C:/Python${bits}/python.exe"
+		PIPEXE="C:/Python${bits}/Scripts/pip.exe"
+		install_python_modules
+	done
+else
+	PYEXE="python.exe"
+	PIPEXE="pip.exe"
+	install_python_modules
+fi
