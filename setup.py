@@ -308,7 +308,15 @@ setup(
     },
     install_requires=[
         'importlib-metadata ; python_version < "3.8"',
+        'pywin32 ; platform_system == "Windows"',
         'PyYAML',
     ],
+    extras_require={
+        'meta': [
+            'pylibacl ; os_name == "posix"',
+            'pyxattr ; platform_system == "Linux"',
+            'psutil',
+        ]
+    },
     setup_requires=['setuptools_scm'],
 )

@@ -23,7 +23,9 @@ class UtilsPsutilTest(unittest.TestCase):
                       ("python", "python3", "coverage"))
 
         print(sys.argv[0])
-        self.assertIsNone(simpleps.get_pid_name(sys.maxsize))
+        # max unicode doesn't make a lot of sense but it works under Linux
+        # and Windows, and it should be seldom enough to not break the pipeline
+        self.assertIsNone(simpleps.get_pid_name(sys.maxunicode))
 
 
 if __name__ == "__main__":

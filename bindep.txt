@@ -1,0 +1,40 @@
+# List of packages required to use and/or develop rdiff-backup
+# Note that it doesn't encompass Python libraries installed via pip,
+# those are listed in requirements.txt resp. requs/*.txt
+
+# USAGE:
+# Install bindep with e.g. `pip install --user bindep` and call for example
+#   bindep -l newlines [usage|devel]
+# to see which packages are necessary on your platform for this purpose
+# You could use the following command to install missing packages:
+#   dnf|yum|apt -y install $(bindep devel)
+
+# If this doesn't work on your favourite Linux platform, create an enhancement
+# issue at https://github.com/rdiff-backup/rdiff-backup/issues/new
+# with following information:
+# - name of distribution and package manager (dnf, yum, apt...)
+# - output of `bindep --profiles`
+# - a list of missed/failed packages with their package name on your Linux
+# - if you've worked it out, improved version of this bindep.txt
+
+epel-release [platform:redhat !platform:fedora]
+librsync
+
+# Packages for usage of rdiff-backup
+
+rdiff-backup [usage]
+python3-psutil [usage]
+python3-pylibacl [usage]
+python3-pyxattr [usage]
+
+# Packages for development of rdiff-backup
+
+python3-devel [platform:redhat devel]
+python3-dev [platform:dpkg devel]
+librsync-devel [platform:redhat devel]
+librsync-dev [platform:dpkg devel]
+libacl-devel [platform:redhat devel]
+libacl1-dev [platform:dpkg devel]
+gcc [devel]
+rubygem-asciidoctor [platform:redhat devel]
+asciidoctor [platform:dpkg devel]
