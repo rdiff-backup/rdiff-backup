@@ -4,4 +4,4 @@
 pylibacl ; os_name == "posix"
 pyxattr ; platform_system == "Linux"
 # or xattr under SuSE Linux & Co
-psutil
+psutil ; os_name == "posix"  # FIXME see GH #744
