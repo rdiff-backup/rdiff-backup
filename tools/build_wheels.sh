@@ -10,7 +10,11 @@ build_dir=${basedir}/build
 dist_dir=${basedir}/dist
 
 # Install a system package required by our library
-yum install -y librsync-devel rubygems
+if ! yum install -y librsync-devel rubygems
+then  # re-try with EPEL
+	yum install -y epel-release
+	yum install -y librsync-devel rubygems
+fi
 
 # asciidoctor 2.x isn't compatible with Ruby 1.8
 ruby_version=$(rpm -qi ruby | awk -F' *: *' '$1=="Version" {print $2}')
