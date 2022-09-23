@@ -315,7 +315,7 @@ setup(
         'meta': [
             'pylibacl ; os_name == "posix"',
             'pyxattr ; platform_system == "Linux"',
-            'psutil ; os_name == "posix"',  # FIXME see GH #744
+            'psutil',
         ]
     },
     setup_requires=['setuptools_scm'],
