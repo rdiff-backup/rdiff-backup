@@ -3,3 +3,6 @@
 
 twine
 wheel
+#py2exe; platform_system=="Windows"
+pyinstaller==5.4; platform_system=="Windows"
+#certifi; platform_system=="Windows"

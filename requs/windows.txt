@@ -1,7 +1,0 @@
-
-#--- for Windows ---
-
-py2exe
-pywin32
-pyinstaller==5.4
-certifi

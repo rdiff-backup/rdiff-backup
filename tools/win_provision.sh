@@ -19,8 +19,7 @@ fi
 
 function install_python_modules() {
 	${PYEXE} -VV
-	${PIPEXE} install --upgrade -r requs/base.txt \
-		-r requs/windows.txt -r requs/optional.txt \
+	${PIPEXE} install --upgrade -r requs/base.txt -r requs/optional.txt \
 		-r requs/build.txt -r requs/test.txt
 	${PYEXE} -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'
 }
