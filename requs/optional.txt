@@ -1,0 +1,7 @@
+
+#--- optional ---
+
+pylibacl ; os_name == "posix"
+pyxattr ; platform_system == "Linux"
+# or xattr under SuSE Linux & Co
+psutil

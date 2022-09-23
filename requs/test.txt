@@ -1,0 +1,7 @@
+
+#--- for testing ---
+
+tox
+flake8
+coverage==5.5
+rpdb

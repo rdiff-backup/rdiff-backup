@@ -27,7 +27,7 @@
     chocolatey.chocolatey.win_chocolatey:
       name: "python3"
       version: "{{ python_version_full }}"
-      state: present
+      state: upgrade
       package_params: /InstallDir:C:\Python64 /InstallDir32:C:\Python32
   - name: install dependencies, allows for reboot in-between
     chocolatey.chocolatey.win_chocolatey:
@@ -52,20 +52,16 @@
     ansible.windows.win_reboot:
     when: vs is changed
 
-  - name: install necessary python libraries
-    ansible.windows.win_command: "\\{{ item }}\\Scripts\\pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML"
+  - name: copy requirement files
+    ansible.windows.win_copy:
+      src: "{{ playbook_dir }}/../../requs"
+      dest: "."
+  - name: install and validate necessary Python libraries
+    ansible.builtin.script:
+      cmd: "{{ playbook_dir }}/../win_provision.sh 32 64"
+      executable: "\"{{ git_bash_exe | regex_replace('/', '\\\\') }}\""
     register: pipcmd
     changed_when: "'Successfully installed ' in pipcmd.stdout"
-    # pylibacl and pyxattr aren't supported under Windows
-    loop:
-      - Python64
-      - Python32
-  - name: validate that python seems to work as it should
-    win_shell: "\\{{ item }}\\python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'"
-    changed_when: false  # this command doesn't change anything ever
-    loop:
-      - Python64
-      - Python32
 
   - name: Install NuGet to overcome issue 50332 in Ansible
     # https://github.com/ansible/ansible/issues/50332
@@ -77,6 +73,7 @@
       allow_clobber: true
   - name: refresh the environment variables as we need gem in the PATH
     ansible.windows.win_command: refreshenv.cmd
+    changed_when: false
   - name: install asciidoctor gem
     ansible.windows.win_command: gem.cmd install asciidoctor
 

@@ -12,35 +12,3 @@
 # You can also use the file to install your environment with the following
 # command:
 #	pip install -r requirements.txt
-
-#--- mandatory ---
-
-setuptools
-# also listed in setup.py!
-setuptools-scm
-importlib-metadata ; python_version < "3.8"
-PyYAML  # for rdiff-backup >= 2.1
-
-pywin32 ; platform_system=="Windows"
-
-#--- building packages ---
-
-twine
-wheel
-#py2exe; platform_system=="Windows"
-pyinstaller==5.4; platform_system=="Windows"
-#certifi; platform_system=="Windows"
-
-#--- optional ---
-
-pylibacl ; os_name == "posix"
-pyxattr ; platform_system == "Linux"
-# or xattr under SuSE Linux & Co
-psutil ; os_name == "posix"  # FIXME see GH #744
-
-#--- for testing ---
-
-tox
-flake8
-coverage==5.5
-rpdb
