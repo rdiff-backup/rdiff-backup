@@ -1,11 +1,14 @@
+# Note this spec file is overly complex to cover every issue.
+# For modern systems you would be recommended starting from the Fedora version
+
 %define PYTHON_NAME %((rpm -q --quiet python3 && echo python3) || echo python)
 %define PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print(sys.version[:3])')
 %define NEXT_PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print("%d.%d" % (sys.version_info[0], sys.version_info[1]+1))')
 
 # Note this in not necessarily the same at the version, so confirm
-%define gittag %{version}
+%define gittag {{ version }}
 
-Version: {{ version }}
+Version: %{gittag}
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
 Release: 1
@@ -16,8 +19,17 @@ License: GPLv2+
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: %{PYTHON_NAME} >= %{PYTHON_VERSION}, %{PYTHON_NAME} < %{NEXT_PYTHON_VERSION}
-BuildPrereq: %{PYTHON_NAME}-devel >= 3.2, librsync-devel >= 1.0.0
+%if %{PYTHON_VERSON} < 3.8
+Requires: %{PYTHON_NAME}-importlib-metadata
+%endif
+Requires: ${PYTHON_NAME}-PyYAML
+
+BuildPrereq: %{PYTHON_NAME}-devel >= 3.6, librsync-devel >= 1.0.0
+BuildPrereq: %{PYTHON_NAME}-setuptools
 BuildPrereq: %{PYTHON_NAME}-setuptools_scm
+BuildPrereq: gcc
+#Required to generate the manpages
+BuildPrereq: rubygem-asciidoctor
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -39,8 +51,6 @@ differences from the previous backup will be transmitted.
 
 %install
 %{PYTHON_NAME} setup.py install --root $RPM_BUILD_ROOT
-# Produce .pyo files for %ghost directive later
-%{PYTHON_NAME} -Oc 'from compileall import *; compile_dir("'$RPM_BUILD_ROOT/%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup'")'
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -53,53 +63,38 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/rdiff-backup*
 %dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
-%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/__pycache__
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/__pycache__/*.pyc
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup-*.egg-info
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/*.py
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/__pycache__
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/__pycache__/*.pyc
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/actions
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/actions/*.py
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/actions/__pycache__
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/actions/__pycache__/*.pyc
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/utils
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/utils/*.py
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/utils/__pycache__
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/utils/__pycache__/*.pyc
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/meta
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/meta/*.py
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/meta/__pycache__
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/meta/__pycache__/*.pyc
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations/*.py
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations/__pycache__
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations/__pycache__/*.pyc
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations/map
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations/map/*.py
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations/map/__pycache__
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiffbackup/locations/map/__pycache__/*.pyc
 %{_datadir}/bash-completion/completions/rdiff-backup
-%ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
 %doc CHANGELOG.adoc COPYING README.adoc docs/*.adoc
 
 %changelog
-* Sat Nov 23 2019 Eric Lavarde <ewl+rdiffbackup@lavar.de> 1.4.0b0-1
-- Beta release of upgrade to Python3.
+* Sun Mar 15 2020 Eric Lavarde <ewl+rdiffbackup@lavar.de> 2.0.0-1
+- Version 2.0.0 - ready for the future
 
-* Sat Feb 16 2019 Eric Lavarde <ewl+rdiffbackup@lavar.de> 1.3.0-1
-- Update URLs
-
-* Wed Nov 15 2006 Gordon Rowell <gordonr@gormand.com.au> 1.1.7-1
-- Update URLs
-
-* Mon Aug 22 2005 Ben Escoto <ben@emerose.org> - 1.0.0-3
-- Matthijs van der Klip's patch to fix python2 support
-
-* Tue Aug 16 2005 Ben Escoto <ben@emerose.org> - 1.0.0-2
-- Removing /usr/share/doc in build for some obscure reason
-
-* Mon Mar 28 2005 Ben Escoto <ben@emerose.org> - 0.13.5-1
-- Set librsync >= 0.9.7 to encourage upgrade
-
-* Sat Dec 15 2003 Ben Escoto <bescoto@stanford.edu> - 0.12.6-2
-- Readded python2/python code; turns out not everyone calls it python
-- A number of changes from Fedora rpm.
-
-* Sun Oct 05 2003 Ben Escoto <bescoto@stanford.edu> - 0:0.12.5-0.fdr.1
-- Added epochs to python versions, more concise %%defines, %%ghost files
-
-* Thu Sep 11 2003 Ben Escoto <bescoto@stanford.edu> - 0.12.4-1
-- Removed code that selected between python2 and python; I think
-  everyone calls it python now.
-
-* Thu Aug 16 2003 Ben Escoto <bescoto@stanford.edu> - 0:0.12.3-0.fdr.4
-- Implemented various suggestions of Fedora QA
-
-* Thu Aug 8 2003 Ben Escoto <bescoto@stanford.edu>
-- Set librsync >= 0.9.6, because rsync.h renamed to librsync.h
-
-* Sun Jul 20 2003 Ben Escoto <bescoto@stanford.edu>
-- Minor changes to comply with Fedora standards.
-
-* Sun Jan 19 2002 Troels Arvin <troels@arvin.dk>
-- Builds, no matter if Python 2.2 is called python2-2.2 or python-2.2.
-
-* Sun Nov 4 2001 Ben Escoto <bescoto@stanford.edu>
-- Initial RPM
