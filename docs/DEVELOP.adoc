@@ -47,7 +47,7 @@ if not quickly merged) and overall to support the review process.
 Ideally each pull request gets some feedback within 24 hours from it having been filed, and is merged within days or a couple of weeks.
 Each author should facilitate quick reviews and merges by making clean and neat commits and pull requests that are quick to review and do not spiral out in long discussions.
 
-If something is of interest for the changelog, prefix the statement in the commit body with a three uppercase letters and a column;
+If something is of interest for the changelog, prefix the statement in the commit body with a three uppercase letters and a colon;
 which acronym is not that important but here is a list of recommended ones (see the release section to understand why it's important):
 
 * FIX: for a bug fix
