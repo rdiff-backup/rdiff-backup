@@ -45,6 +45,9 @@ differences from the previous backup will be transmitted.
 %install
 %py3_install
 
+# Remove doc files so we package them with rpmbuild
+rm -rf $RPM_BUILD_ROOT/usr/share/doc/*
+
 %files
 %defattr(-,root,root)
 %{_bindir}/rdiff-backup
@@ -58,7 +61,6 @@ differences from the previous backup will be transmitted.
 %doc CHANGELOG.adoc README.adoc
 %doc docs/credits.adoc docs/DEVELOP.adoc docs/examples.adoc
 %doc docs/FAQ.adoc docs/migration.adoc
-%doc docs/Windows-README.adoc docs/Windows-DEVELOP.adoc
 %license COPYING
 
 %changelog
