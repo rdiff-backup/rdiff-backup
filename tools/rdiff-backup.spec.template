@@ -95,6 +95,12 @@ rm -rf $RPM_BUILD_ROOT
 %doc CHANGELOG.adoc COPYING README.adoc docs/*.adoc
 
 %changelog
+* Sat Jul 25 2020 Frank Crawford <frank@crawford.emu.id.au> 2.0.5-1
+- Last bug-fix before code clean-up
+
+* Sat May 23 2020 Frank Crawford <frank@crawford.emu.id.au> 2.0.3-1
+- Version 2.0.3 - Bugfix release
+
 * Sun Mar 15 2020 Eric Lavarde <ewl+rdiffbackup@lavar.de> 2.0.0-1
 - Version 2.0.0 - ready for the future
 
