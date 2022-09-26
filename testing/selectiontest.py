@@ -123,7 +123,8 @@ rdiff-backup_testfiles/select/3\t""")  # noqa: W291 trailing whitespaces
         self.assertEqual(sf(self.root), 1)
         self.assertEqual(sf(self.makeext("1  ")), 1)
         self.assertEqual(sf(self.makeext("2  ")), 0)
-        self.assertEqual(sf(self.makeext("3\t")), 1)
+        if not sys.platform.startswith("win"):  # can't succeed
+            self.assertEqual(sf(self.makeext("3\t")), 1)
         self.assertIsNone(sf(self.makeext("4")))
 
     def testFilelistIncludeNullSep(self):
@@ -141,7 +142,8 @@ rdiff-backup_testfiles/select/3\t""")  # noqa: W291 trailing whitespaces
         self.assertEqual(sf(self.makeext("3")), 1)
         self.assertEqual(sf(self.makeext("3/3")), 1)
         self.assertIsNone(sf(self.makeext("3/3/3")))
-        self.assertEqual(sf(self.makeext("hello\nthere")), 1)
+        if not sys.platform.startswith("win"):  # can't succeed
+            self.assertEqual(sf(self.makeext("hello\nthere")), 1)
         Globals.null_separator = 0
 
     def testFilelistExclude(self):
@@ -244,6 +246,7 @@ rdiff-backup_testfiles/select/1/1
         self.assertRaises(FilePrefixError, self.Select._glob_get_sf,
                           b"ignorecase:testfiles/sect/foo/bar", 1)
 
+    @unittest.skipIf(sys.platform.startswith("win"), "can't work with Windows")
     def testDev(self):
         """Test device and special file selection"""
         dir = self.root.append("filetypes")
@@ -312,6 +315,7 @@ rdiff-backup_testfiles/select/1/1
         self.assertIsNone(
             select._filelist_get_sf(io.BytesIO(b"/foo/bar"), 0, "test")(root))
 
+    @unittest.skipIf(sys.platform.startswith("win"), "can't work with Windows")
     def testOtherFilesystems(self):
         """Test to see if --exclude-other-filesystems works correctly"""
         root = rpath.RPath(Globals.local_connection, "/")
@@ -478,9 +482,15 @@ rdiff-backup_testfiles/select**/2
         self.ParseTest([("--exclude", "rdiff-backup_testfiles/select/1/[23]")],
                        [(), ('1', ), ('1', '1'), ('1', '2'), ('1', '3')])
 
-        self.root = rpath.RPath(Globals.local_connection, "/")
-        self.ParseTest([("--exclude", "/home/*"), ("--include", "/home"),
-                        ("--exclude", "/")], [(), ("home", )])
+        if sys.platform.startswith("win"):
+            self.root = rpath.RPath(Globals.local_connection, "C:/")
+            self.ParseTest([("--exclude", "C:/Users/*"),
+                            ("--include", "C:/Users"),
+                            ("--exclude", "C:/")], [(), ("Users", )])
+        else:
+            self.root = rpath.RPath(Globals.local_connection, "/")
+            self.ParseTest([("--exclude", "/home/*"), ("--include", "/home"),
+                            ("--exclude", "/")], [(), ("home", )])
 
 
 class CommandTest(unittest.TestCase):
