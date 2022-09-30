@@ -213,7 +213,7 @@ class RestoreAction(actions.BaseAction):
         self.repo.init_loop(self.action_time)
         target_iter = self.dir.get_sigs_select()
         src_diff_iter = self.repo.get_diffs(target_iter)
-        self.dir.patch(src_diff_iter)
+        self.dir.apply(src_diff_iter)
         self.repo.finish_loop()
 
         return Globals.RET_CODE_OK

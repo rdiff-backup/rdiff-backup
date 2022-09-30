@@ -107,12 +107,13 @@
 ** `.get_select`
 ** `.set_select`
 * `locations._dir_shadow.WriteDirShadow`  **new**
+** `.apply`
 ** `.get_fs_abilities`
 ** `.get_sigs_select`
 ** `.init_owners_mapping`
-** `.patch`
 ** `.set_select`
 * `locations._repo_shadow.RepoShadow`  **new**
+** `.apply`
 ** `.close_statistics`
 ** `.finish_loop`
 ** `.get_config`
@@ -130,8 +131,6 @@
 ** `.list_files_changed_since`
 ** `.lock`
 ** `.needs_regress`
-** `.patch`
-** `.patch_and_increment`
 ** `.regress`
 ** `.remove_current_mirror`
 ** `.remove_increments_older_than`

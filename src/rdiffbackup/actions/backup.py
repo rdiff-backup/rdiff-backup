@@ -181,7 +181,7 @@ class BackupAction(actions.BaseAction):
         source_rpiter = self.dir.get_select()
         dest_sigiter = self.repo.get_sigs(source_rpiter, previous_time)
         source_diffiter = self.dir.get_diffs(dest_sigiter)
-        self.repo.patch_or_increment(source_diffiter, previous_time)
+        self.repo.apply(source_diffiter, previous_time)
 
         if previous_time:
             self.repo.remove_current_mirror()
