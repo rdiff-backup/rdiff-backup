@@ -385,15 +385,12 @@ information in it.
         return self._shadow.get_sigs(self.base_dir, source_iter,
                                      use_increment, self.remote_transfer)
 
-    def patch_or_increment(self, source_diffiter, previous_time):
+    def apply(self, source_diffiter, previous_time):
         """
-        Shadow function for RepoShadow.patch and .patch_and_increment
+        Shadow function for RepoShadow.apply
         """
-        if previous_time:
-            return self._shadow.patch_and_increment(
-                self.base_dir, source_diffiter, self.incs_dir, previous_time)
-        else:
-            return self._shadow.patch(self.base_dir, source_diffiter)
+        return self._shadow.apply(
+            self.base_dir, source_diffiter, self.incs_dir, previous_time)
 
     def touch_current_mirror(self, current_time_str):
         """

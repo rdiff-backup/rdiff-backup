@@ -96,36 +96,27 @@ class RepoShadow:
         cls._set_rorp_cache(baserp, source_iter, previous_time)
         return cls._sigs_iterator(baserp, is_remote)
 
-    # @API(RepoShadow.patch, 201)
+    # @API(RepoShadow.apply, 201)
     @classmethod
-    def patch(cls, dest_rpath, source_diffiter):
+    def apply(cls, dest_rpath, source_diffiter,
+              inc_rpath=None, previous_time=None):
         """
-        Patch dest_rpath with an rorpiter of diffs
+        Patch dest_rpath with rorpiter of diffs and optionally write increments
 
-        This function is used for the first backup within a repository.
+        This function is used for first and follow-up backups
+        within a repository.
         """
-        ITR = rorpiter.IterTreeReducer(_RepoPatchITRB, [dest_rpath, cls.CCPP])
+        if previous_time:
+            ITR = rorpiter.IterTreeReducer(
+                _RepoIncrementITRB,
+                [dest_rpath, inc_rpath, cls.CCPP, previous_time])
+            log_msg = "Processing changed file {cf}"
+        else:
+            ITR = rorpiter.IterTreeReducer(
+                _RepoPatchITRB, [dest_rpath, cls.CCPP])
+            log_msg = "Processing file {cf}"
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing file {cf}".format(cf=diff), log.INFO)
-            ITR(diff.index, diff)
-        ITR.finish_processing()
-        cls.CCPP.close()
-        dest_rpath.setdata()
-
-    # @API(RepoShadow.patch_and_increment, 201)
-    @classmethod
-    def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath,
-                            previous_time):
-        """
-        Patch dest_rpath with rorpiter of diffs and write increments
-
-        This function is used for follow-up backups within a repository.
-        """
-        ITR = rorpiter.IterTreeReducer(
-            _RepoIncrementITRB,
-            [dest_rpath, inc_rpath, cls.CCPP, previous_time])
-        for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing changed file {cf}".format(cf=diff), log.INFO)
+            log.Log(log_msg.format(cf=diff), log.INFO)
             ITR(diff.index, diff)
         ITR.finish_processing()
         cls.CCPP.close()

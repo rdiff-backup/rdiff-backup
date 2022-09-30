@@ -100,19 +100,19 @@ class ReadDir(Dir, locations.ReadLocation):
 
     def compare_meta(self, repo_iter):
         """
-        Shadow function for ReadDirShadow.patch
+        Shadow function for ReadDirShadow.compare_meta
         """
         return self._shadow.compare_meta(repo_iter)
 
     def compare_hash(self, repo_iter):
         """
-        Shadow function for ReadDirShadow.patch
+        Shadow function for ReadDirShadow.compare_hash
         """
         return self._shadow.compare_hash(repo_iter)
 
     def compare_full(self, repo_iter):
         """
-        Shadow function for ReadDirShadow.patch
+        Shadow function for ReadDirShadow.compare_full
         """
         return self._shadow.compare_full(self.base_dir, repo_iter)
 
@@ -195,8 +195,8 @@ class WriteDir(Dir, locations.WriteLocation):
         """
         return self._shadow.get_sigs_select(self.base_dir)
 
-    def patch(self, source_diff_iter):
+    def apply(self, source_diff_iter):
         """
-        Shadow function for WriteDirShadow.patch
+        Shadow function for WriteDirShadow.apply
         """
-        return self._shadow.patch(self.base_dir, source_diff_iter)
+        return self._shadow.apply(self.base_dir, source_diff_iter)

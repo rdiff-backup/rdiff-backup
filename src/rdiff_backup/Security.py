@@ -322,7 +322,7 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.RepoShadow.get_sigs",
             "_repo_shadow.RepoShadow.lock",
             "_repo_shadow.RepoShadow.needs_regress",
-            "_repo_shadow.RepoShadow.patch_and_increment",
+            "_repo_shadow.RepoShadow.apply",
             "_repo_shadow.RepoShadow.remove_current_mirror",
             "_repo_shadow.RepoShadow.set_config",
             "_repo_shadow.RepoShadow.touch_current_mirror",
@@ -361,12 +361,11 @@ def _set_allowed_requests(sec_class, sec_level):
             "restore.TargetStruct.patch",
             "restore.TargetStruct.set_target_select",
             # API >= 201
-            "_repo_shadow.RepoShadow.patch",
             "_repo_shadow.RepoShadow.regress",
             "_repo_shadow.RepoShadow.remove_increments_older_than",
             "_dir_shadow.WriteDirShadow.get_fs_abilities",
             "_dir_shadow.WriteDirShadow.get_sigs_select",
-            "_dir_shadow.WriteDirShadow.patch",
+            "_dir_shadow.WriteDirShadow.apply",
             "_dir_shadow.WriteDirShadow.set_select",
         ])
     if sec_class == "server":

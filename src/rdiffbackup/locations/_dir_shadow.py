@@ -290,14 +290,14 @@ class WriteDirShadow:
         else:
             return selection.Select(target).get_select_iter()
 
-    # @API(WriteDirShadow.patch, 201)
+    # @API(WriteDirShadow.apply, 201)
     @classmethod
-    def patch(cls, target, diff_iter):
+    def apply(cls, target, diff_iter):
         """
         Patch target with the diffs from the mirror side
 
         This function and the associated ITRB is similar to the
-        patching code in backup.py, but they have different error
+        apply code for a repository, but they have different error
         correction requirements, so it seemed easier to just repeat it
         all in this module.
         """
