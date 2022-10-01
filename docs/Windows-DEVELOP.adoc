@@ -138,3 +138,39 @@ If you see link errors like these:
 
 then you are using the wrong bitness build tools.
 Try both "x64 Native Tools Command Prompt for VS 2019" as well as "Developer Command Prompt for VS2019".
+
+== Debugging (from the command line)
+
+I'm a Windows no-obs, and I use Windows through Vagrant, mostly from the command line (using `vagrant ssh`).
+Here are my notes on some tricks I learned, Windows is a weird beast for a Linux guy...
+
+=== Process handling
+
+Get a list of processes: `tasklist`
+
+Kill a process: `taskkill /IM firefox.exe /F`
+
+=== Files handling
+
+To get a list of opened files, and the process accessing them:
+
+[source,bat]
+----
+openfiles /local ON
+REM reboot
+openfiles /query /fo csv | find /I "<path>"
+----
+
+With `icacls` you can list the (Windows) ACLs of a file.
+
+=== Shells
+
+Different shells might be useful:
+
+* `cmd.exe` is the default one.
+* PowerShell can be started with `powershell`.
+* Git comes with the bash shell `"\Program Files\Git\bin\bash.exe"`
+
+=== Interesting links
+
+* https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/windows-commands[Reference of Windows commands]

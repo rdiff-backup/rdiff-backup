@@ -34,8 +34,12 @@ def get_delta_sigrp_hash(rp_signature, rp_new):
     """Like above but also calculate hash of new as close() value"""
     log.Log("Getting delta (with hash) of file {fi} with signature {si}".format(
         fi=rp_new, si=rp_signature), log.DEBUG)
-    return librsync.DeltaFile(
-        rp_signature.open("rb"), hash.FileWrapper(rp_new.open("rb")))
+    try:
+        return librsync.DeltaFile(
+            rp_signature.open("rb"), hash.FileWrapper(rp_new.open("rb")))
+    except OSError:
+        rp_signature.close_if_necessary()
+        raise
 
 
 def write_delta(basis, new, delta, compress=None):
