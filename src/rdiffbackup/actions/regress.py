@@ -89,7 +89,7 @@ class RegressAction(actions.BaseAction):
         # set the filesystem properties of the repository
         if Globals.get_api_version() < 201:  # compat200
             self.repo.base_dir.conn.fs_abilities.single_set_globals(
-                self.repo.base_dir, 0)  # read_only=False
+                self.repo.data_dir, 0)  # read_only=False
             self.repo.setup_quoting()
 
         return ret_code

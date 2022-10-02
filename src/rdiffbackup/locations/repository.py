@@ -134,12 +134,7 @@ class Repo(locations.Location):
                         "API >= 201, ignoring".format(lf=self.lockfile),
                         log.NOTE)
 
-            if self.must_be_writable:
-                self.fs_abilities = self._shadow.get_fs_abilities_readwrite(
-                    self.base_dir)
-            else:
-                self.fs_abilities = self._shadow.get_fs_abilities_readonly(
-                    self.base_dir)
+            self.fs_abilities = self.get_fs_abilities()
             if not self.fs_abilities:
                 return Globals.RET_CODE_ERR
             else:
@@ -181,8 +176,7 @@ class Repo(locations.Location):
         """
         Close the repository, mainly unlock it if it's been previously locked
         """
-        if hasattr(self, '_shadow'):
-            self.unlock()
+        self.unlock()
         if self.logging_to_file:
             log.Log.close_logfile()
 
@@ -242,6 +236,18 @@ class Repo(locations.Location):
         return self._shadow.setup_paths(
             self.base_dir, self.data_dir, self.incs_dir)
 
+    def get_fs_abilities(self):
+        """
+        Shadow function for RepoShadow.get_fs_abilities_readonly/write
+        """
+        if self.must_be_writable:
+            # base dir can be _potentially_ writable but actually read-only
+            # to map the actual rights of the root directory, whereas the
+            # data dir is alway writable
+            return self._shadow.get_fs_abilities_readwrite(self.data_dir)
+        else:
+            return self._shadow.get_fs_abilities_readonly(self.base_dir)
+
     def is_locked(self):
         """
         Shadow function for RepoShadow.is_locked
@@ -258,7 +264,8 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.unlock
         """
-        return self._shadow.unlock(self.lockfile, self.must_be_writable)
+        if hasattr(self, '_shadow'):
+            return self._shadow.unlock(self.lockfile, self.must_be_writable)
 
     def needs_regress(self):
         """
