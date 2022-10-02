@@ -29,11 +29,11 @@ import gzip
 import io
 import os
 import re
+import shutil
 import stat
 import struct
 import subprocess
 import sys
-from distutils import spawn
 
 
 # List of suffixes for increments
@@ -56,7 +56,7 @@ def _str(value):
 
 
 # Check if gzip is available.
-_GZIP = spawn.find_executable('gzip')
+_GZIP = shutil.which('gzip')
 
 
 class WrapClose:

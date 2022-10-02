@@ -254,10 +254,19 @@ setup(
     download_url="https://github.com/rdiff-backup/rdiff-backup/releases",
     python_requires='~=3.6',
     platforms=['linux', 'win32'],
+    entry_points={
+        'console_scripts': [
+            'rdiff-backup = rdiffbackup.run:main',
+            'rdiff-backup-delete = rdiff_backup.run_delete:main',
+            'rdiff-backup-statistics = rdiff_backup.run_stats:main',
+        ]
+    },
     packages=["rdiff_backup", "rdiffbackup",
               "rdiffbackup.actions", "rdiffbackup.utils", "rdiffbackup.meta",
               "rdiffbackup.locations", "rdiffbackup.locations.map"],
     package_dir={"": "src"},  # tell distutils packages are under src
+    include_package_data=True,
+    package_data={"rdiff_backup": ["*.dll"]},
     ext_modules=[
         Extension("rdiff_backup.C", ["src/cmodule.c"]),
         Extension(
@@ -270,7 +279,6 @@ setup(
             extra_link_args=lflags_arg,
         ),
     ],
-    scripts=["src/rdiff-backup", "src/rdiff-backup-statistics", "src/rdiff-backup-delete"],
     data_files=[
         ("share/man/man1", ["build/rdiff-backup.1",
                             "build/rdiff-backup-old.1",
