@@ -222,7 +222,7 @@ NOTE: This assumes gdb was already installed.
   python3 ./setup.py clean --all
   python3-debug ./setup.py clean --all
   CFLAGS='-Wall -O0 -g' python3-debug ./setup.py build
-  PATH=$PWD/build/scripts-3.7:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.7-pydebug/ rdiff-backup -v 10 \
+  PATH=$PWD/build/scripts-3.7:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.7-pydebug/ python -m rdiffbackup.run -v 10 \
       /some/dir1 /some/dir2
   [...]
   Segmentation fault (core dumped)
@@ -292,7 +292,7 @@ If you make sure that you run the latest code version, and set all the environme
 ----
 ./setup.py build
 PATH=$PWD/build/scripts-3.9:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.9 \
-	python -m pdb build/scripts-3.9/rdiff-backup --remote-schema \
+	python -m pdb -m rdiffbackup.run --remote-schema \
 		"ssh -C {h}  # <1>
 		RDIFF_BACKUP_DEBUG=0.0.0.0:4445  # <2>
 		PATH=$PWD/build/scripts-3.9:$PATH

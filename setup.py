@@ -42,21 +42,24 @@ if os.name == "posix" or os.name == "nt":
         if LFLAGS or LIBS:
             lflags_arg = LFLAGS + LIBS
 
-        if LIBRSYNC_DIR:  # this should only happen under Windows
+        if LIBRSYNC_DIR and len(sys.argv) > 1:  # should only be under Windows
             incdir_list = [os.path.join(LIBRSYNC_DIR, "include")]
             libdir_list = [os.path.join(LIBRSYNC_DIR, "lib")]
             rsyncdll_src = os.path.join(LIBRSYNC_DIR, "bin", "rsync.dll")
             rsyncdll_dst = os.path.join("src", "rdiff_backup", "rsync.dll")
             # rather ugly workaround, but it should be good enough
             if "clean" in sys.argv:
-                if os.path.exists(rsyncdll_dst):
+                if os.path.exists(rsyncdll_dst) and "--all" in sys.argv:
                     print(f"removing {rsyncdll_dst}")
-                    os.remove(rsyncdll_dst)
-            else:  # we assume some build command
+                    if "--dry-run" not in sys.argv:
+                        os.remove(rsyncdll_dst)
+            elif ("--version" not in sys.argv and "-V" not in sys.argv
+                  and "--help" not in sys.argv):
                 if (not os.path.exists(rsyncdll_dst)
                         or not filecmp.cmp(rsyncdll_src, rsyncdll_dst)):
                     print(f"copying {rsyncdll_src} -> {rsyncdll_dst}")
-                    shutil.copyfile(rsyncdll_src, rsyncdll_dst)
+                    if "--dry-run" not in sys.argv:
+                        shutil.copyfile(rsyncdll_src, rsyncdll_dst)
         if "-lrsync" in LIBS:
             libname = []
 

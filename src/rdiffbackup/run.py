@@ -25,7 +25,6 @@ from rdiffbackup import arguments, actions_mgr, actions
 
 try:
     import msvcrt
-    import os
 
     msvcrt.setmode(0, os.O_BINARY)
     msvcrt.setmode(1, os.O_BINARY)
