@@ -48,7 +48,7 @@ class ReadDir(Dir, locations.ReadLocation):
                 self._shadow = _dir_shadow.ReadDirShadow
             else:
                 self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
-            self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
+            self.fs_abilities = self.get_fs_abilities()
             if not self.fs_abilities:
                 return ret_code | Globals.RET_CODE_ERR
             else:
@@ -85,6 +85,12 @@ class ReadDir(Dir, locations.ReadLocation):
         else:  # FIXME we're retransforming bytes into a file pointer
             self._shadow.set_select(self.base_dir, select_opts,
                                     *list(map(io.BytesIO, select_data)))
+
+    def get_fs_abilities(self):
+        """
+        Shadow function for ReadDirShadow.get_fs_abilities
+        """
+        return self._shadow.get_fs_abilities(self.base_dir)
 
     def get_select(self):
         """
@@ -131,7 +137,7 @@ class WriteDir(Dir, locations.WriteLocation):
                 self._shadow = _dir_shadow.WriteDirShadow
             else:
                 self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
-            self.fs_abilities = self._shadow.get_fs_abilities(self.base_dir)
+            self.fs_abilities = self.get_fs_abilities()
             if not self.fs_abilities:
                 return ret_code | Globals.RET_CODE_ERR
             else:
@@ -188,6 +194,12 @@ class WriteDir(Dir, locations.WriteLocation):
                 self.base_dir.conn.restore.TargetStruct.set_target_select(
                     self.base_dir, select_opts,
                     *list(map(io.BytesIO, select_data)))
+
+    def get_fs_abilities(self):
+        """
+        Shadow function for WriteDirShadow.get_fs_abilities
+        """
+        return self._shadow.get_fs_abilities(self.base_dir)
 
     def get_sigs_select(self):
         """
