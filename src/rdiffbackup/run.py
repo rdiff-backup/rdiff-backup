@@ -26,8 +26,9 @@ from rdiffbackup import arguments, actions_mgr, actions
 try:
     import msvcrt
 
-    msvcrt.setmode(0, os.O_BINARY)
-    msvcrt.setmode(1, os.O_BINARY)
+    # make sure line endings are kept under Windows like under Linux
+    msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 except ImportError:
     pass
 
