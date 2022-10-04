@@ -17,12 +17,10 @@ else
 fi
 
 PYEXE=python.exe
-PYINST=PyInstaller.exe
 if [[ -n ${PYDIRECT} ]]
 then
 	py_dir=C:/Python${bits}
 	PYEXE=${py_dir}/${PYEXE}
-	PYINST=${py_dir}/Scripts/${PYINST}
 fi
 
 ver_name=rdiff-backup-$(${PYEXE} setup.py --version)
