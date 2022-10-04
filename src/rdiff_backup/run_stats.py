@@ -25,11 +25,11 @@ import re
 import getopt
 
 from rdiff_backup import (
-    Globals,
-    Time,
     FilenameMapping,
+    Globals,
     robust,
     rpath,
+    Time,
 )
 
 begin_time = None  # Parse statistics at or after this time...
@@ -558,8 +558,8 @@ def _safe_str(cmd):
         return str(cmd, errors='replace')
 
 
-def Main():
-    Time.setcurtime()
+def main_run():
+    Time.set_current_time()
     parse_args()
     set_chars_to_quote()
     srp = StatisticsRPaths(Globals.rbdir)
@@ -576,10 +576,10 @@ def Main():
     fst.print_top_dirs("number of files changed", lambda fs: fs.changed)
 
 
-def error_check_Main():
-    """Run Main on arglist, suppressing stack trace for routine errors"""
+def main():
+    """Run main_run on arglist, suppressing stack trace for routine errors"""
     try:
-        Main()
+        main_run()
     except SystemExit:
         raise
     except KeyboardInterrupt:
@@ -592,4 +592,4 @@ def error_check_Main():
 
 
 if __name__ == "__main__":
-    error_check_Main()
+    main()
