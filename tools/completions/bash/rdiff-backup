@@ -1,0 +1,26 @@
+# /etc/bash_completion.d/rdiff-backup - bash-completion for rdiff-backup
+# (c) 2022 Eric Lavarde
+#
+# Developed for rdiff-backup 2.2+
+# This completion relies on the 'complete' action of rdiff-backup
+
+_rdiff_backup_complete()
+{
+	oldIFS="${IFS}"
+	# only a newline can separate options
+	IFS='
+'
+	COMPREPLY=( $($1 complete --cword ${COMP_CWORD} --unique -- "${COMP_WORDS[@]}") )
+	IFS="${oldIFS}"
+	#echo ${COMPREPLY[@]} >&2
+	if [[ ${#COMPREPLY[@]} -gt 0 ]] && [[ "${COMPREPLY[-1]}" == ::*:: ]]
+	then
+		action=$(echo "${COMPREPLY[-1]}" | tr -d ':')
+		unset COMPREPLY[-1]
+		COMPREPLY+=( $(compgen -A ${action} -- "${COMP_WORDS[COMP_CWORD]}") )
+	fi
+}
+
+# 'rdiff-backup complete' takes care of the sorting, and this way, the options
+# are listed, followed by possible filenames
+complete -F _rdiff_backup_complete -o filenames -o nosort rdiff-backup

@@ -30,6 +30,11 @@ to use it.
 import argparse
 import sys
 
+DEPRECATION_MESSAGE = (
+    "WARNING: this command line interface is deprecated and will "
+    "disappear, start using the new one as described with '--new --help'."
+)
+
 # === FUNCTIONS ===
 
 
@@ -49,9 +54,10 @@ def parse(args, version_string, generic_parsers, parent_parsers, actions_dict=No
     # it's the case if --new is explicitly given, or if any parameter starts
     # with an @ (meaning read from file), or if api-version or help is used,
     # or if any of the action names is found in the parameters,
-    # without `--no-new` being found.
+    # without `--no-new` being found. We also explicitly check `complete`
+    # because it could be _followed_ by `--no-new`.
     # note: `set1 & set2` is the intersection of two sets
-    if ('--new' in args
+    if ('--new' in args or 'complete' in args
             or (any(map(lambda x: x.startswith('@'), args)))
             or ('--no-new' not in args
                 and ('--api-version' in args or '--help' in args
@@ -61,11 +67,9 @@ def parse(args, version_string, generic_parsers, parent_parsers, actions_dict=No
         return _parse_compat200(args, version_string, generic_parsers + parent_parsers)
 
 
-def _parse_new(args, version_string, parent_parsers, actions_dict):
+def get_parser_new(version_string, parent_parsers, actions_dict):
     """
-    Parse arguments according to new parameters of rdiff-backup, i.e.
-
-        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
+    Generates an argparse parser from the given parameters
     """
     parser = argparse.ArgumentParser(
         description="local/remote mirror and incremental backup",
@@ -85,6 +89,16 @@ def _parse_new(args, version_string, parent_parsers, actions_dict):
     for action in actions_dict.values():
         action.add_action_subparser(sub_handler)
 
+    return parser
+
+
+def _parse_new(args, version_string, parent_parsers, actions_dict):
+    """
+    Parse arguments according to new parameters of rdiff-backup, i.e.
+
+        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
+    """
+    parser = get_parser_new(version_string, parent_parsers, actions_dict)
     parsed_args = parser.parse_args(args)
 
     if not (sys.version_info.major >= 3 and sys.version_info.minor >= 7):
@@ -95,23 +109,10 @@ def _parse_new(args, version_string, parent_parsers, actions_dict):
     return parsed_args
 
 
-def _parse_compat200(args, version_string, parent_parsers=[]):
+def get_parser_compat200(version_string, parent_parsers=[]):
     """
-    Parse arguments according to old parameters of rdiff-backup.
-
-    The hint in square brackets at the beginning of the help are in preparation
-    for the new way of parsing:
-
-        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
-
-    Note that actions are mutually exclusive and that '[act=]' will need to be
-    split into an action and a sub-option.
+    Get a parser according to old parameters of rdiff-backup.
     """
-
-    DEPRECATION_MESSAGE = (
-        "WARNING: this command line interface is deprecated and will "
-        "disappear, start using the new one as described with '--new --help'."
-    )
 
     parser = argparse.ArgumentParser(
         description="local/remote mirror and incremental backup "
@@ -196,6 +197,23 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         "locations", nargs='*',
         help="[args] locations remote and local to be handled by chosen action")
 
+    return parser
+
+
+def _parse_compat200(args, version_string, parent_parsers=[]):
+    """
+    Parse arguments according to old parameters of rdiff-backup.
+
+    The hint in square brackets at the beginning of the help are in preparation
+    for the new way of parsing:
+
+        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
+
+    Note that actions are mutually exclusive and that '[act=]' will need to be
+    split into an action and a sub-option.
+    """
+
+    parser = get_parser_compat200(version_string, parent_parsers)
     values = parser.parse_args(args)
 
     _make_values_like_new_compat200(values)

@@ -1,0 +1,127 @@
+= Programmatic completion for rdiff-backup
+:sectnums:
+:toc: left
+
+Using the `complete` action of rdiff-backup, one can quite easily write a shell completion script.
+It shouldn't require to analyze all possible completions because rdiff-backup itself is doing the analysis.
+The completion "glue" for each shell only needs to prepare the results.
+
+NOTE: the code has been written with 'bash' as guinea pig for the approach.
+The expectation is that the programmatic completion of other shells will have similar requirements and facilities.
+Should this prove wrong, additional requirements are welcome as https://github.com/rdiff-backup/rdiff-backup/issues/new?assignees=&labels=&template=feature_request.md&title=%5BENH%5D+[enhancement issue].
+
+== Usage
+
+The principle is rather simple:
+one calls `rdiff-backup complete` with the current arguments entered by the user on the command line, and rdiff-backup outputs a list of possible completions.
+The completion script then only needs to use this list as required by the shell.
+
+[code,shell]
+----
+rdiff-backup complete [--cword <index>] [--unique|--no-unique] -- <words...>
+----
+
+The 'words' are the words on the command line as currently entered by the user.
+The 'cword' option represents the zero-based index where the cursor of the user is currently placed.
+
+Example 1::
+User input;; `$ rdiff-backup --verb⌷` (the `⌷` represents the user's cursor when they triggers the completion, e.g. with <TAB><TAB> under bash)
+Completion script call;; `rdiff-backup complete --cword 1 \-- rdiff-backup --verb`
+Completion values;; `--verbosity`
+
+Example 2::
+User input;; `$ rdiff-backup --verbosity ⌷` (notice the blank between verbosity and cursor)
+Completion script call;; `rdiff-backup complete --cword 2 \-- rdiff-backup --verbosity ''` (notice accordingly the empty last word)
+Completion values;; a list of integers from 0 to 10 as possible parameter for `--verbosity`
+
+Example 3::
+User input;; `$ rdiff-backup --verbosity⌷ 5`
+Completion script call;; `rdiff-backup complete --cword 1 \-- rdiff-backup --verbosity 5` (notice the cword pointing at `--verbosity`)
+Completion values;; `--verbosity` again
+
+IMPORTANT: the double minus `--` is absolutely required to avoid that the words are interpreted as options of the `complete` action.
+
+Finally the `--unique`/`--no-unique` option toggles if the returned completion values should return values already entered on the command line.
+By default options are considered unique (see <<Limitations>> on this topic).
+
+== Return values
+
+In the current stage, the returned completion values might be a mixture of old and new CLI options, as long as rdiff-backup doesn't have enough information to differentiate them.
+
+In all cases, the possible completion values are returned on stdout with one possible value on each line.
+The values are considered pre-sorted and _shouldn't_ be sorted by the completion script/toolset, but this decision remains to the judgement of the script's author.
+
+Important is that the _last_ option in the list might have a specific meaning, and the special format **::__action__::**.
+Currently there is only one possible action, and it is `file`.
+This action means that the completion script should remove this one option, and replace it with the list of files which could be used to complete the command line.
+
+Example 4::
+User input;; `$ rdiff-backup backup D⌷`
+Completion script call;; `rdiff-backup complete --cword 2 \-- rdiff-backup backup D`
+Completion values;; `::file::`.
+It would be the responsibility of the completion script to replace it (for example) with `Desktop`, `Documents` and `Downloads`.
++
+TIP: the bash built-in command `complete` resp. `compgen` offers the option `-A file` to do this.
+In our example, calling `compgen -A file D` in a typical Linux home drive would exactly return the three directories listed above.
+
+Example 5::
+User input;; `$ rdiff-backup backup ⌷`
+Completion script call;; `rdiff-backup complete --cword 2 \-- rdiff-backup backup ''` (without first letter D)
+Completion values;; all possible backup options followed by the said `::file::` option, i.e. something like:
++
+----
+--acls
+--carbonfile
+[...]
+--resource-forks
+--user-mapping-file
+::file::
+----
+
+Some options, like `--user-mapping-file`, followed by a filename would similarly trigger the output of the `::file::` parameter.
+
+== Limitations
+
+=== Default value for cword
+
+The default value for `cword` is -1, meaning the last word of the list.
+This is a rather sensitive approach should there be a shell completion not supporting this parameter.
+
+=== Uniqueness of options
+
+By default all parameters are considered 'unique' and only offered once to the user as completion.
+This limitation is due to the author's reluctance to have an algorithm based on intrinsic knowledge of the options' semantic.
+As the actions ('backup', 'compare', etc...) are actually plugins, the `complete` action plugin shouldn't rely on knowing how to use their options, as this approach would break with each new plug-in.
+
+=== Assumptions
+
+Despite the above stated lack of knowledge about options' semantic, some assumptions are made, which could be broken if care isn't taken:
+
+* an option which has a 'type' which isn't a boolean is followed by a parameter
+** if this kind of option has 'choices', those are output by `complete`
+** if there is no choice but a type `FileType` or 'str' with additionally a 'metavar' ending in `_FILE`, then the option is deemed having a file as parameter
+* arguments called `locations` are supposed to represent a list of files (or directories).
+
+NOTE: it shouldn't be the worry of the completion script's author to make sure that those assumptions are kept true.
+
+=== Locations
+
+There is no reasonable way to help the user with completion if the locations are remote, so we always assume "local" locations and expect files/directories represented by the `::file::` placeholder.
+
+The exact number of possible locations/files isn't really validated, just cursorily checked.
+
+=== Sorted options
+
+The options are sorted by ignoring the hyphens, this means that actions and options are mixed.
+
+== Adding new completion scripts
+
+It should be pretty simple in most cases, if you know how to create a fork and a pull request against rdiff-backup's Git repo:
+
+. add a subdirectory and script to `tools/completions`, e.g. `bash/rdiff-backup` (the script must have its definitive name on the file system, hence the sub-directory)
+. add an entry of the form `("<relative-target-directory>", ["tools/completions/myshell/myscript"]),` in the `data_file` parameter of the `setup.py` script.
+  Take the already existing bash entry `("share/bash-completion/completions", ["tools/completions/bash/rdiff-backup"]),` as sample.
++
+IMPORTANT: pay attention to the final comma!
+
+That's it, test (e.g. using `pip install .`), commit and push, a pull request is then just a click or two away.

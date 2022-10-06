@@ -301,7 +301,7 @@ setup(
                 "docs/Windows-DEVELOP.adoc",
             ],
         ),
-        ("share/bash-completion/completions", ["tools/bash-completion/rdiff-backup"]),
+        ("share/bash-completion/completions", ["tools/completions/bash/rdiff-backup"]),
     ],
     # options is a hash of hash with command -> option -> value
     # the value happens here to be a list of file couples/tuples
