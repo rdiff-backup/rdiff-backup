@@ -2,21 +2,19 @@
 :sectnums:
 :toc!:
 
-+++<p align="center">+++
-image:docs/resources/logo-banner.png["rdiff-backup banner"]
-+++</p>+++
+image::docs/resources/logo-banner.png["rdiff-backup banner",align="center"]
 
-+++<p align="center">+++
+[.text-center]
 link:https://rdiff-backup.net/[*website*] .
-link:https://rdiff-backup.net/docs/docs.html[*docs*] .
+link:https://github.com/rdiff-backup/rdiff-backup/releases[*download*] .
 link:https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users[*community*]
-+++</p>+++
 
-+++<p align="center">+++
-image:https://travis-ci.org/rdiff-backup/rdiff-backup.svg?branch=master["Build Status",link="https://travis-ci.org/rdiff-backup/rdiff-backup"]
+[.text-center]
 image:https://img.shields.io/github/license/rdiff-backup/rdiff-backup["License",link="COPYING"]
-image:http://hits.dwyl.io/rdiff-backup/rdiff-backup.svg["HitCount",link="http://hits.dwyl.io/rdiff-backup/rdiff-backup"]
-+++</p>+++
+image:https://bestpractices.coreinfrastructure.org/projects/6072/badge["OpenSSF Best Practices",link="https://bestpractices.coreinfrastructure.org/projects/6072"]
+image:https://github.com/rdiff-backup/rdiff-backup/actions/workflows/test_linux.yml/badge.svg[Linux]
+image:https://github.com/rdiff-backup/rdiff-backup/actions/workflows/test_windows.yml/badge.svg[Windows]
+image:https://github.com/rdiff-backup/rdiff-backup/actions/workflows/jekyll-gh-pages.yml/badge.svg[Pages]
 
 = rdiff-backup
 
@@ -179,7 +177,7 @@ There is no particular company backing the development of rdiff-backup, so we re
 There are many ways to contribute:
 
 * Testing, troubleshooting and writing good bug reports that are easy for other developers to read and act upon
-* Reviewing and triaging link:../../issues[existing bug reports and issues], helping other developers focus their efforts
+* Reviewing and triaging https://github.com/rdiff-backup/rdiff-backup/issues[existing bug reports and issues], helping other developers focus their efforts
 * Writing documentation (e.g.
 the xref:docs/rdiff-backup.1.adoc[man page]), or updating the webpage rdiff-backup.net
 * Packaging and shipping rdiff-backup in your own favorite Linux distribution or operating system

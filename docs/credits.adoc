@@ -14,7 +14,7 @@ toc::[]
 This list is far from being complete, accurate or up-to-date.
 Please also see the git log itself for authors and committers and the Github statistics at:
 
-* https://github.com/rdiff-backup/rdiff-backup/people[rdiff-backup team members^]
+* https://github.com/rdiff-backup/rdiff-backup/people[rdiff-backup team members^] (only viewable if you're member yourself)
 * https://github.com/rdiff-backup/rdiff-backup/graphs/contributors[contributors' graph^]
 * Most authors are now documented in the https://github.com/rdiff-backup/rdiff-backup/blob/master/CHANGELOG.adoc[change log^].
 ====

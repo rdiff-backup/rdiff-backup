@@ -81,7 +81,7 @@ It is the responsibility of the merging developer to make sure that the PR is _s
 In versioning we utilize git tags as understood by https://github.com/pypa/setuptools_scm/#default-versioning-scheme[setuptools_scm].
 Version strings follow the https://www.python.org/dev/peps/pep-0440/[PEP-440 standard].
 
-The rules are currently as follows (check the `.travis.yml` file for details):
+The rules are currently as follows (check the files in `.github/workflows` for details):
 
 * all commits tagged with an underscore at the end or with a tag looking like a version number (i.e.
 as in next two bullets) are released to https://github.com/rdiff-backup/rdiff-backup/releases/[GitHub].
@@ -198,7 +198,7 @@ That's it, you can now run the tests:
 * or `tox -c tox_slow.ini` for long tests
 * or `sudo tox -c tox_root.ini` for the few tests needing root rights
 
-For more details on testing, see the `test` sections in the link:../Makefile[Makefile] and the link:../.travis-ci.yml[.travis-ci.yml definitions].
+For more details on testing, see the `test` sections in the link:../Makefile[Makefile] and the link:../.github/workflows[GitHub Actions].
 
 == DEBUGGING
 
@@ -260,7 +260,7 @@ Jumping between frames and printing the different variables, we can recognize th
 . the core dump is due to a seek on a null file pointer
 . that the file pointer comes from the job pointer handed over to the function rs_job_iter
 . the job pointer itself comes from the self variable handed over to `_librsync_patchmaker_cycle`
-. reading through the https://librsync.github.io/rdiff.html[librsync documentation], it appears that the job type is opaque, i.e.
+. reading through the https://librsync.github.io/page_rdiff.html[librsync documentation], it appears that the job type is opaque, i.e.
 I can't directly influence and it has been created via the `rs_patch_begin` function within the function `_librsync_new_patchmaker` in `rdiff_backup/_librsyncmodule.c`.
 
 At this stage, it seems that the core file has given most of its secrets and we need to debug the live program:
@@ -442,7 +442,7 @@ Given the above rules, a release cycle looks roughly as follows:
 . If everything goes well, you should see the https://github.com/rdiff-backup/rdiff-backup/releases[new draft release] with all assets (aka packages) attached to it after all jobs have finished.
 . Give the release a title and description and save it to make it visible to everybody.
 . You'll get a notification e-mail telling you that rdiff-backup-admin has released a new version.
-. Use this e-mail to inform the link:rdiff-backup-users@nongnu.org[rdiff-backup users].
+. Use this e-mail to inform the mailto:rdiff-backup-users@nongnu.org[rdiff-backup users].
 
 IMPORTANT: if not everything goes well, remove the tag both locally with `git tag -d TAG` and remotely with `git push -d origin TAG`.
 Then fix the issue with a new PR and start from the beginning.
@@ -450,28 +450,6 @@ Then fix the issue with a new PR and start from the beginning.
 TIP: if the PyPI deploy pipeline is broken, you may download the impacted wheel(s) from GitHub and upload them to PyPI from the command line using twine: `twine upload [--repository-url https://test.pypi.org/legacy/] dist/rdiff\_backup-*.whl`
 
 The following sub-chapters list some learnings and specifities in case you need to modify the pipeline.
-
-=== Create an OAuth key
-
-Use the travis client to generate a secure API key (you can throw away other changes to the `.travis.yml` file).
-You will need the password of the rdiff-backup-admin, hence only project admins can generate it:
-
- $ travis setup releases
- Detected repository as rdiff-backup/rdiff-backup, is this correct? |yes|
- Username: rdiff-backup-admin
- Password for rdiff-backup-admin: ********************
- File to Upload: dist/*
- Deploy only from rdiff-backup/rdiff-backup? |yes|
- Encrypt API key? |yes|
-
-The key to add looks then as follows for GitHub deployment (the concrete key shown here isn't valid though):
-
-----
-deploy:
-  provider: releases
-  api_key:
-    secure: lqg+HZoy68WudiogbEnOmhxfw9zEJhPOyM4bLJdU2lRBlUZbf0uFvpVJdJqPB7rovKpDknapg4xdXdpbLbD0r/PwsSI9UyFLmyhGn24pnSlrFFjFm2AIQQJUMiCcqsPqNc7fXNMC1BwuM1/RjO3hIxfPxI+A9MSVqW3qhzmerOKXeKFiOLXJ0FkTomRdWGhCEafWO1Ibz5O2d5psK1N/r1ni8kv+E6GPjHk54vmKNcFg8uB7+cPs7ONtW2F+M/h12UVZkC+hy8Bss+esQIMYdVLW5JkKSFfNwKs57qDYYd0lWLzMRti+S+0k/1O6l51BzLY61C4FlRwrMWAy4HIYn5ui39GXIYtGXq9zW+EpYvqTsar+KDU+DGzsr+hAt+eCQpbmZ2SpA7B8Mb3x+BwAcEkvCql789FhWCOd3arUm3H6Ng6yNt50crafJeboHhmitgFQ9uTM7AnXwMnIYVkl6IAZlPkIj20TF1JSdmzpPG2jEJATsMybCuaAuS+ngq4DnJ1axGcclIr4AY9RkSI8EVrL1HTcVLaIH0JnWdO/YC7DSZloC0oswbch1qaW3WsWkJspeaLRvochyFYsatAbvZ46Mzt5uuJUPtSNUVizeb7kBhVGzLVYIepd5XYPgc3Qxp23hu2k9lwg4vjq8WFegC5a34SW/zEZeuFP3HTnD+4=
-----
 
 === Delete draft releases
 

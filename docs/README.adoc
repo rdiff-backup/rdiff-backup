@@ -65,9 +65,9 @@ This is an open source project and contributions are welcome!
 Rdiff-backup has been around for almost 20 years now and has proved to be a very solid solution for backups and it is still unique in its model of unlimited incrementals with no need to space consuming regular full backups.
 
 Current lead developers are Eric Lavarde, Patrik Dufresne and Otto Kekäläinen.
-Full list of core developers available at https://github.com/rdiff-backup/rdiff-backup/people[rdiff-backup Github page^] and on the xref:credits.adoc[credits page].
+For other members check the xref:credits.adoc[credits page].
 
 The original author and maintainer was *Ben Escoto* from 2001 to 2005.
 Key contributors from 2005 to 2016 were Dean Gaudet, Andrew Ferguson and Edward Ned Harvey.
 After some hibernation time Sol1 took over the stewardship of rdiff-backup from February 2016 but there were no new releases.
-In August 2019 https://eric.lavar.de/[Eric Lavarde^] with the support of Otto Kekäläinen from https://seravo.com/[Seravo^] and Patrik Dufresne from http://www.patrikdufresne.com/en/minarca/[Minarca^] took over, completed the Python 3 rewrite and finally released rdiff-backup 2.0 in March 2020.
+In August 2019 https://eric.lavar.de/[Eric Lavarde^] with the support of Otto Kekäläinen from https://seravo.com/[Seravo^] and Patrik Dufresne from http://minarca.org/[Minarca^] took over, completed the Python 3 rewrite and finally released rdiff-backup 2.0 in March 2020.
