@@ -8,6 +8,7 @@ pybindirs="$@"
 
 build_dir=${basedir}/build
 dist_dir=${basedir}/dist
+requs_dir=${basedir}/requs
 
 # Install a system package required by our library
 if ! yum install -y librsync-devel rubygems
@@ -35,7 +36,7 @@ esac
 
 # Compile wheels
 for PYBIN in $pybindirs; do
-    "${PYBIN}/pip" install --user -r requs/base.txt
+    "${PYBIN}/pip" install --user -r ${requs_dir}/base.txt
     "${PYBIN}/pip" wheel ${basedir} -w ${build_dir}/
 done
 
