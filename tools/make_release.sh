@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
-
+# call with $0 v1.2.3 ["commit messages"...]
 RELEASE="$1"
+shift
+
+if [ "${RELEASE}" != v*.* ]
+then
+	echo "Release must start with v like version" >&2
+	exit 1
+fi
 
 # first check that the changelog has been properly updated
 
@@ -29,7 +36,14 @@ fi
 # add, commit, push branch
 
 git add CHANGELOG.adoc
-git commit -m "Preparing release ${RELEASE}"
+if [ -n "$*" ]
+then
+	git commit -m "Preparing release ${RELEASE}
+
+$(for line in $@; do echo ${line}; done)"
+else
+	git commit -m "Preparing release ${RELEASE}"
+fi
 git push --set-upstream origin ${CURR_BRANCH}
 
 gh pr create \
@@ -37,7 +51,9 @@ gh pr create \
 	--fill \
 	--base master \
 	--head ${CURR_BRANCH} \
-	--repo rdiff-backup/rdiff-backup
+	--repo rdiff-backup/rdiff-backup  # determines the following commands
+
+sleep 1  # GitHub needs a bit of time to react
 
 # retrieve the Pull Request number
 
@@ -64,13 +80,17 @@ do
 		fi
 	done < <(gh pr view ${PR_NUMBER} --json statusCheckRollup --template '{{ range .statusCheckRollup }}{{ .status }} {{ .conclusion }}
 {{ end }}')
-	[ ${PR_STATUS} != "COMPLETED" ] && sleep 10
+	if [ "${PR_STATUS}" != "COMPLETED" ]
+	then
+		echo "PR #${PR_NUMBER} checks status: ${PR_STATUS}, waiting 20 more secs..."
+		sleep 20
+	fi
 done
 
 if [ ${PR_CONCLUSION} != "SUCCESS" ]
 then
 	echo "PR #${PR_NUMBER} failed with ${PR_CONCLUSION}" >&2
-	exit 3
+	exit 2
 fi
 
 # check if it can be merged, else exit
@@ -80,5 +100,18 @@ PR_MERGE_STATE=$(gh pr view ${PR_NUMBER} --json mergeStateStatus,mergeable \
 if [ ${PR_MERGE_STATE} != "CLEAN/MERGEABLE" ]
 then
 	echo "PR #${PR_NUMBER} state is ${PR_MERGE_STATE}, exiting" 2>&1
-	exit 2
+	exit 3
 fi
+
+set -e  # exit immediately if something goes wrong
+
+gh pr review ${PR_NUMBER} --approve --comment "Auto-approve by $(basename $0)"
+
+gh pr merge ${PR_NUMBER} --auto --squash --delete-branch
+
+sleep 1
+
+git checkout master
+git pull --prune
+git tag ${RELEASE}
+git push --tags
