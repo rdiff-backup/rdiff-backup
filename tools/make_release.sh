@@ -39,3 +39,44 @@ gh pr create \
 	--head ${CURR_BRANCH} \
 	--repo rdiff-backup/rdiff-backup
 
+# retrieve the Pull Request number
+
+PR_NUMBER=$(gh pr list --author '@me' --head ericzolf-prepare-v2.1.3b0 \
+	--json number --template '{{range .}}{{.number}}{{end}}')
+
+# check if it can be merged, else exit
+
+PR_MERGE_STATE=$(gh pr view ${PR_NUMBER} --json mergeStateStatus,mergeable \
+	--template '{{ .mergeStateStatus }}/{{ .mergeable }}')
+if [ ${PR_MERGE_STATE} != "CLEAN/MERGEABLE" ]
+then
+	echo "PR #${PR_NUMBER} is ${PR_MERGE_STATE}, exiting" 2>&1
+	exit 2
+fi
+
+PR_STATUS="IN_PROGRESS"
+while [ ${PR_STATUS} != "COMPLETED" ]
+do
+	PR_STATUS="COMPLETED"
+	PR_CONCLUSION="SUCCESS"
+	gh pr view ${PR_NUMBER} --json statusCheckRollup --template '{{ range .statusCheckRollup }}{{ .status }} {{ .conclusion }}
+{{ end }}' | while read status conclusion
+	do
+		if [ ${status} != "COMPLETED" ]
+		then
+			PR_STATUS=${status}
+		else
+			if [ ${conclusion} != "SUCCESS" ]
+			then
+				PR_CONCLUSION=${conclusion}
+			fi
+		fi
+	done
+	[ ${PR_STATUS} != "COMPLETED" ] && sleep 10
+done
+
+if [ ${PR_CONCLUSION} != "SUCCESS" ]
+then
+	echo "PR #${PR_NUMBER} failed with ${PR_CONCLUSION}" >&2
+	exit 3
+fi
