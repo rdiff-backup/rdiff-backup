@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # call with $0 v1.2.3 ["commit messages"...]
+# Require that the go-lang tool "gh" is installed
+
 RELEASE="$1"
 shift
 
-if [ "${RELEASE}" != v*.* ]
+if [[ "${RELEASE}" != v* ]]
 then
 	echo "Release must start with v like version" >&2
 	exit 1
@@ -40,7 +42,7 @@ if [ -n "$*" ]
 then
 	git commit -m "Preparing release ${RELEASE}
 
-$(for line in $@; do echo ${line}; done)"
+$(for line in "$@"; do echo ${line}; done)"
 else
 	git commit -m "Preparing release ${RELEASE}"
 fi
