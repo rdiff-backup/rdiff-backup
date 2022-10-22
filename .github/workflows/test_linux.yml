@@ -21,7 +21,7 @@ jobs:
     steps:
     - name: skip workflow if only docs PR
       id: skip-docs # id used for referencing step
-      uses: saulmaldonado/skip-workflow@v1.1.0
+      uses: saulmaldonado/skip-workflow@v1.1.1
       with:
         phrase: '[DOC]'
         search: '["pull_request"]'
