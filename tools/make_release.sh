@@ -64,6 +64,12 @@ PR_NUMBER=$(gh pr list --author '@me' --head ericzolf-prepare-v2.1.3b0 \
 
 # wait for Pull Request checks to be completed (and successful)
 
+while [ "$(gh pr view ${PR_NUMBER} --json mergeStateStatus --template '{{ .mergeStateStatus }}')" == "BLOCKED" ]
+do
+	echo "PR #${PR_NUMBER} merge status: BLOCKED, waiting 20 more secs..."
+	sleep 20
+done
+
 PR_STATUS="IN_PROGRESS"
 while [ ${PR_STATUS} != "COMPLETED" ]
 do
