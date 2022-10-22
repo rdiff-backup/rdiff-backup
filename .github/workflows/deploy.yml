@@ -139,7 +139,7 @@ jobs:
         path: dist
     - name: Export artifacts
       id: export
-      run: echo artifact_files=${{ steps.download.outputs.download-path }}/*.* >>> $GITHUB_OUTPUT
+      run: echo artifact_files=${{ steps.download.outputs.download-path }}/*.* >> $GITHUB_OUTPUT
       # see https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
     - name: Create release and upload assets to GitHub
       uses: meeDamian/github-release@2.0
