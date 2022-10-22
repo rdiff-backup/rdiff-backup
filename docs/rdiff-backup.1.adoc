@@ -35,7 +35,7 @@ New users may want to check out the *examples* file included in the rdiff-backup
 The rdiff-backup commands knows four types of parameters
 
 . generic options valid for all actions,
-. one action out of *backup*, *calculate*, *compare*, *info*, *list*, *regress*, *remove*, *restore*, *server*, *test*, *verify*,
+. one action out of *backup*, *calculate*, *complete*, *compare*, *info*, *list*, *regress*, *remove*, *restore*, *server*, *test*, *verify*,
 . sub-options applicable to each action specifically, even though some are common to multiple actions,
 . zero, one, two or more location paths, either local or remote.
 
@@ -135,6 +135,15 @@ backup [<<_creation_options,CREATION OPTIONS>>] [<<_compression_options,COMPRESS
 calculate [--method *average*] _statfile1_ _statfile2_ [...]:: calculate average across multiple statistics files
 
 --method *average*;; there is currently only one method and it is the default, but it might change in the future.
+
+complete [--cword _index_] [--unique|--no-unique] *--* _words_ [...]::
+outputs a list of fitting options given already entered parameters.
+This option is of no relevance to backup tasks, it is only to be used to support programmatic completion like in bash.
+See the documentation for more details if you plan to write your own completion code, e.g. for an alternative shell.
+
+--cword _index_;; index where the cursor currently is within the list of words.
+
+--unique,--no-unique;; should parameters already entered by the user be offered again, or not?
 
 compare [<<_selection_options,SELECTION OPTIONS>>] [--method _method_] [--at _time_] _sourcedir_ _targetdir_::
 Compare a directory with the backup set at the given time.
