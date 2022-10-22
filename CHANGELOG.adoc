@@ -10,6 +10,41 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * **DOC**umentation and *WEB*-site changes are marked as such.
 * And **DEV**elopment changes are only of interest for developers and testers.
 
+== New in v2.1.3b0 (2022-10-22)
+
+=== Changes
+
+* CHG: Update RPM specs to latest requirements and standards
+* DEV: added pull request templates differentiating between doc and 
+       code PRs
+* DEV: add step test-built-windows to test built artifacts and avoid 
+       unrunnable Windows binaries, closes #306
+* DEV: add testing/action_backuprestore_test.py to Windows tests
+* DEV: consolidate all Python and binary dependencies into 
+       requirements.txt/requs/*.txt respectively bindep.txt, see DEVELOP.adoc 
+       for details, closes #730
+* DEV: enable selectiontest.py under Windows
+* FIX: avoid abort on PermissionError if a locked source file had been 
+       successfully backed up once, closes #619
+* FIX: bash completion works for new _and_ old CLI, closes #725
+* FIX: make Windows wheel runnable by adding rsync.dll and renaming 
+       scripts, closes #733, #602
+* FIX: recognizes now sub-path of root directory (X:/) as base path 
+       under Windows, closes #620
+* FIX: regression in fs abilities check on read-only files for 
+       read-write actions remove and regress, closes #738
+* NEW: new rdiff-backup wheels based on manylinux_2_28, compatible with 
+       more recent Linux versions, closes #721
+* NEW: the action plug-in `complete` makes writing completion scripts 
+       beyond bash much easier, afficionados of alternative shells are called 
+       to write their own, see docs/arch/completion.adoc for details
+
+=== Authors
+
+* Eric L
+* Frank Crawford
+
+
 == New in v2.1.2b2 (2022-09-15)
 
 === Changes
