@@ -55,7 +55,7 @@ gh pr create \
 	--head ${CURR_BRANCH} \
 	--repo rdiff-backup/rdiff-backup  # determines the following commands
 
-sleep 1  # GitHub needs a bit of time to react
+sleep 5  # GitHub needs a bit of time to react
 
 # retrieve the Pull Request number
 
@@ -117,7 +117,7 @@ gh pr review ${PR_NUMBER} --approve --comment "Auto-approve by $(basename $0)"
 
 gh pr merge ${PR_NUMBER} --auto --squash --delete-branch
 
-sleep 1
+sleep 5
 
 git checkout master
 git pull --prune
