@@ -113,7 +113,8 @@ fi
 
 set -e  # exit immediately if something goes wrong
 
-gh pr review ${PR_NUMBER} --approve --body "Auto-approve by $(basename $0)"
+gh pr review ${PR_NUMBER} --comment \
+	--body "Automatically created and merged by $(basename $0)"
 
 gh pr merge ${PR_NUMBER} --auto --squash --delete-branch
 
