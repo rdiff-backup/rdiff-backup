@@ -34,13 +34,13 @@ jobs:
         phrase: '[DOC]'
         search: '["pull_request"]'
         github-token: ${{ secrets.GITHUB_TOKEN }}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       if: '!steps.skip-docs.outputs.skip'
       with:
         fetch-depth: 0  # to have the correct version
     - name: Set up Python ${{ env.WIN_PYTHON_VERSION }}
       if: '!steps.skip-docs.outputs.skip'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ env.WIN_PYTHON_VERSION }}
         architecture: ${{ matrix.arch }}
