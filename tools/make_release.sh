@@ -44,34 +44,26 @@ gh pr create \
 PR_NUMBER=$(gh pr list --author '@me' --head ericzolf-prepare-v2.1.3b0 \
 	--json number --template '{{range .}}{{.number}}{{end}}')
 
-# check if it can be merged, else exit
-
-PR_MERGE_STATE=$(gh pr view ${PR_NUMBER} --json mergeStateStatus,mergeable \
-	--template '{{ .mergeStateStatus }}/{{ .mergeable }}')
-if [ ${PR_MERGE_STATE} != "CLEAN/MERGEABLE" ]
-then
-	echo "PR #${PR_NUMBER} is ${PR_MERGE_STATE}, exiting" 2>&1
-	exit 2
-fi
+# wait for Pull Request checks to be completed (and successful)
 
 PR_STATUS="IN_PROGRESS"
 while [ ${PR_STATUS} != "COMPLETED" ]
 do
 	PR_STATUS="COMPLETED"
 	PR_CONCLUSION="SUCCESS"
-	gh pr view ${PR_NUMBER} --json statusCheckRollup --template '{{ range .statusCheckRollup }}{{ .status }} {{ .conclusion }}
-{{ end }}' | while read status conclusion
+	while read status conclusion
 	do
-		if [ ${status} != "COMPLETED" ]
+		if [ "${status}" != "COMPLETED" ]
 		then
 			PR_STATUS=${status}
 		else
-			if [ ${conclusion} != "SUCCESS" ]
+			if [ "${conclusion}" != "SUCCESS" ]
 			then
 				PR_CONCLUSION=${conclusion}
 			fi
 		fi
-	done
+	done < <(gh pr view ${PR_NUMBER} --json statusCheckRollup --template '{{ range .statusCheckRollup }}{{ .status }} {{ .conclusion }}
+{{ end }}')
 	[ ${PR_STATUS} != "COMPLETED" ] && sleep 10
 done
 
@@ -79,4 +71,14 @@ if [ ${PR_CONCLUSION} != "SUCCESS" ]
 then
 	echo "PR #${PR_NUMBER} failed with ${PR_CONCLUSION}" >&2
 	exit 3
+fi
+
+# check if it can be merged, else exit
+
+PR_MERGE_STATE=$(gh pr view ${PR_NUMBER} --json mergeStateStatus,mergeable \
+	--template '{{ .mergeStateStatus }}/{{ .mergeable }}')
+if [ ${PR_MERGE_STATE} != "CLEAN/MERGEABLE" ]
+then
+	echo "PR #${PR_NUMBER} state is ${PR_MERGE_STATE}, exiting" 2>&1
+	exit 2
 fi
