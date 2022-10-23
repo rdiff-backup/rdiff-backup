@@ -39,5 +39,5 @@ The interface of the plugin type manager is specific to each type, and described
 
 == Plugin types specifics
 
-include::actions.adoc[leveloffset=+2]
-include::meta.adoc[leveloffset=+2]
+include::./actions.adoc[leveloffset=+2]
+include::./meta.adoc[leveloffset=+2]

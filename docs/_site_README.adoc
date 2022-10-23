@@ -1,0 +1,11 @@
+= Building this site with Jekyll
+
+(still very much WiP)
+
+We're assuming ruby, gem and bundler are already installed on one's system.
+
+----
+bundle install
+bundle exec jekyll build .
+# or bundle exec jekyll serve .
+----
