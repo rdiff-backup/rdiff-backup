@@ -9,3 +9,7 @@ bundle install
 bundle exec jekyll build .
 # or bundle exec jekyll serve .
 ----
+
+NOTE: make sure that each README.adoc is soft-linked to an index.adoc.
+The first one is understood by GitHub as landing page for a directory.
+The 2nd one is rendered as regular file by Jekyll, and understood as well as default page for a directory then.
