@@ -27,13 +27,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./docs
-          destination: ./docs/_site
+      - name: install dependencies and call Jekyll
+        run: |
+          sudo gem install bundler
+          cd docs
+          bundle install
+          bundle exec jekyll build --baseurl rdiff-backup-site-tests .
+#      - name: Setup Pages
+#      - name: Setup Pages
+#        uses: actions/configure-pages@v2
+#      - name: Build with Jekyll
+#        uses: actions/jekyll-build-pages@v1
+#        with:
+#          source: ./docs
+#          destination: ./docs/_site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
