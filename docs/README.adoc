@@ -1,6 +1,14 @@
-= rdiff-backup
+= image:resources/logo-banner.svg[rdiff-backup] rdiff-backup
 :sectnums:
-:toc:
+:toc: macro
+
+Reverse differential backup tool, over a network or locally
+
+'''''
+
+toc::[]
+
+== Introduction
 
 Rdiff-backup backs up one directory to another, possibly over a network.
 The target directory ends up a copy of the source directory, but extra reverse diffs are stored in a special subdirectory of that target directory, so you can still recover files lost some time ago.
@@ -17,6 +25,7 @@ Read further:
 * xref:DEVELOP.adoc[Developer documentation]
 * xref:Windows-README.adoc[Windows specific documentation] - possibly outdated
 * xref:Windows-DEVELOP.adoc[Windows specific Developer documentation]
+* xref:net/index.adoc[site documentation] (not yet sorted out, and potentially outdated)
 
 == Support or Contact
 
@@ -31,7 +40,7 @@ This is an open source project and contributions are welcome!
 
 Rdiff-backup has been around for almost 20 years now and has proved to be a very solid solution for backups and it is still unique in its model of unlimited incrementals with no need to space consuming regular full backups.
 
-Current lead developers are Eric Lavarde, Patric Dufresene and Otto Kekäläinen.
+Current lead developers are Eric Lavarde, Patrik Dufresne and Otto Kekäläinen.
 Full list of core developers available at https://github.com/rdiff-backup/rdiff-backup/people[rdiff-backup Github page] and on the xref:credits.adoc[credits page].
 
 The original author and maintainer was *Ben Escoto* from 2001 to 2005.

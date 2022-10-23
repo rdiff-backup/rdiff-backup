@@ -1,28 +1,20 @@
-== image:../images/logo.png[rdiff-backup] rdiff-backup
+= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: examples
+:sectnums:
+:toc: macro
 
-=== Reverse differential backup tool, over a network or locally.
+Reverse differential backup tool, over a network or locally
 
 [[pages]]
-link:../index.html[Home] link:./features.html[Features]
-link:./docs.html[Documentation]
-link:./acknowledgments.html[Acknowledgement] link:./related.html[Related
+xref:../index.adoc[Home] xref:./features.adoc[Features]
+xref:./docs.adoc[Documentation]
+xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
 pages]
 
-[[main]]
-== [#ToC2]#rdiff-backup examples#
+'''''
 
-=== [#ToC3]#Sections#
+toc::[]
 
-* link:#backup[Backing up]
-* link:#restore[Restoring]
-* link:#delete_older[Deleting older files]
-* link:#exclude[File selection with include/exclude options]
-* link:#query[Getting information about the backup directory]
-* link:#misc[Miscellaneous other commands]
-
-[#backup]##
-
-=== [#ToC4]#Backing up#
+== Backing up
 
 * Simplest case---backup local directory `foo` to local directory `bar`.
 `bar` will end up a copy of `foo`, except it will contain the directory
@@ -59,9 +51,8 @@ ____
 `rdiff-backup -v5 --print-statistics user1@host1::/source-dir user2@host2::/dest-dir`
 ____
 
-[#restore]##
 
-=== [#ToC5]#Restoring#
+== Restoring
 
 * Suppose earlier we have run `rdiff-backup foo bar`, with both foo and
 bar local. We accidentally deleted `foo/dir` and now want to restore it
@@ -115,9 +106,8 @@ rdiff-backup will tell from the filename that it is an rdiff-backup
 increment file and thus enter restore mode. Above the restored version
 is written to `local-dir/file`.
 
-[#delete_older]##
 
-=== [#ToC6]#Deleting older files#
+== Deleting older files
 
 Although rdiff-backup tries to save space by only storing file
 differences, eventually space may run out in the destination directory.
@@ -147,9 +137,8 @@ ____
 `rdiff-backup --remove-older-than 20B host.net::/remote-dir`
 ____
 
-[#exclude]##
 
-=== [#ToC7]#File selection with include/exclude options#
+== File selection with include/exclude options
 
 Sometimes you don't want to back up all files. The various `--include`
 and `--exclude` options can be used to select exactly which files to
@@ -247,9 +236,8 @@ Above we have used `--include-globbing-filelist` instead of
 were specified on the command line. Otherwise, for instance, `**txt`
 would be considered the name of a file, not a globbing string.
 
-[#query]##
 
-=== [#ToC8]#Getting information about the backup directory#
+== Getting information about the backup directory
 
 The following examples assume that you have run
 `rdiff-backup in-dir out-dir` in the past.
@@ -300,9 +288,8 @@ ____
 `rdiff-backup --calculate-average out-dir/rdiff-backup-data/session_statistics*`
 ____
 
-[#misc]##
 
-=== [#ToC9]#Miscellaneous other commands#
+== Miscellaneous other commands
 
 * If you are having problems connecting to a remote host, the
 `--test-server` command may be useful. This command simply verifies that
@@ -311,11 +298,3 @@ there is a working rdiff-backup server on the remote side.
 ____
 `rdiff-backup --test-server hostname.net::/ignored`
 ____
-
-[[footer]]
-
-'''''
-
-A standards (CSS) compliant web browser will display this page
-correctly. +
-Last modified Fri Dec 23 23:05:53 2005

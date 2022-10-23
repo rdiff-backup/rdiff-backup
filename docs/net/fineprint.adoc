@@ -1,12 +1,15 @@
-== image:../images/logo.png[rdiff-backup] rdiff-backup
+= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: fineprint
+:sectnums:
 
-=== Reverse differential backup tool, over a network or locally.
+Reverse differential backup tool, over a network or locally
 
 [[pages]]
-link:../index.html[Home] link:./features.html[Features]
-link:./docs.html[Documentation]
-link:./acknowledgments.html[Acknowledgement] link:./related.html[Related
+xref:../index.adoc[Home] xref:./features.adoc[Features]
+xref:./docs.adoc[Documentation]
+xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
 pages]
+
+'''''
 
 The command
 
@@ -20,7 +23,7 @@ making /target-dir a mirror of /, and storing increments in
 
 . rdiff-backup and ssh are properly installed on both computers, and in
 the PATH. host.net must be running an ssh server. (rdiff-backup can use
-something other than ssh; see the link:rdiff-backup.1.html[man page] for
+something other than ssh; see the xref:rdiff-backup.1.adoc[man page] for
 more information.)
 . all source files are readable, and all necessary destination files are
 writable. In the example above this requires running as root. You could
@@ -41,9 +44,3 @@ Here is how I used to run it nightly on my system:
 /usr/bin/rdiff-backup --exclude /usr/local/games --exclude /tmp/'*'
 --exclude /var/tmp/'*' --exclude /mnt --exclude /proc --exclude /sys /
 /mnt/back
-
-'''''
-
-mailto:bescoto@stanford.edu[]
-
-Last modified: Sat Aug 13 22:24:50 PDT 2005

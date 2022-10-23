@@ -1,41 +1,32 @@
-== image:../images/logo.png[rdiff-backup] rdiff-backup
+= image:../resources/logo-banner.png[rdiff-backup] rdiff-backup: documentation
+:sectnums:
 
-=== Reverse differential backup tool, over a network or locally.
+Reverse differential backup tool, over a network or locally
 
 [[pages]]
-link:../index.html[Home] link:./features.html[Features]
-link:./docs.html[Documentation]
-link:./acknowledgments.html[Acknowledgement] link:./related.html[Related
+xref:../index.adoc[Home] xref:./features.adoc[Features]
+xref:./docs.adoc[Documentation]
+xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
 pages]
 
-[[main]]
-[[medium-title]]
-== [#ToC2]#Documentation#
+'''''
 
 These are also included in the tar, zip, and rpm packages:
 
-* link:examples.html[Examples of rdiff-backup usage] - good for new
+* xref:examples.adoc[Examples of rdiff-backup usage] - good for new
 users
-* link:FAQ.html[Frequently Asked Questions]
-* link:rdiff-backup.1.html[Manual page] (converted by man2html.)
+* xref:FAQ.adoc[Frequently Asked Questions]
+* xref:rdiff-backup.1.adoc[Manual page] (converted by man2html.)
 
 Other documentation:
 
 * http://arctic.org/~dean/rdiff-backup/unattended.html[Dean Gaudet's
 unattended rdiff-backup page] details how to configure ssh to make
 unattended rdiff-backup sessions more secure.
-* link:error_policy.html[Error policy] - Describes how rdiff-backup
+* xref:error_policy.adoc[Error policy] - Describes how rdiff-backup
 reacts to various errors.
-* link:format.html[rdiff-backup file format] - Describes in more detail
+* xref:format.adoc[rdiff-backup file format] - Describes in more detail
 how rdiff-backup stores file information. Intended mainly for
 implementors, not users.
 * http://www.w3.org/TR/NOTE-datetime[W3 note describing a time format
 rdiff-backup uses]
-
-[[footer]]
-
-'''''
-
-A standards (CSS) compliant web browser will display this page
-correctly. +
-Last modified Wed Jan 7 19:53:43 EST 2009

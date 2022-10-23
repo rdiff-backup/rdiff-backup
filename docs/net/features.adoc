@@ -1,16 +1,15 @@
-== image:../images/logo.png[rdiff-backup] rdiff-backup
+= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: features
+:sectnums:
 
-=== Reverse differential backup tool, over a network or locally.
+Reverse differential backup tool, over a network or locally
 
 [[pages]]
-link:../index.html[Home] link:./features.html[Features]
-link:./docs.html[Documentation]
-link:./acknowledgments.html[Acknowledgement] link:./related.html[Related
+xref:../index.adoc[Home] xref:./features.adoc[Features]
+xref:./docs.adoc[Documentation]
+xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
 pages]
 
-[[main]]
-[[medium-title]]
-== [#ToC2]#Features#
+'''''
 
 For many people hard disks provide the form of persistent storage that
 is most readily available and cheapest per MB. I think that rdiff-backup
@@ -30,7 +29,7 @@ will work out-of-the-box to backup dir1 to dir2.
 +
 will backup dir1 to dir2 on a different system (provided rdiff-backup is
 installed on both systems). rdiff-backup also comes with a lot of
-link:docs.html[up-to-date documentation].
+xref:docs.adoc[up-to-date documentation].
 * *Creates mirror:* rdiff-backup makes the backup directory into an
 almost exact copy of the source directory (the only difference is one
 extra subdirectory on the backup side). If you delete a file from the
@@ -149,11 +148,3 @@ Errors 80
 rdiff-backup also saves very detailed statistics in a `file_statistics`.
 This file is also in (compressed) text form, but is usually too
 voluminous to read manually.
-
-[[footer]]
-
-'''''
-
-A standards (CSS) compliant web browser will display this page
-correctly. +
-Last modified Sat Aug 4 12:38:25 2007

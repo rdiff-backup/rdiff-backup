@@ -1,12 +1,15 @@
-== image:../images/logo.png[rdiff-backup] rdiff-backup
+= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: error policy
+:sectnums:
 
-=== Reverse differential backup tool, over a network or locally.
+Reverse differential backup tool, over a network or locally
 
 [[pages]]
-link:../index.html[Home] link:./features.html[Features]
-link:./docs.html[Documentation]
-link:./acknowledgments.html[Acknowledgement] link:./related.html[Related
+xref:../index.adoc[Home] xref:./features.adoc[Features]
+xref:./docs.adoc[Documentation]
+xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
 pages]
+
+'''''
 
 This page describes the intended reaction of rdiff-backup to various
 errors which may occur during a backup session. Subject to various
@@ -97,7 +100,3 @@ Thus for practical purposes, an rdiff-backup session that ends in an
 unrecoverable error simply did not occur. Any errors that occur during
 the process of regressing the destination directory are considered
 unrecoverable and treated the same way.
-
-'''''
-
-Last modified: Sun Feb 23 22:05:08 PST 2003
