@@ -1,0 +1,49 @@
+== image:../images/logo.png[rdiff-backup] rdiff-backup
+
+=== Reverse differential backup tool, over a network or locally.
+
+[[pages]]
+link:../index.html[Home] link:./features.html[Features]
+link:./docs.html[Documentation]
+link:./acknowledgments.html[Acknowledgement] link:./related.html[Related
+pages]
+
+The command
+
+....
+rdiff-backup / host.net::/target-dir
+....
+
+will backup your root filesystem and all the subdirectories to host.net,
+making /target-dir a mirror of /, and storing increments in
+/target-dir/rdiff-backup-data. Assuming, of course, that:
+
+. rdiff-backup and ssh are properly installed on both computers, and in
+the PATH. host.net must be running an ssh server. (rdiff-backup can use
+something other than ssh; see the link:rdiff-backup.1.html[man page] for
+more information.)
+. all source files are readable, and all necessary destination files are
+writable. In the example above this requires running as root. You could
+run only one side as root, as in:
++
+....
+rdiff-backup / user@host.net::/target-dir
+....
++
+but then rdiff-backup wouldn't make the dev files. Also, all the files
+in /target-dir would be owned by user, because only root can chown.
+However, uid/gid information would be preserved in a separate file.
+
+In reality, other options would probably be added, for instance to
+exclude /proc and tmp directories, change permissions if necessary, etc.
+Here is how I used to run it nightly on my system:
+
+/usr/bin/rdiff-backup --exclude /usr/local/games --exclude /tmp/'*'
+--exclude /var/tmp/'*' --exclude /mnt --exclude /proc --exclude /sys /
+/mnt/back
+
+'''''
+
+mailto:bescoto@stanford.edu[]
+
+Last modified: Sat Aug 13 22:24:50 PDT 2005
