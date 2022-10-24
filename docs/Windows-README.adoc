@@ -1,7 +1,14 @@
 = Using rdiff-backup under Windows
 :pp: {plus}{plus}
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home] ⇒ *Windows*
+
+'''''
+
+toc::[]
+
 
 == Installation
 

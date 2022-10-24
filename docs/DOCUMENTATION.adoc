@@ -1,4 +1,13 @@
 = Guidelines for Documentation
+:sectnums:
+:toc: macro
+
+link:.[Home] ⇒ *Documentation*
+
+'''''
+
+toc::[]
+
 
 == Text
 

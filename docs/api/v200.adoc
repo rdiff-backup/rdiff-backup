@@ -1,6 +1,12 @@
 = rdiff-backup API description v200
 :sectnums:
-:toc:
+:toc: macro
+
+link:..[Home] ⇒  link:.[API] ⇒ *v200*
+
+'''''
+
+toc::[]
 
 == Format
 

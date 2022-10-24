@@ -1,15 +1,12 @@
-= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: file format
+= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: repository format
 :sectnums:
+:toc: macro
 
-Reverse differential backup tool, over a network or locally.
-
-[[pages]]
-xref:../index.adoc[Home] xref:./features.adoc[Features]
-xref:./docs.adoc[Documentation]
-xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
-pages]
+link:..[Home] ⇒ link:.[Architecture] ⇒ *Repository*
 
 '''''
+
+toc::[]
 
 This web page describes how rdiff-backup stores backup information, at
 least as of version 0.6.x. This a pretty boring document and should only

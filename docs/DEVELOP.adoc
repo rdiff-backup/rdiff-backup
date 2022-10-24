@@ -1,6 +1,13 @@
 = Development Guide for rdiff-backup
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home] ⇒ *Develop*
+
+'''''
+
+toc::[]
+
 
 NOTE: Suggest https://github.com/rdiff-backup/rdiff-backup/issues/new?title=Docs%20feedback:%20/docs/DEVELOP.md[improvements to this documentation]!
 

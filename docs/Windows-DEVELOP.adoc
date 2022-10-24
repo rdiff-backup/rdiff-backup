@@ -1,7 +1,14 @@
 = Windows Development Guide for rdiff-backup
 :pp: {plus}{plus}
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home] ⇒ *WinDev*
+
+'''''
+
+toc::[]
+
 
 Some notes for developers and other people willing to help development on Windows platform, or simply compile rdiff-backup from source code on Windows.
 

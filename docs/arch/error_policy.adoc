@@ -1,15 +1,12 @@
 = image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: error policy
 :sectnums:
+:toc: macro
 
-Reverse differential backup tool, over a network or locally
-
-[[pages]]
-xref:../index.adoc[Home] xref:./features.adoc[Features]
-xref:./docs.adoc[Documentation]
-xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
-pages]
+link:..[Home] ⇒ link:.[Architecture] ⇒ *Errors*
 
 '''''
+
+toc::[]
 
 This page describes the intended reaction of rdiff-backup to various
 errors which may occur during a backup session. Subject to various

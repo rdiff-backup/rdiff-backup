@@ -1,15 +1,12 @@
 = image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: features
 :sectnums:
+:toc: macro
 
-Reverse differential backup tool, over a network or locally
-
-[[pages]]
-xref:../index.adoc[Home] xref:./features.adoc[Features]
-xref:./docs.adoc[Documentation]
-xref:./acknowledgments.adoc[Acknowledgement] xref:./related.adoc[Related
-pages]
+link:.[Home] ⇒ *Features*
 
 '''''
+
+toc::[]
 
 For many people hard disks provide the form of persistent storage that
 is most readily available and cheapest per MB. I think that rdiff-backup

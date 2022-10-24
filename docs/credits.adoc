@@ -1,7 +1,14 @@
+= rdiff-backup: credits and acknowledgments
 :sectnums:
-:toc:
+:toc: macro
 
-*NOTE!* This list is not complete.
+link:.[Home] ⇒ *Credits*
+
+'''''
+
+toc::[]
+
+NOTE: This list is not complete.
 Please also see the git log itself for authors and committers and the Github statistics at:
 
 * https://github.com/rdiff-backup/rdiff-backup/people

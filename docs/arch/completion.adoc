@@ -1,6 +1,12 @@
 = Programmatic completion for rdiff-backup
 :sectnums:
-:toc: left
+:toc: macro
+
+link:..[Home] ⇒ link:.[Architecture] ⇒ *Completion*
+
+'''''
+
+toc::[]
 
 Using the `complete` action of rdiff-backup, one can quite easily write a shell completion script.
 It shouldn't require to analyze all possible completions because rdiff-backup itself is doing the analysis.

@@ -1,6 +1,12 @@
 = Plugins structure of rdiff-backup
 :sectnums:
-:toc:
+:toc: macro
+
+link:../..[Home] ⇒ link:..[Architecture] ⇒ *Plug-ins*
+
+'''''
+
+toc::[]
 
 Believing that a clear plug-in structure helps newcomers to participate in the code base of a product, we strive to offer such a low-entry plugin API.
 

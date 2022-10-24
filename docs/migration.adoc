@@ -1,6 +1,13 @@
 = Migration and Side-by-Side installation
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home] ⇒ *Migration*
+
+'''''
+
+toc::[]
+
 
 This document is a guide to help you migrate from one version of rdiff-backup to the next, when it comes to breach of compatibility.
 
