@@ -1,8 +1,9 @@
-= Locations, Directories and Repositories
+= rdiff-backup: {page-name}
+:page-name: Locations
 :sectnums:
 :toc: macro
 
-link:..[Home] ⇒ link:.[Architecture] ⇒ *Locations*
+link:..[Home,role="button round"] link:.[Architecture,role="button round"] // *{page-name}*
 
 '''''
 

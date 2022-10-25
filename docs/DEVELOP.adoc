@@ -1,8 +1,9 @@
-= Development Guide for rdiff-backup
+= rdiff-backup: {page-name}
+:page-name: Development Guide
 :sectnums:
 :toc: macro
 
-link:.[Home] ⇒ *Develop*
+link:.[Home,role="button round"] // *{page-name}*
 
 '''''
 

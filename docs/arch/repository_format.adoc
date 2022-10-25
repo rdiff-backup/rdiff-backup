@@ -1,8 +1,9 @@
-= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: repository format
+= rdiff-backup: {page-name}
+:page-name: Repository Format
 :sectnums:
 :toc: macro
 
-link:..[Home] ⇒ link:.[Architecture] ⇒ *Repository*
+link:..[Home,role="button round"] link:.[Architecture,role="button round"] // *{page-name}*
 
 '''''
 

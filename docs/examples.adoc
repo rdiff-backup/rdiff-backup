@@ -1,8 +1,9 @@
-= rdiff-backup examples
+= rdiff-backup: {page-name}
+:page-name: Examples
 :sectnums:
 :toc: macro
 
-link:.[Home] ⇒ *Examples*
+link:.[Home,role="button round"] // *{page-name}*
 
 '''''
 

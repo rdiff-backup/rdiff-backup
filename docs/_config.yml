@@ -1,9 +1,14 @@
-#remote_theme: pages-themes/tactile@v0.2.0
-theme: jekyll-theme-tactile
-plugins:
-  - jekyll-asciidoc
-  #  - jekyll-remote-theme # add this line to the plugins list if you already have one
-asciidoctor:
-  base_dir: :docdir
+title: rdiff-backup
+description: reverse differential backup tool, over a network or locally
 exclude:
   - '*.1'  # man pages
+plugins:
+  - jekyll-asciidoc
+asciidoc: {}
+asciidoctor:
+  base_dir: :docdir
+  safe: unsafe
+  attributes:
+    - idseparator=_
+    - source-highlighter=coderay
+    #- icons=font  # couldn't get it to work

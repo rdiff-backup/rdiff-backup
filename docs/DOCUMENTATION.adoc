@@ -1,8 +1,9 @@
-= Guidelines for Documentation
+= rdiff-backup: {page-name}
+:page-name: Documentation Guidelines
 :sectnums:
 :toc: macro
 
-link:.[Home] ⇒ *Documentation*
+link:.[Home,role="button round"] // *{page-name}*
 
 '''''
 

@@ -1,8 +1,9 @@
-= Programmatic completion for rdiff-backup
+= rdiff-backup: {page-name}
+:page-name: Programmatic Completion
 :sectnums:
 :toc: macro
 
-link:..[Home] ⇒ link:.[Architecture] ⇒ *Completion*
+link:..[Home,role="button round"] link:.[Architecture,role="button round"] // *{page-name}*
 
 '''''
 

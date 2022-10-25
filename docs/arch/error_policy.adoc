@@ -1,8 +1,9 @@
-= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: error policy
+= rdiff-backup: {page-name}
+:page-name: Error Policy
 :sectnums:
 :toc: macro
 
-link:..[Home] ⇒ link:.[Architecture] ⇒ *Errors*
+link:..[Home,role="button round"] link:.[Architecture,role="button round"] // *{page-name}*
 
 '''''
 

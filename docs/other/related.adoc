@@ -1,9 +1,10 @@
-= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: related pages
+= rdiff-backup: {page-name}
+:page-name: Related Pages
 :sectnums:
 
 Reverse differential backup tool, over a network or locally
 
-link:..[Home] ⇒ *Related*
+link:..[Home,role="button round"] // *{page-name}*
 
 '''''
 

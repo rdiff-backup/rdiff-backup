@@ -1,8 +1,9 @@
-= image:../resources/logo-banner.svg[rdiff-backup] rdiff-backup: features
+= rdiff-backup: {page-name}
+:page-name: Features
 :sectnums:
 :toc: macro
 
-link:.[Home] ⇒ *Features*
+link:.[Home,role="button round"] // *{page-name}*
 
 '''''
 
@@ -14,19 +15,18 @@ is often the best way to back one hard drive to another.
 
 * *Easy to use:* In most cases, the command
 +
-....
-     rdiff-backup dir1 dir2
-....
+----
+rdiff-backup dir1 dir2
+----
 +
 will work out-of-the-box to backup dir1 to dir2.
 +
-....
-     rdiff-backup dir1 user@system::/dir2
-....
+----
+rdiff-backup dir1 user@system::/dir2
+----
 +
 will backup dir1 to dir2 on a different system (provided rdiff-backup is
-installed on both systems). rdiff-backup also comes with a lot of
-xref:docs.adoc[up-to-date documentation].
+installed on both systems).
 * *Creates mirror:* rdiff-backup makes the backup directory into an
 almost exact copy of the source directory (the only difference is one
 extra subdirectory on the backup side). If you delete a file from the

@@ -1,8 +1,9 @@
-= image:resources/logo-banner.svg[rdiff-backup] rdiff-backup
+= rdiff-backup: {page-name}
+:page-name: Main Page
 :sectnums:
 :toc: macro
 
-Reverse differential backup tool, over a network or locally
+_// Reverse differential backup tool, over a network or locally
 
 '''''
 
@@ -21,7 +22,7 @@ Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remo
 
 === User documentation
 
-* Installation instructions are directly available from our https://github.com/rdiff-backup/rdiff-backup#1-installation[GitHub site]
+* Installation instructions are directly available from our https://github.com/rdiff-backup/rdiff-backup#1-installation[GitHub site], from https://github.com/rdiff-backup/rdiff-backup/releases[which] you can also download the binaries (if not already packaged for your preferred distro).
 * xref:features.adoc[Most relevant features]
 * xref:examples.adoc[Usage examples]
 * xref:FAQ.adoc[Frequently asked questions]

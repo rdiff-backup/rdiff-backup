@@ -1,8 +1,9 @@
-= RDIFF-BACKUP ARCHITECTURE
+= rdiff-backup: {page-name}
+:page-name: Architecture
 :sectnums:
 :toc: macro
 
-link:..[Home] ⇒ *Architecture*
+link:..[Home,role="button round"] // *{page-name}*
 
 '''''
 

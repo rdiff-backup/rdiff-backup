@@ -1,9 +1,9 @@
-= rdiff-backup Frequently Asked Questions (and their answers)
-:pagetitle: rdiff-backup FAQ
+= rdiff-backup: {page-name}
+:page-name: F.A.Q.
 :sectnums:
 :toc: macro
 
-link:.[Home] ⇒ *FAQ*
+link:.[Home,role="button round"] // *{page-name}*
 
 '''''
 

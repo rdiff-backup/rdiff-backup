@@ -1,8 +1,9 @@
-= client/server API documentation
+= rdiff-backup: {page-name}
+:page-name: API documentation
 :sectnums:
 :toc: macro
 
-link:..[Home] ⇒ *API*
+link:..[Home,role="button round"] // *{page-name}*
 
 '''''
 

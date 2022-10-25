@@ -1,8 +1,9 @@
-= CODING CONVENTIONS
+= rdiff-backup: {page-name}
+:page-name: Coding Conventions
 :sectnums:
 :toc: macro
 
-link:.[Home] ⇒ *Coding*
+link:.[Home,role="button round"] // *{page-name}*
 
 '''''
 
