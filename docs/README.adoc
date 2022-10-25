@@ -70,4 +70,4 @@ Full list of core developers available at https://github.com/rdiff-backup/rdiff-
 The original author and maintainer was *Ben Escoto* from 2001 to 2005.
 Key contributors from 2005 to 2016 were Dean Gaudet, Andrew Ferguson and Edward Ned Harvey.
 After some hibernation time Sol1 took over the stewardship of rdiff-backup from February 2016 but there were no new releases.
-In August 2019 https://www.lavar.de/[Eric Lavarde^] with the support of Otto Kekäläinen from https://seravo.com/[Seravo^] and Patrik Dufresne from http://www.patrikdufresne.com/en/minarca/[Minarca^] took over, completed the Python 3 rewrite and finally released rdiff-backup 2.0 in March 2020.
+In August 2019 https://eric.lavar.de/[Eric Lavarde^] with the support of Otto Kekäläinen from https://seravo.com/[Seravo^] and Patrik Dufresne from http://www.patrikdufresne.com/en/minarca/[Minarca^] took over, completed the Python 3 rewrite and finally released rdiff-backup 2.0 in March 2020.

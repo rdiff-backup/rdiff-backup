@@ -27,12 +27,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v2
       - name: install dependencies and call Jekyll
         run: |
           sudo gem install bundler
           cd docs
           bundle install
-          bundle exec jekyll build --baseurl rdiff-backup-site-tests .
+          bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" .
 #      - name: Setup Pages
 #      - name: Setup Pages
 #        uses: actions/configure-pages@v2
