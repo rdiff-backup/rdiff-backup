@@ -1,0 +1,93 @@
+<!doctype html>
+<!--[if IE 9]>
+<html class="lt-ie10" lang="en"> <![endif]-->
+<html class="no-js" lang="en" data-useragent="Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{page.title}}</title>
+    <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+    <meta name="author" content="Your name goes here">
+    <meta name="copyright" content="Maybe consider a Creative Commons license">
+    <link rel="stylesheet" href="{{ '/css/foundation.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/css/fontawesome.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/css/coderay.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/css/asciidoctor.css' | relative_url }}">
+    <script src="{{ '/js/vendor/modernizr.js' | relative_url }}"></script>
+    <script src="{{ '/js/toc.js' | relative_url }}"></script>
+    <link rel="icon" type="image/png" href="{{ '/resources/logo-32.png' | relative_url }}">
+</head>
+<body>
+
+
+<!-- Nav Bar -->
+
+<nav class="top-bar" data-topbar>
+    <ul class="title-area">
+        <!-- Title Area -->
+        <li class="name">
+            <h1>
+    	    <a href="{{ '/' | relative_url }}">{{site.title}}</a>
+            </h1>
+        </li>
+        <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+    </ul>
+</nav>
+<!-- End Nav -->
+
+
+<!-- Main Page Content and Sidebar -->
+
+<div class="row">
+
+    <!-- Main Blog Content -->
+    <div class="large-9 columns" role="content">
+
+        {{ content }}
+
+    </div>
+
+    <!-- End Main Content -->
+
+    <!-- Sidebar -->
+
+    <aside class="large-3 columns">
+
+        <div class="panel">
+	    <img src="{{ '/resources/logo-banner.svg' | relative_url }}"/>
+	    <h5><a href="{{ '/' | relative_url }}">Home</a></h5>
+	    <h5><a href="https://github.com/rdiff-backup/rdiff-backup#installation" target="_blank">Install</a></h5>
+	    <h5><a href="https://github.com/rdiff-backup/rdiff-backup/releases" target="_blank">Download</a></h5>
+	    <h5><a href="{{ '/#support_or_contact' | relative_url }}">Support / Contact</a></h5>
+        </div>
+
+    </aside>
+
+    <!-- End Sidebar -->
+</div>
+
+<!-- End Main Content and Sidebar -->
+
+
+<!-- Footer -->
+
+<footer class="row">
+    <div class="large-12 columns">
+        <hr>
+        <div class="row">
+            <div class="large-12 columns">
+		    <p>{{site.title}} - {{site.description}}</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="{{ '/js/vendor/jquery.js' | relative_url }}"></script>
+<script src="{{ '/js/foundation.min.js' | relative_url }}"></script>
+<script>
+$(document).foundation();
+var doc = document.documentElement;
+doc.setAttribute('data-useragent', navigator.userAgent);
+</script>
+</body>
+</html>

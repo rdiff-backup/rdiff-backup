@@ -1,6 +1,11 @@
-= Meta plugins
+= rdiff-backup: {page-name}
+:page-name: Meta Plug-ins
 :sectnums:
-:toc:
+:toc: macro
+
+link:../..[Home,role="button round"] link:..[Architecture,role="button round"] link:.[Plug-ins,role="button round"] // *{page-name}*
+
+toc::[]
 
 == Naming convention and meta manager
 

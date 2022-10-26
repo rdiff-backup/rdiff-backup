@@ -1,6 +1,13 @@
-= rdiff-backup API description v201
+= rdiff-backup: {page-name}
+:page-name: v201
 :sectnums:
-:toc:
+:toc: macro
+
+link:..[Home,role="button round"] link:.[API,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
 
 == Format
 

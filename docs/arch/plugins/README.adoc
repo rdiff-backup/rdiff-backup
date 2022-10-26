@@ -1,6 +1,13 @@
-= Plugins structure of rdiff-backup
+= rdiff-backup: {page-name}
+:page-name: Plug-ins
 :sectnums:
-:toc:
+:toc: macro
+
+link:../..[Home,role="button round"] link:..[Architecture,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
 
 Believing that a clear plug-in structure helps newcomers to participate in the code base of a product, we strive to offer such a low-entry plugin API.
 
@@ -39,5 +46,5 @@ The interface of the plugin type manager is specific to each type, and described
 
 == Plugin types specifics
 
-include::actions.adoc[leveloffset=+2]
-include::meta.adoc[leveloffset=+2]
+* xref:actions.adoc[Action Plug-ins]
+* xref:meta.adoc[Meta Plug-ins]

@@ -1,7 +1,15 @@
-= Using rdiff-backup under Windows
+= rdiff-backup: {page-name}
+:page-name: Windows Usage
 :pp: {plus}{plus}
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
 
 == Installation
 
