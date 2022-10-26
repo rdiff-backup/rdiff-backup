@@ -1,0 +1,33 @@
+= Building this site with Jekyll
+
+We're assuming ruby, gem and bundler are already installed on one's system.
+
+----
+bundle install
+bundle exec jekyll build .
+# or bundle exec jekyll serve .
+----
+
+The current theme is greatly based on the https://github.com/asciidoctor/jekyll-asciidoc-quickstart[Jekyll Asciidoc Quickstart], which is itself based on the https://github.com/asciidoctor/jekyll-asciidoc/[jekyll-asciidoc plug-in], required because we use Asciidoc for our documentation.
+
+== Caveats
+
+Most normal features of Jekyll and CSS themes can be used, but a few things need to be considered, as it appeared:
+
+. Make sure that each `README.adoc` is soft-linked to an `index.adoc`.
+  The first one is understood by GitHub as landing page for a directory (but only if it's a _regular_ file).
+  The 2nd one is rendered as regular file by Jekyll, and understood as well as default page for a directory then.
+. CSS/HTML `class` can be assigned, e.g. to links in the navigation bar, using the https://docs.asciidoctor.org/asciidoc/latest/attributes/role/[role attribute].
+. Similarly the https://docs.asciidoctor.org/asciidoc/latest/attributes/id/[ID attribute] can be assigned (we don't use it explicitly yet).
+. Instead of using the usual front-matter format, Asciidoc prefers header variables prefixed with `page-`, e.g. `:page-name: my-page-name`.
+. The specifics required to integrate the documentation into Jekyll should nevertheless be kept to a minimum as to not cripple documentation writers, and make documentation still readable directly in GitHub.
+
+== To Be Done
+
+Few things could still be addressed in due time:
+
+. https://github.com/asciidoctor/jekyll-asciidoc/#stylesheet-for-code-highlighting[code hightlighting] doesn't seem to work (didn't try yet)
+. https://github.com/asciidoctor/jekyll-asciidoc/#font-based-admonition-and-inline-icons[Font-based Admonition and Inline Icons] don't seem to work (tried, failed).
+. a clearer separation of user and developer documentation might be helpful, also physically in different sub-folders (to be reflected in setup.py for packaging).
+. a more automated generation of the navigation bar could then possibly be addressed, with an overarching Table of Content accross the whole site.
+. the whole style could use a professional revamp, especially the footer looks uncool to my eyes.

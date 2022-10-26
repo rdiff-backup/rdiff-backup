@@ -1,4 +1,14 @@
-= Guidelines for Documentation
+= rdiff-backup: {page-name}
+:page-name: Documentation Guidelines
+:sectnums:
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
 
 == Text
 

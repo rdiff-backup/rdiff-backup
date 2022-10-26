@@ -1,0 +1,14 @@
+title: rdiff-backup
+description: reverse differential backup tool, over a network or locally
+exclude:
+  - '*.1'  # man pages
+plugins:
+  - jekyll-asciidoc
+asciidoc: {}
+asciidoctor:
+  base_dir: :docdir
+  safe: unsafe
+  attributes:
+    - idseparator=_
+    - source-highlighter=coderay
+    #- icons=font  # couldn't get it to work

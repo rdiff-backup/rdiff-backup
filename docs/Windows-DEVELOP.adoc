@@ -1,7 +1,15 @@
-= Windows Development Guide for rdiff-backup
+= rdiff-backup: {page-name}
+:page-name: Windows Development Guide
 :pp: {plus}{plus}
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
 
 Some notes for developers and other people willing to help development on Windows platform, or simply compile rdiff-backup from source code on Windows.
 

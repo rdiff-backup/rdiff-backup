@@ -1,6 +1,14 @@
-= Migration and Side-by-Side installation
+= rdiff-backup: {page-name}
+:page-name: Migration
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
 
 This document is a guide to help you migrate from one version of rdiff-backup to the next, when it comes to breach of compatibility.
 
@@ -18,7 +26,7 @@ You have two options for your migration:
 
 . Upgrade all instances of rdiff-backup to the new version.
 This option is recommended for *small deployment*.
-If this is your case, just https://github.com/rdiff-backup/rdiff-backup#installation[follow the installation instructions].
+If this is your case, just https://github.com/rdiff-backup/rdiff-backup#installation[follow the installation instructions^].
 . Upgrade rdiff-backup progressively to the new version.
 This option is recommended for *large deployment*.
 If this is your case, just continue reading.
