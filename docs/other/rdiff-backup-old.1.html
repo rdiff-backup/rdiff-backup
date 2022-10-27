@@ -1,0 +1,1564 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of RDIFF-BACKUP-OLD</TITLE>
+</HEAD><BODY>
+<H1>RDIFF-BACKUP-OLD</H1>
+Section: User Manuals (1)<BR>Updated: {{ month_year }}<BR><A HREF="#index">Index</A>
+<A HREF="/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+rdiff-backup - local/remote mirror and incremental backup
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>rdiff-backup</B>
+
+<B>[</B><I>options...</I><B>]</B>
+
+<B>[[</B><I>user@</I><B>]</B><I>host1.foo::</I><B>]</B><I>source_directory</I>
+
+<B>[[</B><I>user@</I><B>]</B><I>host2.foo::</I><B>]</B><I>destination_directory</I>
+
+<P>
+<B>rdiff-backup</B>
+
+<B>{{ -l | --list-increments }</B>
+
+<B>| --remove-older-than </B><I>time_interval</I>
+
+<B>| --list-at-time </B><I>time</I>
+
+<B>| --list-changed-since </B><I>time</I>
+
+<B>| --list-increment-sizes </B>
+
+<B>| --verify</B>
+
+<B>| --verify-at-time </B><I>time</I><B>}</B>
+
+<B>[[</B><I>user@</I><B>]</B><I>host2.foo::</I><B>]</B><I>destination_directory</I>
+
+<P>
+<B>rdiff-backup --calculate-average</B>
+
+<I>statfile1 statfile2 ...</I>
+
+<P>
+<B>rdiff-backup --test-server</B>
+
+<B>[</B><I>user1@</I><B>]</B><I>host1.net1::path</I>
+
+<B>[[</B><I>user2@</I><B>]</B><I>host2.net2::path</I><B>]</B>
+
+<I>...</I>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<P>
+<I>This man-page describes the old deprecated version of the rdiff-backup</I>
+
+<I>command line. Refer preferably to the new</I>
+
+<B><A HREF="/man/man2html?1+rdiff-backup">rdiff-backup</A></B>(1)
+
+<I>man-page.</I>
+
+<P>
+<B>rdiff-backup</B>
+
+is a script, written in
+<B><A HREF="/man/man2html?1+python">python</A></B>(1)
+
+that backs up one directory to another.  The target directory ends up
+a copy (mirror) of the source directory, but extra reverse diffs are
+stored in a special subdirectory of that target directory, so you can
+still recover files lost some time ago.  The idea is to combine the
+best features of a mirror and an incremental backup.  rdiff-backup
+also preserves symlinks, special files, hardlinks, permissions,
+uid/gid ownership, and modification times.
+<P>
+<B>rdiff-backup</B>
+
+can also operate
+in a bandwidth efficient manner over a pipe, like
+<B><A HREF="/man/man2html?1+rsync">rsync</A></B>(1).
+
+Thus you can use ssh and rdiff-backup to securely back a hard drive up
+to a remote location, and only the differences will be transmitted.
+Using the default settings, rdiff-backup requires that the remote
+system accept ssh connections, and that
+<B>rdiff-backup</B>
+
+is installed in the user's PATH on the remote system.  For information
+on other options, see the section on
+<B>REMOTE OPERATION.</B>
+
+<P>
+Note that you
+<B>should not write to the mirror directory</B>
+
+except with rdiff-backup.  Many of the increments are stored as
+reverse diffs, so if you delete or modify a file, you may lose the
+ability to restore previous versions of that file.
+<P>
+Finally, this man page is intended more as a precise description of
+the behavior and syntax of rdiff-backup.  New users may want to check
+out the examples.html file included in the rdiff-backup distribution.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT><B>--allow-duplicate-timestamps</B>
+
+<DD>
+This option is only to be used if you encounter the issue of metadata
+mirrors with the same timestamp. In such cases, you may use this flag
+to first recover from the failed backup with something like
+<B>rdiff-backup --allow-duplicate-timestamps --check-destination-dir &lt;targetdir&gt;</B>
+
+after which you will need to remove those old duplicate entries
+using the
+<B>--remove-older-than</B>
+
+parameter.
+<DT><B>--api-version </B><I>api</I>
+
+<DD>
+Sets the API version to the given integer between minimum and maximum versions.
+It is the responsibility of the user to make sure
+that this version is also supported by any server started by this client.
+<DT><B>-b, --backup-mode</B>
+
+<DD>
+Force backup mode even if first argument appears to be an increment or
+mirror file.
+<DT><B>--calculate-average</B>
+
+<DD>
+Enter calculate average mode.  The arguments should be a number of
+statistics files.  rdiff-backup will print the average of the listed
+statistics files and exit.
+<DT><B>--carbonfile</B>
+
+<DD>
+Enable backup of MacOS X carbonfile information.
+<DT><B>--check-destination-dir</B>
+
+<DD>
+If an rdiff-backup session fails, running rdiff-backup with this
+option on the destination dir will undo the failed directory.  This
+happens automatically if you attempt to back up to a directory and the
+last backup failed.
+<DT><B>--compare</B>
+
+<DD>
+This is equivalent to
+<B>'--compare-at-time</B><I> now</I><B>'</B>
+
+<DT><B>--compare-at-time </B><I>time</I>
+
+<DD>
+Compare a directory with the backup set at the given time.  This can
+be useful to see how archived data differs from current data, or to
+check that a backup is current.  This only compares metadata, in the same
+way rdiff-backup decides whether a file has changed.
+<DT><B>--compare-full</B>
+
+<DD>
+This is equivalent to
+<B>'--compare-full-at-time</B><I> now</I><B>'</B>
+
+<DT><B>--compare-full-at-time </B><I>time</I>
+
+<DD>
+Compare a directory with the backup set at the given time.  To compare
+regular files, the repository data will be copied in its entirety to
+the source side and compared byte by byte.  This is the slowest but
+most complete compare option.
+<DT><B>--compare-hash</B>
+
+<DD>
+This is equivalent to
+<B>'--compare-hash-at-time</B><I> now</I><B>'</B>
+
+<DT><B>--compare-hash-at-time </B><I>time</I>
+
+<DD>
+Compare a directory with the backup set at the given time.  Regular
+files will be compared by computing their SHA1 digest on the source
+side and comparing it to the digest recorded in the metadata.
+<DT><B>--create-full-path</B>
+
+<DD>
+Normally only the final directory of the destination path will be
+created if it does not exist. With this option, all missing directories
+on the destination path will be created. Use this option with care: if
+there is a typo in the remote path, the remote filesystem could fill up
+very quickly (by creating a duplicate backup tree). For this reason
+this option is primarily aimed at scripts which automate backups.
+<DT><B>--current-time </B><I>seconds</I>
+
+<DD>
+This option is useful mainly for testing.  If set, rdiff-backup will use
+it for the current time instead of consulting the clock.  The argument
+is the number of seconds since the epoch.
+<DT><B>--exclude </B><I>shell_pattern</I>
+
+<DD>
+Exclude the file or files matched by
+<I>shell_pattern</I>.
+
+If a directory is matched, then files under that directory will also
+be matched.  See the
+<B>FILE SELECTION</B>
+
+section for more information.
+<DT><B>--exclude-device-files</B>
+
+<DD>
+Exclude all device files.  This can be useful for security/permissions
+reasons or if rdiff-backup is not handling device files correctly.
+<DT><B>--exclude-fifos</B>
+
+<DD>
+Exclude all fifo files.
+<DT><B>--exclude-filelist </B><I>filename</I>
+
+<DD>
+Excludes the files listed in
+<I>filename</I>.
+
+If
+<I>filename</I>
+
+is handwritten you probably want
+<B>--exclude-globbing-filelist</B>
+
+instead.  See the
+<B>FILE SELECTION</B>
+
+section for more information.
+<DT><B>--exclude-filelist-stdin</B>
+
+<DD>
+Like
+<B>--exclude-filelist,</B>
+
+but the list of files will be read from standard input.  See the
+<B>FILE SELECTION</B>
+
+section for more information.
+<DT><B>--exclude-globbing-filelist </B>filename
+
+<DD>
+Like
+<B>--exclude-filelist</B>
+
+but each line of the filelist will be interpreted according to the
+same rules as
+<B>--include</B>
+
+and
+<B>--exclude.</B>
+
+<DT><B>--exclude-globbing-filelist-stdin</B>
+
+<DD>
+Like
+<B>--exclude-globbing-filelist</B>,
+
+but the list of files will be read from standard input.
+<DT><B>--exclude-other-filesystems</B>
+
+<DD>
+Exclude files on file systems (identified by device number) other than
+the file system the root of the source directory is on.
+<DT><B>--exclude-regexp </B><I>regexp</I>
+
+<DD>
+Exclude files matching the given regexp.  Unlike the
+<B>--exclude</B>
+
+option, this option does not match files in a directory it matches.
+See the
+<B>FILE SELECTION</B>
+
+section for more information.
+<DT><B>--exclude-special-files</B>
+
+<DD>
+Exclude all device files, fifo files, socket files, and symbolic links.
+<DT><B>--exclude-sockets</B>
+
+<DD>
+Exclude all socket files.
+<DT><B>--exclude-symbolic-links</B>
+
+<DD>
+Exclude all symbolic links. This option is automatically enabled if the backup
+source is running on native Windows to avoid backing-up NTFS reparse points.
+<DT><B>--exclude-if-present </B><I>filename</I>
+
+<DD>
+Exclude directories if
+<I>filename</I>
+
+is present. This option needs to come before any other include or
+exclude options.
+<DT><B>--force</B>
+
+<DD>
+Authorize a more drastic modification of a directory than usual (for
+instance, when overwriting of a destination path, or when removing
+multiple sessions with
+<B>--remove-older-than</B>).
+
+rdiff-backup will generally tell you if it needs this.
+<B>WARNING:</B>
+
+You can cause data loss if you mis-use this option.
+Furthermore, do NOT use this option when doing a restore, as it will
+DELETE FILES, unless you absolutely know what you are doing.
+<DT><B>--group-mapping-file </B><I>filename</I>
+
+<DD>
+Map group names and ids according the the group mapping file
+<I>filename</I>.
+
+See the
+<B>USERS AND GROUPS</B>
+
+section for more information.
+<DT><B>--include </B><I>shell_pattern</I>
+
+<DD>
+Similar to
+<B>--exclude</B>
+
+but include matched files instead.  Unlike
+<B>--exclude</B>,
+
+this option will also match parent directories of matched files
+(although not necessarily their contents).  See the
+<B>FILE SELECTION</B>
+
+section for more information.
+<DT><B>--include-filelist </B><I>filename</I>
+
+<DD>
+Like
+<B>--exclude-filelist</B>,
+
+but include the listed files instead.  If
+<I>filename</I>
+
+is handwritten you probably want
+<B>--include-globbing-filelist</B>
+
+instead.  See the
+<B>FILE SELECTION</B>
+
+section for more information.
+<DT><B>--include-filelist-stdin</B>
+
+<DD>
+Like
+<B>--include-filelist</B>,
+
+but read the list of included files from standard input.
+<DT><B>--include-globbing-filelist </B><I>filename</I>
+
+<DD>
+Like
+<B>--include-filelist</B>
+
+but each line of the filelist will be interpreted according to the
+same rules as
+<B>--include</B>
+
+and
+<B>--exclude.</B>
+
+<DT><B>--include-globbing-filelist-stdin</B>
+
+<DD>
+Like
+<B>--include-globbing-filelist</B>,
+
+but the list of files will be read from standard input.
+<DT><B>--include-regexp </B><I>regexp</I>
+
+<DD>
+Include files matching the regular expression
+<I>regexp</I>.
+
+Only files explicitly matched by
+<I>regexp</I>
+
+will be included by this option.  See the
+<B>FILE SELECTION</B>
+
+section for more information.
+<DT><B>--include-special-files</B>
+
+<DD>
+Include all device files, fifo files, socket files, and symbolic links.
+<DT><B>--include-symbolic-links</B>
+
+<DD>
+Include all symbolic links.
+<DT><B>--list-at-time </B><I>time</I>
+
+<DD>
+List the files in the archive that were present at the given time.  If
+a directory in the archive is specified, list only the files under
+that directory.
+<DT><B>--list-changed-since </B><I>time</I>
+
+<DD>
+List the files that have changed in the destination directory since
+the given time.  See
+<B>TIME FORMATS</B>
+
+for the format of
+<I>time</I>.
+
+If a directory in the archive is specified, list only the files under
+that directory.  This option does not read the source directory; it is
+used to compare the contents of two different rdiff-backup sessions.
+<DT><B>-l, --list-increments</B>
+
+<DD>
+List the number and date of partial incremental backups contained in
+the specified destination directory.  No backup or restore will take
+place if this option is given.
+<DT><B>--list-increment-sizes</B>
+
+<DD>
+List the total size of all the increment and mirror files by time.
+This may be helpful in deciding how many increments to keep, and when
+to --remove-older-than.  Specifying a subdirectory is allowable; then
+only the sizes of the mirror and increments pertaining to that
+subdirectory will be listed.
+<DT><B>--max-file-size </B><I>size</I>
+
+<DD>
+Exclude files that are larger than the given size in bytes
+<DT><B>--min-file-size </B><I>size</I>
+
+<DD>
+Exclude files that are smaller than the given size in bytes
+<DT><B>--never-drop-acls</B>
+
+<DD>
+Exit with error instead of dropping acls or acl entries.  Normally
+this may happen (with a warning) because the destination does not
+support them or because the relevant user/group names do not exist on
+the destination side.
+<DT><B>--acls</B>,<B> --no-acls</B>
+
+<DD>
+No Access Control Lists - disable backup of ACLs
+<DT><B>--carbonfile</B>,<B> --no-carbonfile</B>
+
+<DD>
+Disable backup of MacOS X carbonfile information
+<DT><B>--compare-inode</B>,<B> --no-compare-inode</B>
+
+<DD>
+This option prevents rdiff-backup from flagging a hardlinked file as changed
+when its device number and/or inode changes.  This option is useful in
+situations where the source filesystem lacks persistent device and/or inode
+numbering.  For example, network filesystems may have mount-to-mount
+differences in their device number (but possibly stable inode numbers);
+USB/1394 devices may come up at different device numbers each remount (but
+would generally have same inode number); and there are filesystems which
+don't even have the same inode numbers from use to use.  Without the
+option rdiff-backup may generate unnecessary numbers of tiny diff files.
+<DT><B>--compression</B>,<B> --no-compression</B>
+
+<DD>
+Disable the default gzip compression of most of the .snapshot and .diff
+increment files stored in the rdiff-backup-data directory.  A backup
+volume can contain compressed and uncompressed increments, so using
+this option inconsistently is fine. Default is to compress.
+<DT><B>--not-compressed-regexp, --no-compression-regexp </B><I>regexp</I>
+
+<DD>
+Do not compress increments based on files whose filenames match
+regexp.  The default includes many common audiovisual and archive
+files, and may be found in Globals.py.
+<DT><B>--eas</B>,<B> --no-eas</B>
+
+<DD>
+No Extended Attributes support - disable backup of EAs.
+<DT><B>--file-statistics</B>,<B> --no-file-statistics</B>
+
+<DD>
+This will disable writing to the file_statistics file in the
+rdiff-backup-data directory.  rdiff-backup will run slightly quicker
+and take up a bit less space.
+<DT><B>--fsync</B>,<B> --no-fsync</B>
+
+<DD>
+This will disable issuing fsync from rdiff-backup altogether.
+This option is designed to optimize performance on busy backup systems.
+Use with caution. This may render your backup unusable in case of
+filesystem failure. Default is to use fsync.
+<DT><B>--no-new</B>,<B> --new</B>
+
+<DD>
+Use the new command line interface (not described in this man-page).
+This will soon be the default behavior.
+<DT><B>--hard-links</B>,<B> --no-hard-links</B>
+
+<DD>
+Don't use hard links on destination side, hard-linked files are copied
+like two different files.  If many hard-linked files are present,
+this option can drastically increase disk usage.
+This option is enabled by default if the backup source or restore
+destination is running on native Windows.
+<DT><B>--null-separator</B>
+
+<DD>
+Use nulls (\0) instead of newlines (\n) as line separators, which
+may help when dealing with filenames containing newlines.  This
+affects the expected format of the files specified by the
+--{include|exclude}-filelist[-stdin] switches as well as the format of
+the directory statistics file.
+<DT><B>--parsable-output</B>
+
+<DD>
+If set, rdiff-backup's output will be tailored for easy parsing by
+computers, instead of convenience for humans.  Currently this only
+applies when listing increments using the
+<B>-l</B>
+
+or
+<B>--list-increments</B>
+
+switches, where the time will be given in seconds since the epoch.
+<DT><B>--chars-to-quote, --override-chars-to-quote </B><I>chars</I>
+
+<DD>
+If the filesystem to which we are backing up is not case-sensitive, automatic 'quoting' of characters occurs. For example, a file 'Developer.doc' will be converted into ';068eveloper.doc'. To override this behavior, you need to specify this option and list the characters to quote in this way.
+<DT><B>--preserve-numerical-ids</B>
+
+<DD>
+If set, rdiff-backup will preserve uids/gids instead of trying to
+preserve unames and gnames.  See the
+<B>USERS AND GROUPS</B>
+
+section for more information.
+<DT><B>--no-print-statistics</B>,<B> --print-statistics</B>
+
+<DD>
+If set, summary statistics will be printed after a successful backup.
+If not set, this information will still be available from the
+session statistics file.  See the
+<B>STATISTICS</B>
+
+section for more information. Default is to not print statistics.
+<DT><B>--resource-forks</B>,<B> --no-resource-forks</B>
+
+<DD>
+Preserve or not resource forks under MacOS X.
+<DT><B>--restore</B>
+
+<DD>
+Restore the specified increment to the given directory.
+<DT><B>-r, --restore-as-of </B><I>restore_time</I>
+
+<DD>
+Restore the specified directory as it was as of
+<I>restore_time</I>.
+
+See the
+<B>TIME FORMATS</B>
+
+section for more information on the format of
+<I>restore_time</I>,
+
+and see the
+<B>RESTORING</B>
+
+section for more information on restoring.
+<DT><B>--remote-schema </B><I>schema</I>
+
+<DD>
+Specify an alternate method of connecting to a remote computer.  This
+is necessary to get rdiff-backup not to use ssh for remote backups, or
+if, for instance, rdiff-backup is not in the PATH on the remote side.
+See the
+<B>REMOTE OPERATION</B>
+
+section for more information.
+<DT><B>--remote-tempdir </B><I>path</I>
+
+<DD>
+Adds the --tempdir option with argument
+<I>path</I>
+
+when invoking remote instances of rdiff-backup.
+<DT><B>--remove-older-than </B><I>time_spec</I>
+
+<DD>
+Remove the incremental backup information in the destination directory
+that has been around longer than the given time.
+<I>time_spec</I>
+
+can be either an absolute time, like &quot;2002-01-04&quot;, or a time interval.
+The time interval is an integer followed by the character s, m, h, D,
+W, M, or Y, indicating seconds, minutes, hours, days, weeks, months,
+or years respectively, or a number of these concatenated.  For
+example, 32m means 32 minutes, and 3W2D10h7s means 3 weeks, 2 days, 10
+hours, and 7 seconds.  In this context, a month means 30 days, a year
+is 365 days, and a day is always 86400 seconds.
+<P>
+rdiff-backup cannot remove-older-than and back up or restore in a
+single session.  In order to both backup a directory and remove old
+files in it, you must run rdiff-backup twice.
+<P>
+By default, rdiff-backup will only delete information from one session
+at a time.  To remove two or more sessions at the same time, supply the
+<B>--force</B>
+
+option (rdiff-backup will tell you if
+<B>--force</B>
+
+is required).
+<P>
+Note that snapshots of deleted files are covered by this operation.
+Thus if you deleted a file two weeks ago, backed up immediately
+afterwards, and then ran rdiff-backup with --remove-older-than 10D
+today, no trace of that file would remain.  Finally, file selection
+options such as --include and --exclude don't affect
+--remove-older-than.
+<DT><B>--restrict-path </B><I>path</I>
+
+<DD>
+Together with
+<B>--restrict-mode</B>
+
+this option is a new alternative to using the now deprecated
+<B>--restrict</B>
+
+,
+<B>--restrict-read-only</B>
+
+or
+<B>--restrict-update-only</B>
+
+options. It gives the path to which operations are to be restricted.
+<DT><B>--restrict-mode </B><I>mode</I>
+
+<DD>
+Defines the mode in which the path given by
+<B>--restrict-path</B>
+
+shall be restricted: either
+<I>read-write</I>
+
+(the default),
+<I>read-only</I>
+
+or
+<I>update-only</I>.
+
+<DT><B>--restrict </B><I>path</I>
+
+<DD>
+Require that all file access be inside the given path.  This switch,
+and the following two, are intended to be used with the --server
+switch to provide a bit more protection when doing automated remote
+backups.  They are
+<B>not intended as your only line of defense</B>
+
+so please don't do something silly like allow public access to an
+rdiff-backup server run with --restrict-read-only.
+<DT><B>--restrict-read-only </B><I>path</I>
+
+<DD>
+Like
+<B>--restrict</B>,
+
+but also reject all write requests.
+<DT><B>--restrict-update-only </B><I>path</I>
+
+<DD>
+Like
+<B>--restrict</B>,
+
+but only allow writes as part of an incremental backup.  Requests for other types of writes (for instance, deleting
+<I>path</I>)
+
+will be rejected.
+<DT><B>--server</B>
+
+<DD>
+Enter server mode (not to be invoked directly, but instead used by
+another rdiff-backup process on a remote computer).
+<DT><B>--ssh-compression</B>,<B> --no-ssh-compression</B>,<B> --ssh-no-compression</B>
+
+<DD>
+When running ssh, do not use the -C option to enable compression.
+This option is ignored if you specify a new schema using
+<B>--remote-schema</B>.
+
+The default is to use SSH compression.
+<DT><B>--tempdir </B><I>path</I>
+
+<DD>
+Sets the directory that rdiff-backup uses for temporary files to
+the given path. The environment variables TMPDIR, TEMP, and TMP can
+also be used to set the temporary files directory. See the
+documentation of the Python tempfile module for more information.
+<DT><B>--terminal-verbosity </B><I>[0-9]</I>
+
+<DD>
+Select which messages will be displayed to the terminal.  If missing
+the level defaults to the verbosity level.
+<DT><B>--test-server</B>
+
+<DD>
+Test for the presence of a compatible rdiff-backup server as specified
+in the following host::filename argument(s).  The filename section
+will be ignored.
+<DT><B>--use-compatible-timestamps</B>
+
+<DD>
+Create timestamps in which the hour/minute/second separator is a - (hyphen)
+instead of a : (colon). It is safe to use this option on one backup, and then
+not use it on another; rdiff-backup supports the intermingling of different
+timestamp formats. This option is enabled by default on platforms which
+require that the colon be escaped.
+<DT><B>--user-mapping-file </B><I>filename</I>
+
+<DD>
+Map user names and ids according to the user mapping file
+<I>filename</I>.
+
+See the
+<B>USERS AND GROUPS</B>
+
+section for more information.
+<DT><B>-v</B><I>[0-9]</I><B>, --verbosity </B><I>[0-9]</I>
+
+<DD>
+Specify verbosity level (0 is totally silent, 3 is the default, and 9
+is noisiest).  This determines how much is written to the log file.
+<DT><B>--verify</B>
+
+<DD>
+This is short for
+<B>--verify-at-time</B><I> now</I>
+
+<DT><B>--verify-at-time</B><I> now</I>
+
+<DD>
+Check all the data in the repository at the given time by computing
+the SHA1 hash of all the regular files and comparing them with the
+hashes stored in the metadata file.
+<DT><B>-V, --version</B>
+
+<DD>
+Print the current version and exit.
+Starting with version 201 of the API, it outputs also information about
+API, call, python and operating system.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>ENVIRONMENT</H2>
+
+<DL COMPACT>
+<DT><B>RDIFF_BACKUP_VERBOSITY=[0-9]</B>
+
+<DD>
+Sets the default verbosity for log file and terminal, can be overwritten
+by the corresponding options &quot;-v/--verbosity&quot; and &quot;--terminal-verbosity&quot;.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>RESTORING</H2>
+
+There are two ways to tell rdiff-backup to restore a file or
+directory.  Firstly, you can run rdiff-backup on a mirror file and use
+the
+<B>-r</B>
+
+or
+<B>--restore-as-of</B>
+
+options.  Secondly, you can run it on an increment file with the
+<B>--restore</B>
+
+option.
+<P>
+
+For example, suppose in the past you have run:
+<P>
+
+<DL COMPACT><DT><DD>
+rdiff-backup /usr /usr.backup
+<P>
+
+</DL>
+
+to back up the /usr directory into the /usr.backup directory, and now
+want a copy of the /usr/local directory the way it was 3 days ago
+placed at /usr/local.old.
+<P>
+
+One way to do this is to run:
+<P>
+
+<DL COMPACT><DT><DD>
+rdiff-backup -r 3D /usr.backup/local /usr/local.old
+<P>
+
+</DL>
+
+where above the &quot;3D&quot; means 3 days (for other ways to specify the time,
+see the
+<B>TIME FORMATS</B>
+
+section).  The /usr.backup/local directory was selected, because that
+is the directory containing the current version of /usr/local.
+<P>
+
+Note that the option to
+<B>--restore-as-of</B>
+
+always specifies an exact time.  (So &quot;3D&quot; refers to the instant 72
+hours before the present.)  If there was no backup made at that time,
+rdiff-backup restores the state recorded for the previous backup.  For
+instance, in the above case, if &quot;3D&quot; is used, and there are only
+backups from 2 days and 4 days ago, /usr/local as it was 4 days ago
+will be restored.
+<P>
+
+The second way to restore files involves finding the corresponding
+increment file.  It would be in the
+/backup/rdiff-backup-data/increments/usr directory, and its name would
+be something like &quot;local.2002-11-09T12:43:53-04:00.dir&quot; where the time
+indicates it is from 3 days ago.  Note that the increment files all
+end in &quot;.diff&quot;, &quot;.snapshot&quot;, &quot;.dir&quot;, or &quot;.missing&quot;, where &quot;.missing&quot;
+just means that the file didn't exist at that time (finally, some of
+these may be gzip-compressed, and have an extra &quot;.gz&quot; to indicate
+this).  Then running:
+<P>
+
+<DL COMPACT><DT><DD>
+rdiff-backup --restore /backup/rdiff-backup-data/increments/usr/local.&lt;time&gt;.dir /usr/local.old
+<P>
+
+</DL>
+
+would also restore the file as desired.
+<P>
+
+If you are not sure exactly which version of a file you need, it is
+probably easiest to either restore from the increments files as
+described immediately above, or to see which increments are available
+with -l/--list-increments, and then specify exact times into
+-r/--restore-as-of.
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>TIME FORMATS</H2>
+
+rdiff-backup uses time strings in two places.  Firstly, all of the
+increment files rdiff-backup creates will have the time in their
+filenames in the w3 datetime format as described in a w3 note at
+<A HREF="https://www.w3.org/TR/NOTE-datetime.">https://www.w3.org/TR/NOTE-datetime.</A>  Basically they look like
+&quot;2001-07-15T04:09:38-07:00&quot;, which means what it looks like.  The
+&quot;-07:00&quot; section means the time zone is 7 hours behind UTC.
+<P>
+
+Secondly, the
+<B>-r</B><I>,</I><B> --restore-as-of</B><I>, and </I><B>--remove-older-than</B>
+
+options take a time string, which can be given in any of several
+formats:
+<DL COMPACT>
+<DT>1.<DD>
+the string &quot;now&quot; (refers to the current time)
+<DT>2.<DD>
+a sequences of digits, like &quot;123456890&quot; (indicating the time in
+seconds after the epoch)
+<DT>3.<DD>
+A string like &quot;2002-01-25T07:00:00+02:00&quot; in datetime format
+<DT>4.<DD>
+An interval, which is a number followed by one of the characters s, m,
+h, D, W, M, or Y (indicating seconds, minutes, hours, days, weeks,
+months, or years respectively), or a series of such pairs.  In this
+case the string refers to the time that preceded the current time by
+the length of the interval.  For instance, &quot;1h78m&quot; indicates the time
+that was one hour and 78 minutes ago.  The calendar here is
+unsophisticated: a month is always 30 days, a year is always 365 days,
+and a day is always 86400 seconds.
+<DT>5.<DD>
+A date format of the form YYYY/MM/DD, YYYY-MM-DD, MM/DD/YYYY, or
+MM-DD-YYYY, which indicates midnight on the day in question, relative
+to the current timezone settings.  For instance, &quot;2002/3/5&quot;,
+&quot;03-05-2002&quot;, and &quot;2002-3-05&quot; all mean March 5th, 2002.
+<DT>6.<DD>
+A backup session specification which is a non-negative integer
+followed by 'B'.  For instance, '0B' specifies the time of the current
+mirror, and '3B' specifies the time of the 3rd newest increment.
+<P>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>REMOTE OPERATION</H2>
+
+In order to access remote files, rdiff-backup opens up a pipe to a
+copy of rdiff-backup running on the remote machine.  Thus rdiff-backup
+must be installed on both ends.  To open this pipe, rdiff-backup first
+splits the filename into host_info::pathname.  It then substitutes
+host_info into the remote schema, and runs the resulting command,
+reading its input and output.
+<P>
+
+The default remote schema is 'ssh -C %s rdiff-backup --server' where
+host_info is substituted for '%s'.  So if the host_info is
+<A HREF="mailto:user@host.net">user@host.net</A>, then rdiff-backup runs 'ssh <A HREF="mailto:user@host.net">user@host.net</A> rdiff-backup
+--server'.  Using --remote-schema, rdiff-backup can invoke an
+arbitrary command in order to open up a remote pipe.  For instance,
+<DL COMPACT><DT><DD>
+rdiff-backup --remote-schema 'cd /usr; %s' foo 'rdiff-backup
+--server'::bar
+</DL>
+
+is basically equivalent to (but slower than)
+<DL COMPACT><DT><DD>
+rdiff-backup foo /usr/bar
+</DL>
+
+<P>
+
+Concerning quoting, if for some reason you need to put two consecutive
+colons in the host_info section of a host_info::pathname argument, or
+in the pathname of a local file, you can quote one of them by
+prepending a backslash.  So in 'a\::b::c', host_info is 'a::b' and
+the pathname is 'c'.  Similarly, if you want to refer to a local file
+whose filename contains two consecutive colons, like 'strange::file',
+you'll have to quote one of the colons as in 'strange\::file'.
+Because the backslash is a quote character in these circumstances, it
+too must be quoted to get a literal backslash, so 'foo\::\\bar'
+evaluates to 'foo::\bar'.  To make things more complicated, because
+the backslash is also a common shell quoting character, you may need
+to type in '\\\\' at the shell prompt to get a literal backslash
+(if it makes you feel better, I had to type in 8 backslashes to get
+that in this man page...).  And finally, to include a literal % in the
+string specified by --remote-schema, quote it with another %, as in
+%%.
+<P>
+Although ssh itself may be secure, using rdiff-backup in the default
+way presents some security risks.  For instance if the server is run
+as root, then an attacker who compromised the client could then use
+rdiff-backup to overwrite arbitrary server files by &quot;backing up&quot; over
+them.  Such a setup can be made more secure by using the sshd
+configuration option
+<B>command=rdiff-backup --server</B>
+
+possibly along with the
+<B>--restrict*</B>
+
+options to rdiff-backup.  For more information, see the web page, the
+wiki, and the entries for the
+<B>--restrict*</B>
+
+options on this man page.
+<P>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>FILE SELECTION</H2>
+
+<B>rdiff-backup</B>
+
+has a number of file selection options.  When rdiff-backup is run, it
+searches through the given source directory and backs up all the files
+matching the specified options.  This selection system may appear
+complicated, but it is supposed to be flexible and easy-to-use.  If
+you just want to learn the basics, first look at the selection
+examples in the examples.html file included in the package, or on the
+web at
+<I><A HREF="https://rdiff-backup.net/docs/examples.html">https://rdiff-backup.net/docs/examples.html</A></I>
+
+<P>
+<B>rdiff-backup</B>'s
+
+selection system was originally inspired by
+<B><A HREF="/man/man2html?1+rsync">rsync</A></B>(1),
+
+but there are many differences. For instance, trailing backslashes
+have no special significance.
+<P>
+<B>IMPORTANT:</B>
+
+include and exclude patterns under Windows solely support
+slashes &quot;/&quot; as file separators, given that backslashes &quot;\&quot; have a special
+meaning in regex/glob patterns.
+<P>
+The file selection system comprises a number of file
+selection conditions, which are set using one of the following command
+line options:
+<B>--exclude</B>GLOB<B>,</B>--include<B>GLOB</B>,
+
+<B>--exclude-device-files</B>,<B>--include-device-files</B>,
+
+<B>--exclude-fifos</B>,<B>--include-fifos</B>,
+
+<B>--exclude-filelist</B>LIST_FILE<B>,</B>--include-filelist<B>LIST_FILE</B>,
+
+<B>--exclude-filelist-stdin</B>,<B>--include-filelist-stdin</B>,
+
+<B>--exclude-symbolic-links</B>,<B>--include-symbolic-links</B>,
+
+<B>--exclude-sockets</B>,<B>--include-sockets</B>,
+
+<B>--exclude-globbing-filelist</B>GLOBS_FILE<B>,</B>--include-globbing-filelist<B>GLOBS_FILE</B>,
+
+<B>--exclude-globbing-filelist-stdin</B>,<B>--include-globbing-filelist-stdin</B>,
+
+<B>--exclude-other-filesystems</B>,<B>--include-other-filesystems</B>,
+
+<B>--exclude-regexp</B>REGEXP<B>,</B>--include-regexp<B>REGEXP</B>,
+
+<B>--exclude-if-present</B>FILENAME<B>,</B>--include-if-present<B>FILENAME</B>,
+
+<B>--exclude-special-files</B>,<B>--include-special-files</B>.
+
+<P>
+Each file selection condition either matches or doesn't match a given
+file.  A given file is excluded by the file selection system exactly
+when the first matching file selection condition specifies that the
+file be excluded; otherwise the file is included.  When backing up, if
+a file is excluded, rdiff-backup acts as if that file does not exist
+in the source directory.  When restoring, an excluded file is
+considered not to exist in either the source or target directories.
+<P>
+For instance,
+<P>
+
+<DL COMPACT><DT><DD>
+rdiff-backup --include /usr --exclude /usr /usr /backup
+<P>
+
+</DL>
+
+is exactly the same as
+<P>
+
+<DL COMPACT><DT><DD>
+rdiff-backup /usr /backup
+<P>
+
+</DL>
+
+because the include and exclude directives match exactly the same
+files, and the
+<B>--include</B>
+
+comes first, giving it precedence.  Similarly,
+<P>
+
+<DL COMPACT><DT><DD>
+rdiff-backup --include /usr/local/bin --exclude /usr/local /usr /backup
+<P>
+
+</DL>
+
+would backup the /usr/local/bin directory (and its contents), but not
+/usr/local/doc.
+<P>
+The
+<B>include</B>,
+
+<B>exclude</B>,
+
+<B>include-globbing-filelist</B>,
+
+and
+<B>exclude-globbing-filelist</B>
+
+options accept
+<I>extended shell globbing patterns</I>.
+
+These patterns can contain the special patterns
+<B>*</B>,
+
+<B>**</B>,
+
+<B>?</B>,
+
+and
+<B>[...]</B>.
+
+As in a normal shell,
+<B>*</B>
+
+can be expanded to any string of characters not containing &quot;/&quot;,
+<B>?</B>
+
+expands to any character except &quot;/&quot;, and
+<B>[...]</B>
+
+expands to a single character of those characters specified (ranges
+are acceptable).  The new special pattern,
+<B>**</B>,
+
+expands to any string of characters whether or not it contains &quot;/&quot;.
+Furthermore, if the pattern starts with &quot;ignorecase:&quot; (case
+insensitive), then this prefix will be removed and any character in
+the string can be replaced with an upper- or lowercase version of
+itself.
+<P>
+If you need to match filenames which contain the above globbing
+characters, they may be escaped using a backslash &quot;\&quot;. The backslash
+will only escape the character following it so for
+<B>**</B>
+
+you will need
+to use &quot;\*\*&quot; to avoid escaping it to the
+<B>*</B>
+
+globbing character.
+<P>
+Remember that you may need to quote these characters when typing them
+into a shell, so the shell does not interpret the globbing patterns
+before rdiff-backup sees them.
+<P>
+The
+<B>--exclude </B><I>pattern</I>
+
+option matches a file iff:
+<DL COMPACT>
+<DT><B>1.</B>
+
+<DD>
+<I>pattern</I>
+
+can be expanded into the file's filename, or
+<DT><B>2.</B>
+
+<DD>
+the file is inside a directory matched by the option.
+</DL>
+<P>
+
+
+Conversely,
+<B>--include </B><I>pattern</I>
+
+matches a file iff:
+<DL COMPACT>
+<DT><B>1.</B>
+
+<DD>
+<I>pattern</I>
+
+can be expanded into the file's filename,
+<DT><B>2.</B>
+
+<DD>
+the file is inside a directory matched by the option, or
+<DT><B>3.</B>
+
+<DD>
+the file is a directory which contains a file matched by the option.
+</DL>
+<P>
+
+
+For example,
+<P>
+
+<DL COMPACT><DT><DD>
+<B>--exclude</B>
+
+/usr/local
+<P>
+
+</DL>
+
+matches /usr/local, /usr/local/lib, and /usr/local/lib/netscape.  It
+is the same as --exclude /usr/local --exclude '/usr/local/**'.
+<P>
+
+<DL COMPACT><DT><DD>
+<B>--include</B>
+
+/usr/local
+<P>
+
+</DL>
+
+specifies that /usr, /usr/local, /usr/local/lib, and
+/usr/local/lib/netscape (but not /usr/doc) all be backed up.  Thus you
+don't have to worry about including parent directories to make sure
+that included subdirectories have somewhere to go.  Finally,
+<P>
+
+<DL COMPACT><DT><DD>
+<B>--include</B>
+
+ignorecase:'/usr/[a-z0-9]foo/*/**.py'
+<P>
+
+</DL>
+
+would match a file like /usR/5fOO/hello/there/world.py.  If it did
+match anything, it would also match /usr.  If there is no existing
+file that the given pattern can be expanded into, the option will not
+match /usr.
+<P>
+The
+<B>--include-filelist</B>,
+
+<B>--exclude-filelist</B>,
+
+<B>--include-filelist-stdin</B>,
+
+and
+<B>--exclude-filelist-stdin</B>
+
+options also introduce file selection conditions.  They direct
+rdiff-backup to read in a file, each line of which is a file
+specification, and to include or exclude the matching files.  Lines
+are separated by newlines or nulls, depending on whether the
+--null-separator switch was given.  Each line in a filelist is
+interpreted similarly to the way
+<I>extended shell patterns</I>
+
+are, with a few exceptions:
+<DL COMPACT>
+<DT><B>1.</B>
+
+<DD>
+Globbing patterns like
+<B>*</B>,
+
+<B>**</B>,
+
+<B>?</B>,
+
+and
+<B>[...]</B>
+
+are not expanded.
+<DT><B>2.</B>
+
+<DD>
+Include patterns do not match files in a directory that is included.
+So /usr/local in an include file will not match /usr/local/doc.
+<DT><B>3.</B>
+
+<DD>
+Lines starting with &quot;+ &quot; are interpreted as include directives, even
+if found in a filelist referenced by
+<B>--exclude-filelist</B>.
+
+Similarly, lines starting with &quot;- &quot; exclude files even if they are
+found within an include filelist.
+<P>
+
+For example, if the file &quot;list.txt&quot; contains the lines:
+<P>
+<DL COMPACT><DT><DD>
+/usr/local
+</DL>
+
+<DL COMPACT><DT><DD>
+- /usr/local/doc
+</DL>
+
+<DL COMPACT><DT><DD>
+/usr/local/bin
+</DL>
+
+<DL COMPACT><DT><DD>
++ /var
+</DL>
+
+<DL COMPACT><DT><DD>
+- /var
+<P>
+</DL>
+
+then &quot;--include-filelist list.txt&quot; would include /usr, /usr/local, and
+/usr/local/bin.  It would exclude /usr/local/doc,
+/usr/local/doc/python, etc.  It neither excludes nor includes
+/usr/local/man, leaving the fate of this directory to the next
+specification condition.  Finally, it is undefined what happens with
+/var.  A single file list should not contain conflicting file
+specifications.
+<P>
+The
+<B>--include-globbing-filelist</B>
+
+and
+<B>--exclude-globbing-filelist</B>
+
+options also specify filelists, but each line in the filelist will be
+interpreted as a globbing pattern the way
+<B>--include</B>
+
+and
+<B>--exclude</B>
+
+options are interpreted (although &quot;+ &quot; and &quot;- &quot; prefixing is still
+allowed).  For instance, if the file &quot;globbing-list.txt&quot; contains the
+lines:
+<P>
+
+<DL COMPACT><DT><DD>
+dir/foo
+</DL>
+
+<DL COMPACT><DT><DD>
++ dir/bar
+</DL>
+
+<DL COMPACT><DT><DD>
+- **
+<P>
+</DL>
+
+Then &quot;--include-globbing-filelist globbing-list.txt&quot; would be exactly
+the same as specifying &quot;--include dir/foo --include dir/bar --exclude **&quot;
+on the command line.
+<P>
+Finally, the
+<B>--include-regexp</B>
+
+and
+<B>--exclude-regexp</B>
+
+allow files to be included and excluded if their filenames match a
+python regular expression.  Regular expression syntax is too
+complicated to explain here, but is covered in Python's library
+reference.  Unlike the
+<B>--include</B>
+
+and
+<B>--exclude</B>
+
+options, the regular expression options don't match files containing
+or contained in matched files.  So for instance
+</DL>
+<P>
+
+<DL COMPACT><DT><DD>
+--include '[0-9]{7}(?!foo)'
+<P>
+
+</DL>
+
+matches any files whose full pathnames contain 7 consecutive digits
+which aren't followed by 'foo'.  However, it wouldn't match /home even
+if /home/ben/1234567 existed.
+<P>
+<A NAME="lbAK">&nbsp;</A>
+<H2>USERS AND GROUPS</H2>
+
+There can be complications preserving ownership across systems.  For
+instance the username that owns a file on the source system may not
+exist on the destination.  Here is how rdiff-backup maps ownership on
+the source to the destination (or vice-versa, in the case of restoring):
+<P>
+<DL COMPACT>
+<DT><B>1.</B>
+
+<DD>
+If the --preserve-numerical-ids option is given, the remote files will
+always have the same uid and gid, both for ownership and ACL entries.
+This may cause unames and gnames to change.
+<DT><B>2.</B>
+
+<DD>
+Otherwise, attempt to preserve the user and group names for ownership
+and in ACLs.  This may result in files having different uids and gids
+across systems.
+<DT><B>3.</B>
+
+<DD>
+If a name cannot be preserved (e.g. because the username does not
+exist), preserve the original id, but only in cases of user and group
+ownership.  For ACLs, omit any entry that has a bad user or group
+name.
+<DT><B>4.</B>
+
+<DD>
+The
+<B>--user-mapping-file</B>
+
+and
+<B>--group-mapping-file</B>
+
+options override this behavior.  If either of these options is given,
+the policy described in 2 and 3 above will be followed, but with the
+mapped user and group instead of the original.  If you specify both
+<B>--preserve-numerical-ids</B>
+
+and one of the mapping options, the behavior is undefined.
+<P>
+
+The user and group mapping files both have the same form:
+<P>
+<DL COMPACT><DT><DD>
+old_name_or_id1:new_name_or_id1
+</DL>
+
+<DL COMPACT><DT><DD>
+old_name_or_id2:new_name_or_id2
+</DL>
+
+<DL COMPACT><DT><DD>
+&lt;etc&gt;
+</DL>
+
+<P>
+Each line should contain a name or id, followed by a colon &quot;:&quot;,
+followed by another name or id.  If a name or id is not listed, they
+are treated in the default way described above.
+<P>
+When restoring, the above behavior is also followed, but note that the
+original source user/group information will be the input, not the
+already mapped user/group information present in the backup
+repository.  For instance, suppose you have mapped all the files owned
+by
+<I>alice</I>
+
+in the source so that they are owned by
+<I>ben</I>
+
+in the repository, and now you want to restore, making sure the files owned originally by
+<I>alice</I>
+
+are still owned by
+<I>alice</I>.
+
+In this case there is no need to use any of the mapping options.
+However, if you wanted to restore the files so that the files
+originally owned by
+<I>alice</I>
+
+on the source are now owned by
+<I>ben</I>,
+
+you would have to use the mapping options, even though you just want
+the unames of the repository's files preserved in the restored files.
+<P>
+<P>
+</DL>
+<A NAME="lbAL">&nbsp;</A>
+<H2>STATISTICS</H2>
+
+Every session rdiff-backup saves various statistics into two files,
+the session statistics file at
+rdiff-backup-data/session_statistics.&lt;time&gt;.data and the directory
+statistics file at rdiff-backup-data/directory_statistics.&lt;time&gt;.data.
+They are both text files and contain similar information: how many
+files changed, how many were deleted, the total size of increment
+files created, etc.  However, the session statistics file is intended
+to be very readable and only describes the session as a whole.  The
+directory statistics file is more compact (and slightly less readable)
+but describes every directory backed up.  It also may be compressed to
+save space.
+<P>
+Statistics-related options include
+<B>--print-statistics</B>
+
+and
+<B>--null-separator</B>.
+
+<P>
+Also, rdiff-backup will save various messages to the log file, which
+is rdiff-backup-data/backup.log for backup sessions and
+rdiff-backup-data/restore.log for restore sessions.  Generally what is
+written to this file will coincide with the messages displayed to
+stdout or stderr, although this can be changed with the
+<B>--terminal-verbosity</B>
+
+option.
+<P>
+The log file is not compressed and can become quite large if
+rdiff-backup is run with high verbosity.
+<P>
+<A NAME="lbAM">&nbsp;</A>
+<H2>EXIT STATUS</H2>
+
+If rdiff-backup finishes successfully, the exit status will be 0.  If
+there is an unrecoverable (critical) error, it will be non-zero
+(usually 1, but don't depend on this specific value).  When setting up
+rdiff-backup to run automatically (as from
+<B><A HREF="/man/man2html?8+cron">cron</A></B>(8)
+
+or similar) it is probably a good idea to check the exit code.
+<P>
+<A NAME="lbAN">&nbsp;</A>
+<H2>BUGS</H2>
+
+The gzip library in versions 2.2 and earlier of python (but fixed in
+2.3a1) has trouble producing files over 2GB in length.  This bug will
+prevent rdiff-backup from producing large compressed increments
+(snapshots or diffs).  A workaround is to disable compression for
+large incompressible files.
+<P>
+<A NAME="lbAO">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+Ben Escoto &lt;<A HREF="mailto:ben@emerose.org">ben@emerose.org</A>&gt;
+<P>
+
+Feel free to ask me questions or send me bug reports, but you may want to see the web page, mentioned below, first.
+<P>
+<A NAME="lbAP">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<B><A HREF="/man/man2html?1+rdiff-backup">rdiff-backup</A></B>(1),
+
+<B><A HREF="/man/man2html?1+python">python</A></B>(1),
+
+<B><A HREF="/man/man2html?1+rdiff">rdiff</A></B>(1),
+
+<B><A HREF="/man/man2html?1+rsync">rsync</A></B>(1),
+
+<B><A HREF="/man/man2html?1+ssh">ssh</A></B>(1).
+
+The main rdiff-backup web page is at
+<I><A HREF="https://rdiff-backup.net/">https://rdiff-backup.net/</A></I>.
+
+It has more information, links to the mailing list and CVS, etc.
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">ENVIRONMENT</A><DD>
+<DT><A HREF="#lbAG">RESTORING</A><DD>
+<DT><A HREF="#lbAH">TIME FORMATS</A><DD>
+<DT><A HREF="#lbAI">REMOTE OPERATION</A><DD>
+<DT><A HREF="#lbAJ">FILE SELECTION</A><DD>
+<DT><A HREF="#lbAK">USERS AND GROUPS</A><DD>
+<DT><A HREF="#lbAL">STATISTICS</A><DD>
+<DT><A HREF="#lbAM">EXIT STATUS</A><DD>
+<DT><A HREF="#lbAN">BUGS</A><DD>
+<DT><A HREF="#lbAO">AUTHOR</A><DD>
+<DT><A HREF="#lbAP">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 17:18:09 GMT, October 24, 2022
+</BODY>
+</HTML>

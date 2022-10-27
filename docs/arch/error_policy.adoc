@@ -1,0 +1,100 @@
+= rdiff-backup: {page-name}
+:page-name: Error Policy
+:sectnums:
+:toc: macro
+
+link:..[Home,role="button round"] link:.[Architecture,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
+This page describes the intended reaction of rdiff-backup to various
+errors which may occur during a backup session. Subject to various
+limitations (see below), no error should cause rdiff-backup to lose
+data. The below should be accurate for rdiff-backup versions 0.11.2 and
+later.
+
+== Limitations
+
+Firstly, note that rdiff-backup cannot correctly respond to every
+possible error that could occur. For instance, rdiff-backup may not
+correctly handle programming errors I have caused, even though these may
+exist. In particular, rdiff-backup assumes that:
+
+. The rdiff-backup destination directory is only written to by
+rdiff-backup. If other programs modify the directory structure of the
+destination directory, or regular files in that directory, unanticipated
+circumstances could arise.
+. The underlying file system respects calls like fsync(), which require
+that data be physically written to disk in a certain order. Also the
+file system needs to maintain its own integrity, including treating
+certain operations like rename() as atomic. This could become important
+if the computer is reset during an rdiff-backup session.
+
+== Error types
+
+The anticipated errors fall into four categories:
+
+* *Recoverable errors:* These errors may prevent rdiff-backup from
+backing up particular files or directories, but the rdiff-backup session
+as a whole may be successful. Any errors caused the source directory
+changing during an rdiff-backup session should be recoverable. When a
+recoverable error occurs, information is written to the error log
+indicating the type of error, the filename the error occurred on, and
+the error message.
+** *1. File stat()ing/directory listing/permission errors:* These errors
+occur when a directory cannot be listed, a file cannot be statted, or a
+regular file lacks read permissions. Directory listing errors can
+happend when a directory changes to a different type of file as
+rdiff-backup is listing it. These are called ListErrors in the error
+log.
++
+When a file cannot be statted or it is a regular file and it lacks read
+permissions, rdiff-backup will treat it as not existing. A directory
+that cannot be listed will be treated as if it does not contain any
+files. Thus the corresponding file(s) in the mirror directory will be
+removed (although they can still be recovered from the increments that
+will be written).
+** *2. Special file creation errors:* These errors occur when
+rdiff-backup tries and fails to create a special file in the destination
+directory. Special files include pipes, device files, sockets, and
+fifos. Error log lines starting with SpecialFileError indicate this kind
+of error.
++
+These errors are logged, but are not considered serious because they
+cause no data loss. Restores will recover the information about special
+files from the metadata file and create them successfully. On the
+destination side, 0 length regular files will be substituted for the
+special files.
+** *3. Updating errors:* These errors occur when rdiff-backup is trying
+to read regular files in the source directory in order to update the
+corresponding file in the destination directory. These are usually
+caused by a file being modified as rdiff-backup is processing it. The
+error log calls these UpdateErrors.
++
+When this type of error occurs, rdiff-backup will pretend that the file
+is the same as it is in the destination directory. For an incremental
+backup, this means that no new increment will be written, and the mirror
+copy will not be updated.
+* *4. Unrecoverable errors:* Errors not described above are
+unrecoverable. Some examples are: running out of space on the
+destination directory, the user aborting by pressing Cntl-C, the
+rdiff-backup process being killed with SIGKILL or SIGTERM, or the
+computer crashing during an rdiff-backup session.
++
+Because rdiff-backup may not be able to respond, it does nothing but
+quit in the face of an unrecoverable error. However, if the aborted
+session was an incremental backup, the rdiff-backup destination
+directory will be in a recognizably intermediate state. When the next
+backup is run into that directory, rdiff-backup will fix it before
+starting normal backup operations. Restores from that directory will
+fail, although the directory can be fixed by running rdiff-backup with
+the --check-destination-dir option.
++
+This "fixing" mentioned above involves regressing the destination
+directory to the state it was in after the last successful rdiff-backup.
+Thus for practical purposes, an rdiff-backup session that ends in an
+unrecoverable error simply did not occur. Any errors that occur during
+the process of regressing the destination directory are considered
+unrecoverable and treated the same way.

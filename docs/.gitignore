@@ -1,0 +1,3 @@
+# special exceptions for Jekyll layouts and man2html pages
+!_layouts/*.html
+!other/*.1.html

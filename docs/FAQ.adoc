@@ -1,7 +1,14 @@
-= rdiff-backup Frequently Asked Questions (and their answers)
-:pagetitle: rdiff-backup FAQ
+= rdiff-backup: {page-name}
+:page-name: F.A.Q.
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
 
 == What do the different verbosity levels mean?
 
@@ -415,3 +422,18 @@ if __name__ == "__main__":
 CAUTION: there is no guarantee as this stage that the `main_run` function can be called more than once in the same program.
 The risk is mainly because it makes extensive use of global variables.
 Pull requests are more than welcome to fix the issue and make integration easier.
+
+== What user interfaces are available for rdiff-backup ?
+
+Two open source projects exist providing a user interface for
+rdiff-backup.
+
+https://rdiffweb.org[Rdiffweb] is a web interface for rdiff-backup. It
+can be used to browse and restore your data from the convenience of your
+web browser.
+
+https://minarca.org[Minarca] is a centralized backup solution. It
+provides an agent to automate the backup process and a server to browse
+and restore the data to be installed on your centralized backup server.
+The agent is cross-platform allowing you to seamlessly use a single
+solution.

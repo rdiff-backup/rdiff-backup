@@ -1,6 +1,14 @@
-= Development Guide for rdiff-backup
+= rdiff-backup: {page-name}
+:page-name: Development Guide
 :sectnums:
-:toc:
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
 
 NOTE: Suggest https://github.com/rdiff-backup/rdiff-backup/issues/new?title=Docs%20feedback:%20/docs/DEVELOP.md[improvements to this documentation]!
 

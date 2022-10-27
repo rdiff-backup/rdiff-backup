@@ -1,8 +1,14 @@
-= rdiff-backup examples
-:pagetitle: rdiff-backup examples
+= rdiff-backup: {page-name}
+:page-name: Examples
 :sectnums:
-:toc:
-:toc-title: Sections
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
 
 == Old vs. New Command Line Interface
 

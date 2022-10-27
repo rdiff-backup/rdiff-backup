@@ -1,0 +1,153 @@
+= rdiff-backup: {page-name}
+:page-name: Related Pages
+:sectnums:
+
+Reverse differential backup tool, over a network or locally
+
+link:..[Home,role="button round"] // *{page-name}*
+
+'''''
+
+This page describes and links to projects related to rdiff-backup,
+either because they depend on or work with rdiff-backup, or because they
+are competing backup programs.
+
+== Software written for rdiff-backup
+
+* Filip Gruszczyski has written a http://fuse.sourceforge.net/[FUSE]
+plugin named *archfs*, still present but unmaintained under the
+namehttps://github.com/rdiff-backup/rdiff-backup-fs[rdiff-backup-fs]
+which allows browsing through rdiff-backup increments directly as a
+filesystem.
+* *http://safekeep.sourceforge.net/[SafeKeep]* for Linux is a front-end
+for rdiff-backup providing LVM snapshots and easy configuration.
+* *https://launchpad.net/gnomeeasybackup[EasyBackup]* is a graphical
+backup solution for Gnome which is integrated with the Nautilus file
+manager and uses rdiff-backup as the backend.
+* *https://people.debian.org/~sunweaver/debian-edu/source/slbackup/[slbackup]*
+is a graphical backup program included in
+https://wiki.debian.org/DebianEdu/[DebianEdu] (formerly known as
+Skolelinux). Apparently it uses rdiff-backup as the backend.
+(http://www.skolelinux.no/~klaus/newnotater/x2949.html[Here] is a page
+with some instructions.)
+* *http://rdiffbackupweb.sourceforge.net/[rdiff-backup-web]* is a
+web-based frontend to rdiff-backup by David Evans. In alpha state as of
+Dec 2005, and still so in 2020.
+* Julien Perez has written an alternative to rsnapshot called
+*http://rbackup.lescigales.org/[rBackup]* which uses rdiff-backup as the
+backend instead of rsync. It uses a configuration file to backup
+directories, subversion repositories, and mysql databases.
+* *http://freshmeat.net/projects/backupninja[Backupninja]* is a set of
+scripts and configuration files for managing backup software, and
+includes support for rdiff-backup.
+* *http://rdiffweb.org/[rdiffweb]* is a web interface to browse and
+restore data from a rdiff-backup repository. Provide an overview of
+backup failures, send notification on errors, manage users
+authentication and many more features.
+* *http://minarca.org/[Minarca]* is a backup software solution built on
+top of rdiff-backup and rdiffweb. Minarca Stack provide a tight
+integration to ease the deployment and configuration of rdiff-backup.
+
+*NOTE:* both rdiffweb and Minarca are maintained by
+https://github.com/ikus060/[Patrik Dufresne], active member of the
+rdiff-backup community.
+
+== Community provided scripts
+
+There are many scripts to help rdiff-backup work in various environments
+available on the
+https://github.com/rdiff-backup/rdiff-backup/tree/master/tools/misc[rdiff-backup
+github project].
+
+== Articles/books that mention rdiff-backup
+
+* (2020-05-25)
+https://www.tecmint.com/linux-rdiff-backup-tool/[rdiff-backup – A
+Powerful Incremental Backup Tool Now Supports Python 3] by Ravi Saive
+* (2019-01-25)
+https://carloscaballero.io/backup-using-rdiff-backup/[Backup automated
+using rdiff-backup] by Carlos Caballero
+* (2018-09-12)
+https://blog.sleeplessbeastie.eu/2018/09/12/how-to-perform-incremental-backup-using-rdiff-backup/[How
+to perform incremental backup using rdiff-backup] by Milosz Galazka
+* (2017-04-13)
+https://www.tecmint.com/rdiff-backup-remote-incremental-backup-for-linux/[rdiff-backup
+– A Remote Incremental Backup Tool for Linux] by Aaron Kili.
+* (2013-05-20)
+https://bencane.com/2013/05/20/securely-backing-up-your-files-with-rdiff-backup-and-sudo/[Securely
+backing up your files with rdiff-backup and sudo] by Benjamin Cane.
+* (2010-12-01) https://www.linuxjournal.com/article/10701[Using
+rdiff-backup and rdiffWeb to Back Up and Restore] by Adrian Klaver.
+* (2009-06-03)
+https://www.thomas-krenn.com/en/wiki/Using_rdiff-backup_under_Linux[Using
+rdiff-backup under Linux] by Werner Fischer.
+* (2007-08-24) http://www.howtoforge.com/sshfs_rdiff_backup[Use SSHFS
+With rdiff-backup] by Stef Bon.
+* (2005-10-13) https://www.howtoforge.com/linux_rdiff_backup[Automated
+Backups With rdiff-backup] by Falko Timme.
+* (2004-09-03) http://fedoranews.org/ghenry/rdiff/[HOWTO: Automate
+remote backups using rdiff-backup and perl] by Gavin Henry in
+http://fedoranews.org[FedoraNews.org.]
+* Kirk Bauer's book http://kaybee.org:81/kirk/aua.html[Automating UNIX
+and Linux Administration]
+(http://www.amazon.com/gp/product/1590592123/ref=ase_kaybee-20/103-1716073-5395018?s=books&v=glance&n=283155&tagActionCode=kaybee-20[Amazon
+link]) has a few pages on rdiff-backup.
+
+== Other related backup programs
+
+Here are short descriptions of other mirroring/diffing backup programs
+which may compete with rdiff-backup. Of course you should consider me
+biased in favor of rdiff-backup, but I recognize that rdiff-backup is
+not the best choice for every situation, and I try to be fair in my
+comparisons.
+
+http://rsync.samba.org[rsync]:: the inspiration for rdiff-backup.
+Although rsync and rdiff-backup do not share any code, rdiff-backup uses
+the rsync algorithm, invented by rsync author Andrew Tridgell.
++
+Compared to rdiff-backup, rsync is faster, so it is often the better
+choice when pure mirroring is required. Also rdiff-backup does not have
+a separate server like rsyncd (instead it relies on ssh-based networking
+and authentication).
++
+However, rdiff-backup uses much less memory than rsync on large
+directories. Second, by itself rsync only mirrors and does not keep
+incremental information (but see below). Third, rsync may not preserve
+all the information you want to backup. For instance, if you don't run
+rsync as root, you will lose all ownership information. Fourth,
+rdiff-backup has a number of extra features, like extended attribute and
+ACL suport, detailed file statistics, and SHA1 checksums.
+
+rsync-based scripts:: Because rsync does not save
+incremental information, it is usually inappropriate for backing up.
+There are several utilities which use the rsync binary, but keep old
+data by using rsync --link-dest option and rotating the destination
+directory.
++
+Compared to rdiff-backup, these are usually faster but use more memory
+and disk space. They make each increment appear as a separate complete
+directory, which is a neat feature. On the other hand, these will
+usually be missing the features that are missing from rsync (see above).
++
+Here are various programs which use the rsync strategy:
++
+** *http://www.mikerubel.org/computers/rsync_snapshots/[Mike Rubel's
+rsync snapshots]* - the original rsync hardlinking script
+** *http://www.rsnapshot.org/[rsnapshot]* - based off Mike Rubel's
+article
+** *http://www.dirvish.com/[Dirvish]* - perhaps the most feature-filled
+of these programs
+** *http://www.perusion.com/misc/Snapback2/[Snapback2]*
+http://backuppc.sourceforge.net/[BackupPC]:: A great, innovative
+program which notices when you save many copies of the same file.
+Definitely take a look at this if you back up many similar systems to
+the same destination (e.g. many windows PCs to a central linux server).
+http://www.cis.upenn.edu/~bcpierce/unison/index.html[Unison]:: a
+interesting bidirectional mirroring tool. Similar to rsync, but changes
+propagate in either direction. Consider this if you need to keep two
+directories synced and either may get edited.
+https://gitlab.com/duplicity/duplicity[Duplicity]:: it is a backup program that is similar to rdiff-backup in some ways.
+It grew out of rdiff-backup, had the same "father", is also written in Python, and uses librsync for bandwidth efficiency.
+However, rdiff-backup's archives are meant to be as easy to view as possible, while duplicity's are as hard to view as possible---they can be encrypted with GnuPG.
+Also, duplicity saves data in the more conventional full+forward delta format instead of rdiff-backup's mirror+reverse deltas.
+Finally, rdiff-backup expects another copy of rdiff-backup on the remote destination, while duplicity can access remote locations with scp or ftp (other backends may be supported later).

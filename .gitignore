@@ -25,6 +25,8 @@ rdiff-backup.spec
 
 # Jekyll static sites
 _site/
+Gemfile.lock
+vendor/
 # generated files
 *.html
 *.pdf

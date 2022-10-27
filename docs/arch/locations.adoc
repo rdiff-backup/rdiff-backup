@@ -1,4 +1,13 @@
-= Locations, Directories and Repositories
+= rdiff-backup: {page-name}
+:page-name: Locations
+:sectnums:
+:toc: macro
+
+link:..[Home,role="button round"] link:.[Architecture,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
 
 A location is any source or target path given on the command line, including the optional user/hostname.
 It can either be a simple directory from which to backup, or to which to restore, or it can be a backup repository.
