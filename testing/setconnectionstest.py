@@ -23,6 +23,10 @@ class SetConnectionsTest(unittest.TestCase):
         self.assertEqual(pl(rb"foobar\\"), (None, b"foobar/", None))
         self.assertEqual(pl(rb"not\::too::many\\\::paths"),
                          (b"not::too", b"many/::paths", None))
+        self.assertEqual(pl(rb"\\hostname\unc\path"),
+                         (None, b"//hostname/unc/path", None))
+        self.assertEqual(pl(rb"remotehost::\\hostname\unc\path"),
+                         (b"remotehost", b"//hostname/unc/path", None))
 
         # test missing path and missing host
         self.assertIsNotNone(pl(rb"a host without\:path::")[2])

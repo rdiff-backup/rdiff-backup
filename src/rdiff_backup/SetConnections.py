@@ -240,16 +240,28 @@ def parse_location(file_desc):
     # According to description, the backslashes must be unquoted, i.e.
     # double backslashes replaced by single ones, and single ones removed
     # before colons.
+    sbs = b'\\'  # single backslash
+    dbs = rb'\\'  # double backslash (r for raw)
     # Hence we split along double ones, remove single ones in each element,
     # and join back with a single backslash.
     if file_host:
-        file_host = b'\\'.join(
-            [x.replace(b'\\:', b':') for x in file_host.split(b'\\\\')])
-    file_path = b'\\'.join(
-        [x.replace(b'\\:', b':') for x in file_path.split(b'\\\\')])
+        file_host = sbs.join(
+            [x.replace(sbs + b':', b':') for x in file_host.split(dbs)])
+    # handle the special case of an UNC path '\\hostname\some\path'
+    if (file_path.startswith(dbs)
+            and len(file_path) > 2 and file_path[2:3] != sbs):
+        is_unc_path = True
+    else:
+        # it could still be an UNC path using forward slashes
+        # but we don't need to care
+        is_unc_path = False
+    file_path = sbs.join(
+        [x.replace(sbs + b':', b':') for x in file_path.split(dbs)])
     # And then we make sure that paths under Windows use / instead of \
     # (we don't do it for the host part because it could be a shell command)
     file_path = file_path.replace(b"\\", b"/")
+    if is_unc_path:
+        file_path = b'/' + file_path
 
     return (file_host, file_path, None)
 
