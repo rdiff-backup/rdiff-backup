@@ -114,7 +114,7 @@ class RemoveAction(actions.BaseAction):
             return ret_code | Globals.RET_CODE_WARN
 
         if Globals.get_api_version() < 201:
-            manage.delete_earlier_than(self.repo.base_dir, self.action_time)
+            manage.delete_earlier_than(self.repo.data_dir, self.action_time)
         else:
             self.repo.remove_increments_older_than(self.action_time)
 

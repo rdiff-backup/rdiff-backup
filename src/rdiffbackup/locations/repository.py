@@ -441,7 +441,7 @@ information in it.
         """
         Shadow function for RepoShadow.remove_increments_older_than
         """
-        return self._shadow.remove_increments_older_than(self.base_dir, reftime)
+        return self._shadow.remove_increments_older_than(self.data_dir, reftime)
 
     def list_files_changed_since(self, reftime):
         """
