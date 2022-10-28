@@ -36,11 +36,11 @@ pyinstaller==5.4; platform_system=="Windows"
 pylibacl ; os_name == "posix"
 pyxattr ; platform_system == "Linux"
 # or xattr under SuSE Linux & Co
-psutil ; os_name == "posix"  # FIXME see GH #744
+psutil
 
 #--- for testing ---
 
 tox
 flake8
-coverage==5.5
+coverage
 rpdb
