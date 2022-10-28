@@ -194,6 +194,7 @@ class Select:
             "--exclude-if-present": (self._presence_get_sf, Select.EXCLUDE),
             "--include": (self._glob_get_sf, Select.INCLUDE),
             "--include-regexp": (self._regexp_get_sf, Select.INCLUDE),
+            "--include-if-present": (self._presence_get_sf, Select.INCLUDE),
             "--min-file-size": (self._size_get_sf, Select.MIN),
             "--max-file-size": (self._size_get_sf, Select.MAX),
         }
@@ -498,8 +499,11 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
             "Include is {ival}, should be 0 or 1.".format(ival=include))
 
         def sel_func(rp):
-            if rp.isdir() and rp.readable() and \
-               rp.append(presence_filename).lstat():
+            if (rp.isdir() and rp.readable()
+                    and rp.append(presence_filename).lstat()):
+                return include
+            elif (include and not rp.isdir()
+                    and rp.get_parent_rp().append(presence_filename).lstat()):
                 return include
             return None
 

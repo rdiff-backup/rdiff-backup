@@ -121,28 +121,28 @@ def quote(path):
     would go to "10;05811;05812" if ":" were quoted and ";" were
     the quoting character.
     """
-    QuotedPath = Globals.chars_to_quote_regexp.sub(_quote_single, path)
+    quoted_path = Globals.chars_to_quote_regexp.sub(_quote_single, path)
     if not Globals.escape_dos_devices and not Globals.escape_trailing_spaces:
-        return QuotedPath
+        return quoted_path
 
     # Escape a trailing space or period (invalid in names on FAT32 under DOS,
     # Windows and modern Linux)
     if Globals.escape_trailing_spaces:
-        if len(QuotedPath) and (QuotedPath[-1] == ord(' ')
-                                or QuotedPath[-1] == ord('.')):
-            QuotedPath = QuotedPath[:-1] + \
-                b"%b%03d" % (Globals.quoting_char, QuotedPath[-1])
+        if len(quoted_path) and (quoted_path[-1] == ord(' ')
+                                 or quoted_path[-1] == ord('.')):
+            quoted_path = quoted_path[:-1] + \
+                b"%b%03d" % (Globals.quoting_char, quoted_path[-1])
 
         if not Globals.escape_dos_devices:
-            return QuotedPath
+            return quoted_path
 
     # Escape first char of any special DOS device files even if filename has an
     # extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-9.
     if not re.search(br"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|"
-                     br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath,
+                     br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", quoted_path,
                      re.I):
-        return QuotedPath
-    return b"%b%03d" % (Globals.quoting_char, QuotedPath[0]) + QuotedPath[1:]
+        return quoted_path
+    return b"%b%03d" % (Globals.quoting_char, quoted_path[0]) + quoted_path[1:]
 
 
 def unquote(path):

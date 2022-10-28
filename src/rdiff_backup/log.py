@@ -25,8 +25,7 @@ import shutil
 import sys
 import textwrap
 import traceback
-import types
-from . import Globals
+from rdiff_backup import Globals
 
 LOGFILE_ENCODING = 'utf-8'
 
@@ -63,24 +62,18 @@ class Logger:
         self.termverbset = None
 
     def __call__(self, message, verbosity):
-        """Log message that has verbosity importance
+        """
+        Log message that has verbosity importance
 
-        message can be a string, which is logged as-is, or a function,
-        which is then called and should return the string to be
-        logged.  We do it this way in case producing the string would
-        take a significant amount of CPU.
-
+        message can be a string or bytes
         """
         if verbosity > self.verbosity and verbosity > self.term_verbosity:
             return
 
         if not isinstance(message, (bytes, str)):
-            if isinstance(message, types.FunctionType):
-                message = message()
-            else:
-                raise TypeError(
-                    "You can only log bytes, str or functions to generate "
-                    "messages, and not {lt}".format(lt=type(message)))
+            raise TypeError(
+                "You can only log bytes or str, and not {lt}".format(
+                    lt=type(message)))
 
         if Globals.get_api_version() < 201:  # compat200
             message = "{pre} {msg}".format(pre=_LOG_PREFIX[verbosity],
@@ -257,19 +250,11 @@ class Logger:
         self.logfp.close()
         self.log_file_local = None
 
-    def _exception_to_string(self, arglist=[]):
-        """Return string version of current exception plus what's in arglist"""
+    def _exception_to_string(self):
+        """Return string version of current exception"""
         type, value, tb = sys.exc_info()
         s = ("Exception '%s' raised of class '%s':\n%s" %
              (value, type, "".join(traceback.format_tb(tb))))
-        if arglist:
-            s += "__Arguments:"
-            for arg in arglist:
-                s += "\n"
-                try:
-                    s += str(arg)
-                except UnicodeError:
-                    s += str(arg).encode('ascii', 'replace')
         return s
 
     def _format(self, message, verbosity, msg_verbosity=None):

@@ -169,7 +169,7 @@ def _create_directory(dir_name, settings={}, always_delete=False):
     os.makedirs(dir_name, mode=settings.get("mode", DEFAULT_DIR_MODE))
 
 
-def _create_file(file_name, settings):
+def _create_file(file_name, settings, always_delete=False):
     """
     Creates a file according to settings
 
@@ -177,6 +177,9 @@ def _create_file(file_name, settings):
     from the corresponding key, written in binary mode if "open" is set to "b",
     else "t".
     """
+    if os.path.exists(file_name):
+        if always_delete or not os.path.isfile(file_name):
+            shutil.rmtree(file_name)
     with open(file_name, "w" + settings.get("open", DEFAULT_FILE_OPEN)) as fd:
         fd.write(settings.get("content", DEFAULT_FILE_CONTENT))
     os.chmod(file_name, mode=settings.get("mode", DEFAULT_FILE_MODE))

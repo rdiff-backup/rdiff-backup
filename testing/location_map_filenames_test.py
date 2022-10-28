@@ -6,6 +6,7 @@ import unittest
 
 import commontest as comtst
 import fileset
+from rdiff_backup import Globals
 
 
 class LocationMapFilenamesTest(unittest.TestCase):
@@ -25,6 +26,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 "itemY": {"type": "file"},
                 "longDiRnAm" * 25: {"type": "dir"},
                 "longFiLnAm" * 25: {"content": "not so long content"},
+                "aux123": {"content": "looks like DOS file"},
+                "ends_in_blank ": {"content": "looks like DOS file"},
             }}
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
@@ -37,6 +40,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 "itemY": {"type": "dir"},
                 "longDiRnAm" * 25: {"type": "dir"},
                 "longFiLnAm" * 25: {"content": "differently long"},
+                "aux123": {"content": "still looks like DOS file"},
+                "ends_in_blank ": {"content": "still looks like DOS file"},
             }}
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
@@ -58,12 +63,12 @@ class LocationMapFilenamesTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, False, self.from1_path, self.bak_path,
             ("--api-version", "201", "--current-time", "10000",
-                "--chars-to-quote", "A-Z"),
+             "--chars-to-quote", "A-Z:"),
             b"backup", ()), 0)
         self.assertEqual(comtst.rdiff_backup_action(
             False, True, self.from2_path, self.bak_path,
             ("--api-version", "201", "--current-time", "20000",
-                "--chars-to-quote", "A-Z"),
+             "--chars-to-quote", "A-Z:"),
             b"backup", ()), 0)
 
         # then we restore the increment and the last mirror to two directories
@@ -91,18 +96,18 @@ class LocationMapFilenamesTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, False, self.from1_path, self.bak_path,
             ("--api-version", "201", "--current-time", "10000",
-                "--chars-to-quote", "A-P"),
+             "--chars-to-quote", "A-P:"),
             b"backup", ()), 0)
         # we try the 2nd time to change the chars-to-quote, which fails
         self.assertNotEqual(comtst.rdiff_backup_action(
             False, True, self.from2_path, self.bak_path,
             ("--api-version", "201", "--current-time", "15000",
-                "--chars-to-quote", "H-Z"),
+             "--chars-to-quote", "H-Z:"),
             b"backup", ()), 0)
         self.assertNotEqual(comtst.rdiff_backup_action(
             False, True, self.from2_path, self.bak_path,
             ("--api-version", "201", "--current-time", "20000",
-                "--chars-to-quote", "H-Z", "--force"),
+             "--chars-to-quote", "H-Z:", "--force"),
             b"backup", ()), 0)
 
         # then we restore the last mirror to a directory without issue
@@ -124,6 +129,31 @@ class LocationMapFilenamesTest(unittest.TestCase):
             fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
             fileset.remove_fileset(self.base_dir, {"to1": {"type": "dir"}})
             fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
+
+
+class LocationMapFilenamesUnitTest(unittest.TestCase):
+    """
+    Test specific aspects of locations.map.filenames to increase coverage
+    """
+
+    def test_location_map_filenames_dos_quotes(self):
+        """
+        Check that DOS filenames are properly quoted
+        """
+        Globals.escape_dos_devices = True
+        Globals.escape_trailing_spaces = True
+        from rdiffbackup.locations.map import filenames as map_filenames
+
+        chars_to_quote = b"A-Z"
+        regexp, unregexp = map_filenames.get_quoting_regexps(
+            chars_to_quote, Globals.quoting_char)
+        Globals.set_all("chars_to_quote", chars_to_quote)
+        Globals.set_all('chars_to_quote_regexp', regexp)
+        Globals.set_all('chars_to_quote_unregexp', unregexp)
+
+        self.assertEqual(map_filenames.quote(b'aux.123'), b";097ux.123")
+        self.assertEqual(map_filenames.quote(b'ends in space '),
+                         b"ends in space;032")
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ def get_parent_parsers_compat200():
     return rdiffbackup.actions.PARENT_PARSERS
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     actions = get_actions_dict()
     for name, action_class in actions.items():
         print(name + ": " + action_class.get_version())
