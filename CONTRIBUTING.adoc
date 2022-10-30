@@ -1,1 +1,1 @@
-docs/DEVELOP.adoc
+include::docs/DEVELOP.adoc[]

@@ -453,7 +453,8 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
        leading to errors in librsynctest, closes #304
 * DEV: function rpath.getdevnums now also returns the device type,
        block or char
-* DEV: replace deprecated xattr.+++<verb>+++xattr with xattr.+++<verb>+++function, closes #177+++</verb>++++++</verb>+++
+* DEV: replace deprecated xattr.<verb>xattr with xattr.<verb> function,
+       closes #177
 * DOC: added clearer instructions for installing weak dependencies to
        support ACLs and EAs under CentOS and RHEL
 * DOC: fix semi-broken nongnu.org links in manpages of rdiff-backup and
@@ -1684,8 +1685,8 @@ The above process can be done without a backup with the
 ....
 
 Improved error logging.
-Instead of the old haphazard reporting method, which sometimes didn't indicate the file an error occurred on, now all recoverable errors are reported in a standard format and also written to the error_log.+++<time>+++.data file in the rdiff-backup-data directory.
-Thanks to Dean Gaudet and others for repeatedly bugging me about this.+++</time>+++
+Instead of the old haphazard reporting method, which sometimes didn't indicate the file an error occurred on, now all recoverable errors are reported in a standard format and also written to the error_log.<time>.data file in the rdiff-backup-data directory.
+Thanks to Dean Gaudet and others for repeatedly bugging me about this.
 
 == New in v0.11.1 (2002/12/31)
 
@@ -1917,8 +1918,8 @@ Added new restore syntax and corresponding -r and --restore-as-of options.
 For instance, "rdiff-backup -r 1/3/2002 /backup/foo out" will try to restore /backup/foo (a file on the mirror directory) to out, as it was January 3rd, 2002.
 See man page for more information.
 
-directory_statistics.+++<time>+++.data files will now be created in the directories underneath rdiff-backup-data/increments.
-Just look at one to see what's inside.+++</time>+++
+directory_statistics.<time>.data files will now be created in the directories underneath rdiff-backup-data/increments.
+Just look at one to see what's inside.
 
 Added extra options --chars-to-quote, --quoting-char, and --windows-mode, mostly to allow files whose names have colons (:) in them to be backed up to windows machines.
 
