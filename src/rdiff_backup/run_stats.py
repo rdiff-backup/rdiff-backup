@@ -19,10 +19,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
 
-import os
-import sys
-import re
 import getopt
+import os
+import re
+import subprocess
+import sys
 
 from rdiff_backup import (
     FilenameMapping,
@@ -97,9 +98,9 @@ def version(rc):
     sys.exit(rc)
 
 
-def system(cmd):
+def os_system(cmd):
     sys.stdout.flush()
-    if os.system(cmd):
+    if subprocess.call(cmd):
         sys.exit("Error running command '%s'\n" % _safe_str(cmd))
 
 
@@ -147,11 +148,8 @@ class StatisticsRPaths:
 
 def print_session_statistics(stat_rpaths):
     print("Session statistics:")
-    system(
-        b'rdiff-backup --calculate-average "'
-        + b'" "'.join([inc.path for inc in stat_rpaths.session_rps])
-        + b'"'
-    )
+    os_system([b"rdiff-backup", b"calculate"]
+              + [inc.path for inc in stat_rpaths.session_rps])
 
 
 class FileStatisticsTree:
@@ -543,9 +541,8 @@ def sum_fst(rp_pairs):
 def set_chars_to_quote():
     ctq_rp = Globals.rbdir.append("chars_to_quote")
     if ctq_rp.lstat():
-        Globals.chars_to_quote = ctq_rp.get_string()
+        Globals.chars_to_quote = ctq_rp.get_bytes()
     if Globals.chars_to_quote:
-        Globals.must_escape_dos_devices = 0  # No DOS devices will be present
         FilenameMapping.set_init_quote_vals()
         Globals.rbdir = FilenameMapping.get_quotedrpath(Globals.rbdir)
 

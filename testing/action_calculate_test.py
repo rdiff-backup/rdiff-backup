@@ -3,6 +3,7 @@ Test the basic backup and restore actions with api version >= 201
 """
 import glob
 import os
+import shutil
 import subprocess
 import unittest
 
@@ -96,9 +97,10 @@ class ActionCalculateTest(unittest.TestCase):
 
         # try also rdiff-backup-statistics until we merge functionality into
         # the calculate plug-in (see #772)
+        rd_stats_bin = os.fsencode(shutil.which("rdiff-backup-statistics")
+                                   or "rdiff-backup-statistics")
         self.assertRegex(
-            subprocess.check_output([comtst.RBBin + b"-statistics",
-                                     self.bak_path]),
+            subprocess.check_output([rd_stats_bin, self.bak_path]),
             b"^Processing statistics from")
 
         # all tests were successful
