@@ -449,6 +449,12 @@ Thus rdiff-backup must be installed on both ends.
 To open this pipe, rdiff-backup first splits the location into '[.code]``host_info::pathname``'.
 It then substitutes '[.code]``host_info``' into the remote schema, and runs the resulting command, reading its input and output.
 
+The '[.code]``host_info``' can be anything understood as a destination by your version of SSH.
+Assuming it is the standard OpenSSH, it can be:
+
+* either '[.code]``[user@]hostname``'
+* or a URI of the form '[.code]``ssh://[user@]hostname[:port]``'.
+
 The default remote schema is '[.code]``ssh -C {h} rdiff-backup --server``' where '[.code]``host_info``' is substituted for '[.code]``{h}``'.
 So if the '[.code]``host_info``' is '[.code]``user@host.net``', then rdiff-backup runs '[.code]``ssh user@host.net rdiff-backup --server``'.
 Using *--remote-schema*, rdiff-backup can invoke an arbitrary command in order to open up a remote pipe.
