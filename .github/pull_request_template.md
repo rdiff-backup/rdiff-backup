@@ -1,11 +1,7 @@
----
-name: Code and otherwise pull request
-about: Provide generic improvements
-title: ""
-labels: ''
-assignees: ''
-
----
+<!--
+    check our development guide
+    https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.adoc
+-->
 
 ## Changes done and why
 
