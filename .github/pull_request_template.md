@@ -1,3 +1,8 @@
+<!--
+    check our development guide
+    https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.adoc
+-->
+
 ## Changes done and why
 
 > **NOTE:** if your explanation needs to be (very) different from your Git commit message, your Git commit might be insufficient, please re-think it and amend it! Your message must contain `Closes #NNN` if it [closes an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue).
