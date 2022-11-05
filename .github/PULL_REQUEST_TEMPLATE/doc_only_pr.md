@@ -1,8 +1,4 @@
----
-name: Documentation only pull request
-about: Provide improvements to the documentation
-title: "[DOC] "
----
+<!-- add [DOC] at the beginning of the title of your Pull Request -->
 
 ## Changes done and why
 
