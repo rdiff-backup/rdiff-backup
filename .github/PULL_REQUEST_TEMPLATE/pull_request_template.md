@@ -1,10 +1,6 @@
 ---
 name: Code and otherwise pull request
 about: Provide generic improvements
-title: ""
-labels: ''
-assignees: ''
-
 ---
 
 ## Changes done and why
