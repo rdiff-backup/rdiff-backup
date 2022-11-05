@@ -2,9 +2,6 @@
 name: Documentation only pull request
 about: Provide improvements to the documentation
 title: "[DOC] "
-labels: ''
-assignees: ''
-
 ---
 
 ## Changes done and why
