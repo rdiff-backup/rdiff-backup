@@ -22,10 +22,15 @@ class UtilsPsutilTest(unittest.TestCase):
         self.assertIn(simpleps.get_pid_name(os.getpid()).split(".")[0],
                       ("python", "python3", "coverage"))
 
-        print(sys.argv[0])
         # max unicode doesn't make a lot of sense but it works under Linux
         # and Windows, and it should be seldom enough to not break the pipeline
         self.assertIsNone(simpleps.get_pid_name(sys.maxunicode))
+
+        # we repeat the same tests with the internal version to improve code
+        # coverage (assuming psutil might be installed)
+        self.assertIn(simpleps._get_pid_name_ps(os.getpid()).split(".")[0],
+                      ("python", "python3", "coverage"))
+        self.assertIsNone(simpleps._get_pid_name_ps(sys.maxunicode))
 
 
 if __name__ == "__main__":

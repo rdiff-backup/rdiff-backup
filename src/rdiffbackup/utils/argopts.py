@@ -29,9 +29,9 @@ import argparse
 
 try:
     from argparse import BooleanOptionalAction
-except ImportError:
+except ImportError:  # pragma: no cover
     # the class exists only since Python 3.9
-    class BooleanOptionalAction(argparse.Action):  # pragma: no cover
+    class BooleanOptionalAction(argparse.Action):
         """
         Copy of the standard implementation in argparse
 

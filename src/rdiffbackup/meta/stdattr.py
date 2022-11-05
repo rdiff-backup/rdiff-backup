@@ -113,12 +113,12 @@ class AttrExtractor(meta.FlatExtractor):
                     data_dict[cls._decode_mapping[field]] = data.decode('ascii')
             elif field == "File":
                 index = cls._filename_to_index(data)
-            elif field == "ResourceFork":
+            elif field == "ResourceFork":  # pragma: no cover
                 if data == b"None":
                     data_dict['resourcefork'] = b""
                 else:
                     data_dict['resourcefork'] = binascii.unhexlify(data)
-            elif field == "CarbonFile":
+            elif field == "CarbonFile":  # pragma: no cover
                 if data == b"None":
                     data_dict['carbonfile'] = None
                 else:
@@ -161,7 +161,7 @@ class AttrFile(meta.FlatFile):
             str_list.append(b"  Size %i\n" % rorpath.getsize())
 
             # If there is a resource fork, save it.
-            if rorpath.has_resource_fork():
+            if rorpath.has_resource_fork():  # pragma: no cover
                 if not rorpath.get_resource_fork():
                     rf = b"None"
                 else:
@@ -169,7 +169,7 @@ class AttrFile(meta.FlatFile):
                 str_list.append(b"  ResourceFork %b\n" % (rf, ))
 
             # If there is Carbon data, save it.
-            if rorpath.has_carbonfile():
+            if rorpath.has_carbonfile():  # pragma: no cover
                 cfile = _carbonfile2string(rorpath.get_carbonfile())
                 str_list.append(b"  CarbonFile %b\n" % (cfile, ))
 
@@ -221,7 +221,7 @@ class AttrFile(meta.FlatFile):
         return b"".join(str_list)
 
 
-def _carbonfile2string(cfile):
+def _carbonfile2string(cfile):  # pragma: no cover
     """Convert CarbonFile data to a string suitable for storing."""
     if not cfile:
         return "None"
@@ -238,7 +238,7 @@ def _carbonfile2string(cfile):
     return '|'.join(retvalparts)
 
 
-def _string2carbonfile(data):
+def _string2carbonfile(data):  # pragma: no cover
     """Re-constitute CarbonFile data from a string stored by
     _carbonfile2string."""
     retval = {}

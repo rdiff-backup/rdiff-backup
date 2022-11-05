@@ -3,8 +3,10 @@ import unittest
 import os
 import subprocess
 import sys
-from commontest import old_test_dir, abs_test_dir, re_init_rpath_dir, MakeOutputDir, \
-    rdiff_backup, iter_equal, iter_map
+from commontest import (old_test_dir, abs_test_dir, re_init_rpath_dir,
+                        MakeOutputDir, rdiff_backup, iter_equal, iter_map)
+import commontest as comtst
+import fileset
 from rdiff_backup.selection import Select, GlobbingError, FilePrefixError
 from rdiff_backup import Globals, rpath
 
@@ -493,13 +495,101 @@ rdiff-backup_testfiles/select**/2
                             ("--exclude", "/")], [(), ("home", )])
 
 
+class SelectionIfPresentTest(unittest.TestCase):
+    """
+    Test that rdiff-backup really restores what has been backed-up
+    """
+
+    def setUp(self):
+        self.base_dir = os.path.join(comtst.abs_test_dir,
+                                     b"select_if_present")
+        self.from1_struct = {
+            "from1": {"subs": {
+                "dirWith": {
+                    "subs": {
+                        "check_for_me": {"content": "whatever"},
+                        "fileWithin": {"content": "initial"},
+                        "emptyDir": {"type": "dir"},
+                    },
+                },
+                "dirWithout": {
+                    "subs": {
+                        "fileWithout": {"content": "initial"},
+                        "nonEmptyDir": {
+                            "subs": {
+                                "check_for_me": {"content": "whatever"},
+                                "fileWithin": {"content": "initial"},
+                                "anotherEmptyDir": {"type": "dir"},
+                            },
+                        },
+                    }
+                },
+            }}
+        }
+        self.from1_path = os.path.join(self.base_dir, b"from1")
+        fileset.create_fileset(self.base_dir, self.from1_struct)
+        fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
+        self.bak_path = os.path.join(self.base_dir, b"bak")
+        self.success = False
+
+    def test_exclude_if_present(self):
+        """Test that --exclude-if-present works properly"""
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, False, self.from1_path, self.bak_path,
+            ("--api-version", "201"),
+            b"backup", ("--exclude-if-present", "check_for_me")), 0)
+        self.assertTrue(
+            os.path.exists(os.path.join(self.bak_path, b"dirWithout")))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.bak_path, b"dirWithout", b"fileWithout")))
+        self.assertFalse(
+            os.path.exists(os.path.join(self.bak_path, b"dirWith")))
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(self.bak_path, b"dirWithout", b"nonEmptyDir")))
+        self.success = True
+
+    def test_include_if_present(self):
+        """Test that --include-if-present works properly"""
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, True, self.from1_path, self.bak_path,
+            ("--api-version", "201"),
+            b"backup", ("--include-if-present", "check_for_me",
+                        "--exclude", "**")), 0)
+        self.assertTrue(
+            os.path.exists(os.path.join(self.bak_path, b"dirWith")))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.bak_path, b"dirWith", b"fileWithin")))
+        self.assertFalse(
+            os.path.exists(os.path.join(self.bak_path, b"dirWithout")))
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(self.bak_path, b"dirWith", b"emptyDir")))
+
+        # this fails because the last include statement is redundant
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, True, self.from1_path, self.bak_path,
+            ("--api-version", "201"),
+            b"backup", ("--include-if-present", "check_for_me")), 0)
+
+        self.success = True
+
+    def tearDown(self):
+        # we clean-up only if the test was successful
+        if self.success:
+            fileset.remove_fileset(self.base_dir, self.from1_struct)
+            fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
+
+
 class CommandTest(unittest.TestCase):
     """Test rdiff-backup on actual directories"""
     def testEmptyDirInclude(self):
-        """Make sure empty directories are included with **xx exps
+        """
+        Make sure empty directories are included with **xx exps
 
         This checks for a bug present in 1.0.3/1.1.5 and similar.
-
         """
         outrp = MakeOutputDir()
         # we need to change directory to be able to work with relative paths
@@ -521,8 +611,10 @@ class CommandTest(unittest.TestCase):
         self.assertTrue(outempty.isdir())
 
     def test_overlapping_dirs(self):
-        """Test if we can backup a directory containing the backup repo
-        while ignoring this repo"""
+        """
+        Test if we can backup a directory containing the backup repo
+        while ignoring this repo
+        """
 
         testrp = rpath.RPath(Globals.local_connection,
                              abs_test_dir).append('selection_overlap')

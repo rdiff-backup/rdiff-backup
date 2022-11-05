@@ -53,21 +53,3 @@ def init_group_mapping(mapping_string=None, numerical_ids=None):
     argument is None, default to preserving gname where possible.
     """
     return map_owners.init_groups_mapping(mapping_string, numerical_ids)
-
-
-def map_rpath(rp):
-    """
-    Return mapped (newuid, newgid) from rpath's initial info
-
-    This is the main function exported by the user_group module.  Note
-    that it is connection specific.
-    """
-    return map_owners.map_rpath_owner(rp)
-
-
-def acl_user_map(uid, uname):
-    return map_owners.map_acl_user(uid, uname)
-
-
-def acl_group_map(gid, gname):
-    return map_owners.map_acl_group(gid, gname)

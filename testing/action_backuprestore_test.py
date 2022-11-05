@@ -1,6 +1,7 @@
 """
 Test the basic backup and restore actions with api version >= 201
 """
+import glob
 import os
 import unittest
 
@@ -55,9 +56,13 @@ class ActionBackupRestoreTest(unittest.TestCase):
         fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
         fileset.remove_fileset(self.base_dir, {"to1": {"type": "dir"}})
         fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
+        fileset.remove_fileset(self.base_dir, {"to3": {"type": "dir"}})
+        fileset.create_fileset(self.base_dir, {"to4": {"type": "file"}})
         self.bak_path = os.path.join(self.base_dir, b"bak")
         self.to1_path = os.path.join(self.base_dir, b"to1")
         self.to2_path = os.path.join(self.base_dir, b"to2")
+        self.to3_path = os.path.join(self.base_dir, b"to3")
+        self.to4_path = os.path.join(self.base_dir, b"to4")
         self.success = False
 
     def test_action_backuprestore(self):
@@ -75,15 +80,95 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # then we restore the increment and the last mirror to two directories
         self.assertEqual(comtst.rdiff_backup_action(
             True, False, self.bak_path, self.to1_path,
-            ("--api-version", "201"),
+            ("--api-version", "201", "--no-ssh-compression"),
             b"restore", ("--at", "1B")), 0)
         self.assertEqual(comtst.rdiff_backup_action(
             True, True, self.bak_path, self.to2_path,
+            ("--api-version", "201", "--remote-tempdir", self.base_dir),
+            b"restore", ()), 0)
+        dir_old_inc = glob.glob(
+            os.path.join(self.bak_path,
+                         b'rdiff-backup-data', b'increments', b'dirOld.*'))[0]
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, True, dir_old_inc, self.to3_path,
             ("--api-version", "201"),
             b"restore", ()), 0)
 
         self.assertFalse(fileset.compare_paths(self.from1_path, self.to1_path))
         self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
+
+        # all tests were successful
+        self.success = True
+
+    def test_action_backup_errorcases(self):
+        """test the "backup" actions in error cases"""
+        # we backup twice to the same backup repository at different times
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, False, self.from1_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "10000"),
+            b"backup", ()), 0)
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            False, True, self.from2_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "10000"),
+            b"backup", ()), 0)  # can't backup at same time
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            False, True, self.from2_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "20000"),
+            b"backup", ("--exclude", "not-in-from")), 0)  # can't match
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            False, True, self.from2_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "20001"),
+            b"backup", ("--include", "**")), 0)  # redundant inclusion
+
+    def test_action_restore_errorcases(self):
+        """test the "restore" actions in error cases"""
+        # we backup twice to the same backup repository at different times
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, False, self.from1_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "10000"),
+            b"backup", ()), 0)
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, True, self.from2_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "20000"),
+            b"backup", ()), 0)
+
+        # then we generate some error cases while restoring
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, False, self.bak_path, self.to1_path,
+            ("--api-version", "201"),
+            b"restore", ("--at", "xyz")), 0)  # bad time string
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, self.to4_path,  # can't write to file
+            ("--api-version", "201"),
+            b"restore", ()), 0)
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, self.to4_path,  # force write to file
+            ("--api-version", "201", "--force"),
+            b"restore", ()), 0)
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, False, self.bak_path, self.to1_path,
+            ("--api-version", "201"),
+            b"restore", ("--at", "1B", "--increment")), 0)  # both not allowed
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, self.to2_path,
+            ("--api-version", "201"),
+            b"restore", ("--increment",)), 0)  # not an increment!
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, False, b"/does-not-exist", self.to1_path,
+            ("--api-version", "201"),
+            b"restore", ()), 0)  # restoring from non-existing repository
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, False, self.to4_path, self.to1_path,
+            ("--api-version", "201"),
+            b"restore", ()), 0)  # restoring from non-repository directory
+        # can't combine increment restore and file selection
+        dir_old_inc = glob.glob(
+            os.path.join(self.bak_path,
+                         b'rdiff-backup-data', b'increments', b'dirOld.*'))[0]
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, True, dir_old_inc, self.to3_path,
+            ("--api-version", "201"),
+            b"restore", ("--exclude-regexp", "*.forbidden")), 0)
 
         # all tests were successful
         self.success = True
@@ -109,6 +194,9 @@ class ActionBackupRestoreTest(unittest.TestCase):
             ("--api-version", "201"),
             b"restore", ()), 0)
 
+        # all tests were successful
+        self.success = True
+
     def tearDown(self):
         # we clean-up only if the test was successful
         if self.success:
@@ -117,6 +205,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
             fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
             fileset.remove_fileset(self.base_dir, {"to1": {"type": "dir"}})
             fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
+            fileset.remove_fileset(self.base_dir, {"to3": {"type": "dir"}})
+            fileset.remove_fileset(self.base_dir, {"to4": {"type": "dir"}})
 
 
 class PreQuotingTest(unittest.TestCase):

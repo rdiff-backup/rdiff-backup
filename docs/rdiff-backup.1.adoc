@@ -342,6 +342,8 @@ Include/exclude files on file systems (identified by device number) other than t
 The default is to include other filesystems.
 
 --include-if-present,--exclude-if-present _filename_:: Include/exclude directories if they contain the given _filename_.
+Files directly in an included directory are also considered included.
+This doesn't apply recursively though so that the _filename_ must be present in _all_ directories of a hierarchy for it to be fully included.
 
 --max-file-size _sizeinbytes_:: Exclude files that are larger than the given size in bytes.
 

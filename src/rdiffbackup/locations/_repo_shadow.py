@@ -1146,6 +1146,9 @@ information in it.
             if exclusive:  # empty the file without removing it
                 cls._lockfd.seek(0)
                 cls._lockfd.truncate()
+            # Unlocking isn't absolutely necessary as we close the file just
+            # after, which automatically removes the lock
+            locking.unlock(cls._lockfd)
             cls._lockfd.close()
             cls._lockfd = None
 

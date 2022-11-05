@@ -33,13 +33,20 @@ class ApiVersionTest(unittest.TestCase):
 
     def test_default_actual_api(self):
         """validate that the default version is the actual one or the one explicitly set"""
-        output = subprocess.check_output([RBBin, b'info'])
+        output = subprocess.check_output([RBBin, b"info"])
         api_version = yaml.safe_load(output)['exec']['api_version']
         self.assertEqual(Globals.get_api_version(), api_version['default'])
         api_param = os.fsencode(str(api_version['max']))
         output = subprocess.check_output([RBBin, b'--api-version', api_param, b'info'])
         out_info = yaml.safe_load(output)
         self.assertEqual(out_info['exec']['api_version']['actual'], api_version['max'])
+
+    def test_debug_output(self):
+        """we use verbosity 9 only to cover debug functions in logging"""
+        output = subprocess.check_output([RBBin, b"-v", b"9",
+                                          b"--terminal-verbosity", b"9",
+                                          b"info"])
+        self.assertIn(b"DEBUG: Runtime information =>", output)
 
 
 if __name__ == "__main__":
