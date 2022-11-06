@@ -437,3 +437,12 @@ provides an agent to automate the backup process and a server to browse
 and restore the data to be installed on your centralized backup server.
 The agent is cross-platform allowing you to seamlessly use a single
 solution.
+
+== How to use a custom port for SSH access?
+
+If your SSH server is running on a custom port, say 2222, and you are using the OpenSSh client, you may use the URI form `ssh://[user@]hostname[:port]` of the hostname to connect to it, e.g.
+
+----
+rdiff-backup backup mylocaldir ssh://myuser@myhost:2222::/backup_repo
+----
+
