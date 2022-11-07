@@ -32,6 +32,7 @@ from rdiff_backup import (
     rpath,
     Time,
 )
+from rdiffbackup.utils import safestr
 
 begin_time = None  # Parse statistics at or after this time...
 end_time = None  # ... and at or before this time (epoch seconds)
@@ -101,7 +102,7 @@ def version(rc):
 def os_system(cmd):
     sys.stdout.flush()
     if subprocess.call(cmd):
-        sys.exit("Error running command '%s'\n" % _safe_str(cmd))
+        sys.exit("Error running command '{rc}'".format(rc=safestr.to_str(cmd)))
 
 
 class StatisticsRPaths:
@@ -312,7 +313,8 @@ def _yield_fs_objs(filestatsobj):
             continue
         match = r.match(line)
         if not match:
-            sys.stderr.write("Error parsing line: %s\n" % _safe_str(line))
+            sys.stderr.write("Error parsing line: '{li}'\n".format(
+                li=safestr.to_str(line)))
             continue
 
         filename = match.group(1)
@@ -545,14 +547,6 @@ def set_chars_to_quote():
     if Globals.chars_to_quote:
         FilenameMapping.set_init_quote_vals()
         Globals.rbdir = FilenameMapping.get_quotedrpath(Globals.rbdir)
-
-
-def _safe_str(cmd):
-    """Transform bytes into string without risk of conversion error"""
-    if isinstance(cmd, str):
-        return cmd
-    else:
-        return str(cmd, errors='replace')
 
 
 def main_run():

@@ -203,6 +203,7 @@ class CompleteAction(actions.BaseAction):
                     return prev_option.choices
                 elif (isinstance(prev_option.type, argparse.FileType)
                         or (prev_option.type == str
+                            and isinstance(prev_option.metavar, str)
                             and prev_option.metavar.endswith('_FILE'))):
                     return ["::file::"]
                 else:  # we can't make any statement about the parameter

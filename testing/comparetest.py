@@ -5,6 +5,9 @@ from commontest import rdiff_backup, abs_output_dir, abs_test_dir, \
 from rdiff_backup import Globals, rpath
 """Test the compare.py module and overall compare functionality"""
 
+# FIXME the remote comparison tests have to be skipped under Windows
+# see https://github.com/rdiff-backup/rdiff-backup/issues/788
+
 
 class CompareTest(unittest.TestCase):
     def setUp(self):
@@ -42,6 +45,7 @@ class CompareTest(unittest.TestCase):
         """Test basic --compare and --compare-at-time modes"""
         self.generic_test(1, b"--compare")
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testBasicRemote(self):
         """Test basic --compare and --compare-at-time modes, both remote"""
         self.generic_test(0, b"--compare")
@@ -50,6 +54,7 @@ class CompareTest(unittest.TestCase):
         """Test --compare-hash and --compare-hash-at-time modes local"""
         self.generic_test(1, b"--compare-hash")
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testHashRemote(self):
         """Test --compare-hash and -at-time remotely"""
         self.generic_test(0, b"--compare-hash")
@@ -58,6 +63,7 @@ class CompareTest(unittest.TestCase):
         """Test --compare-full and --compare-full-at-time"""
         self.generic_test(1, b"--compare-full")
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testFullRemote(self):
         """Test full file compare remotely"""
         self.generic_test(0, b"--compare-full")
@@ -94,6 +100,7 @@ class CompareTest(unittest.TestCase):
         """Test basic local compare of single subdirectory"""
         self.generic_selective_test(1, b"--compare")
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testSelRemote(self):
         """Test --compare of single directory, remote"""
         self.generic_selective_test(0, b"--compare")
@@ -102,6 +109,7 @@ class CompareTest(unittest.TestCase):
         """Test --compare-hash of subdirectory, local"""
         self.generic_selective_test(1, b"--compare-hash")
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testSelHashRemote(self):
         """Test --compare-hash of subdirectory, remote"""
         self.generic_selective_test(0, b"--compare-hash")
@@ -110,6 +118,7 @@ class CompareTest(unittest.TestCase):
         """Test --compare-full of subdirectory, local"""
         self.generic_selective_test(1, b"--compare-full")
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testSelFullRemote(self):
         """Test --compare-full of subdirectory, remote"""
         self.generic_selective_test(0, b"--compare-full")

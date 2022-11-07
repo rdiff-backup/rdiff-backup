@@ -11,7 +11,7 @@ from rdiff_backup import Globals
 
 class ActionRemoveTest(unittest.TestCase):
     """
-    Test that rdiff-backup really restores what has been backed-up
+    Test that rdiff-backup properly removes increments
     """
 
     def setUp(self):

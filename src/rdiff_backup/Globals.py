@@ -321,7 +321,7 @@ def set_all(setting_name, value):
     Where set relies on each connection to grab the value at a later stage,
     set_all forces the value on all connections at once.
     """
-    for conn in connections:
+    for conn in connection_dict.values():
         conn.Globals.set_local(setting_name, value)
 
 

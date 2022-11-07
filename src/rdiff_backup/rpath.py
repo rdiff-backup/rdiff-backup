@@ -634,7 +634,6 @@ class RPath(RORPath):
     identification (i.e. if two files have the the same (==) data
     dictionary, they are the same file).
     """
-    _regex_chars_to_quote = re.compile(b"[\\\\\\\"\\$`]")
     # class index to make temporary files unique, see get_temp_rpath
     _temp_file_index = 0
 
@@ -929,11 +928,6 @@ class RPath(RORPath):
                 if child_rp.contains_files():
                     return True
         return False
-
-    def quote(self):
-        """Return quoted self.path for use with os.system()"""
-        return b'"%s"' % self._regex_chars_to_quote.sub(
-            lambda m: b"\\" + m.group(0), self.path)
 
     def normalize(self):
         """Return RPath canonical version of self.path

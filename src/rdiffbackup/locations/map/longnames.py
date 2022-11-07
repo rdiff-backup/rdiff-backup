@@ -39,6 +39,7 @@ it later.
 
 import errno
 from rdiff_backup import Globals, log
+from rdiffbackup.utils import safestr
 
 _long_name_dir = b"long_filename_data"
 _long_name_rootrp = None
@@ -172,21 +173,12 @@ def update_rf(rf, rorp, mirror_root, rf_class):
     rf_class is the object type to return, RestoreFile or RegressFile
     """
 
-    def _safe_str(cmd):
-        """
-        Transform bytes into string without risk of conversion error
-        """
-        if isinstance(cmd, str):
-            return cmd
-        else:
-            return str(cmd, errors='replace')
-
     def update_incs(rf, inc_base):
         """
         Swap inclist in rf with those with base inc_base and return
         """
         log.Log("Restoring with increment base {ib} for file {rp}".format(
-            ib=_safe_str(inc_base), rp=rf), log.DEBUG)
+            ib=safestr.to_str(inc_base), rp=rf), log.DEBUG)
         rf.inc_rp = _get_long_rp(inc_base)
         rf.inc_list = _get_inclist(inc_base, rf_class)
         rf.set_relevant_incs()

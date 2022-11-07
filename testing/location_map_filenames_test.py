@@ -17,6 +17,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(comtst.abs_test_dir,
                                      b"location_map_filenames")
+        # Windows can't handle too long filenames
+        long_multi = 5 if os.name == "nt" else 25
         self.from1_struct = {
             "from1": {"subs": {
                 "fileABC": {"content": "initial"},
@@ -24,8 +26,10 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 "dirAbCXyZ": {"type": "dir"},
                 "itemX": {"type": "dir"},
                 "itemY": {"type": "file"},
-                "longDiRnAm" * 25: {"type": "dir"},
-                "longFiLnAm" * 25: {"content": "not so long content"},
+                "longDiRnAm" * long_multi: {"type": "dir"},
+                "longFiLnAm" * long_multi: {"content": "not so long content"},
+                # it should be aux.123 but it can't be created under Windows
+                # and isn't special under Linux
                 "aux123": {"content": "looks like DOS file"},
                 "ends_in_blank ": {"content": "looks like DOS file"},
             }}
@@ -38,8 +42,10 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 "diraBcXyZ": {"type": "dir"},
                 "itemX": {"type": "file"},
                 "itemY": {"type": "dir"},
-                "longDiRnAm" * 25: {"type": "dir"},
-                "longFiLnAm" * 25: {"content": "differently long"},
+                "longDiRnAm" * long_multi: {"type": "dir"},
+                "longFiLnAm" * long_multi: {"content": "differently long"},
+                # it should be aux.123 but it can't be created under Windows
+                # and isn't special under Linux
                 "aux123": {"content": "still looks like DOS file"},
                 "ends_in_blank ": {"content": "still looks like DOS file"},
             }}

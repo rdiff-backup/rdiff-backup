@@ -39,6 +39,7 @@ except ImportError:
 
 from rdiff_backup import C, Globals, log, rorpiter
 from rdiffbackup import meta
+from rdiffbackup.utils import safestr
 
 
 class ExtendedAttributes:
@@ -240,17 +241,9 @@ class ExtendedAttributesFile(meta.FlatFile):
     @staticmethod
     def join_iter(rorp_iter, ea_iter):
         """Update a rorp iter by adding the information from ea_iter"""
-
-        def _safe_str(cmd):
-            """Transform bytes into string without risk of conversion error"""
-            if isinstance(cmd, str):
-                return cmd
-            else:
-                return str(cmd, errors='replace')
-
         for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
             assert rorp, ("Missing rorp for EA index '{eaidx}'.".format(
-                eaidx=map(_safe_str, ea.index)))
+                eaidx=map(safestr.to_str, ea.index)))
             if not ea:
                 ea = get_meta_object(rorp.index)
             rorp.set_ea(ea)

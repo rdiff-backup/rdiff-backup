@@ -38,6 +38,9 @@ __no_execute__ = 1  # Keeps the actual rdiff-backup program from running
 
 if os.name == "nt":
     Globals.use_compatible_timestamps = 1
+    CMD_SEP = b" & "
+else:
+    CMD_SEP = b" ; "
 
 
 def Myrm(dirstring):
@@ -46,6 +49,8 @@ def Myrm(dirstring):
     for rp in selection.Select(root_rp).get_select_iter():
         if rp.isdir():
             rp.chmod(0o700)  # otherwise may not be able to remove
+        elif rp.isreg():
+            rp.chmod(0o600)  # Windows can't remove read-only files
     path = root_rp.path
     if os.path.isdir(path):
         shutil.rmtree(path)
@@ -110,12 +115,12 @@ def rdiff_backup(source_local,
 
     If expected_ret_code is set to None, no return value comparaison is done.
     """
+    remote_exec = CMD_SEP.join([b'"cd %s', b'%s server::%s"'])
+
     if not source_local:
-        src_dir = (b'"cd %s; %s server::%s"' %
-                   (abs_remote1_dir, RBBin, src_dir))
+        src_dir = (remote_exec % (abs_remote1_dir, RBBin, src_dir))
     if dest_dir and not dest_local:
-        dest_dir = (b'"cd %s; %s server::%s"' %
-                    (abs_remote2_dir, RBBin, dest_dir))
+        dest_dir = (remote_exec % (abs_remote2_dir, RBBin, dest_dir))
 
     cmdargs = [RBBin, extra_options]
     if not (source_local and dest_local):
@@ -156,10 +161,7 @@ def rdiff_backup_action(source_local, dest_local,
     The std_input parameter is optional and used to provide the call to
     rdiff-backup with pre-defined input.
     """
-    if os.name == "nt":
-        remote_exec = b"cd %s & %s server::%s"
-    else:
-        remote_exec = b"cd %s ; %s server::%s"
+    remote_exec = CMD_SEP.join([b"cd %s", b"%s server::%s"])
 
     if src_dir and not source_local:
         src_dir = (remote_exec % (abs_remote1_dir, RBBin, src_dir))
@@ -421,10 +423,18 @@ def _acl_compare_rps(rp1, rp2):
 
 def _files_rorp_eq(src_rorp, dest_rorp,
                    compare_hardlinks=True,
+                   compare_symlinks=None,
                    compare_ownership=False,
                    compare_eas=False,
                    compare_acls=False):
     """Combined eq func returns true if two files compare same"""
+    # default value depends on OS, symlinks aren't supported under Windows
+    if compare_symlinks is None:
+        compare_symlinks = (os.name != "nt")
+    if not compare_symlinks:
+        if (src_rorp and src_rorp.issym()
+                or dest_rorp and dest_rorp.issym()):
+            return True
     if not src_rorp:
         log.Log("Source rorp missing: %s" % str(dest_rorp), 3)
         return False
