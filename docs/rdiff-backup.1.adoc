@@ -195,7 +195,7 @@ If an rdiff-backup session fails, this action will undo the failed directory.
 This happens automatically if you attempt to back-up to a directory and the last backup failed.
 You can use the *--force* option to undo the last backup even if it wasn't failed.
 
-remove *increments* *--older-than* _time_ _repository_:: Remove the incremental backup information in the destination directory that has been around longer than the given time, or the oldest one if no time is provided.
+remove *increments* *--older-than* _time_ [*--size*] _repository_:: Remove the incremental backup information in the destination directory that has been around longer than the given time, or the oldest one if no time is provided.
 +
 By default, rdiff-backup will only delete information from one session at a time.
 To remove two or more sessions at the same time, supply the *--force* option (rdiff-backup will tell you if it is required).
@@ -206,6 +206,10 @@ Thus if you deleted a file two weeks ago, backed up immediately afterwards, and 
 --older-than _time_;;
 all the increments older than the given time will be deleted.
 See <<_time_formats,TIME FORMATS>> for details.
+
+--size;;
+Show the size of each increment being removed. The default
+is to _not_ show sizes.
 
 restore [<<_creation_options,CREATION OPTIONS>>] [<<_compression_options,COMPRESSION OPTIONS>>] [<<_selection_options,SELECTION OPTIONS>>] [<<_filesystem_options,FILESYSTEM OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [*--at* _time_|*--increment*] _source_ _targetdir_::
 restore a source backup repository at a specific time or a specific     source increment to a target directory.
