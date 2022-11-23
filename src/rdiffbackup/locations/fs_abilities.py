@@ -432,6 +432,7 @@ class FSAbilities:
             if write:
                 xattr.set(rp.path, b"user.test", test_ea)
                 read_ea = xattr.get(rp.path, b"user.test")
+                xattr.remove(rp.path, b"user.test")
         except OSError as exc:
             log.Log("Extended attributes not supported by filesystem at "
                     "path {pa} due to exception '{ex}'".format(pa=rp, ex=exc),
