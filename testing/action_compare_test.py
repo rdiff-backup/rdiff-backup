@@ -90,9 +90,10 @@ class ActionCompareTest(unittest.TestCase):
             True, False, self.from2_path, self.bak_path,
             ("--api-version", "201"),
             b"compare", ("--at", "now", "--method", "hash")), 0)
+        # reduce verbosity to avoid file system quoting notes under Windows
         self.assertEqual(comtst.rdiff_backup_action(
             False, False, self.from3_path, self.bak_path,
-            ("--api-version", "201", "--parsable"),
+            ("--api-version", "201", "--parsable", "-v2"),
             b"compare", ("--method", "hash"), return_stdout=True),
             b"""---
 - path: fileChanged
@@ -110,9 +111,10 @@ class ActionCompareTest(unittest.TestCase):
             True, False, self.from1_path, self.bak_path,
             ("--api-version", "201"),
             b"compare", ("--at", "1B", "--method", "full")), 0)
+        # reduce verbosity to avoid file system quoting notes under Windows
         self.assertEqual(comtst.rdiff_backup_action(
             True, True, self.from3_path, self.bak_path,
-            ("--api-version", "201", "--parsable"),
+            ("--api-version", "201", "--parsable", "-v2"),
             b"compare", ("--method", "full"), return_stdout=True),
             b"""---
 - path: fileChanged

@@ -8,9 +8,9 @@ import commontest as comtst
 import fileset
 
 
-class ActionRemoveTest(unittest.TestCase):
+class ActionVerifyTest(unittest.TestCase):
     """
-    Test that rdiff-backup really restores what has been backed-up
+    Test that rdiff-backup properly verifies repositories
     """
 
     def setUp(self):

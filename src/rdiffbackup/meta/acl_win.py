@@ -21,6 +21,7 @@ import re
 import os
 from rdiff_backup import C, Globals, log, rorpiter
 from rdiffbackup import meta
+from rdiffbackup.utils import safestr
 
 try:
     from win32security import (
@@ -183,18 +184,11 @@ class ACL:
                     "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
 
     def from_string(self, acl_str):
-
-        def _safe_str(cmd):
-            """Transform bytes into string without risk of conversion error"""
-            if isinstance(cmd, str):
-                return cmd
-            else:
-                return str(cmd, errors='replace')
-
         lines = acl_str.splitlines()
         if len(lines) != 2 or not lines[0][:8] == b"# file: ":
             raise meta.ParsingError(
-                "Bad record beginning: %s" % _safe_str(lines[0][:8]))
+                "Bad record beginning: '{br}'".format(
+                    br=safestr.to_str(lines[0][:8])))
         filename = lines[0][8:]
         if filename == b'.':
             self.index = ()

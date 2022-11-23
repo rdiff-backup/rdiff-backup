@@ -228,7 +228,7 @@ Start the server in debug mode so that it stops on an early breakpoint and can b
 See the https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.adoc#debug-client-server-mode[developer's documentation] for details.
 
 test _remote_location_1_ [_remote_location_2_ ...]::
-Test for the presence of a compatible rdiff-backup server as specified in the following remote location argument(s) (of which the filename section will be ignored).
+Test for the presence of a compatible rdiff-backup server as specified in the remote location argument(s) (of which the filename section will be checked for existence).
 See the <<_remote_operation,REMOTE OPERATION>> section for details.
 
 verify [*--at* _time_] _location_::

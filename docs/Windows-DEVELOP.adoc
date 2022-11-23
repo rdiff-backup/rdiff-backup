@@ -158,6 +158,8 @@ Get a list of processes: `tasklist`
 
 Kill a process: `taskkill /IM firefox.exe /F`
 
+To get the return code of the last command (the equivalent of `$?` under Linux), call `echo %ERRORLEVEL%`.
+
 === Files handling
 
 To get a list of opened files, and the process accessing them:
@@ -170,6 +172,8 @@ openfiles /query /fo csv | find /I "<path>"
 ----
 
 With `icacls` you can list the (Windows) ACLs of a file.
+
+With `attrib` you can set the read-only attribute of a file.
 
 === Shells
 

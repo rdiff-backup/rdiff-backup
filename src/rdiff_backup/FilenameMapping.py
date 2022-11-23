@@ -31,7 +31,8 @@ handle that error.)
 
 import os
 import re
-from . import Globals, log, rpath
+from rdiff_backup import Globals, log, rpath
+from rdiffbackup.utils import safestr
 
 # If true, enable character quoting, and set characters making
 # regex-style range.
@@ -132,7 +133,7 @@ def set_init_quote_vals_local():
     if len(Globals.quoting_char) != 1:
         log.Log.FatalError("Expected single character for quoting char, "
                            "got '{qc}' instead.".format(
-                               qc=_safe_str(Globals.quoting_char)))
+                               qc=safestr.to_str(Globals.quoting_char)))
     quoting_char = Globals.quoting_char
     _init_quoting_regexps()
 
@@ -191,7 +192,7 @@ def _init_quoting_regexps():
     global chars_to_quote_regexp, unquoting_regexp
     assert chars_to_quote and isinstance(chars_to_quote, bytes), (
         "Chars to quote must be non-empty bytes: '{ctq}'.".format(
-            ctq=_safe_str(chars_to_quote)))
+            ctq=safestr.to_str(chars_to_quote)))
     try:
         chars_to_quote_regexp = re.compile(b"[%b]|%b" %
                                            (chars_to_quote, quoting_char), re.S)
@@ -210,16 +211,10 @@ def _quote_single(match):
 def _unquote_single(match):
     """Unquote a single quoted character"""
     if not len(match.group()) == 4:
-        raise QuotingException("Quoted group wrong size: '%s'." % _safe_str(match.group()))
+        raise QuotingException("Quoted group wrong size: '{qg}'".format(
+            qg=safestr.to_str(match.group())))
     try:
         return os.fsencode(chr(int(match.group()[1:])))
     except ValueError:
-        raise QuotingException("Quoted out of range: '%s'." % _safe_str(match.group()))
-
-
-def _safe_str(cmd):
-    """Transform bytes into string without risk of conversion error"""
-    if isinstance(cmd, str):
-        return cmd
-    else:
-        return str(cmd, errors='replace')
+        raise QuotingException("Quoted out of range: '{qg}'".format(
+            qg=safestr.to_str(match.group())))

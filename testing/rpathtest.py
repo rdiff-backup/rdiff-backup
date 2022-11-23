@@ -86,6 +86,7 @@ class CheckTypes(RPathTest):
             rpath.RPath(self.lc, self.prefix, ("regular_file", )).isblkdev())
 
 
+@unittest.skipIf(os.name == "nt", "Windows doesn't handle well rights")
 class CheckPerms(RPathTest):
     """Check to see if permissions are reported and set accurately"""
 
@@ -135,6 +136,7 @@ class CheckTimes(RPathTest):
         self.assertEqual(rp.getmtime(), 20000)
         rp.delete()
 
+    @unittest.skipIf(os.name == "nt", "Windows doesn't handle ctime correctly")
     def testCtime(self):
         """Check to see if ctime read, compared"""
         rp = rpath.RPath(self.lc, self.prefix, ("ctimetest.1", ))
@@ -182,6 +184,7 @@ class CheckDir(RPathTest):
         self.assertEqual(dirlist, [b"1", b"2", b"3", b"4"])
 
 
+@unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
 class CheckSyms(RPathTest):
     """Check symlinking and reading"""
 
@@ -258,13 +261,9 @@ class MiscFileInfo(RPathTest):
 
 class FilenameOps(RPathTest):
     """Check filename operations"""
-    weirdfilename = eval(
-        '\'\\xd8\\xab\\xb1Wb\\xae\\xc5]\\x8a\\xbb\\x15v*\\xf4\\x0f!\\xf9>\\xe2Y\\x86\\xbb\\xab\\xdbp\\xb0\\x84\\x13k\\x1d\\xc2\\xf1\\xf5e\\xa5U\\x82\\x9aUV\\xa0\\xf4\\xdf4\\xba\\xfdX\\x03\\x82\\x07s\\xce\\x9e\\x8b\\xb34\\x04\\x9f\\x17 \\xf4\\x8f\\xa6\\xfa\\x97\\xab\\xd8\\xac\\xda\\x85\\xdcKvC\\xfa#\\x94\\x92\\x9e\\xc9\\xb7\\xc3_\\x0f\\x84g\\x9aB\\x11<=^\\xdbM\\x13\\x96c\\x8b\\xa7|*"\\\\\\\'^$@#!(){}?+ ~` \''
-    )
     normdict = {
         b"/": b"/",
         b".": b".",
-        b"//": b"/",
         b"/a/b": b"/a/b",
         b"a/b": b"a/b",
         b"a//b": b"a/b",
@@ -275,6 +274,8 @@ class FilenameOps(RPathTest):
         b"//host/share": b"//host/share",
         b"//host//share/": b"//host/share",
     }
+    if os.name != "nt":  # Windows doesn't like double slashes
+        normdict[b"//"] = b"/"
     dirsplitdict = {
         b"/": (b"", b""),
         b"/a": (b"", b"a"),
@@ -284,17 +285,6 @@ class FilenameOps(RPathTest):
         b"a": (b".", b"a"),
         b"//host/share": (b"//host", b"share"),
     }
-
-    def testQuote(self):
-        """See if filename quoting works"""
-        wtf = rpath.RPath(self.lc, self.prefix, (self.weirdfilename, ))
-        reg = rpath.RPath(self.lc, self.prefix, (b"regular_file", ))
-        self.assertTrue(wtf.lstat())
-        self.assertTrue(reg.lstat())
-        self.assertEqual(os_system(
-            b"ls %s >/dev/null 2>&1" % wtf.quote()), 0)
-        self.assertEqual(os_system(
-            b"ls %s >/dev/null 2>&1" % reg.quote()), 0)
 
     def testNormalize(self):
         """rpath.normalize() dictionary test"""
@@ -357,7 +347,12 @@ class FileIO(RPathTest):
 
         with rp_gz.open("wb", compress=1) as fp_out:
             fp_out.write(s)
-        self.assertEqual(os_system(b"gunzip %s" % file_gz), 0)
+        if os.name == "nt":
+            self.assertEqual(
+                os_system(b"7z x -o%s %s >NUL" % (abs_output_dir, file_gz)), 0)
+            os_system(b"del %s" % file_gz)
+        else:
+            self.assertEqual(os_system(b"gunzip %s" % file_gz), 0)
         with rp_nogz.open("rb") as fp_in:
             self.assertEqual(fp_in.read(), s)
 
@@ -380,7 +375,13 @@ class FileIO(RPathTest):
         rp_nogz.setdata()
         self.assertTrue(rp_nogz.lstat())
 
-        self.assertEqual(os_system(b"gzip %s" % file_nogz), 0)
+        if os.name == "nt":
+            self.assertEqual(
+                os_system(b"7z a -tgzip -sdel %s %s >NUL" % (file_gz,
+                                                             file_nogz)),
+                0)
+        else:
+            self.assertEqual(os_system(b"gzip %s" % file_nogz), 0)
         rp_nogz.setdata()
         rp_gz.setdata()
         self.assertFalse(rp_nogz.lstat())
@@ -411,6 +412,7 @@ class FileCopying(RPathTest):
         self.assertFalse(rpath.cmp(self.rf, self.hl1))
         self.assertFalse(rpath.cmp(self.dir, self.rf))
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testCompMisc(self):
         """Test miscellaneous comparisons"""
         self.assertTrue(
@@ -434,7 +436,11 @@ class FileCopying(RPathTest):
 
     def testCopy(self):
         """Test copy of various files"""
-        for rp in [self.sl, self.rf, self.fifo, self.dir]:
+        if os.name == "nt":
+            comp_list = [self.rf, self.dir]
+        else:
+            comp_list = [self.sl, self.rf, self.fifo, self.dir]
+        for rp in comp_list:
             rpath.copy(rp, self.dest)
             self.assertTrue(self.dest.lstat())
             self.assertTrue(rpath.cmp(rp, self.dest))
@@ -496,10 +502,11 @@ class FileAttributes(FileCopying):
         out = rpath.RPath(self.lc, self.write_dir, ("out", ))
         if out.lstat():
             out.delete()
-        for rp in [
-                self.noperms, self.nowrite, self.rf, self.exec1, self.exec2,
-                self.hl1, self.dir, self.sym
-        ]:
+        copy_list = [self.noperms, self.nowrite, self.rf,
+                     self.exec1, self.exec2, self.hl1, self.dir]
+        if os.name != "nt":  # symlinks not supported under Windows
+            copy_list.append(self.sym)
+        for rp in copy_list:
             rpath.copy_with_attribs(rp, out)
             self.assertTrue(rpath.cmp(rp, out))
             self.assertTrue(rp.equal_loose(out))
