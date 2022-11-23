@@ -325,6 +325,8 @@ class Final(PathSetter):
             compare_recursive(Local.wininc3, Local.rpout3, compare_hardlinks=0))
         self.rb_schema = old_schema
 
+    @unittest.skipIf(os.name == "nt",
+                     "Windows doesn't recognize case insensitivity")
     def testLegacy(self):
         """Test restoring directory with no mirror_metadata file"""
         self.delete_tmpdirs()

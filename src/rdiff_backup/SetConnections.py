@@ -29,6 +29,7 @@ import re
 import sys
 import subprocess
 from rdiff_backup import connection, Globals, log, rpath
+from rdiffbackup.utils import safestr
 
 # This is a list of remote commands used to start the connections.
 # The first is None because it is the local connection.
@@ -294,7 +295,7 @@ def _fill_schema(host_info, cmd_schema):
             return cmd_schema % host_info
     except (TypeError, KeyError):
         log.Log.FatalError("Invalid remote schema: {rs}".format(
-            rs=_safe_str(cmd_schema)))
+            rs=safestr.to_str(cmd_schema)))
 
 
 def _init_connection(remote_cmd):
@@ -309,8 +310,8 @@ def _init_connection(remote_cmd):
     if not remote_cmd:
         return Globals.local_connection
 
-    log.Log("Executing remote command {rc}".format(rc=_safe_str(remote_cmd)),
-            log.INFO)
+    log.Log("Executing remote command {rc}".format(
+        rc=safestr.to_str(remote_cmd)), log.INFO)
     try:
         # we need buffered read on SSH communications, hence using
         # default value for bufsize parameter
@@ -362,7 +363,7 @@ Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version ({lv})
-""".format(ex=exception, rc=_safe_str(remote_cmd), lv=Globals.version),
+""".format(ex=exception, rc=safestr.to_str(remote_cmd), lv=Globals.version),
             log.ERROR)
         return False
     except OverflowError:
@@ -374,8 +375,9 @@ Please make sure that nothing is printed (e.g., by your login shell) when this
 command executes. Try running this command: {co}
 
 which should only print out the text: rdiff-backup <version>""".format(
-                rc=_safe_str(remote_cmd),
-                co=_safe_str(remote_cmd.replace(b"--server", b"--version"))),
+                rc=safestr.to_str(remote_cmd),
+                co=safestr.to_str(
+                    remote_cmd.replace(b"--server", b"--version"))),
             log.ERROR)
         return False
 
@@ -490,21 +492,10 @@ def _test_connection(conn_number, rp):
     # on Windows but not on Linux? What are we exactly testing here?
     try:
         assert conn.Globals.get('current_time') is None
-        try:
-            assert type(conn.os.getuid()) is int
-        except AttributeError:  # Windows doesn't support os.getuid()
-            assert type(conn.os.listdir(rp.path)) is list
+        assert type(conn.os.listdir(rp.path)) is list
     except BaseException as exc:
         sys.stderr.write("- Server tests failed due to {exc}\n".format(exc=exc))
         return False
     else:
         print("- Server OK")
         return True
-
-
-def _safe_str(cmd):
-    """Transform bytes into string without risk of conversion error"""
-    if isinstance(cmd, str):
-        return cmd
-    else:
-        return str(cmd, errors='replace')

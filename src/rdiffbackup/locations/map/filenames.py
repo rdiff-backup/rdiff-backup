@@ -31,6 +31,7 @@ handle that error.)
 import os
 import re
 from rdiff_backup import Globals, log, rpath
+from rdiffbackup.utils import safestr
 
 
 class QuotingException(Exception):
@@ -197,18 +198,10 @@ def _unquote_single(match):
     Unquote a single quoted character
     """
     if not len(match.group()) == 4:
-        raise QuotingException("Quoted group wrong size: '%s'." % _safe_str(match.group()))
+        raise QuotingException("Quoted group wrong size: '{qg}'".format(
+            qg=safestr.to_str(match.group())))
     try:
         return os.fsencode(chr(int(match.group()[1:])))
     except ValueError:
-        raise QuotingException("Quoted out of range: '%s'." % _safe_str(match.group()))
-
-
-def _safe_str(cmd):
-    """
-    Transform bytes into string without risk of conversion error
-    """
-    if isinstance(cmd, str):
-        return cmd
-    else:
-        return str(cmd, errors='replace')
+        raise QuotingException("Quoted out of range: '{qg}'".format(
+            qg=safestr.to_str(match.group())))

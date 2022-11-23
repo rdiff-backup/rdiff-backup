@@ -10,7 +10,7 @@ import fileset
 
 class ActionListTest(unittest.TestCase):
     """
-    Test that rdiff-backup really restores what has been backed-up
+    Test that rdiff-backup properly lists files and increments
     """
 
     def setUp(self):

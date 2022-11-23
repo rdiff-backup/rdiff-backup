@@ -14,15 +14,10 @@ def getrp(ending):
         lc, os.path.join(old_test_dir, b"various_file_types", ending))
 
 
+base_dir = getrp(b".")
 rf = getrp(b"regular_file")
 rf2 = getrp(b"two_hardlinked_files1")
 exec1 = getrp(b"executable")
-exec2 = getrp(b"executable2")
-sig = getrp(b"regular_file.sig")
-hl1, hl2 = list(
-    map(getrp, [b"two_hardlinked_files1", b"two_hardlinked_files2"]))
-test = getrp(b"test")
-dir = getrp(b".")
 sym = getrp(b"symbolic_link")
 nothing = getrp(b"nothing")
 
@@ -36,7 +31,6 @@ if os.name == "nt":
     prevtimestr = b"2001-09-02T02-48-33-07-00"
 else:
     prevtimestr = b"2001-09-02T02:48:33-07:00"
-t_pref = os.path.join(abs_output_dir, b"out.%s" % prevtimestr)
 t_diff = os.path.join(abs_output_dir, b"out.%s.diff" % prevtimestr)
 
 Globals.postset_regexp_local("no_compression_regexp",
@@ -81,6 +75,7 @@ class inctest(unittest.TestCase):
         self.assertEqual(missing_rp.getinctype(), b'missing')
         missing_rp.delete()
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testsnapshot(self):
         """Test making of a snapshot"""
         Globals.compression = None
@@ -96,6 +91,7 @@ class inctest(unittest.TestCase):
         self.assertTrue(rpath.cmp(snap_rp2, rf))
         snap_rp2.delete()
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testGzipsnapshot(self):
         """Test making a compressed snapshot"""
         Globals.compression = 1
@@ -113,16 +109,16 @@ class inctest(unittest.TestCase):
         self.assertTrue(rp.isinccompressed())
         rp.delete()
 
+    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testdir(self):
-        """Test increment on dir"""
-        rp = increment.Increment(sym, dir, target)
+        """Test increment on base_dir"""
+        rp = increment.Increment(sym, base_dir, target)
         self.check_time(rp)
         self.assertTrue(rp.lstat())
         self.assertTrue(target.isdir())
-        self.assertTrue(dir._equal_verbose(rp,
-                                           check_index=0,
-                                           compare_size=0,
-                                           compare_type=0))
+        self.assertTrue(base_dir._equal_verbose(rp, check_index=0,
+                                                compare_size=0,
+                                                compare_type=0))
         self.assertTrue(rp.isreg())
         rp.delete()
         target.delete()
