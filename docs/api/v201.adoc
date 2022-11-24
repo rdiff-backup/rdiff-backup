@@ -163,12 +163,13 @@ toc::[]
 * `os.mkdir`
 * `os.mkfifo`
 * `os.mknod`
-* `os.name`
+* `os.name`  **deprecated**  // never worked remotely
 * `os.rename`
 * `os.rmdir`
 * `os.symlink`
 * `os.unlink`
 * `os.utime`
+* `platform.system`  **new**
 * `shutil.rmtree`
 * `sys.stdout.write`
 * `win32security.ConvertSecurityDescriptorToStringSecurityDescriptor`  **unused**

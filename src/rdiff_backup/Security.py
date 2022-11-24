@@ -249,9 +249,11 @@ def _set_allowed_requests(sec_class, sec_level):
             # System
             "os.getuid",
             "os.listdir",
-            "os.name",
             # API < 201
+            "os.name",  # doesn't work because not callable but attribute!
             "Hardlink.initialize_dictionaries",
+            # API >= 201
+            "platform.system",
         ])
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([

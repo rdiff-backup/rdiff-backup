@@ -157,10 +157,10 @@ class ExtendedAttributes:
                     if exc.errno in (errno.EINVAL, errno.ENODATA):
                         continue
                     else:  # can be anything, just fail
-                        log.Log.FatalError(
+                        log.Log(
                             "Can't remove extended attribute '{ea}' from "
-                            "path '{pa}' due to unexpected "
-                            "exception '{ue}'".format(ea=name, pa=rp, ue=exc))
+                            "path '{pa}'".format(ea=name, pa=rp), log.ERROR)
+                        raise
         except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
             return  # if not supported, consider empty
         except FileNotFoundError as exc:
