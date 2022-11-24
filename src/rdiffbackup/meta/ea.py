@@ -151,12 +151,16 @@ class ExtendedAttributes:
                             log.DEBUG)
                     continue
                 except OSError as exc:
-                    # can happen because trusted.SGI_ACL_FILE is deleted
+                    # EINVAL is thrown on trying to remove system.nfs4_acl
+                    # ENODATA can happen because trusted.SGI_ACL_FILE is deleted
                     # together with system.posix_acl_access on XFS file systems.
-                    if exc.errno == errno.ENODATA:
+                    if exc.errno in (errno.EINVAL, errno.ENODATA):
                         continue
                     else:  # can be anything, just fail
-                        raise
+                        log.Log.FatalError(
+                            "Can't remove extended attribute '{ea}' from "
+                            "path '{pa}' due to unexpected "
+                            "exception '{ue}'".format(ea=name, pa=rp, ue=exc))
         except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
             return  # if not supported, consider empty
         except FileNotFoundError as exc:
