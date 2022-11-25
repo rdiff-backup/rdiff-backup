@@ -44,7 +44,6 @@ class CompareTest(unittest.TestCase):
         """Test basic --compare and --compare-at-time modes"""
         self.generic_test(1, b"meta")
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testBasicRemote(self):
         """Test basic --compare and --compare-at-time modes, both remote"""
         self.generic_test(0, b"meta")
@@ -53,7 +52,6 @@ class CompareTest(unittest.TestCase):
         """Test --compare-hash and --compare-hash-at-time modes local"""
         self.generic_test(1, b"hash")
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testHashRemote(self):
         """Test --compare-hash and -at-time remotely"""
         self.generic_test(0, b"hash")
@@ -62,7 +60,6 @@ class CompareTest(unittest.TestCase):
         """Test --compare-full and --compare-full-at-time"""
         self.generic_test(1, b"full")
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testFullRemote(self):
         """Test full file compare remotely"""
         self.generic_test(0, b"full")
@@ -103,7 +100,6 @@ class CompareTest(unittest.TestCase):
         """Test basic local compare of single subdirectory"""
         self.generic_selective_test(1, b"meta")
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testSelRemote(self):
         """Test --compare of single directory, remote"""
         self.generic_selective_test(0, b"meta")
@@ -112,7 +108,6 @@ class CompareTest(unittest.TestCase):
         """Test --compare-hash of subdirectory, local"""
         self.generic_selective_test(1, b"hash")
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testSelHashRemote(self):
         """Test --compare-hash of subdirectory, remote"""
         self.generic_selective_test(0, b"hash")
@@ -121,7 +116,6 @@ class CompareTest(unittest.TestCase):
         """Test --compare-full of subdirectory, local"""
         self.generic_selective_test(1, b"full")
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testSelFullRemote(self):
         """Test --compare-full of subdirectory, remote"""
         self.generic_selective_test(0, b"full")
