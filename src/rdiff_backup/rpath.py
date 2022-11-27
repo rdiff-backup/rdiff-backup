@@ -766,8 +766,14 @@ class RPath(RORPath):
         except OSError:
             # It's not possible to set a modification time for
             # directories on Windows.
-            if self.conn.os.name != 'nt' or not self.isdir():
+            if not self.isdir():
                 raise
+            if Globals.get_api_version() < 201:  # compat200
+                if self.conn.os.name != "nt":  # doesn't work, just historical
+                    raise
+            else:
+                if self.conn.platform.system() != "Windows":
+                    raise
         else:
             self.data['mtime'] = modtime
 

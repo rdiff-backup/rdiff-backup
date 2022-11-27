@@ -24,6 +24,7 @@ import traceback
 # we need those imports because they are used through the connection
 import gzip  # noqa: F401
 import os  # noqa: F401
+import platform  # noqa: F401
 import shutil  # noqa: F401
 import socket  # noqa: F401
 import tempfile  # noqa: F401
@@ -537,14 +538,14 @@ class EmulateCallable:
 
     def __init__(self, connection, name):
         self.connection = connection
-        self.name = name
+        self.call_name = name
 
     def __call__(self, *args):
-        return self.connection.reval(*(self.name, ) + args)
+        return self.connection.reval(*(self.call_name, ) + args)
 
     def __getattr__(self, attr_name):
         return EmulateCallable(self.connection,
-                               "%s.%s" % (self.name, attr_name))
+                               "%s.%s" % (self.call_name, attr_name))
 
 
 class EmulateCallableRedirected:
@@ -552,15 +553,15 @@ class EmulateCallableRedirected:
 
     def __init__(self, conn_number, routing_conn, name):
         self.conn_number, self.routing_conn = conn_number, routing_conn
-        self.name = name
+        self.call_name = name
 
     def __call__(self, *args):
         return self.routing_conn.reval(
-            *("RedirectedRun", self.conn_number, self.name) + args)
+            *("RedirectedRun", self.conn_number, self.call_name) + args)
 
     def __getattr__(self, attr_name):
         return EmulateCallableRedirected(self.conn_number, self.routing_conn,
-                                         "%s.%s" % (self.name, attr_name))
+                                         "%s.%s" % (self.call_name, attr_name))
 
 
 class VirtualFile:
