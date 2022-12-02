@@ -160,7 +160,9 @@ The CI pipeline also uses the `Makefile`, so if all commands in the `Makefile` s
 
 To install, simply run:
 
- python3 setup.py install
+ pip install .
+
+TIP: if pip isn't present on your system, or too old, you can install or upgrade it with `python -m ensurepip --upgrade`
 
 The build process can be also be run separately:
 
@@ -180,12 +182,49 @@ Additional help is displayed by the command:
 
 More information about using setup.py and how rdiff-backup is installed is available from the Python guide, Installing Python Modules for System Administrators, located at https://docs.python.org/3/install/index.html
 
-NOTE: There is no uninstall command provided by the Python distutils/setuptools system.
-One strategy is to use the `python3 setup.py install --record <file>` option to save a list of the files installed to `<file>`, another is to created a wheel package with `python3 setup.py bdist_wheel`, as it can be installed and deinstalled.
-
 NOTE: if you plan to use `./setup.py bdist_rpm` to create an RPM, you would need rpm-build but be aware that it will currently fail due to a https://github.com/pypa/setuptools/issues/1277[known bug in setuptools with compressed man pages].
 
 To build from source on Windows, check the link:../tools/windows[Windows tools] to build a single executable file which contains Python, librsync, and all required modules.
+
+=== Install for test and development
+
+There are the occasions where you don't want to make your system "dirty" with an early or even development version of rdiff-backup.
+This is what virtual environments (or short virtualenv, or even venv) are meant for.
+Here a very short summary on how to create a virtualenv in the directory `.../rdb` (name and exact location aren't important, but once created, a virtualenv can't be moved):
+
+----
+python -m venv .../rdb
+source .../rdb/bin/activate  #<1>
+which pip                    #<2>
+pip install wheel
+# install rdiff-backup       #<3>
+which rdiff-backup           #<2>
+# use rdiff-backup and do whatever you want actually
+deactivate                   #<4>
+rm -fr .../rdb               #<5>
+----
+<1> assuming a bash shell, but there are other activate-scripts for other shells, even Windows' cmd.
+In all cases, you should have a prompt starting with `(rdb)`.
+<2> the path to the command should be `.../rdb/bin/<command>`, else call `hash -r` (under bash) and try again.
+<3> the different options to install rdiff-backup are listed below.
+<4> you're now leaving the virtualenv, the prompt should go back to normal.
+<5> you can of course keep and maintain the virtualenv instead, but why?
+
+The different ways of installing rdiff-backup in such a virtualenv depend on the version type:
+
+----
+pip install rdiff-backup                 #<1>
+pip install rdiff-backup==2.1.3b3        #<2>
+pip install -i https://test.pypi.org/simple/ rdiff-backup==2.1.3.dev1  #<3>
+pip install .                            #<4>
+pip install rdiff-backup[meta]==2.1.3b3  #<5>
+pip install .[meta]                      #<5>
+----
+<1> this will install the last stable version released to PyPI e.g. 2.0.5.
+<2> this will install a specific version, e.g. alpha, beta or release candidate.
+<3> this will install a development version inofficially released (seldom).
+<4> this assumes that you have cloned the Git repo and are in its root, and will install this development state.
+<5> this is the same as the above commands but installs _also_ the optional dependencies of rdiff-backup.
 
 == TESTING
 
