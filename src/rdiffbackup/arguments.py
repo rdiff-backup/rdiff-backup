@@ -260,6 +260,7 @@ def _make_values_like_new_compat200(values):  # noqa C901 "too complex"
             values.action = "remove"
             values.entity = "increments"
             values.older_than = values.remove_older_than
+            values.size = False
         elif values.restore_as_of:
             values.action = "restore"
             values.at = values.restore_as_of
