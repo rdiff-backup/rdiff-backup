@@ -208,8 +208,8 @@ all the increments older than the given time will be deleted.
 See <<_time_formats,TIME FORMATS>> for details.
 
 --size;;
-Show the size of each increment being removed. The default
-is to _not_ show sizes.
+Show the size of each increment being removed.
+The default is to _not_ show sizes.
 
 restore [<<_creation_options,CREATION OPTIONS>>] [<<_compression_options,COMPRESSION OPTIONS>>] [<<_selection_options,SELECTION OPTIONS>>] [<<_filesystem_options,FILESYSTEM OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [*--at* _time_|*--increment*] _source_ _targetdir_::
 restore a source backup repository at a specific time or a specific     source increment to a target directory.
