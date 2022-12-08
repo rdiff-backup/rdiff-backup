@@ -1,7 +1,7 @@
 = RDIFF-BACKUP CHANGELOG
 :pp: {plus}{plus}
 :sectnums:
-:toc:
+:toc: preamble
 
 The prefixes are to be understood as follows, in roughly decreasing order of importance for rdiff-backup users:
 
