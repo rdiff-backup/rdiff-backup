@@ -41,7 +41,7 @@ class RemoveAction(actions.BaseAction):
         entity_parsers = cls._get_subparsers(
             subparser, "entity", "increments")
         entity_parsers["increments"].add_argument(
-            "--older-than", metavar="TIME",
+            "--older-than", metavar="TIME", required=True,
             help="remove increments older than given time")
         entity_parsers["increments"].add_argument(
             "--size", action=BooleanOptionalAction, default=False,
