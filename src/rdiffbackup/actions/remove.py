@@ -22,9 +22,10 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import (Globals, log, manage, Time)
+from rdiff_backup import (Globals, log, manage, statistics, Time)
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
+from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
 class RemoveAction(actions.BaseAction):
@@ -42,6 +43,9 @@ class RemoveAction(actions.BaseAction):
         entity_parsers["increments"].add_argument(
             "--older-than", metavar="TIME", required=True,
             help="remove increments older than given time")
+        entity_parsers["increments"].add_argument(
+            "--size", action=BooleanOptionalAction, default=False,
+            help="also output size of each increment (might take longer)")
         entity_parsers["increments"].add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to remove increments from")
@@ -94,7 +98,8 @@ class RemoveAction(actions.BaseAction):
                 self.repo.data_dir, 0)  # read_only=False
             self.repo.setup_quoting()
 
-        self.action_time = self._get_removal_time(self.values.older_than)
+        self.action_time = self._get_removal_time(self.values.older_than,
+                                                  self.values.size)
         if self.action_time is None:
             return ret_code | Globals.RET_CODE_ERR
 
@@ -120,7 +125,7 @@ class RemoveAction(actions.BaseAction):
 
         return ret_code
 
-    def _get_removal_time(self, time_string):
+    def _get_removal_time(self, time_string, show_increment_sizes):
         """
         Check remove older than time_string, return time in seconds
 
@@ -132,9 +137,14 @@ class RemoveAction(actions.BaseAction):
         if action_time is None:
             return None
 
-        times_in_secs = [
-            inc.getinctime() for inc in self.repo.incs_dir.get_incfiles_list()
-        ]
+        if self.values.size:
+            triples = self.repo.get_increments_sizes()[:-1]
+            times_in_secs = [triple["time"] for triple in triples]
+        else:
+            times_in_secs = [
+                inc.getinctime() for inc
+                in self.repo.incs_dir.get_incfiles_list()
+            ]
         times_in_secs = [t for t in times_in_secs if t < action_time]
         if not times_in_secs:
             log.Log("No increments older than {at} found, exiting.".format(
@@ -142,7 +152,20 @@ class RemoveAction(actions.BaseAction):
             return -1
 
         times_in_secs.sort()
-        pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
+        if self.values.size:
+            sizes = [triple["size"] for triple in triples
+                     if triple["time"] in times_in_secs]
+            stat_obj = statistics.StatsObj()  # used for byte summary string
+
+            def format_time_and_size(time, size):
+                return "{: <24} {: >17}".format(
+                    Time.timetopretty(time),
+                    stat_obj.get_byte_summary_string(size))
+
+            pretty_times_map = map(format_time_and_size, times_in_secs, sizes)
+            pretty_times = "\n".join(pretty_times_map)
+        else:
+            pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
         if len(times_in_secs) > 1:
             if not self.values.force:
                 log.Log(

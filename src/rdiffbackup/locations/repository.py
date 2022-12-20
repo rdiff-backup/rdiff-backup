@@ -58,7 +58,8 @@ class Repo(locations.Location):
             # we delay the error handling until the check step,
             # and as well the definition of ref_path and ref_inc
         else:
-            self.ref_type = self.ref_index = None
+            self.ref_index = ()
+            self.ref_type = None
 
         # Finish the initialization with the identified base_dir
         super().__init__(base_dir, force)
@@ -81,7 +82,9 @@ class Repo(locations.Location):
                 self.ref_inc = self.data_dir.append_path(b'increments',
                                                          self.ref_index)
         else:
-            self.ref_path = self.ref_inc = None
+            self.ref_path = self.base_dir
+            self.ref_inc = self.data_dir.append_path(b'increments',
+                                                     self.ref_index)
             log.Log("Using repository '{re}'".format(re=self.base_dir),
                     log.INFO)
         ret_code = Globals.RET_CODE_OK

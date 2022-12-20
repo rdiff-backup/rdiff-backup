@@ -126,7 +126,7 @@ class ActionRemoveTest(unittest.TestCase):
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", ),
-            b"remove", ("increments", "--older-than", "30001")),
+            b"remove", ("increments", "--older-than", "30001", "--size")),
             Globals.RET_CODE_OK)
         # and check that only the mirror is left
         self.assertEqual(comtst.rdiff_backup_action(
