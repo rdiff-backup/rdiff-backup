@@ -446,3 +446,15 @@ If your SSH server is running on a custom port, say 2222, and you are using the 
 rdiff-backup backup mylocaldir ssh://myuser@myhost:2222::/backup_repo
 ----
 
+== Why does rdiff-backup complain about command line interface being deprecated even though I'm using the new syntax?
+
+Calling for example `rdiff-backup backup loc1 server2::loc2` leads to a message `WARNING: this command line interface is deprecated and will disappear, start using the new one as described with '--new --help'`.
+
+You must be using a remote location in your call, as in our example.
+In order to make sure that the other side understands the call, rdiff-backup uses the CLI form fitting the default API version.
+For example, at time of writing, rdiff-backup 2.2 uses API 200 by default and hence calls `rdiff-backup --server` so that the CLI can be understood by rdiff-backup 2.0.
+If the server side is v2.2+, then the warning message will appear.
+
+Call rdiff-backup with the higher API and the message will disappear.
+
+Calling for example `rdiff-backup --api-version 201 backup loc1 server2::loc2` will make sure that `rdiff-backup server` is being called, getting rid of the warning message.
