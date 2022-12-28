@@ -10,6 +10,28 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * **DOC**umentation and *WEB*-site changes are marked as such.
 * And **DEV**elopment changes are only of interest for developers and testers.
 
+== New in v2.2.1 (2022-12-28)
+
+=== Changes
+
+* CHG: the man pages generated from asciidoc are available under dist/ 
+       instead of build/ (that should be only relevant to packagers)
+* FIX: log messages of regression would be too verbose at level INFO/5
+* FIX: man pages are pre-generated from asciidoc to avoid one 
+       dependency at package time and avoid trying to package librsync.dll 
+       under MacOS, closes #807
+* FIX: TypeError failure on class function with debug verbosity at 
+       level 8 or 9
+* NEW: Adds a --size option to the remove increments command that 
+       causes it to add these increments' size to the lines showing the 
+       removed increments.
+
+=== Authors
+
+* Eric L
+* pcanning
+
+
 == New in v2.2.0 (2022-12-18)
 
 === Changes
