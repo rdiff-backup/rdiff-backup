@@ -2249,30 +2249,32 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
     def end_process_directory(self):
         """Finish processing a directory"""
         rf = self.rf
-        if rf.metadata_rorp.isdir():
-            if rf.mirror_rp.isdir():
-                rf.mirror_rp.setdata()
-                if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-                    log.Log("Regressing attributes of path {pa}".format(pa=rf),
-                            log.INFO)
-                    rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
+        mir_rp = rf.mirror_rp
+        meta_rorp = rf.metadata_rorp
+        if meta_rorp.isdir():
+            if mir_rp.isdir():
+                mir_rp.setdata()
+                if not meta_rorp.equal_loose(mir_rp):
+                    log.Log("Regressing attributes of path {pa}".format(
+                        pa=mir_rp), log.INFO)
+                    rpath.copy_attribs(meta_rorp, mir_rp)
             else:
-                rf.mirror_rp.delete()
-                log.Log("Regressing file {fi}".format(fi=rf.mirror_rp),
+                mir_rp.delete()
+                log.Log("Regressing file {fi}".format(fi=mir_rp),
                         log.INFO)
-                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+                rpath.copy_with_attribs(meta_rorp, mir_rp)
         else:  # replacing a dir with some other kind of file
-            assert rf.mirror_rp.isdir(), (
-                "Mirror '{mrp!r}' can only be a directory.".format(
-                    mrp=rf.mirror_rp))
-            log.Log("Replacing directory {di}".format(di=rf), log.INFO)
-            if rf.metadata_rorp.isreg():
+            assert mir_rp.isdir(), (
+                "Mirror '{mrp!r}' can only be a directory.".format(mrp=mir_rp))
+            log.Log("Replacing directory {di}".format(di=mir_rp), log.INFO)
+            if meta_rorp.isreg():
                 self._restore_orig_regfile(rf)
             else:
-                rf.mirror_rp.delete()
-                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+                mir_rp.delete()
+                rpath.copy_with_attribs(meta_rorp, mir_rp)
         if rf.regress_inc:
-            log.Log("Deleting increment {ic}".format(ic=rf), log.INFO)
+            log.Log("Deleting increment {ic}".format(ic=rf.regress_inc),
+                    log.INFO)
             rf.regress_inc.delete()
 
     def _restore_orig_regfile(self, rf):
