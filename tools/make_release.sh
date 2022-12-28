@@ -59,7 +59,7 @@ sleep 5  # GitHub needs a bit of time to react
 
 # retrieve the Pull Request number
 
-PR_NUMBER=$(gh pr list --author '@me' --head ericzolf-prepare-${RELEASE} \
+PR_NUMBER=$(gh pr list --author '@me' --head ${GH_USER}-prepare-${RELEASE} \
 	--json number --template '{{range .}}{{.number}}{{end}}')
 
 # wait for Pull Request checks to be completed (and successful)
