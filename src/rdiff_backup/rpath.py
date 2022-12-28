@@ -751,9 +751,8 @@ class RPath(RORPath):
 
     def setmtime(self, modtime):
         """Set only modtime (access time to present)"""
-        log.Log(
-            lambda: "Setting time of path {pa} to modified time {mt}".format(
-                pa=self, mt=modtime), log.DEBUG)
+        log.Log("Setting time of path {pa} to modified time {mt}".format(
+            pa=self, mt=modtime), log.DEBUG)
         if modtime < 0:
             log.Log("Modification time {mt} of path {pa} is"
                     "before 1970".format(mt=modtime, pa=self), log.WARNING)
@@ -1738,7 +1737,7 @@ def rename(rp_source, rp_dest):
     assert rp_source.conn is rp_dest.conn, (
         "Source '{srp!r}' and destination '{drp!r}' paths must have the "
         "same connection for renaming.".format(srp=rp_source, drp=rp_dest))
-    log.Log(lambda: "Renaming from path {fp} to path {tp}".format(
+    log.Log("Renaming from path {fp} to path {tp}".format(
         fp=rp_source, tp=rp_dest), log.DEBUG)
     if not rp_source.lstat():
         rp_dest.delete()
