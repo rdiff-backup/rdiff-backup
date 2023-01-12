@@ -279,8 +279,14 @@ def _fill_schema(host_info, cmd_schema):
     try:
         # for security reasons, we accept only specific format placeholders
         # h for host_info, Vx,Vy,Vz for version x.y.z
-        # and the host placeholder is mandatory
-        if ((re.findall(b"{[^}]*}", cmd_schema)
+        # and the host placeholder is mandatory;
+        # some shells allow use of curly braces for various purposes, so we
+        # must provide a way to allow the user to use them in their remote-
+        # schema: format() provides a ready-made way to do this with their
+        # escape mechanism of doubling-up the braces {{ }}, so our findall
+        # check must ignore the doubled-up ones in its validation check
+        # using a simple negative-lookbehind
+        if ((re.findall(b"(?<!{){[^{}]*}", cmd_schema)
              != re.findall(b"{h}|{V[xyz]}", cmd_schema))
                 or (b"{h}" not in cmd_schema
                     and b"%s" not in cmd_schema)):  # compat200
