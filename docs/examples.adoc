@@ -50,7 +50,7 @@ Below we have also added the `-v5` switch for greater verbosity (verbosity setti
 ----
 rdiff-backup -v5 --print-statistics user1@host1::/source-dir user2@host2::/dest-dir
 
-rdiff-backup -v5 --print-statistics backup user1@host1::/source-dir user2@host2::/dest-dir
+rdiff-backup -v5 backup --print-statistics user1@host1::/source-dir user2@host2::/dest-dir
 ----
 
 == Restoring

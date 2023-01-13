@@ -16,7 +16,7 @@ class ActionListTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(comtst.abs_test_dir, b"action_list")
         self.from1_struct = {
-            "from1": {"subs": {
+            "from1": {"contents": {
                 "fileChanged": {"content": "initial"},
                 "fileOld": {},
                 "fileUnchanged": {"content": "unchanged"},
@@ -24,7 +24,7 @@ class ActionListTest(unittest.TestCase):
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"subs": {
+            "from2": {"contents": {
                 "fileChanged": {"content": "modified"},
                 "fileNew": {},
                 "fileUnchanged": {"content": "unchanged"},
