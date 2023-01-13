@@ -504,19 +504,19 @@ class SelectionIfPresentTest(unittest.TestCase):
         self.base_dir = os.path.join(comtst.abs_test_dir,
                                      b"select_if_present")
         self.from1_struct = {
-            "from1": {"subs": {
+            "from1": {"contents": {
                 "dirWith": {
-                    "subs": {
+                    "contents": {
                         "check_for_me": {"content": "whatever"},
                         "fileWithin": {"content": "initial"},
                         "emptyDir": {"type": "dir"},
                     },
                 },
                 "dirWithout": {
-                    "subs": {
+                    "contents": {
                         "fileWithout": {"content": "initial"},
                         "nonEmptyDir": {
-                            "subs": {
+                            "contents": {
                                 "check_for_me": {"content": "whatever"},
                                 "fileWithin": {"content": "initial"},
                                 "anotherEmptyDir": {"type": "dir"},

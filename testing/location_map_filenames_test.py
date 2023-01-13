@@ -20,7 +20,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # Windows can't handle too long filenames
         long_multi = 5 if os.name == "nt" else 25
         self.from1_struct = {
-            "from1": {"subs": {
+            "from1": {"contents": {
                 "fileABC": {"content": "initial"},
                 "fileXYZ": {},
                 "dirAbCXyZ": {"type": "dir"},
@@ -36,7 +36,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"subs": {
+            "from2": {"contents": {
                 "fileABC": {"content": "modified"},
                 "fileXYZ": {},
                 "diraBcXyZ": {"type": "dir"},

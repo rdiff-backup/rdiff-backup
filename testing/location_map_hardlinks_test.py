@@ -17,10 +17,10 @@ class LocationMapHardlinksTest(unittest.TestCase):
         self.base_dir = os.path.join(comtst.abs_test_dir,
                                      b"location_map_hardlinks")
         self.from1_struct = {
-            "from1": {"subs": {
-                "hardlink1": {"content": "initial"},
-                "hardlink2": {"link": "hardlink1"},
-                "hardlink3": {"link": "hardlink1"},
+            "from1": {"contents": {
+                "hardlink1": {"content": "initial", "inode": "hardlink1"},
+                "hardlink2": {"inode": "hardlink1"},
+                "hardlink3": {"inode": "hardlink1"},
             }}
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
