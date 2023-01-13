@@ -17,7 +17,7 @@ class ActionRemoveTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(comtst.abs_test_dir, b"action_remove")
         self.from1_struct = {
-            "from1": {"subs": {
+            "from1": {"contents": {
                 "fileChanged": {"content": "initial"},
                 "fileOld": {},
                 "fileUnchanged": {"content": "unchanged"},
@@ -25,7 +25,7 @@ class ActionRemoveTest(unittest.TestCase):
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"subs": {
+            "from2": {"contents": {
                 "fileChanged": {"content": "modified"},
                 "fileNew": {},
                 "fileUnchanged": {"content": "unchanged"},
@@ -33,7 +33,7 @@ class ActionRemoveTest(unittest.TestCase):
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
         self.from3_struct = {
-            "from3": {"subs": {
+            "from3": {"contents": {
                 "fileChanged": {"content": "modified again"},
                 "fileNew": {},
                 "fileUnchanged": {"content": "unchanged"},
@@ -41,7 +41,7 @@ class ActionRemoveTest(unittest.TestCase):
         }
         self.from3_path = os.path.join(self.base_dir, b"from3")
         self.from4_struct = {
-            "from4": {"subs": {
+            "from4": {"contents": {
                 "fileChanged": {"content": "modified again"},
                 "fileEvenNewer": {},
                 "fileUnchanged": {"content": "unchanged"},

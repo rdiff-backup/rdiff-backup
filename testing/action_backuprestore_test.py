@@ -20,37 +20,37 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # Windows can't handle too long filenames
         long_multi = 10 if os.name == "nt" else 25
         self.from1_struct = {
-            "from1": {"subs": {
-                "fileA": {"content": "initial"},
+            "from1": {"contents": {
+                "fileA": {"content": "initial", "inode": "fileA"},
                 "fileB": {},
                 "dirOld": {"type": "dir"},
                 "itemX": {"type": "dir"},
                 "itemY": {"type": "file"},
                 "longdirnam" * long_multi: {"type": "dir"},
                 "longfilnam" * long_multi: {"content": "not so long content"},
-                # "somehardlink": {"link": "fileA"},
+                # "somehardlink": {"inode": "fileA"},
             }}
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"subs": {
-                "fileA": {"content": "modified"},
+            "from2": {"contents": {
+                "fileA": {"content": "modified", "inode": "fileA"},
                 "fileC": {},
                 "dirNew": {"type": "dir"},
                 "itemX": {"type": "file"},
                 "itemY": {"type": "dir"},
                 "longdirnam" * long_multi: {"type": "dir"},
                 "longfilnam" * long_multi: {"content": "differently long"},
-                # "somehardlink": {"link": "fileA"},
+                # "somehardlink": {"inode": "fileA"},
             }}
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
         if os.name != "nt":
             # rdiff-backup can't handle (yet) hardlinks under Windows
-            self.from1_struct["from1"]["subs"]["somehardlink"] = {
-                "link": "fileA"}
-            self.from2_struct["from2"]["subs"]["somehardlink"] = {
-                "link": "fileA"}
+            self.from1_struct["from1"]["contents"]["somehardlink"] = {
+                "inode": "fileA"}
+            self.from2_struct["from2"]["contents"]["somehardlink"] = {
+                "inode": "fileA"}
         fileset.create_fileset(self.base_dir, self.from1_struct)
         fileset.create_fileset(self.base_dir, self.from2_struct)
         fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
@@ -218,13 +218,13 @@ class PreQuotingTest(unittest.TestCase):
         self.base_dir = os.path.join(comtst.abs_test_dir,
                                      b"action_backuprestore")
         self.from1_struct = {
-            "from1": {"subs": {  # CODE.txt pre-quoted
+            "from1": {"contents": {  # CODE.txt pre-quoted
                 ";067;079;068;069.txt": {"content": "initial"},
             }}
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"subs": {  # CODE.txt pre-quoted and non-quoted
+            "from2": {"contents": {  # CODE.txt pre-quoted and non-quoted
                 ";067;079;068;069.txt": {"content": "modified"},
                 "CODE.txt": {"content": "whatever"},
             }}
