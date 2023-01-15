@@ -176,9 +176,13 @@ The values for `valid_users` and `write_list` should be a comma separated list o
 
 ## Adding arbitrary configuration files
 
-You can add settings that are not supported by this role out-of-the-box through custom configuration files that will be included from the main configuration file. There are three types of include files: for the global section, for the homes section, and for individual shares. Put your custom configuration files in a subdirectory `templates`, relative to your master playbook location. Then, specify them in the variables `samba_global_include`, `samba_homes_include`, or `include_file` in the `samba_shares` definition.
+You can add settings that are not supported by this role out-of-the-box through custom configuration files that will be included from the main configuration file.
+There are three types of include files: for the global section, for the homes section, and for individual shares.
+Put your custom configuration files in a subdirectory `templates`, relative to your master playbook location.
+Then, specify them in the variables `samba_global_include`, `samba_homes_include`, or `include_file` in the `samba_shares` definition.
 
-Your custom configuration files are considered to be Jinja templates, so you can use Ansible variables inside them. The configuration files will be validated to ensure they are syntactically correct.
+Your custom configuration files are considered to be Jinja templates, so you can use Ansible variables inside them.
+The configuration files will be validated to ensure they are syntactically correct.
 
 For example, to include `templates/global-include.conf`, set:
 

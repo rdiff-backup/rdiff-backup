@@ -5,7 +5,7 @@ Source: https://github.com/rdiff-backup/rdiff-backup
 
 Files: *
 Copyright: 2001-2008 Ben Escoto <bescoto@stanford.edu>
-           2019-2020 Eric Lavarde <ewl+rdiffbackup-at-lavar.de>
+           2019-2023 Eric Lavarde <ewl+rdiffbackup@lavar.de>
 License: GPL-2+
 
 Files: debian/*
