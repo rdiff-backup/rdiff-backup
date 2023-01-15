@@ -35,10 +35,6 @@ from rdiffbackup.utils import safestr
 # The first is None because it is the local connection.
 __conn_remote_cmds = [None]
 
-# keep a list of sub-processes running; we don't use it, it's only to avoid
-# "ResourceWarning: subprocess N is still running" from subprocess library
-_processes = []
-
 
 class SetConnectionsException(Exception):
     pass
@@ -312,7 +308,6 @@ def _init_connection(remote_cmd):
     like global settings, its connection number, and verbosity.
 
     """
-    global _processes
     if not remote_cmd:
         return Globals.local_connection
 
@@ -335,12 +330,10 @@ def _init_connection(remote_cmd):
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE)
         (stdin, stdout) = (process.stdin, process.stdout)
-        # only to avoid resource warnings about subprocess still running
-        _processes.append(process)
     except OSError:
         (stdin, stdout) = (None, None)
     conn_number = len(Globals.connections)
-    conn = connection.PipeConnection(stdout, stdin, conn_number)
+    conn = connection.PipeConnection(stdout, stdin, conn_number, process)
 
     if not _validate_connection_version(conn, remote_cmd):
         return None
