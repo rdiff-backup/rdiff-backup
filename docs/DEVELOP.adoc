@@ -121,6 +121,7 @@ All of those should come packaged with your system or available from https://pyp
 * Pywin32 - https://github.com/mhammond/pywin32
 * Pylibacl - http://pylibacl.sourceforge.net/
 * Pyxattr - http://pyxattr.sourceforge.net/
+* PyYAML - https://github.com/yaml/pyyaml
 
 ==== Changing dependencies versions
 
