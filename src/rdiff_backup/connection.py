@@ -29,6 +29,8 @@ import shutil  # noqa: F401
 import socket  # noqa: F401
 import tempfile  # noqa: F401
 import types  # noqa: F401
+import time
+import subprocess
 
 # The following EA and ACL modules may be used if available
 try:  # compat200
@@ -157,10 +159,11 @@ class LowLevelPipeConnection(Connection):
 
     """
 
-    def __init__(self, inpipe, outpipe):
+    def __init__(self, inpipe, outpipe, process=None):
         """inpipe is a file-type open for reading, outpipe for writing"""
         self.inpipe = inpipe
         self.outpipe = outpipe
+        self.process = process
 
     def __str__(self):
         """Return string version
@@ -363,6 +366,23 @@ class LowLevelPipeConnection(Connection):
         """Close the pipes associated with the connection"""
         self.outpipe.close()
         self.inpipe.close()
+        # reap the pipe child with wait() to ensure any final output from
+        # the pipe by commands that run after rdiff-backup server; otherwise
+        # a race condition occurs where final output is sometimes lost;
+        # Python>=3.3 gives the timeout option to wait: set to a modestly
+        # small value here to minimize possibility of introducing bugs/delays
+        if self.process:
+            try:
+                self.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                # if some longer delay occurred, just kill it, try hard so
+                # we avoid the ResourceWarning if it's still running when
+                # the subprocess destructors hit; yes ugly sleeps, but rare
+                self.process.terminate()
+                time.sleep(1)
+                if (self.process.poll() is None):
+                    self.process.kill()
+                    time.sleep(1)
 
 
 class PipeConnection(LowLevelPipeConnection):
@@ -377,7 +397,7 @@ class PipeConnection(LowLevelPipeConnection):
 
     """
 
-    def __init__(self, inpipe, outpipe, conn_number=0):
+    def __init__(self, inpipe, outpipe, conn_number=0, process=None):
         """Init PipeConnection
 
         conn_number should be a unique (to the session) integer to
@@ -386,7 +406,7 @@ class PipeConnection(LowLevelPipeConnection):
         number to route commands to the correct process.
 
         """
-        LowLevelPipeConnection.__init__(self, inpipe, outpipe)
+        LowLevelPipeConnection.__init__(self, inpipe, outpipe, process)
         self.conn_number = conn_number
         self.unused_request_numbers = set(range(256))
 
