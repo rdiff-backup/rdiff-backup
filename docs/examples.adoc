@@ -250,9 +250,10 @@ rdiff-backup doesn't obscure the names of files at all, so often using tradition
 It may be useful if you need to restore an older version of `in-dir/file` but aren't sure which one.
 
 ----
-rdiff-backup --list-increments out-dir/filerdiff-backup -l out-dir/file
+rdiff-backup --list-increments out-dir/file
+rdiff-backup -l out-dir/file
 
-rdiff-backup list increments out-dir/filerdiff-backup -l out-dir/file
+rdiff-backup list increments out-dir/file
 ----
 
 * The following command lists all the files under `out-dir/subdir` which has changed in the last 5 days.

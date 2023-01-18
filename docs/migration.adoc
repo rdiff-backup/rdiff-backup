@@ -254,6 +254,18 @@ The differences between the old and the legacy CLI are, obviously, limited and r
 
 The differences between the old and the new CLI are more important, especially because the new CLI has a more strict approach to the differentiation between actions and options.
 
+A call of rdiff-backup is generally of the form:
+
+----
+rdiff-backup <generic options> <command> <specific options> [<location(s)...>]
+----
+
+Calling `rdiff-backup --help` will give you a list of generic options and available commands (backup, restore, etc).
+Calling `rdiff-backup <command> --help` will give you a list of options specific to the command.
+As some commands have sub-commands, you can repeat this procedure at deeper levels.
+Remember that the sequence between generic options, commands and specific options is to be respected.
+For example, you must call `rdiff-backup --force backup dir1 dir2` because `rdiff-backup backup --force dir1 dir2` will _not_ work.
+
 |===
 | Description | old CLI | new CLI
 
@@ -352,4 +364,9 @@ The differences between the old and the new CLI are more important, especially b
 | Verify hashes of backup at given time
 | `+rdiff-backup --verify-at-time {datetime} {backup-repo}+`
 | `+rdiff-backup verify --at {datetime} {backup-repo}+`
+
+| Remove multiple increments from a repository
+| `+rdiff-backup --remove-older-than {datetime} --force {backup-repo}+`
+| `+rdiff-backup --force remove increments --older-than {datetime} {backup-repo}+`
+
 |===
