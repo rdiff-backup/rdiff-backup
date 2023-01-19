@@ -2,14 +2,16 @@ Source: rdiff-backup
 Section: utils
 Priority: optional
 Maintainer: Otto Kekäläinen <otto@debian.org>
-Build-Depends: debhelper (>= 11),
+Build-Depends: asciidoctor,
+               debhelper (>= 11),
                dh-python,
                librsync-dev,
                python3-all-dev,
                python3-pylibacl,
                python3-pyxattr,
                python3-setuptools,
-               python3-setuptools-scm
+               python3-setuptools-scm,
+               python3-yaml
 Standards-Version: 4.4.0
 Homepage: http://rdiff-backup.net/
 Vcs-Git: https://github.com/rdiff-backup/rdiff-backup.git
