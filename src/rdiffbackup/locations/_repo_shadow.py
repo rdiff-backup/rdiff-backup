@@ -1536,7 +1536,9 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         UpdateError or similar gets in the way.
         """
         if diff_rorp.isflaglinked():
-            self._patch_hardlink_to_temp(diff_rorp, new)
+            result = self._patch_hardlink_to_temp(basis_rp, diff_rorp, new)
+            if result == self.FAILED or result == self.UNCHANGED:
+                return result
         elif diff_rorp.get_attached_filetype() == 'snapshot':
             result = self._patch_snapshot_to_temp(diff_rorp, new)
             if result == self.FAILED or result == self.SPECIAL:
@@ -1565,10 +1567,17 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
                 rpath.copy_attribs(diff_rorp, new)
         return self._matches_cached_rorp(diff_rorp, new)
 
-    def _patch_hardlink_to_temp(self, diff_rorp, new):
+    def _patch_hardlink_to_temp(self, basis_rp, diff_rorp, new):
         """Hardlink diff_rorp to temp, update hash if necessary"""
         map_hardlinks.link_rp(diff_rorp, new, self.basis_root_rp)
         self.CCPP.update_hardlink_hash(diff_rorp)
+        # if the temp file and the original file have the same inode,
+        # they're the same and nothing changed to the content
+        if (basis_rp.getnumlinks() > 1
+                and basis_rp.getinode() == new.getinode()):
+            return self.UNCHANGED
+        else:
+            return self.DONE
 
     def _patch_snapshot_to_temp(self, diff_rorp, new):
         """
