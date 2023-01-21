@@ -7,8 +7,7 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 
 * *CHG* marks changes in the behaviour of rdiff-backup, potentially _incompatible_ ones, which you will want to consider before you upgrade or use for the 1st time a new version.
 * *NEW* features and bug-**FIX**es are of course of interest as well.
-* **DOC**umentation and *WEB*-site changes are marked as such.
-* And **DEV**elopment changes are only of interest for developers and testers.
+* **DOC**umentation (and website) changes are marked as such.
 
 == New in v2.2.2 (2022-12-28)
 

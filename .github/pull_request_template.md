@@ -40,14 +40,8 @@
 
 - [ ] changes to the code have been reflected in the documentation
 - [ ] changes to the code have been covered by new/modified tests
-- [ ] commit contains a description of changes
-    * relevant to users prefixed by DOC:, FIX:, NEW: and/or CHG:
-    * relevant to the web-site prefixed by WEB:
-    * relevant to developers prefixed by DEV:
+- [ ] commit contains a description of changes relevant to users prefixed by DOC:, FIX:, NEW: and/or CHG:
 
 <!--
-    for details on this last point, check:
-
-    * either the [developer documentation](https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.adoc#22-branching-model-and-pull-requests)s
-    * or the top of the [changelog](https://github.com/rdiff-backup/rdiff-backup/blob/master/CHANGELOG.adoc)
+    for details on this last point, check the [developer documentation](https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.adoc#commits)
 -->

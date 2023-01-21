@@ -20,6 +20,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     librsync-dev \
     python3-all-dev \
     python3-pylibacl \
+    python3-yaml \
     python3-pyxattr \
     asciidoctor
 

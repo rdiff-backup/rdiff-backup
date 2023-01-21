@@ -36,6 +36,38 @@ It might provide useful insight why the current state is as it is.
 Rdiff-backup is licensed with GNU General Public License v2.0 or later.
 By contributing to this repository you agree that your work is licensed using the chosen project license.
 
+[[commits]]
+=== Commit messages
+
+If something is of interest for the changelog, prefix the statement in the commit _body_ with a three uppercase letters and a colon:
+
+* FIX: for a bug fix
+* NEW: for a new feature
+* CHG: for a change requesting consideration when upgrading
+* DOC: for documentation and website aspects
+
+If the commit addresses a specific issue, end the statement with a `, closes #NNN` message, `NNN` being of course the number of the issue.
+
+Multiple entries might be required for one single change, e.g. `NEW` if you introduce a new feature, and `CHG` because this new features introduces some breaking changes on which the user needs to take actions at upgrade time.
+You don't need to notice that you've added documentation with `DOC` for a new feature, this is obvious and redundant; `DOC` should be reserved for solely documentation changes.
+
+TIP: make sure that your commit was properly formatted by calling `./tools/get_changelog_since.sh v2.2.2` (or whichever is the last released version), and checking that the _whole_ message is present.
+Beware that the interactive `git commit` command tends to split long lines, which is contraproductive in our use case.
+
+In summary, any commit message could look as follows:
+
+[code,shell]
+----
+git commit -m "Some commit title summarizing the change
+
+DOC: some understandable message on one single line explaining clearly the documentation change, closes #123
+
+Further development notes, important (and recommended) but not fit for end-user changelog"
+----
+
+TIP: check `git log` for earlier examples.
+Note that the `DEV` prefix has been deprecated.
+
 === Branching model and pull requests
 
 The _master_ branch is always kept in a clean state.
@@ -54,15 +86,6 @@ if not quickly merged) and overall to support the review process.
 
 Ideally each pull request gets some feedback within 24 hours from it having been filed, and is merged within days or a couple of weeks.
 Each author should facilitate quick reviews and merges by making clean and neat commits and pull requests that are quick to review and do not spiral out in long discussions.
-
-If something is of interest for the changelog, prefix the statement in the commit body with a three uppercase letters and a colon;
-which acronym is not that important but here is a list of recommended ones (see the release section to understand why it's important):
-
-* FIX: for a bug fix
-* NEW: for a new feature
-* CHG: for a change requesting consideration when upgrading
-* DOC: for documentation aspects
-* WEB: anything regarding the website
 
 ==== Merging changes to master
 
@@ -121,6 +144,7 @@ All of those should come packaged with your system or available from https://pyp
 * Pywin32 - https://github.com/mhammond/pywin32
 * Pylibacl - http://pylibacl.sourceforge.net/
 * Pyxattr - http://pyxattr.sourceforge.net/
+* PyYAML - https://github.com/yaml/pyyaml
 
 ==== Changing dependencies versions
 
