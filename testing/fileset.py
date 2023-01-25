@@ -8,7 +8,6 @@
 # Distributions of rdiff-backup should include a copy of the GPL in a
 # file called COPYING.  The GPL is also available online at
 # https://www.gnu.org/copyleft/gpl.html.
-
 """
 This library allows to create a set of files (and directories), using a
 structure of dictionaries.

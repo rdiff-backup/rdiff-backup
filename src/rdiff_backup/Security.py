@@ -72,7 +72,8 @@ _file_requests = {
     "os.unlink": 0,
     "os.utime": 0,
     "rpath.make_file_dict": 0,
-    "rpath.delete_dir_no_files": 0
+    "rpath.delete_dir_no_files": 0,
+    "shutil.rmtree": 0,
 }
 
 # functions to set global values

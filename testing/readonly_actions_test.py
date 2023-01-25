@@ -7,6 +7,8 @@ import unittest
 import commontest as comtst
 import fileset
 
+from rdiff_backup import Globals, rpath
+
 
 class ActionReadOnlyTest(unittest.TestCase):
     """
@@ -27,9 +29,10 @@ class ActionReadOnlyTest(unittest.TestCase):
                 "dirA": {"contents": {"fileA": {"content": "afterwards"}}},
                 "fileB": {"content": "now else"}
             }}}
+        rec = {"fmode": 0o400, "dmode": 0o500}
         self.from2_path = os.path.join(self.base_dir, b"from2")
-        fileset.create_fileset(self.base_dir, self.from1_struct)
-        fileset.create_fileset(self.base_dir, self.from2_struct)
+        fileset.create_fileset(self.base_dir, self.from1_struct, recurse=rec)
+        fileset.create_fileset(self.base_dir, self.from2_struct, recurse=rec)
         fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
         self.bak_path = os.path.join(self.base_dir, b"bak")
 
@@ -48,7 +51,7 @@ class ActionReadOnlyTest(unittest.TestCase):
     def test_readonly_regress(self):
         """test the "regress" action on a read-only repository"""
 
-        # then we regress forcefully
+        # we regress forcefully
         self.assertEqual(comtst.rdiff_backup_action(
             False, None, self.bak_path, None,
             ("--api-version", "201", "--force"),
@@ -60,11 +63,22 @@ class ActionReadOnlyTest(unittest.TestCase):
     def test_readonly_remove(self):
         """test the "remove" action on a read-only repository"""
 
-        # then we regress forcefully
+        # we remove forcefully
         self.assertEqual(comtst.rdiff_backup_action(
             True, None, self.bak_path, None,
             ("--api-version", "201", "--force"),
             b"remove", ("increments", "--older-than", "0B")), 0)
+
+        # all tests were successful
+        self.success = True
+
+    @unittest.skip("Skipped until issue #790 can be fixed as part of 2.4")
+    def test_readonly_delete(self):
+        """test the "delete" method of rpath on a read-only repository"""
+
+        from1_rp = rpath.RPath(Globals.local_connection, self.from1_path)
+        from1_rp.delete()
+        self.assertIsNone(from1_rp.lstat())
 
         # all tests were successful
         self.success = True
