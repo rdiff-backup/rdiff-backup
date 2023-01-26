@@ -8,7 +8,6 @@
 # Distributions of rdiff-backup should include a copy of the GPL in a
 # file called COPYING.  The GPL is also available online at
 # https://www.gnu.org/copyleft/gpl.html.
-
 """
 This library allows to create a set of files (and directories), using a
 structure of dictionaries.
@@ -328,6 +327,11 @@ def _rmtree(set_path):
     for dir_name, dirs, files in os.walk(set_path):  # topdown
         mode = os.stat(dir_name).st_mode
         os.chmod(dir_name, mode | 0o222)
+        # Windows can't remove read-only files
+        for file_name in files:
+            file = os.path.join(dir_name, file_name)
+            mode = os.stat(file).st_mode
+            os.chmod(file, mode | 0o222)
     shutil.rmtree(set_path)
 
 
