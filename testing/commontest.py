@@ -144,7 +144,9 @@ def rdiff_backup(source_local,
 def rdiff_backup_action(source_local, dest_local,
                         src_dir, dest_dir,
                         generic_opts, action, specific_opts,
-                        std_input=None, return_stdout=False):
+                        std_input=None,
+                        return_stdout=False,
+                        return_stderr=False):
     """
     Run rdiff-backup with the given action and options, faking remote locations
 
@@ -181,10 +183,15 @@ def rdiff_backup_action(source_local, dest_local,
     if dest_dir:
         cmdargs.append(dest_dir)
     print("Executing: ", " ".join(map(shlex.quote, map(os.fsdecode, cmdargs))))
-    if return_stdout:
+    if return_stdout or return_stderr:
         try:
-            ret_val = subprocess.check_output(cmdargs, input=std_input,
-                                              universal_newlines=False)
+            if return_stderr:  # add stderr to stdout
+                ret_val = subprocess.check_output(cmdargs, input=std_input,
+                                                  stderr=subprocess.STDOUT,
+                                                  universal_newlines=False)
+            else:
+                ret_val = subprocess.check_output(cmdargs, input=std_input,
+                                                  universal_newlines=False)
         except subprocess.CalledProcessError as exc:
             ret_val = exc.output
         # normalize line endings under Windows
