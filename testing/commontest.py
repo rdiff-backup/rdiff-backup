@@ -163,12 +163,15 @@ def rdiff_backup_action(source_local, dest_local,
     """
     remote_exec = CMD_SEP.join([b"cd %s", b"%s server::%s"])
 
+    is_remote = False
     if src_dir and not source_local:
         src_dir = (remote_exec % (abs_remote1_dir, RBBin, src_dir))
+        is_remote = True
     if dest_dir and not dest_local:
         dest_dir = (remote_exec % (abs_remote2_dir, RBBin, dest_dir))
+        is_remote = True
 
-    if not (source_local and dest_local):
+    if is_remote:
         generic_opts = list(generic_opts) + [b"--remote-schema", b"{h}"]
 
     cmdargs = [RBBin] + list(generic_opts) + [action] + list(specific_opts)
