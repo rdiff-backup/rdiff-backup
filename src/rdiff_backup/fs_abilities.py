@@ -349,7 +349,7 @@ class FSAbilities:
             files_list = robust.listrp(subdir)
             for filename in files_list:
                 file_rp = subdir.append(filename)
-                if filename != filename.swapcase():
+                if file_rp.lstat() and filename != filename.swapcase():
                     return (subdir, files_list, filename)
                 elif file_rp.isdir():
                     subsearch = find_letter(file_rp)
@@ -362,7 +362,6 @@ class FSAbilities:
             Return 1 if filename shows that file system is case sensitive,
             else 0
             """
-            # TODO move check + lstat to find_letter
             swapped = filename.swapcase()
             if swapped in dirlist:
                 return 1
