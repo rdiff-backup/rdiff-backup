@@ -159,11 +159,10 @@ class LowLevelPipeConnection(Connection):
 
     """
 
-    def __init__(self, inpipe, outpipe, process=None):
+    def __init__(self, inpipe, outpipe):
         """inpipe is a file-type open for reading, outpipe for writing"""
         self.inpipe = inpipe
         self.outpipe = outpipe
-        self.process = process
 
     def __str__(self):
         """Return string version
@@ -366,23 +365,6 @@ class LowLevelPipeConnection(Connection):
         """Close the pipes associated with the connection"""
         self.outpipe.close()
         self.inpipe.close()
-        # reap the pipe child with wait() to ensure any final output from
-        # the pipe by commands that run after rdiff-backup server; otherwise
-        # a race condition occurs where final output is sometimes lost;
-        # Python>=3.3 gives the timeout option to wait: set to a modestly
-        # small value here to minimize possibility of introducing bugs/delays
-        if self.process:
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                # if some longer delay occurred, just kill it, try hard so
-                # we avoid the ResourceWarning if it's still running when
-                # the subprocess destructors hit; yes ugly sleeps, but rare
-                self.process.terminate()
-                time.sleep(1)
-                if (self.process.poll() is None):
-                    self.process.kill()
-                    time.sleep(1)
 
 
 class PipeConnection(LowLevelPipeConnection):
@@ -406,12 +388,21 @@ class PipeConnection(LowLevelPipeConnection):
         number to route commands to the correct process.
 
         """
-        LowLevelPipeConnection.__init__(self, inpipe, outpipe, process)
+        super().__init__(inpipe, outpipe)
         self.conn_number = conn_number
         self.unused_request_numbers = set(range(256))
+        self.process = process
 
     def __str__(self):
-        return "PipeConnection %d" % self.conn_number
+        return "PipeConnection {cn}".format(cn=self.conn_number)
+
+    def __repr__(self):
+        if self.process:
+            return "PipeConnection {cn}, called '{ca}' with rc={rc}".format(
+                cn=self.conn_number, ca=self.process.args,
+                rc=self.process.returncode)
+        else:
+            return str(self)
 
     def __getattr__(self, name):
         """Intercept attributes to allow for . invocation"""
@@ -454,6 +445,30 @@ class PipeConnection(LowLevelPipeConnection):
         self._putquit()
         self._get()
         self._close()
+
+    def _close(self):
+        super()._close()
+        # reap the pipe child with wait() to ensure any final output from
+        # the pipe by commands that run after rdiff-backup server; otherwise
+        # a race condition occurs where final output is sometimes lost;
+        # Python>=3.3 gives the timeout option to wait: set to a modestly
+        # small value here to minimize possibility of introducing bugs/delays
+        if self.process:
+            try:
+                self.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                # if some longer delay occurred, just kill it, try hard so
+                # we avoid the ResourceWarning if it's still running when
+                # the subprocess destructors hit; yes ugly sleeps, but rare
+                log.Log("Terminating pipeline process '{pp}'".format(
+                    pp=self.process.args), log.WARNING)
+                self.process.terminate()
+                time.sleep(1)
+                if (self.process.poll() is None):
+                    log.Log("Killing pipeline process '{pp}'".format(
+                        pp=self.process.args), log.WARNING)
+                    self.process.kill()
+                    time.sleep(1)
 
     def _get_response(self, desired_req_num):
         """Read from pipe, responding to requests until req_num.
