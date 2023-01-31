@@ -44,8 +44,10 @@ TODO: fully support tree format with a list of dictionaries, instead of a dictio
 """
 
 import os
+import random
 import shutil
 import stat
+import string
 
 
 def create_fileset(base_dir, structure, recurse={}):
@@ -300,8 +302,30 @@ def _create_file(set_path, always_delete=False):
     if os.path.exists(set_path):
         if always_delete or not os.path.isfile(set_path):
             _rmtree(set_path)
-    with open(set_path, "w" + set_path.get("open")) as fd:
-        fd.write(set_path.get("content"))
+    open_mode = set_path.get("open")
+    with open(set_path, "w" + open_mode) as fd:
+        size = set_path.get("size")
+        content = set_path.get("content")
+        if size is None:
+            fd.write(set_path.get("content"))
+        elif size == 0:
+            pass  # no need to write anything
+        elif content:
+            times = size // len(content)
+            remainder = size % len(content)
+            while times > 0:
+                fd.write(content)
+                times -= 1
+            if remainder:
+                fd.write(content[:remainder])
+        else:
+            if "b" in open_mode:
+                if sys.version_info.major >= 3 and sys.version_info.minor >= 9:
+                    fd.write(random.randbytes(size))
+                else:
+                    fd.write(bytes(random.choices(range(256), k=size)))
+            else:  # random text data
+                fd.write("".join(random.choices(string.printable, k=size)))
     os.chmod(set_path, set_path.get_mode())
 
 
@@ -429,10 +453,11 @@ if __name__ == "__main__":
                 "fileB": {"mode": "0544", "inode": "B"},
                 "fileC": {"target": "../a_bin_file"},
                 "fileD": {"inode": "B"},
+                "fileE": {"size": 200},
             }
         },
         "empty_dir": {"type": "dir", "dmode": 0o777},
-        "a_bin_file": {"content": b"some_binary_content", "open": "b"},
+        "a_bin_file": {"content": b"some_binary_content", "size": 64, "open": "b"},
     }
 
     print("base directory: {bd}".format(bd=base_temp_dir))
@@ -441,19 +466,20 @@ if __name__ == "__main__":
     remove_fileset(base_temp_dir, structure)
 
 """
-$ tree -aJps --inodes /tmp/fileset_eh24xnxy.d
+$ tree -aJps --inodes /tmp/fileset_1jgrvpy4.d
 [
-  {"type":"directory","name":"/tmp/fileset_eh24xnxy.d","inode":0,"mode":"0700","prot":"drwx------","size":100,"contents":[
-    {"type":"file","name":"a_bin_file","inode":190,"mode":"0644","prot":"-rw-r--r--","size":19},
-    {"type":"directory","name":"a_dir","inode":185,"mode":"0755","prot":"drwxr-xr-x","size":120,"contents":[
-      {"type":"file","name":"fileA","inode":186,"mode":"0444","prot":"-r--r--r--","size":7},
-      {"type":"file","name":"fileB","inode":187,"mode":"0544","prot":"-r-xr--r--","size":15},
-      {"type":"link","name":"fileC","target":"../a_bin_file","inode":190,"mode":"0777","prot":"lrwxrwxrwx","size":13},
-      {"type":"file","name":"fileD","inode":187,"mode":"0544","prot":"-r-xr--r--","size":15}
-  ]},
-    {"type":"directory","name":"empty_dir","inode":189,"mode":"0777","prot":"drwxrwxrwx","size":40}
+  {"type":"directory","name":"/tmp/fileset_1jgrvpy4.d","inode":0,"mode":"0700","prot":"drwx------","size":100,"contents":[
+    {"type":"file","name":"a_bin_file","inode":84,"mode":"0644","prot":"-rw-r--r--","size":64},
+    {"type":"directory","name":"a_dir","inode":78,"mode":"0755","prot":"drwxr-xr-x","size":140,"contents":[
+      {"type":"file","name":"fileA","inode":79,"mode":"0444","prot":"-r--r--r--","size":7},
+      {"type":"file","name":"fileB","inode":80,"mode":"0544","prot":"-r-xr--r--","size":15},
+      {"type":"link","name":"fileC","target":"../a_bin_file","inode":84,"mode":"0777","prot":"lrwxrwxrwx","size":13},
+      {"type":"file","name":"fileD","inode":80,"mode":"0544","prot":"-r-xr--r--","size":15},
+      {"type":"file","name":"fileE","inode":82,"mode":"0444","prot":"-r--r--r--","size":200}
+    ]},
+    {"type":"directory","name":"empty_dir","inode":83,"mode":"0777","prot":"drwxrwxrwx","size":40}
   ]}
 ,
-  {"type":"report","directories":2,"files":5}
+  {"type":"report","directories":3,"files":6}
 ]
 """
