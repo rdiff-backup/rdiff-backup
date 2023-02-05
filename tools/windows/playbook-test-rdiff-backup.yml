@@ -10,7 +10,7 @@
       path: "{{ working_dir }}"
   - name: clone the rdiff-backup testfiles from Git
     win_command: >
-      git.exe clone {{ rdiffbackup_files_git_repo }}
+      git.exe clone --depth 1 {{ rdiffbackup_files_git_repo }}
       "{{ rdiffbackup_files_dir }}"
     args:
       creates: "{{ rdiffbackup_files_dir }}"
