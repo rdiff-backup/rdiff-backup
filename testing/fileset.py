@@ -48,6 +48,7 @@ import random
 import shutil
 import stat
 import string
+import sys
 
 
 def create_fileset(base_dir, structure, recurse={}):
@@ -62,8 +63,8 @@ def create_fileset(base_dir, structure, recurse={}):
     recurse["inodes"] = {}
     _create_directory(SetPath(base_dir, {"type": "directory"}, recurse))
     for name in structure:
-        _call_create_fileset(os.fsdecode(base_dir), name,
-                             structure[name], recurse)
+        _multi_create_fileset(os.fsdecode(base_dir), name,
+                              structure[name], recurse)
 
 
 def remove_fileset(base_dir, structure):
@@ -72,21 +73,17 @@ def remove_fileset(base_dir, structure):
 
     The base directory itself isn't removed unless it's empty
     """
+    base_dir = os.fsdecode(base_dir)
     for name in structure:
-        fullname = os.path.join(os.fsdecode(base_dir), name)
         struct = structure[name]
-        set_path = SetPath(fullname, struct)
-        try:
-            if set_path.get_type() == "directory":
-                _rmtree(fullname)
-            else:
-                os.remove(fullname)
-        except FileNotFoundError:
-            pass  # if the file doesn't exist, we don't need to remove it
-        except IsADirectoryError:
-            _rmtree(fullname)
-        except NotADirectoryError:
-            os.remove(fullname)
+        range_count = struct.get("range")
+        if range_count:
+            if isinstance(range_count, int):
+                range_count = [range_count]
+            for count in range(*range_count):
+                _delete_file_or_dir(base_dir, name.format(count), struct)
+        else:
+            _delete_file_or_dir(base_dir, name, struct)
 
     # at the end we try to remove the base directory, if it's empty
     try:
@@ -246,7 +243,11 @@ class SetPath():
 # --- INTERNAL FUNCTIONS ---
 
 
-def _call_create_fileset(base_dir, name, structure, recurse):
+def _multi_create_fileset(base_dir, name, structure, recurse):
+    """
+    Wrapper for _create_fileset to be able to create multiple filesets
+    following a range of integers
+    """
     range_count = structure.get("range")
     if range_count:
         if isinstance(range_count, int):
@@ -266,8 +267,8 @@ def _create_fileset(fullname, struct, recurse={}):
     if set_path.get_type() == "directory":
         _create_directory(set_path, always_delete=True)
         for name in struct.get("contents", {}):
-            _call_create_fileset(fullname, name, struct["contents"][name],
-                                 set_path.recurse)
+            _multi_create_fileset(fullname, name, struct["contents"][name],
+                                  set_path.recurse)
         _finish_directory(set_path)
     else:
         if set_path.is_hardlinked():
@@ -354,6 +355,25 @@ def _create_symlink(set_path):
     Creates a symlink according to set_path
     """
     os.symlink(set_path.get("target"), set_path)
+
+
+def _delete_file_or_dir(base_dir, name, struct):
+    """
+    Remove a file or directory in a given base directory
+    """
+    fullname = os.path.join(base_dir, name)
+    set_path = SetPath(fullname, struct)
+    try:
+        if set_path.get_type() == "directory":
+            _rmtree(fullname)
+        else:
+            os.remove(fullname)
+    except FileNotFoundError:
+        pass  # if the file doesn't exist, we don't need to remove it
+    except IsADirectoryError:
+        _rmtree(fullname)
+    except NotADirectoryError:
+        os.remove(fullname)
 
 
 def _rmtree(set_path):
@@ -470,7 +490,8 @@ if __name__ == "__main__":
         },
         "empty_dir": {"type": "dir", "dmode": 0o777},
         "a_bin_file": {"content": b"some_binary_content", "size": 64, "open": "b"},
-        "multi_dir_{:02}": {"range": [1, 20, 7],
+        "multi_dir_{:02}": {
+            "range": [1, 20, 7],
             "contents": {
                 "multi_file_{}": {"size": 10, "range": 5},
             },
