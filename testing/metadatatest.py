@@ -2,6 +2,9 @@ import unittest
 import os
 import io
 import time
+
+import commontest as comtst
+import fileset
 from commontest import old_test_dir, abs_output_dir, iter_equal, xcopytree
 from rdiff_backup import rpath, Globals, selection
 from rdiffbackup import meta_mgr
@@ -78,9 +81,23 @@ class MetadataTest(unittest.TestCase):
         if temprp.lstat():
             return temprp
 
+        # create the bigdir on the fly
+        bigdir_path = os.path.join(comtst.abs_test_dir, b"meta_bigdir")
+        bigdir_struct = {
+            "subdir{}": {
+                "range": 4, "contents": {
+                    "subdir{}": {
+                        "range": 50, "contents": {
+                            "file{}": {"range": 50, "size": 1024}
+                        }
+                    }
+                }
+            }
+        }
+        fileset.create_fileset(bigdir_path, bigdir_struct)
+
         self.make_temp()
-        rootrp = rpath.RPath(Globals.local_connection,
-                             os.path.join(old_test_dir, b"bigdir"))
+        rootrp = rpath.RPath(Globals.local_connection, bigdir_path)
         rpath_iter = selection.Select(rootrp).get_select_iter()
 
         start_time = time.time()
@@ -89,6 +106,8 @@ class MetadataTest(unittest.TestCase):
             mf.write_object(rp)
         mf.close()
         print("Writing metadata took %s seconds" % (time.time() - start_time))
+        print(bigdir_path)
+        fileset.remove_fileset(bigdir_path, bigdir_struct)
         return temprp
 
     def helper_speed(self, compress):

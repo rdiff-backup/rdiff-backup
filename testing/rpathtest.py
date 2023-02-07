@@ -3,8 +3,12 @@ import pickle
 import sys
 import unittest
 import time
-from commontest import old_test_dir, abs_test_dir, re_init_subdir, abs_output_dir, \
+from commontest import (
+    old_test_dir, abs_test_dir, re_init_subdir, abs_output_dir,
     re_init_rpath_dir, os_system
+)
+import commontest as comtst
+import fileset
 from rdiff_backup import Globals, rpath
 
 
@@ -426,13 +430,20 @@ class FileCopying(RPathTest):
     def testDirSizeComp(self):
         """Make sure directories can be equal,
         even if they are of different sizes"""
-        smalldir = rpath.RPath(Globals.local_connection,
-                               os.path.join(old_test_dir, b"dircomptest", b"1"))
-        bigdir = rpath.RPath(Globals.local_connection,
-                             os.path.join(old_test_dir, b"dircomptest", b"2"))
-        # Can guarantee below by adding files to bigdir
-        self.assertGreater(bigdir.getsize(), smalldir.getsize())
-        self.assertEqual(smalldir, bigdir)
+        base_path = os.path.join(comtst.abs_test_dir, b"dircomptest")
+        struct = {
+            "1": {"type": "directory"},
+            "2": {"contents": {"{}": {"range": 500}}},
+        }
+        fileset.create_fileset(base_path, struct)
+        short_dir = rpath.RPath(Globals.local_connection,
+                                os.path.join(base_path, b"1"))
+        long_dir = rpath.RPath(Globals.local_connection,
+                               os.path.join(base_path, b"2"))
+        # Can guarantee below by adding files to long_dir
+        self.assertGreater(long_dir.getsize(), short_dir.getsize())
+        self.assertEqual(short_dir, long_dir)
+        fileset.remove_fileset(base_path, struct)
 
     def testCopy(self):
         """Test copy of various files"""

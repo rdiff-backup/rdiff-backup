@@ -32,7 +32,7 @@ py_ver_brief=${PYTHON_VERSION%.[0-9]}
 
 # Extract the test files one directory higher
 pushd ..
-git clone https://github.com/rdiff-backup/rdiff-backup-filesrepo.git rdiff-backup-filesrepo
+git clone --depth 1 https://github.com/rdiff-backup/rdiff-backup-filesrepo.git rdiff-backup-filesrepo
 # ignore the one "Can not create hard link" error
 7z x rdiff-backup-filesrepo/rdiff-backup_testfiles.tar || true
 popd
