@@ -458,3 +458,61 @@ If the server side is v2.2+, then the warning message will appear.
 Call rdiff-backup with the higher API and the message will disappear.
 
 Calling for example `rdiff-backup --api-version 201 backup loc1 server2::loc2` will make sure that `rdiff-backup server` is being called, getting rid of the warning message.
+
+== How to handle a "No space left on device" message while doing a backup?
+
+If you're doing a backup and get an exception `[Errno 28] No space left on device: ...` (or something similar under Windows), it means exactly what it states, there is not enough space to create your backup.
+You need to first fix the issue, then recover, then make sure that it doesn't happen again.
+
+In the following lines, we'll assume you've called something like `rdiff-backup backup /from /mnt/bak`, which failed with a "No space left" error.
+
+=== Fixing
+
+Check the actual size left with `df -h /mnt/bak` under Linux or `dir /mnt/bak` under Windows.
+Under Linux, you might need to check as well the number of inodes with `df -i /mnt/bak`.
+
+TIP: if the file system doesn't seem to be full, it might be that the default temporary directory instead is full.
+In this case, obviously fix this one issue, check for example the `--tempdir` option in the man pages.
+
+If possible, the simplest approach is to increase the size of the underlying filesystem.
+There are too many ways to do it to describe here, so check the usual sources for your operating system.
+
+If this is not possible, you can create a new bigger partition using a _similar_ file system type (e.g. POSIX to POSIX, NTFS to NTFS, etc), and move the repository from one to the next file system.
+
+If this is also not an option, and you have nothing else outside of the repository that you can move away (or remove), then you can try to remove the following files:
+
+- `/mnt/bak/rdiff-backup-data/*.log`
+- `/mnt/bak/rdiff-backup-data/error_log*`
+- `/mnt/bak/rdiff-backup-data/*_statistics.*`
+
+=== Recovering
+
+First you need to regress the repository with something like:
+
+----
+rdiff-backup --tempdir /somewherelse/tmp regress /mnt/bak
+----
+
+The `--tempdir` option might spare some space on the file system where the repository lies.
+Similarly, you can use `--remote-tempdir` if the repository is remote.
+
+If this fails due to lack of disk space, you're out of luck and need to increase further the file system size as described above.
+
+Then you can remove old increments, first listing them:
+
+----
+rdiff-backup list increments [--size] /mnt/bak
+rdiff-backup remove increments [--force] \
+	--older-than 'Tue Feb  7 06:43:45 2023' /mnt/bak
+----
+
+The date/time can be copied & pasted from the output of the list increments command.
+The `--size` parameter can be used to assess the size of the individual increments, and the `--force` option is necessary if you want to remove more than one increment at once.
+
+=== Avoid
+
+There is no magic method, even databases get corrupt if their disk space dwindles.
+You need to monitor the disk space and regularly remove old increments, or increase the file system size.
+One simple measure can be to call `df -h /mnt/bak` at the end of each backup and keep an eye on space left.
+
+To avoid issues with inodes, use a file system format which doesn't have the issue like XFS, and avoid ones having the limitation like ext4.
