@@ -44,8 +44,11 @@ TODO: fully support tree format with a list of dictionaries, instead of a dictio
 """
 
 import os
+import random
 import shutil
 import stat
+import string
+import sys
 
 
 def create_fileset(base_dir, structure, recurse={}):
@@ -60,8 +63,8 @@ def create_fileset(base_dir, structure, recurse={}):
     recurse["inodes"] = {}
     _create_directory(SetPath(base_dir, {"type": "directory"}, recurse))
     for name in structure:
-        _create_fileset(os.path.join(os.fsdecode(base_dir), name),
-                        structure[name], recurse)
+        _multi_create_fileset(os.fsdecode(base_dir), name,
+                              structure[name], recurse)
 
 
 def remove_fileset(base_dir, structure):
@@ -70,21 +73,17 @@ def remove_fileset(base_dir, structure):
 
     The base directory itself isn't removed unless it's empty
     """
+    base_dir = os.fsdecode(base_dir)
     for name in structure:
-        fullname = os.path.join(os.fsdecode(base_dir), name)
         struct = structure[name]
-        set_path = SetPath(fullname, struct)
-        try:
-            if set_path.get_type() == "directory":
-                _rmtree(fullname)
-            else:
-                os.remove(fullname)
-        except FileNotFoundError:
-            pass  # if the file doesn't exist, we don't need to remove it
-        except IsADirectoryError:
-            _rmtree(fullname)
-        except NotADirectoryError:
-            os.remove(fullname)
+        range_count = struct.get("range")
+        if range_count:
+            if isinstance(range_count, int):
+                range_count = [range_count]
+            for count in range(*range_count):
+                _delete_file_or_dir(base_dir, name.format(count), struct)
+        else:
+            _delete_file_or_dir(base_dir, name, struct)
 
     # at the end we try to remove the base directory, if it's empty
     try:
@@ -244,6 +243,22 @@ class SetPath():
 # --- INTERNAL FUNCTIONS ---
 
 
+def _multi_create_fileset(base_dir, name, structure, recurse):
+    """
+    Wrapper for _create_fileset to be able to create multiple filesets
+    following a range of integers
+    """
+    range_count = structure.get("range")
+    if range_count:
+        if isinstance(range_count, int):
+            range_count = [range_count]
+        for count in range(*range_count):
+            _create_fileset(os.path.join(base_dir, name.format(count)),
+                            structure, recurse)
+    else:
+        _create_fileset(os.path.join(base_dir, name), structure, recurse)
+
+
 def _create_fileset(fullname, struct, recurse={}):
     """
     Recursive part of the fileset creation
@@ -252,8 +267,8 @@ def _create_fileset(fullname, struct, recurse={}):
     if set_path.get_type() == "directory":
         _create_directory(set_path, always_delete=True)
         for name in struct.get("contents", {}):
-            _create_fileset(os.path.join(fullname, name),
-                            struct["contents"][name], set_path.recurse)
+            _multi_create_fileset(fullname, name, struct["contents"][name],
+                                  set_path.recurse)
         _finish_directory(set_path)
     else:
         if set_path.is_hardlinked():
@@ -300,8 +315,30 @@ def _create_file(set_path, always_delete=False):
     if os.path.exists(set_path):
         if always_delete or not os.path.isfile(set_path):
             _rmtree(set_path)
-    with open(set_path, "w" + set_path.get("open")) as fd:
-        fd.write(set_path.get("content"))
+    open_mode = set_path.get("open")
+    with open(set_path, "w" + open_mode) as fd:
+        size = set_path.get("size")
+        content = set_path.get("content")
+        if size is None:
+            fd.write(set_path.get("content"))
+        elif size == 0:
+            pass  # no need to write anything
+        elif content:
+            times = size // len(content)
+            remainder = size % len(content)
+            while times > 0:
+                fd.write(content)
+                times -= 1
+            if remainder:
+                fd.write(content[:remainder])
+        else:
+            if "b" in open_mode:
+                if sys.version_info.major >= 3 and sys.version_info.minor >= 9:
+                    fd.write(random.randbytes(size))
+                else:
+                    fd.write(bytes(random.choices(range(256), k=size)))
+            else:  # random text data
+                fd.write("".join(random.choices(string.printable, k=size)))
     os.chmod(set_path, set_path.get_mode())
 
 
@@ -318,6 +355,25 @@ def _create_symlink(set_path):
     Creates a symlink according to set_path
     """
     os.symlink(set_path.get("target"), set_path)
+
+
+def _delete_file_or_dir(base_dir, name, struct):
+    """
+    Remove a file or directory in a given base directory
+    """
+    fullname = os.path.join(base_dir, name)
+    set_path = SetPath(fullname, struct)
+    try:
+        if set_path.get_type() == "directory":
+            _rmtree(fullname)
+        else:
+            os.remove(fullname)
+    except FileNotFoundError:
+        pass  # if the file doesn't exist, we don't need to remove it
+    except IsADirectoryError:
+        _rmtree(fullname)
+    except NotADirectoryError:
+        os.remove(fullname)
 
 
 def _rmtree(set_path):
@@ -429,10 +485,17 @@ if __name__ == "__main__":
                 "fileB": {"mode": "0544", "inode": "B"},
                 "fileC": {"target": "../a_bin_file"},
                 "fileD": {"inode": "B"},
+                "fileE": {"size": 200},
             }
         },
         "empty_dir": {"type": "dir", "dmode": 0o777},
-        "a_bin_file": {"content": b"some_binary_content", "open": "b"},
+        "a_bin_file": {"content": b"some_binary_content", "size": 64, "open": "b"},
+        "multi_dir_{:02}": {
+            "range": [1, 20, 7],
+            "contents": {
+                "multi_file_{}": {"size": 10, "range": 5},
+            },
+        },
     }
 
     print("base directory: {bd}".format(bd=base_temp_dir))
@@ -441,19 +504,23 @@ if __name__ == "__main__":
     remove_fileset(base_temp_dir, structure)
 
 """
-$ tree -aJps --inodes /tmp/fileset_eh24xnxy.d
+$ tree -aJps --inodes /tmp/fileset_1jgrvpy4.d
 [
-  {"type":"directory","name":"/tmp/fileset_eh24xnxy.d","inode":0,"mode":"0700","prot":"drwx------","size":100,"contents":[
-    {"type":"file","name":"a_bin_file","inode":190,"mode":"0644","prot":"-rw-r--r--","size":19},
-    {"type":"directory","name":"a_dir","inode":185,"mode":"0755","prot":"drwxr-xr-x","size":120,"contents":[
-      {"type":"file","name":"fileA","inode":186,"mode":"0444","prot":"-r--r--r--","size":7},
-      {"type":"file","name":"fileB","inode":187,"mode":"0544","prot":"-r-xr--r--","size":15},
-      {"type":"link","name":"fileC","target":"../a_bin_file","inode":190,"mode":"0777","prot":"lrwxrwxrwx","size":13},
-      {"type":"file","name":"fileD","inode":187,"mode":"0544","prot":"-r-xr--r--","size":15}
-  ]},
-    {"type":"directory","name":"empty_dir","inode":189,"mode":"0777","prot":"drwxrwxrwx","size":40}
+  {"type":"directory","name":"/tmp/fileset_1jgrvpy4.d","inode":0,"mode":"0700","prot":"drwx------","size":100,"contents":[
+    {"type":"file","name":"a_bin_file","inode":84,"mode":"0644","prot":"-rw-r--r--","size":64},
+    {"type":"directory","name":"a_dir","inode":78,"mode":"0755","prot":"drwxr-xr-x","size":140,"contents":[
+      {"type":"file","name":"fileA","inode":79,"mode":"0444","prot":"-r--r--r--","size":7},
+      {"type":"file","name":"fileB","inode":80,"mode":"0544","prot":"-r-xr--r--","size":15},
+      {"type":"link","name":"fileC","target":"../a_bin_file","inode":84,"mode":"0777","prot":"lrwxrwxrwx","size":13},
+      {"type":"file","name":"fileD","inode":80,"mode":"0544","prot":"-r-xr--r--","size":15},
+      {"type":"file","name":"fileE","inode":82,"mode":"0444","prot":"-r--r--r--","size":200}
+    ]},
+    {"type":"directory","name":"empty_dir","inode":83,"mode":"0777","prot":"drwxrwxrwx","size":40},
+    {"type":"directory","name":"multi_dir_XX","inode":150,"mode":"0755","prot":"drwxr-xr-x","size":140,"contents":[
+      {"type":"file","name":"multi_file_Y","inode":151,"mode":"0644","prot":"-rw-r--r--","size":10},
+    ]},
   ]}
 ,
-  {"type":"report","directories":2,"files":5}
+  {"type":"report","directories":6,"files":21}
 ]
 """

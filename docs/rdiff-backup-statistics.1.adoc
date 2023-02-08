@@ -27,7 +27,7 @@ you could later run '[.code]``rdiff-backup-statistics out``'.
 The output has two parts.  The first is simply an average of the all
 matching session_statistics files.  The meaning of these fields is
 explained in the FAQ included in the package, and also at
-https://rdiff-backup.net/docs/FAQ.html#statistics .
+https://rdiff-backup.net/FAQ.html#what_do_the_various_fields_mean_in_the_session_statistics_and_directory_statistics_files .
 
 The second section lists some particularly significant files
 (including directories).  These files are either contain a lot of

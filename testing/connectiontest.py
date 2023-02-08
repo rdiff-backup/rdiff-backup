@@ -2,7 +2,6 @@ import os
 import sys
 import subprocess
 import tempfile
-import time
 import unittest
 from commontest import old_test_dir, abs_test_dir
 from rdiff_backup.connection import LowLevelPipeConnection, PipeConnection, \
@@ -109,7 +108,7 @@ class PipeConnectionTest(unittest.TestCase):
                                   stdout=subprocess.PIPE,
                                   close_fds=True)
         (stdin, stdout) = (self.p.stdin, self.p.stdout)
-        self.conn = PipeConnection(stdout, stdin)
+        self.conn = PipeConnection(stdout, stdin, process=self.p)
         Security._security_level = "override"
 
     def testBasic(self):
@@ -186,9 +185,6 @@ class PipeConnectionTest(unittest.TestCase):
     def tearDown(self):
         """Bring down connection"""
         self.conn.quit()
-        time.sleep(0.1)  # give the process time to quit
-        if (self.p.poll() is None):
-            self.p.terminate()
 
 
 class RedirectedConnectionTest(unittest.TestCase):
@@ -236,6 +232,27 @@ class RedirectedConnectionTest(unittest.TestCase):
 
     def tearDown(self):
         SetConnections.CloseConnections()
+
+
+@unittest.skipIf(os.name == "nt", "No way to prolongate a Windows command")
+class LengthyConnectionTest(unittest.TestCase):
+    """Test what happens if a server process takes too long to quit"""
+
+    def test_killing_server_process(self):
+        """Make the server process take longer"""
+        pipe_cmd = "%s testing/server.py %s" % (sys.executable, SourceDir)
+        pipe_cmd += "; sleep 10"
+        self.p = subprocess.Popen(pipe_cmd,
+                                  shell=True,
+                                  stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE,
+                                  close_fds=True)
+        (stdin, stdout) = (self.p.stdin, self.p.stdout)
+        self.conn = PipeConnection(stdout, stdin, process=self.p)
+        Security._security_level = "override"
+        # the sleep command should never be finished at this stage
+        self.conn.quit()
+        self.assertEqual(self.conn.process.returncode, -15)  # kill -15
 
 
 if __name__ == "__main__":

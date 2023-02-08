@@ -1918,36 +1918,48 @@ def delete_dir_no_files(rp):
 
 
 # @API(setdata_local, 200)
-def setdata_local(rpath):
-    """Set eas/acls, uid/gid, resource fork in data dictionary
+def setdata_local(rp):
+    """
+    Set eas/acls, uid/gid, resource fork in data dictionary
 
     This is a global function because it must be called locally, since
     these features may exist or not depending on the connection.
-
     """
-    assert rpath.conn is Globals.local_connection, (
+    assert rp.conn is Globals.local_connection, (
         "Function must be called locally not over {conn}.".format(
-            conn=rpath.conn))
+            conn=rp.conn))
     reset_perms = False
-    if (Globals.process_uid != 0 and not rpath.readable() and rpath.isowner()):
-        reset_perms = True
-        rpath.chmod(0o400 | rpath.getperms())
+    if (Globals.process_uid != 0 and not rp.readable() and rp.isowner()):
+        if rp.lstat() == "sym":
+            # a symlink which isn't readable is strange, hence better not backup
+            # only case known is 'C:\Users\All Users' mounted over Samba
+            # Neither Windows nor Linux support chmod without following
+            # symlinks, so we would anyway try to chmod the file pointed at,
+            # not the symlink itself
+            rp.data["type"] = None
+            log.ErrorLog.write_if_open(
+                "ListError", rp,
+                OSError("[Errno n/a] Ignoring strange unreadable symlink"))
+            return
+        else:
+            reset_perms = True
+            rp.chmod(0o400 | rp.getperms())
 
-    rpath.data['uname'] = usrgrp.uid2uname(rpath.data['uid'])
-    rpath.data['gname'] = usrgrp.gid2gname(rpath.data['gid'])
+    rp.data['uname'] = usrgrp.uid2uname(rp.data['uid'])
+    rp.data['gname'] = usrgrp.gid2gname(rp.data['gid'])
     if Globals.eas_conn:
-        rpath.data['ea'] = ea.get_meta(rpath)
+        rp.data['ea'] = ea.get_meta(rp)
     if Globals.acls_conn:
-        rpath.data['acl'] = acl_posix.get_meta(rpath)
+        rp.data['acl'] = acl_posix.get_meta(rp)
     if Globals.win_acls_conn:
-        rpath.data['win_acl'] = acl_win.get_meta(rpath)
-    if Globals.resource_forks_conn and rpath.isreg():
-        rpath.get_resource_fork()
-    if Globals.carbonfile_conn and rpath.isreg():
-        rpath.data['carbonfile'] = _carbonfile_get(rpath)
+        rp.data['win_acl'] = acl_win.get_meta(rp)
+    if Globals.resource_forks_conn and rp.isreg():
+        rp.get_resource_fork()
+    if Globals.carbonfile_conn and rp.isreg():
+        rp.data['carbonfile'] = _carbonfile_get(rp)
 
     if reset_perms:
-        rpath.chmod(rpath.getperms() & ~0o400)
+        rp.chmod(rp.getperms() & ~0o400)
 
 
 def _carbonfile_get(rp):

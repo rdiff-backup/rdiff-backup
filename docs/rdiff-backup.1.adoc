@@ -500,7 +500,7 @@ For more information, see the web page, the wiki, and the entries for those opti
 rdiff-backup has a number of file selection options.
 When rdiff-backup is run, it searches through the given source directory and backs up all the files matching the specified options.
 This selection system may appear complicated, but it is supposed to be flexible and easy-to-use.
-If you just want to learn the basics, first look at the selection examples in the *examples* file included in the package, or on the web at https://rdiff-backup.net/docs/examples.html.
+If you just want to learn the basics, first look at the selection examples in the *examples* file included in the package, or on the web at https://rdiff-backup.net/examples.html.
 
 rdiff-backup's selection system was originally inspired by *rsync*(1), but there are many differences.
 For instance, trailing backslashes have no special significance.

@@ -19,7 +19,7 @@ else
 	if [ ! -f ${TESTREPODIR}/${TESTTARFILE} ]
 	then
 		rm -fr ${TESTREPODIR}  # Clean away potential cruft
-		git clone ${TESTREPOURL}
+		git clone --depth 1 ${TESTREPOURL}
 	else  # update the existing Git repo
 		git -C ${TESTREPODIR} pull --ff-only  # fail if things don't look right
 	fi
