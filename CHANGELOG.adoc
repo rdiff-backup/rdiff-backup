@@ -9,6 +9,42 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * *NEW* features and bug-**FIX**es are of course of interest as well.
 * **DOC**umentation (and website) changes are marked as such.
 
+== New in v2.2.3.dev17+g93cd515.d20230210 (2023-02-10)
+
+=== Changes
+
+* DOC: add FAQ on how to handle 'No space left on device' messages, 
+       closes #838
+* DOC: better describe what is expected from commit messages, get rid 
+       of DEV and WEB prefixes, as irrelevant to end-users changelog
+* DOC: describe better principles of new CLI in migration documentation 
+       and add 'remove' example, closes #830
+* DOC: fixed some typos and formatting in the examples documentation
+* DOC: fix example with outdated --check-destination-dir instead of 
+       regress in man-page
+* DOC: fix mangled list increments example call
+* DOC: fix typo in examples because --print-statistics comes _after_ 
+       backup command, closes #820
+* DOC: Polish and document the Debian package build process and also 
+       how to trigger new builds at the rdiff-backup PPA on Launchpad.net
+* FIX: allow user to use curly braces for shell purposes in 
+       remote-schema via format() double-up escape mechanism, closes #818
+* FIX: avoid message about renaming over same inode when hardlinks' 
+       metadata is modified but not content, closes #816
+* FIX: CloseConnections doesn't wait for child prcesses to die, losing 
+       output, closes #819
+* FIX: ignore instead of failing on strange unreadable symlink 'All 
+       Users' on SMB share, closes #817
+
+=== Authors
+
+* Eric L
+* Marc van der Sluys
+* Otto Kekäläinen
+* Trevor E Cordes
+* Y.D.X
+
+
 == New in v2.2.2 (2022-12-28)
 
 === Changes
