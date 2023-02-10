@@ -372,8 +372,7 @@ Even if disabled (the default), this information will still be available from th
 This option is only to be used if you encounter the issue of metadata mirrors with the same timestamp.
 In such cases, you may use this flag to first recover from the failed backup with something like
 
-  rdiff-backup --allow-duplicate-timestamps \
-               --check-destination-dir {targetdir}
+  rdiff-backup regress --allow-duplicate-timestamps {targetdir}
 +
 after which you will need to remove those old duplicate entries using the *remove increments* action.
 
