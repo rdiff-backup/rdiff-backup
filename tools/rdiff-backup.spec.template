@@ -19,9 +19,6 @@ License: GPLv2+
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: %{PYTHON_NAME} >= %{PYTHON_VERSION}, %{PYTHON_NAME} < %{NEXT_PYTHON_VERSION}
-%if %{PYTHON_VERSON} < 3.8
-Requires: %{PYTHON_NAME}-importlib-metadata
-%endif
 Requires: ${PYTHON_NAME}-PyYAML
 
 BuildPrereq: %{PYTHON_NAME}-devel >= 3.6, librsync-devel >= 1.0.0

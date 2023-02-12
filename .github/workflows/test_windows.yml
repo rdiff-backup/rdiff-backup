@@ -17,7 +17,7 @@ defaults:
     shell: bash
 
 env:
-  WIN_PYTHON_VERSION: 3.10.7
+  WIN_PYTHON_VERSION: 3.11.2
   WIN_LIBRSYNC_VERSION: v2.3.2
 
 jobs:

@@ -18,29 +18,17 @@
 # 02110-1301, USA
 """Hold a variety of constants usually set at initialization."""
 
-import re
+import importlib.metadata
 import os
 import platform
+import re
 import sys
 from rdiff_backup import log
 
 # The current version of rdiff-backup
 # Get it from package info or fall back to DEV version.
-# importlib/metadata is the new approach, pkg_resources the old one, kept for
-# compatibility reasons (and because importlib_metadata -for Python < 3.8-
-# isn't yet packaged for all distros).
 try:
-    try:
-        from importlib import metadata
-        version = metadata.version('rdiff-backup')
-    except ImportError:
-        try:  # the fallback library for Python below 3.8
-            import importlib_metadata as metadata
-            version = metadata.version('rdiff-backup')
-        except ImportError:
-            # the old method requiring setuptools to be installed
-            import pkg_resources
-            version = pkg_resources.get_distribution("rdiff-backup").version
+    version = importlib.metadata.version('rdiff-backup')
 except BaseException:  # if everything else fails...
     version = "DEV.no.metadata"
 

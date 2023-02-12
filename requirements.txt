@@ -18,7 +18,6 @@
 setuptools
 # also listed in setup.py!
 setuptools-scm
-importlib-metadata ; python_version < "3.8"
 PyYAML  # for rdiff-backup >= 2.1
 
 pywin32 ; platform_system=="Windows"
@@ -28,7 +27,7 @@ pywin32 ; platform_system=="Windows"
 twine
 wheel
 #py2exe; platform_system=="Windows"
-pyinstaller==5.4; platform_system=="Windows"
+pyinstaller; platform_system=="Windows"
 #certifi; platform_system=="Windows"
 
 #--- optional ---

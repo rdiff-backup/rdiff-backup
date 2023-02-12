@@ -266,7 +266,7 @@ setup(
     # maintainer and maintainer_email could be used to differentiate the package owner
     url="https://rdiff-backup.net/",
     download_url="https://github.com/rdiff-backup/rdiff-backup/releases",
-    python_requires='~=3.6',
+    python_requires='~=3.8',
     platforms=['linux', 'win32'],
     entry_points={
         'console_scripts': [
@@ -344,7 +344,6 @@ setup(
         'clean': clean,
     },
     install_requires=[
-        'importlib-metadata ; python_version < "3.8"',
         'pywin32 ; platform_system == "Windows"',
         'PyYAML',
     ],

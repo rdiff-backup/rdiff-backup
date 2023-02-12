@@ -13,5 +13,5 @@ win_arch: "{{ (win_bits == '64') | ternary('x64', 'x86') }}"
 # Bits to be used for compiling librsync, win32 or win-amd64
 win_python_arch: "{{ (win_bits == '64') | ternary('win-amd64', 'win32') }}-cpython"
 
-python_version: "3.10"
-python_version_full: "{{ python_version }}.7"
+python_version: "3.11"
+python_version_full: "{{ python_version }}.0"
