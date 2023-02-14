@@ -634,8 +634,8 @@ class RPath(RORPath):
     identification (i.e. if two files have the the same (==) data
     dictionary, they are the same file).
     """
-    # class index to make temporary files unique, see get_temp_rpath
-    _temp_file_index = 0
+    # class index to make temporary files unique, see _get_next_tempfile_name
+    _temp_file_index = -1
 
     def __init__(self, connection, base, index=(), data=None):
         """
@@ -1094,30 +1094,22 @@ class RPath(RORPath):
         if sibling or not self.isdir():
             return self.get_parent_rp().get_temp_rpath()
 
+        # When the file system hosting the rdiff-backup-data directory
+        # is (almost) full and when the --tempdir flag is defined,
+        # attempt to save temporary files on a different path and
+        # hopefully file system.
+        if (tempfile.tempdir
+                and shutil.disk_usage(self.path).free < 0):  # 1048576):
+            # FIXME disabled because os.rename between file systems fails
+            tempdir = self.newpath(tempfile.tempdir)
+        else:
+            tempdir = self  # at this stage, we know self is a directory
+
         # we have to create our own "uniqueness" as tempfile.mktemp is
         # obsolete and we just want a name agnostic regarding file vs. dir
         while True:
-            if self.__class__._temp_file_index > 100000000:
-                log.Log("Resetting tempfile index", log.NOTE)
-                self.__class__._temp_file_index = 0
+            tf = tempdir.append(self._get_next_tempfile_name())
 
-            # When the file system hosting the rdiff-backup-data directory
-            # is full and when the --tempdir flag is defined, attempt to save
-            # temporary files on a different path / file system.
-            if tempfile.tempdir and (shutil.disk_usage(self.path).free == 0):
-                # If tempfile.tempdir is manually passed in via the --tempdir
-                # cli flag, it defaults being a bytes string, as such we need to
-                # convert the target path to a string first
-                tempdir = os.fsdecode(tempfile.tempdir)
-            else:
-                tempdir = None
-
-            _tf = 'rdiff-backup.tmp.{index:d}'.format(index=self.__class__._temp_file_index)
-            if not tempdir:
-                tf = self.append(_tf)
-            else:
-                tf = os.path.join(tempdir, _tf)
-            self.__class__._temp_file_index += 1
             if not tf.lstat():
                 return tf
 
@@ -1416,6 +1408,17 @@ class RPath(RORPath):
         """Change access control list of rp"""
         acl_win.write_meta(self, acl_meta)
         self.data['win_acl'] = acl_meta
+
+    @classmethod
+    def _get_next_tempfile_name(cls):
+        """
+        Internal function to increment index and return temporary file name
+        """
+        cls._temp_file_index += 1
+        if cls._temp_file_index > 100000000:
+            log.Log("Resetting tempfile index", log.NOTE)
+            cls._temp_file_index = 0
+        return "rdiff-backup.tmp.{idx:d}".format(idx=cls._temp_file_index)
 
     def _debug_consistency(self):
         """Raise an error if consistency of rp broken

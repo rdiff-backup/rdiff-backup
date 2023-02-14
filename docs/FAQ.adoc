@@ -496,6 +496,9 @@ rdiff-backup --tempdir /somewherelse/tmp regress /mnt/bak
 The `--tempdir` option might spare some space on the file system where the repository lies.
 Similarly, you can use `--remote-tempdir` if the repository is remote.
 
+// FIXME remove the note once fixed in rpath
+NOTE: due to a current limitation, the tempdir options might not help as much as they could.
+
 If this fails due to lack of disk space, you're out of luck and need to increase further the file system size as described above.
 
 Then you can remove old increments, first listing them:
