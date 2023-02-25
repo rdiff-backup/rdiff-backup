@@ -227,6 +227,35 @@ class SetPath():
         else:
             return int(mode, base=8)
 
+    def set_times(self, is_symlink=False):
+        """
+        Set access and/or modification times of files according to their
+        parameters.
+
+        Returns None if nothing was changed, else a tuple of times modified
+        """
+        atime = self.get("atime")
+        mtime = self.get("mtime")
+        atime_ns = self.get("atime_ns")
+        mtime_ns = self.get("mtime_ns")
+        if atime_ns is None and atime is not None:
+            atime_ns = int(atime * 1_000_000_000)
+        if mtime_ns is None and mtime is not None:
+            mtime_ns = int(mtime * 1_000_000_000)
+        if atime_ns is None and mtime_ns is None:
+            return  # nothing to do
+        if atime_ns is None or mtime_ns is None:
+            lstat = os.lstat(self)
+            if atime_ns is None:
+                atime_ns = lstat.st_atime_ns
+            if mtime_ns is None:
+                mtime_ns = lstat.st_mtime_ns
+        if os.utime in os.supports_follow_symlinks:
+            os.utime(self, ns=(atime_ns, mtime_ns), follow_symlinks=False)
+        elif not is_symlink:
+            os.utime(self, ns=(atime_ns, mtime_ns))
+        return (atime_ns, mtime_ns)
+
     def get(self, param):
         """
         Get the value of the given parameters across own values, recursive ones
@@ -302,6 +331,7 @@ def _finish_directory(set_path):
     have been created.
     """
     os.chmod(set_path, set_path.get_mode())
+    set_path.set_times()
 
 
 def _create_file(set_path, always_delete=False):
@@ -340,6 +370,7 @@ def _create_file(set_path, always_delete=False):
             else:  # random text data
                 fd.write("".join(random.choices(string.printable, k=size)))
     os.chmod(set_path, set_path.get_mode())
+    set_path.set_times()
 
 
 def _create_hardlink(set_path):
@@ -348,6 +379,7 @@ def _create_hardlink(set_path):
     """
     os.sync()
     os.link(set_path.get("target"), set_path)
+    set_path.set_times()  # beware that last hardlink wins!
 
 
 def _create_symlink(set_path):
@@ -355,6 +387,7 @@ def _create_symlink(set_path):
     Creates a symlink according to set_path
     """
     os.symlink(set_path.get("target"), set_path)
+    set_path.set_times(is_symlink=True)
 
 
 def _delete_file_or_dir(base_dir, name, struct):
@@ -481,12 +514,13 @@ if __name__ == "__main__":
         "a_dir": {
             "rec": {"fmode": 0o444, "content": "default content"},
             "contents": {
-                "fileA": {"content": "initial", "inode": 0},
-                "fileB": {"mode": "0544", "inode": "B"},
-                "fileC": {"target": "../a_bin_file"},
-                "fileD": {"inode": "B"},
+                "fileA": {"content": "initial", "inode": 0, "mtime": 10_000},
+                "fileB": {"mode": "0544", "inode": "B", "mtime": 15_000},
+                "fileC": {"target": "../a_bin_file", "mtime": 20_000},
+                "fileD": {"inode": "B", "mtime": 30_000},  # last hardlink wins!
                 "fileE": {"size": 200},
-            }
+            },
+            "atime": 50_000, "mtime": 50_001,  # tree doesn't show atime
         },
         "empty_dir": {"type": "dir", "dmode": 0o777},
         "a_bin_file": {"content": b"some_binary_content", "size": 64, "open": "b"},
@@ -500,25 +534,44 @@ if __name__ == "__main__":
 
     print("base directory: {bd}".format(bd=base_temp_dir))
     create_fileset(base_temp_dir, structure)
-    subprocess.call(["tree", "-aJps", "--inodes", base_temp_dir])
+    subprocess.call(["tree", "-aDJps", "--inodes", "--timefmt", "%s",
+                     base_temp_dir])
     remove_fileset(base_temp_dir, structure)
 
 """
-$ tree -aJps --inodes /tmp/fileset_1jgrvpy4.d
+$ tree -aDJps --inodes --timefmt %s /tmp/fileset_0e2bgq6t.d
 [
-  {"type":"directory","name":"/tmp/fileset_1jgrvpy4.d","inode":0,"mode":"0700","prot":"drwx------","size":100,"contents":[
-    {"type":"file","name":"a_bin_file","inode":84,"mode":"0644","prot":"-rw-r--r--","size":64},
-    {"type":"directory","name":"a_dir","inode":78,"mode":"0755","prot":"drwxr-xr-x","size":140,"contents":[
-      {"type":"file","name":"fileA","inode":79,"mode":"0444","prot":"-r--r--r--","size":7},
-      {"type":"file","name":"fileB","inode":80,"mode":"0544","prot":"-r-xr--r--","size":15},
-      {"type":"link","name":"fileC","target":"../a_bin_file","inode":84,"mode":"0777","prot":"lrwxrwxrwx","size":13},
-      {"type":"file","name":"fileD","inode":80,"mode":"0544","prot":"-r-xr--r--","size":15},
-      {"type":"file","name":"fileE","inode":82,"mode":"0444","prot":"-r--r--r--","size":200}
+  {"type":"directory","name":"/tmp/fileset_0e2bgq6t.d","inode":0,"mode":"0700","prot":"drwx------","size":160,"time":"1677348476","contents":[
+    {"type":"file","name":"a_bin_file","inode":1407,"mode":"0644","prot":"-rw-r--r--","size":64,"time":"1677348476"},
+    {"type":"directory","name":"a_dir","inode":1401,"mode":"0755","prot":"drwxr-xr-x","size":140,"time":"50001","contents":[
+      {"type":"file","name":"fileA","inode":1402,"mode":"0444","prot":"-r--r--r--","size":7,"time":"10000"},
+      {"type":"file","name":"fileB","inode":1403,"mode":"0544","prot":"-r-xr--r--","size":15,"time":"30000"},
+      {"type":"link","name":"fileC","target":"../a_bin_file","inode":1407,"mode":"0777","prot":"lrwxrwxrwx","size":13,"time":"20000"},
+      {"type":"file","name":"fileD","inode":1403,"mode":"0544","prot":"-r-xr--r--","size":15,"time":"30000"},
+      {"type":"file","name":"fileE","inode":1405,"mode":"0444","prot":"-r--r--r--","size":200,"time":"1677348476"}
     ]},
-    {"type":"directory","name":"empty_dir","inode":83,"mode":"0777","prot":"drwxrwxrwx","size":40},
-    {"type":"directory","name":"multi_dir_XX","inode":150,"mode":"0755","prot":"drwxr-xr-x","size":140,"contents":[
-      {"type":"file","name":"multi_file_Y","inode":151,"mode":"0644","prot":"-rw-r--r--","size":10},
+    {"type":"directory","name":"empty_dir","inode":1406,"mode":"0777","prot":"drwxrwxrwx","size":40,"time":"1677348476"},
+    {"type":"directory","name":"multi_dir_01","inode":1408,"mode":"0755","prot":"drwxr-xr-x","size":140,"time":"1677348476","contents":[
+      {"type":"file","name":"multi_file_0","inode":1409,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_1","inode":1410,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_2","inode":1411,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_3","inode":1412,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_4","inode":1413,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"}
     ]},
+    {"type":"directory","name":"multi_dir_08","inode":1414,"mode":"0755","prot":"drwxr-xr-x","size":140,"time":"1677348476","contents":[
+      {"type":"file","name":"multi_file_0","inode":1415,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_1","inode":1416,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_2","inode":1417,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_3","inode":1418,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_4","inode":1419,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"}
+    ]},
+    {"type":"directory","name":"multi_dir_15","inode":1420,"mode":"0755","prot":"drwxr-xr-x","size":140,"time":"1677348476","contents":[
+      {"type":"file","name":"multi_file_0","inode":1421,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_1","inode":1422,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_2","inode":1423,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_3","inode":1424,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"},
+      {"type":"file","name":"multi_file_4","inode":1425,"mode":"0644","prot":"-rw-r--r--","size":10,"time":"1677348476"}
+    ]}
   ]}
 ,
   {"type":"report","directories":6,"files":21}
