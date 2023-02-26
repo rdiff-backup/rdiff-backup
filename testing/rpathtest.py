@@ -435,7 +435,8 @@ class FileCopying(RPathTest):
             "1": {"type": "directory"},
             "2": {"contents": {"{}": {"range": 500}}},
         }
-        fileset.create_fileset(base_path, struct)
+        fileset.create_fileset(base_path, struct,
+                               recurse={"atime": 12345, "mtime": 12345})
         short_dir = rpath.RPath(Globals.local_connection,
                                 os.path.join(base_path, b"1"))
         long_dir = rpath.RPath(Globals.local_connection,
