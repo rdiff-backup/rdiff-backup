@@ -9,7 +9,25 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * *NEW* features and bug-**FIX**es are of course of interest as well.
 * **DOC**umentation (and website) changes are marked as such.
 
-== New in v2.2.3.dev17+g93cd515.d20230210 (2023-02-10)
+== New in v2.2.4 (2023-02-27)
+
+=== Changes
+
+* CHG: revert addition of Python 3.11 to 2.2 revision line
+* CHG: temp directory given by `--tempdir` isn't used as often as it 
+       could to avoid cross-filesystems renaming errors (impossible to address 
+       now)
+* FIX: str object has no lstat attribute when using tempdir for full 
+       repository file system, closes #850
+* NEW: add Python 3.11 to the Linux versions compiled on PyPI (Windows 
+       stays on 3.10)
+
+=== Authors
+
+* Eric L
+
+
+== New in v2.2.3 (2023-02-10)
 
 === Changes
 
