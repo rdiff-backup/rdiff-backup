@@ -732,7 +732,7 @@ In doubt subscribe to and ask the mailing list:: https://lists.nongnu.org/mailma
 
 == SEE ALSO
 
-*python*(1), *rdiff*(1), *rsync*(1), *ssh*(1).
+*rdiff-backup-old*(1), *python*(1), *rdiff*(1), *rsync*(1), *ssh*(1).
 
 The main rdiff-backup web page is at https://rdiff-backup.net/.
 It has more documentation, links to the mailing list and source code.

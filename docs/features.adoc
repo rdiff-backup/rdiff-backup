@@ -109,7 +109,7 @@ will backup the resource forks which store, for instance, Finder
 information. Most unix backup programs would only backup the data forks
 and discard the resource forks.
 ACL and EA support:: If rdiff-backup can find the
-http://pylibacl.sourceforge.net/[pylibacl] and
+https://pylibacl.k1024.org/[pylibacl] and
 https://pyxattr.k1024.org/readme.html[pyxattr]
 (http://cheeseshop.python.org/pypi/xattr[mac version]) modules, and if
 the file system supports these features, rdiff-backup will preserve
