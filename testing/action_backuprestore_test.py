@@ -279,5 +279,17 @@ class PreQuotingTest(unittest.TestCase):
             fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
 
 
+class ConnectionHandlingTest(unittest.TestCase):
+    """
+    Test handling of wrong connection
+    """
+
+    def test_wrong_connection(self):
+        # we backup using a non existing destination location
+        self.assertNotEqual(comtst.rdiff_backup_action(
+            True, True, ".", "doesnotexist::/some_dir",
+            ("--api-version", "201"), b"backup", ()), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -280,6 +280,9 @@ class BaseAction:
     # list of parent parsers as defined above
     parent_parsers = []
 
+    # connection status
+    conn_status = Globals.RET_CODE_OK
+
     @classmethod
     def get_name(cls):
         """
@@ -446,8 +449,6 @@ class BaseAction:
         """
         Connect to potentially provided locations arguments, remote or local.
 
-        Defines the current time as being the time of a potentially upcoming
-        backup.
         Returns self, to be used as context manager.
         """
 
@@ -466,13 +467,17 @@ class BaseAction:
             Security.initialize(self.get_security_class(), cmdpairs)
             self.connected_locations = list(
                 map(SetConnections.get_connected_rpath, cmdpairs))
+
+            # if a connection is None, it's an error
+            for conn, loc in zip(self.connected_locations,
+                                 self.values.locations):
+                if conn is None:
+                    log.Log("Location '{lo}' couldn't be connected.".format(
+                        lo=loc), log.ERROR)
+                    self.conn_status = Globals.RET_CODE_ERR
         else:
             Security.initialize(self.get_security_class(), [])
             self.connected_locations = []
-
-        # once the connection is set, we can define "now" as being the current
-        # time, unless the user defined a fixed a current time.
-        Time.set_current_time(self.values.current_time)
 
         return self
 
@@ -483,19 +488,7 @@ class BaseAction:
         Whatever can be checked without changing anything to the environment.
         Return 0 if everything looked good, else an error code.
         """
-        ret_code = Globals.RET_CODE_OK
-
-        if 'locations' not in self.values:
-            return ret_code
-
-        # if a connection is None, it's an error
-        for conn, loc in zip(self.connected_locations, self.values.locations):
-            if conn is None:
-                log.Log("Location '{lo}' couldn't be connected.".format(
-                    lo=loc), log.ERROR)
-                ret_code |= Globals.RET_CODE_ERR
-
-        return ret_code
+        return self.conn_status
 
     def setup(self):
         """
@@ -503,6 +496,10 @@ class BaseAction:
 
         Return 0 if everything looked good, else an error code.
         """
+        # we can define "now" as being the current time,
+        # unless the user defined a fixed a current time.
+        Time.set_current_time(self.values.current_time)
+
         if self.values.tempdir:
             # At least until Python 3.10, the module tempfile doesn't work
             # properly,
@@ -525,6 +522,12 @@ class BaseAction:
         Return 0 if everything looked good, else an error code.
         """
         return Globals.RET_CODE_OK
+
+    def is_connection_ok(self):
+        """
+        Return True if connection is OK, False else
+        """
+        return not self.conn_status & Globals.RET_CODE_ERR
 
     def _operate_regress(self, try_regress=True,
                          noticeable=False, force=False):
