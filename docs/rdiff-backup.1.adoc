@@ -463,7 +463,7 @@ So if the '[.code]``host_info``' is '[.code]``user@host.net``', then rdiff-backu
 Using *--remote-schema*, rdiff-backup can invoke an arbitrary command in order to open up a remote pipe.
 For instance,
 
- rdiff-backup backup --remote-schema 'cd /usr; {h}' \
+ rdiff-backup --remote-schema 'cd /usr; {h}' backup \
                      foo 'rdiff-backup server'::bar
 
 is basically equivalent to (but slower than)
