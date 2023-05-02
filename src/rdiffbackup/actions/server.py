@@ -51,7 +51,7 @@ class ServerAction(actions.BaseAction):
 
     def connect(self):
         conn_value = super().connect()
-        if conn_value:
+        if conn_value.is_connection_ok():
             Security.initialize(self.get_security_class(), [],
                                 security_level=self.values.restrict_mode,
                                 restrict_path=self.values.restrict_path)
