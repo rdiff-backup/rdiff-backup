@@ -9,6 +9,23 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * *NEW* features and bug-**FIX**es are of course of interest as well.
 * **DOC**umentation (and website) changes are marked as such.
 
+== New in v2.2.5 (2023-05-06)
+
+=== Changes
+
+* DOC: fix man page to have correct arguments order in example, closes 
+       #867
+* FIX: cross-version issue with 2.0.5 complaining about KeyError 
+       restrict_path, closes #872
+* FIX: fail gracefully when connection(s) can't be setup e.g. in case 
+       of network error, closes #868
+
+=== Authors
+
+* Eric L
+* Frank Crawford
+
+
 == New in v2.2.4 (2023-02-27)
 
 === Changes
