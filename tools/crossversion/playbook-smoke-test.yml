@@ -63,7 +63,7 @@
   - name: check that the remote rdiff-backup works
     command: >
       rdiff-backup --remote-schema '{{ remote_schema }}' --test-server
-      {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}/simplebackup
+      {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}
     delegate_to: localhost
 
   - name: make a simple backup from the local directory to remote repo

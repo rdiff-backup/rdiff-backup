@@ -114,6 +114,7 @@ def reset_restrict_path(rp):
         "Function works locally not over '{conn}'.".format(conn=rp.conn))
     global _restrict_path, _restrict_path_list
     _restrict_path = rp.normalize().path
+    Globals.restrict_path = _restrict_path  # compat200
     _restrict_path_list = _restrict_path.split(b"/")
 
 

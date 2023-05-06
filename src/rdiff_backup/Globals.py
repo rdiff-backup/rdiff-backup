@@ -247,6 +247,10 @@ file_statistics = 1
 # object.  Access is provided to increment error counts.
 ITRB = None
 
+# If this is set, it indicates that the remote connection should only
+# deal with paths inside of restrict_path.
+restrict_path = None  # compat200
+
 # If set, a file will be marked as changed if its inode changes.  See
 # the man page under --no-compare-inode for more information.
 compare_inode = 1
