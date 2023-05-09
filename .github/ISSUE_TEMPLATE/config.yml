@@ -1,0 +1,10 @@
+# check https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository#configuring-the-template-chooser
+
+blank_issues_enabled: false
+contact_links:
+  - name: rdiff-backup mailing list
+    url: https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users
+    about: A better place to ask questions and get support from the community.
+  - name: rdiff-backup documentation
+    url: https://rdiff-backup.net/#documentation
+    about: Check the documentation, before asking questions.

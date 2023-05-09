@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: "[BUG]"
-labels: ''
+title: "[BUG] "
+labels: ["bug", "triage"]
 assignees: ''
 
 ---
@@ -13,7 +13,8 @@ REPLACE THIS LINE - A clear and concise description of what the bug is
 
 ## Version, Python, Operating System
 
-Call `rdiff-backup info` (version >= 2.1) or `rdiff-backup -v9` and replace the following line with the output, repeat for each environment impacted:
+Call `rdiff-backup info` and replace the following line with the output,
+repeat for each environment impacted, especially if using remote operations:
 
 ```yaml
 <REPLACE THIS LINE - version info>
