@@ -42,7 +42,7 @@ The rdiff-backup commands knows four types of parameters
 Note that this documents the _new_ command line interface of rdiff-backup since 2.1+;
 for the traditional one, check *rdiff-backup-old(1)* but consider that it is deprecated and will disappear.
 
-=== Options
+=== Generic options
 
 -h, --help::
 Prints brief usage information and exits.
