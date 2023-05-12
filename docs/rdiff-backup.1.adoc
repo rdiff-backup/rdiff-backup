@@ -193,7 +193,7 @@ sizes of that directory will be shown.
 regress [<<_compression_options,COMPRESSION OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [<<_timestamp_options,TIMESTAMP OPTIONS>>] _repository_::
 If an rdiff-backup session fails, this action will undo the failed directory.
 This happens automatically if you attempt to back-up to a directory and the last backup failed.
-You can use the *--force* option to undo the last backup even if it wasn't failed.
+You can use the *--force* option to undo the last backup even if it wasn't failed (starting with API 201, use *--api-version* if necessary).
 
 remove *increments* *--older-than* _time_ [*--size*] _repository_:: Remove the incremental backup information in the destination directory that has been around longer than the given time, or the oldest one if no time is provided.
 +
