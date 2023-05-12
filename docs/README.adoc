@@ -26,14 +26,15 @@ Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remo
 * xref:features.adoc[Most relevant features]
 * xref:examples.adoc[Usage examples]
 * xref:FAQ.adoc[Frequently asked questions]
-* xref:Windows-README.adoc[Windows specific documentation] - possibly outdated
+* xref:Windows-README.adoc[Windows specific documentation]
 * xref:migration.adoc[How to migrate from rdiff-backup 1.x to 2.x]
 * man pages (_no navigation, come back with your browser's keys_):
 ** xref:rdiff-backup.1.adoc[rdiff-backup(1)]
 ** xref:rdiff-backup-delete.1.adoc[rdiff-backup-delete(1)]
 ** xref:rdiff-backup-statistics.1.adoc[rdiff-backup-statistics(1)]
 ** link:other/rdiff-backup-old.1.html[rdiff-backup-old(1)^] (generated with man2html)
-* http://arctic.org/~dean/rdiff-backup/unattended.html[Dean Gaudet's unattended rdiff-backup page^] details how to configure ssh to make unattended rdiff-backup sessions more secure.
+* External documents:
+** http://arctic.org/~dean/rdiff-backup/unattended.html[Dean Gaudet's unattended rdiff-backup page^] details how to configure ssh to make unattended rdiff-backup sessions more secure.
 
 === Developer documentation
 
@@ -42,7 +43,7 @@ Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remo
 * xref:CODING.adoc[Coding conventions]
 * xref:DOCUMENTATION.adoc[Documentation guidelines]
 * link:./api[Client-server API documentation] (i.e. when used over SSH)
-* link:./arch[Architecture documentation], if you want/need to know the internals of rdiff-backup
+* link:./arch[Architecture documentation], if you want/need to know the internas of rdiff-backup
 * http://www.w3.org/TR/NOTE-datetime[W3 note describing a time format rdiff-backup uses^]
 
 === Other documentation
