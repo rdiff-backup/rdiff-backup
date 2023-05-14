@@ -81,7 +81,7 @@ class ReadDir(Dir, locations.ReadLocation):
         # I suspect that not all users can read symlinks with os.readlink
         if (is_windows
                 and ("--exclude-symbolic-links", None) not in select_opts):
-            log.Log("Symbolic links excluded by default on Windows",
+            log.Log("Symbolic links excluded on Windows",
                     log.NOTE)
             select_opts.insert(0, ("--exclude-symbolic-links", None))
         if Globals.get_api_version() < 201:  # compat200

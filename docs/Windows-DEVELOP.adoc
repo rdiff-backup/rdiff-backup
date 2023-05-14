@@ -175,6 +175,8 @@ With `icacls` you can list the (Windows) ACLs of a file.
 
 With `attrib` you can set the read-only attribute of a file.
 
+With `fsutil file queryfileid FILENAME` you can get the "inode" of a file.
+
 === Shells
 
 Different shells might be useful:

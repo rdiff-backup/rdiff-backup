@@ -1056,7 +1056,7 @@ def get_readonly_fsa(desc_string, rp):
 
     """
     if os.name == "nt":
-        log.Log("Hardlinks disabled by default on Windows", log.INFO)
+        log.Log("Hardlinks disabled on Windows", log.INFO)
         Globals.set_all('preserve_hardlinks', 0)
     return FSAbilities(desc_string, rp, read_only=True)
 

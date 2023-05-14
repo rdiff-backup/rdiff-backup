@@ -191,7 +191,11 @@ class FSAbilities:
         """
         Set self.hardlinks to true if hard linked files can be created
         """
-        if not Globals.preserve_hardlinks:
+        if os.name == "nt":
+            log.Log("Hardlinks disabled on Windows", log.INFO)
+            self.hardlinks = None
+            return
+        elif not Globals.preserve_hardlinks:
             log.Log("Hard linking test skipped as rdiff-backup was started "
                     "with --no-hard-links option", log.INFO)
             self.hardlinks = None
