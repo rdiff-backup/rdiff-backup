@@ -490,8 +490,12 @@ def _test_connection(conn_number, rp):
     # FIXME the tests don't sound right, the path given needs to pre-exist
     # on Windows but not on Linux? What are we exactly testing here?
     try:
-        assert conn.Globals.get('current_time') is None
-        assert type(conn.os.listdir(rp.path)) is list
+        remote_time = conn.Globals.get('current_time')
+        assert remote_time == Globals.current_time, (
+            "connection not returning current time {ct1} but {ct2}".format(
+                ct1=Globals.current_time, ct2=remote_time))
+        assert type(conn.os.listdir(rp.path)) is list, (
+            "connection not listing directory '{rp}'".format(rp=rp))
     except BaseException as exc:
         sys.stderr.write("- Server tests failed due to {exc}\n".format(exc=exc))
         return False

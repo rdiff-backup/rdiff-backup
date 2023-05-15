@@ -18,21 +18,21 @@ class ActionTestTest(unittest.TestCase):
         # the test action works with one or two locations (or more)
         self.assertEqual(
             comtst.rdiff_backup_action(False, False, self.dir1, self.dir2,
-                                       (), b"test", ()),
+                                       ("--api-version", "201"), b"test", ()),
             0)
         self.assertEqual(
             comtst.rdiff_backup_action(False, True, self.dir1, None,
-                                       (), b"test", ()),
+                                       ("--api-version", "201"), b"test", ()),
             0)
         # but it doesn't work with a local one
         self.assertNotEqual(
             comtst.rdiff_backup_action(False, True, self.dir1, self.dir2,
-                                       (), b"test", ()),
+                                       ("--api-version", "201"), b"test", ()),
             0)
         # and it doesn't work without any location
         self.assertNotEqual(
             comtst.rdiff_backup_action(True, True, None, None,
-                                       (), b"test", ()),
+                                       ("--api-version", "201"), b"test", ()),
             0)
 
 
