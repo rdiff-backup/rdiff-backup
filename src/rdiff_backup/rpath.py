@@ -1631,11 +1631,11 @@ def copy_reg_file(rpin, rpout, compress=0):
 
 
 def cmp(rpin, rpout):
-    """True if rpin has the same data as rpout
+    """
+    True if rpin has the same data as rpout
 
     does not compare file ownership, permissions, or times, or
     examine the contents of a directory.
-
     """
     _check_for_files(rpin, rpout)
     if rpin.isreg():
@@ -1661,11 +1661,11 @@ def cmp(rpin, rpout):
 
 
 def copy_attribs(rpin, rpout):
-    """Change file attributes of rpout to match rpin
+    """
+    Change file attributes of rpout to match rpin
 
     Only changes the chmoddable bits, uid/gid ownership, and
     timestamps, so both must already exist.
-
     """
     log.Log("Copying attributes from path {fp!r} to path {tp!r}".format(
         fp=rpin, tp=rpout), log.DEBUG)
@@ -1677,6 +1677,8 @@ def copy_attribs(rpin, rpout):
     if Globals.change_ownership:
         rpout.chown(*map_owners.map_rpath_owner(rpin))
     if Globals.eas_write:
+        if not rpin.issym():  # make sure EAs can be written
+            rpout.chmod(rpin.getperms() | 0o666)
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
         return  # symlinks don't have times or perms
@@ -1695,12 +1697,12 @@ def copy_attribs(rpin, rpout):
 
 
 def copy_attribs_inc(rpin, rpout):
-    """Change file attributes of rpout to match rpin
+    """
+    Change file attributes of rpout to match rpin
 
     Like above, but used to give increments the same attributes as the
     originals.  Therefore, don't copy all directory acl and
     permissions.
-
     """
     log.Log("Copying inc attributes from path {fp!r} to path {tp!r}".format(
         fp=rpin, tp=rpout), log.DEBUG)

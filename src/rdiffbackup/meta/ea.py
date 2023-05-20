@@ -63,6 +63,9 @@ class ExtendedAttributes:
     def __ne__(self, ea):
         return not self.__eq__(ea)
 
+    def __str__(self):
+        return "{} == {}".format(self.index, self.attr_dict)
+
     def get_indexpath(self):
         return self.index and b'/'.join(self.index) or b'.'
 

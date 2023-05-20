@@ -148,8 +148,10 @@ class WriteDir(Dir, locations.WriteLocation):
             else:
                 log.Log("--- Write directory file system capabilities ---\n"
                         + str(self.fs_abilities), log.INFO)
+            ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
 
-            return ret_code | fs_abilities.Repo2DirSetGlobals(src_repo, self)()
+            if ret_code & Globals.RET_CODE_ERR:
+                return ret_code
 
         if owners_map is not None:
             ret_code |= self.init_owners_mapping(**owners_map)

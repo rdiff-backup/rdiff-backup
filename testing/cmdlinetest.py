@@ -10,6 +10,8 @@ from commontest import (
 import commontest as comtst
 import fileset
 from rdiff_backup import Globals, log, rpath, robust, FilenameMapping, Time, selection
+from rdiffbackup.locations.map import filenames as map_filenames
+
 """Regression tests"""
 
 Globals.exclude_mirror_regexps = [re.compile(b".*/rdiff-backup-data")]
@@ -190,9 +192,13 @@ class PathSetter(unittest.TestCase):
         within a given directory."""
 
         if quoted:
-            FilenameMapping.set_init_quote_vals()
-            dirrp = FilenameMapping.QuotedRPath(Globals.local_connection,
-                                                directory)
+            if Globals.get_api_version() < 201:  # compat200
+                FilenameMapping.set_init_quote_vals()
+                dirrp = FilenameMapping.QuotedRPath(Globals.local_connection,
+                                                    directory)
+            else:
+                dirrp = map_filenames.QuotedRPath(Globals.local_connection,
+                                                  directory)
         else:
             dirrp = rpath.RPath(Globals.local_connection, directory)
         incbasenames = [
@@ -207,18 +213,26 @@ class PathSetter(unittest.TestCase):
 
 
 class Final(PathSetter):
+    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
+                     "Higher API version than 200 not supported")
     def testLocal(self):
         """Run test sequence everything local"""
         self.runtest(True, True)
 
+    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
+                     "Higher API version than 200 not supported")
     def testRemoteAll(self):
         """Run test sequence everything remote"""
         self.runtest(False, False)
 
+    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
+                     "Higher API version than 200 not supported")
     def testRemoteSource(self):
         """Run test sequence when remote side is source"""
         self.runtest(False, True)
 
+    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
+                     "Higher API version than 200 not supported")
     def testRemoteDest(self):
         """Run test sequence when remote side is destination"""
         self.runtest(True, False)

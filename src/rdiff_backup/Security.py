@@ -239,7 +239,9 @@ def _set_allowed_requests(sec_class, sec_level):
         "Time.setcurtime_local",
         # API >= 201
         "_repo_shadow.RepoShadow.is_locked",
+        "_repo_shadow.RepoShadow.lock",
         "_repo_shadow.RepoShadow.setup_paths",
+        "_repo_shadow.RepoShadow.unlock",
     }
     if (sec_level == "read-only" or sec_level == "update-only"
             or sec_level == "read-write"):
@@ -256,6 +258,9 @@ def _set_allowed_requests(sec_class, sec_level):
             "Hardlink.initialize_dictionaries",
             # API >= 201
             "platform.system",
+            "_repo_shadow.RepoShadow.get_config",
+            "_repo_shadow.RepoShadow.get_mirror_time",
+            "_repo_shadow.RepoShadow.needs_regress",
         ])
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
@@ -288,10 +293,8 @@ def _set_allowed_requests(sec_class, sec_level):
             "_dir_shadow.ReadDirShadow.get_fs_abilities",
             "_dir_shadow.ReadDirShadow.get_select",
             "_dir_shadow.ReadDirShadow.set_select",
-            "_repo_shadow.RepoShadow.get_config",
             "_repo_shadow.RepoShadow.get_fs_abilities_readonly",
             "_repo_shadow.RepoShadow.init_loop",
-            "_repo_shadow.RepoShadow.get_mirror_time",
             "_repo_shadow.RepoShadow.get_increment_times",
             "_repo_shadow.RepoShadow.set_select",
             "_repo_shadow.RepoShadow.finish_loop",
@@ -324,13 +327,10 @@ def _set_allowed_requests(sec_class, sec_level):
             "_repo_shadow.RepoShadow.close_statistics",
             "_repo_shadow.RepoShadow.get_fs_abilities_readwrite",
             "_repo_shadow.RepoShadow.get_sigs",
-            "_repo_shadow.RepoShadow.lock",
-            "_repo_shadow.RepoShadow.needs_regress",
             "_repo_shadow.RepoShadow.apply",
             "_repo_shadow.RepoShadow.remove_current_mirror",
             "_repo_shadow.RepoShadow.set_config",
             "_repo_shadow.RepoShadow.touch_current_mirror",
-            "_repo_shadow.RepoShadow.unlock",
         ])
     if sec_level == "read-write":
         requests.update([
