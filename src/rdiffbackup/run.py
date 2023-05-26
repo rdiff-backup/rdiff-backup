@@ -23,17 +23,15 @@ import sys
 from rdiff_backup import Globals, log
 from rdiffbackup import arguments, actions_mgr, actions
 
-try:
+if os.name == "nt":
     import msvcrt
-
-    # make sure line endings are kept under Windows like under Linux
-    msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
-    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
-except ImportError:
-    pass
 
 
 def main():
+    if os.name == "nt":
+        # make sure line endings are kept under Windows like under Linux
+        msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+        msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
     sys.exit(main_run(sys.argv[1:]))
 
 
