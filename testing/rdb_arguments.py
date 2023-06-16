@@ -1,6 +1,7 @@
 import subprocess
 import unittest
 from commontest import RBBin
+from rdiff_backup import Globals
 from rdiffbackup import arguments, actions_mgr
 
 
@@ -13,11 +14,24 @@ class ArgumentsTest(unittest.TestCase):
         """
         - make sure that the new help is shown either with --new or by using an action
         """
-        output = subprocess.check_output([RBBin, b'--new', b'--help'])
-        self.assertIn(b"possible actions:", output)
+        output = subprocess.run([RBBin, b'--new', b'--help'],
+                                capture_output=True)
+        self.assertIn(b"possible actions:", output.stdout)
+        self.assertEqual(0, output.returncode)
 
-        output = subprocess.check_output([RBBin, b'info', b'--help'])
-        self.assertIn(b"Output information", output)
+        output = subprocess.run([RBBin, b'info', b'--help'],
+                                capture_output=True)
+        self.assertIn(b"Output information", output.stdout)
+        self.assertEqual(Globals.RET_CODE_OK, output.returncode)
+
+    def test_error_return_code(self):
+        """
+        - verify that a wrong arguments returns 1 instead of the standard 2
+        """
+        output = subprocess.run([RBBin, b'--thisdoesntexist'],
+                                capture_output=True)
+        self.assertIn(b"unrecognized arguments:", output.stderr)
+        self.assertEqual(Globals.RET_CODE_ERR, output.returncode)
 
     def test_parse_function(self):
         """

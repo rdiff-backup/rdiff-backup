@@ -35,6 +35,24 @@ DEPRECATION_MESSAGE = (
     "disappear, start using the new one as described with '--new --help'."
 )
 
+# === WORKAROUND ===
+
+
+def parse_args(parser, args):
+    """
+    Function overwriting the default exit code for parsing errors
+
+    Once we're only supporting Python 3.9+ we can use the exit_on_error=False
+    option and simply catch ArgumentError
+    """
+    try:
+        parsed_args = parser.parse_args(args)
+    except SystemExit as exc:
+        if exc.code != 0:
+            exc.code = 1
+        raise
+    return parsed_args
+
 # === FUNCTIONS ===
 
 
@@ -99,7 +117,7 @@ def _parse_new(args, version_string, parent_parsers, actions_dict):
         rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
     """
     parser = get_parser_new(version_string, parent_parsers, actions_dict)
-    parsed_args = parser.parse_args(args)
+    parsed_args = parse_args(parser, args)
 
     if not (sys.version_info.major >= 3 and sys.version_info.minor >= 7):
         # we need a work-around as long as Python 3.6 doesn't know about required
@@ -214,7 +232,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     """
 
     parser = get_parser_compat200(version_string, parent_parsers)
-    values = parser.parse_args(args)
+    values = parse_args(parser, args)
 
     _make_values_like_new_compat200(values)
     _validate_number_locations_compat200(values, parser)
