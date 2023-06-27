@@ -39,11 +39,11 @@ class ActionListTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         comtst.rdiff_backup_action(
             True, True, self.from1_path, self.bak_path,
-            ("--api-version", "201", "--current-time", "10000"),
+            ("--api-version", "201", "--current-time", "111111"),
             b"backup", ())
         comtst.rdiff_backup_action(
             True, True, self.from2_path, self.bak_path,
-            ("--api-version", "201", "--current-time", "20000"),
+            ("--api-version", "201", "--current-time", "222222"),
             b"backup", ())
 
     def test_action_listfilesattime(self):
@@ -61,7 +61,7 @@ fileUnchanged
         self.assertEqual(comtst.rdiff_backup_action(
             True, None, self.bak_path, None,
             ("--api-version", "201"),
-            b"list", ("files", "--at", "10000"), return_stdout=True),
+            b"list", ("files", "--at", "111111"), return_stdout=True),
             b""".
 fileChanged
 fileOld
@@ -100,7 +100,7 @@ fileUnchanged
         self.assertEqual(comtst.rdiff_backup_action(
             True, None, self.bak_path, None,
             ("--api-version", "201"),
-            b"list", ("files", "--changed-since", "10000"), return_stdout=True),
+            b"list", ("files", "--changed-since", "111111"), return_stdout=True),
             b"""changed fileChanged
 new     fileNew
 deleted fileOld
@@ -133,11 +133,11 @@ deleted fileOld
             ("--api-version", "201", "--parsable"),
             b"list", ("increments", ), return_stdout=True),
             b"""---
-- base: increments.1970-01-0[12]T[0-9][0-9][:-][14]6[:-]40.*.dir
-  time: 10000
+- base: increments.1970-01-0[12]T[0-9][0-9][:-][25]1[:-]51.*.dir
+  time: 111111
   type: directory
 - base: bak
-  time: 20000
+  time: 222222
   type: directory
 ...
 
@@ -150,10 +150,10 @@ deleted fileOld
             b"list", ("increments", "--size"), return_stdout=True),
             b"""---
 - size: [0-9]+
-  time: 10000
+  time: 111111
   total_size: [0-9]+
 - size: [0-9]+
-  time: 20000
+  time: 222222
   total_size: [0-9]+
 ...
 
