@@ -146,9 +146,12 @@ jobs:
       uses: meeDamian/github-release@2.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        tag: weekly
+        commitish: master
         name: Weekly Release ${{ github.event.repository.pushed_at }}
         body: >
-          This weekly release has been built and uploaded automatically
+          This weekly release has been built and uploaded automatically.
+          Feel free to use (at your own risk) and report issues.
         prerelease: true
         files: ${{ steps.export.outputs.artifact_files }}
         gzip: false
