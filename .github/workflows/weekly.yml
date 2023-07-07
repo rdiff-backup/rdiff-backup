@@ -143,15 +143,16 @@ jobs:
       run: echo artifact_files=${{ steps.download.outputs.download-path }}/*.* >> $GITHUB_OUTPUT
       # see https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
     - name: Create release and upload assets to GitHub
-      uses: meeDamian/github-release@2.0
+      uses: ncipollo/release-action@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: weekly
-        commitish: master
+        commit: master
         name: Weekly Release ${{ github.event.repository.pushed_at }}
         body: >
           This weekly release has been built and uploaded automatically.
           Feel free to use (at your own risk) and report issues.
         prerelease: true
-        files: ${{ steps.export.outputs.artifact_files }}
-        gzip: false
+        artifacts: ${{ steps.export.outputs.artifact_files }}
+        allowUpdates: true
+        removeArtifacts: true
