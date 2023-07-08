@@ -132,6 +132,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-manylinux, build-sdist, test-built-windows]
     steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # to have the correct version
+    - name: force create weekly tag and push it
+      run: git tag -f weekly && git push -f origin weekly
     - name: Download artifacts
       id: download
       uses: actions/download-artifact@v2
@@ -147,7 +152,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: weekly
-        commit: master
+        # commit: master
         name: Weekly Release ${{ github.event.repository.pushed_at }}
         body: >
           This weekly release has been built and uploaded automatically.
