@@ -314,28 +314,15 @@ def _get_tzd(timeinseconds=None):
     """
     if timeinseconds is None:
         timeinseconds = time.time()
-    dst_in_effect = time.daylight and time.localtime(timeinseconds)[8]
-    if dst_in_effect:
-        offset = -time.altzone / 60
-    else:
-        offset = -time.timezone / 60
-    if offset > 0:
-        prefix = "+"
-    elif offset < 0:
-        prefix = "-"
-    else:
-        return "Z"  # time is already in UTC
-
+    tzd = time.strftime("%z", time.localtime(timeinseconds))
     if Globals.use_compatible_timestamps:
         time_separator = '-'
     else:
         time_separator = ':'
-    hours, minutes = list(map(abs, divmod(offset, 60)))
-    assert 0 <= hours <= 23, (
-        "Hours {hrs} must be between 0 and 23".format(hrs=hours))
-    assert 0 <= minutes <= 59, (
-        "Minutes {mins} must be between 0 and 59".format(mins=minutes))
-    return "%s%02d%s%02d" % (prefix, hours, time_separator, minutes)
+    if tzd == "+0000":
+        return "Z"
+    else:
+        return tzd[:3] + time_separator + tzd[3:]
 
 
 def _tzd_to_seconds(tzd):
