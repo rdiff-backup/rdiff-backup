@@ -1,13 +1,15 @@
 #!/bin/sh
-# get a list of changes and authors since a give revision tag in Git
+# get a list of changes and authors since a given revision tag in Git
+# outputs changes marked with 'XYZ:' and a unique list of authors
+# if no tag is given, uses the latest valid one
 
 if [[ -z "${1}" ]]
 then
-	echo "Usage: $0 <Git-Tag>" >&2
-	echo "       outputs changes marked with 'XYZ:' and a unique list of authors since the tagged release" >&2
-	exit 1
+	RELTAG=$(git tag | grep '^v' | sort --version-sort | tail -n1)
+	echo "Listing changes since ${RELTAG}" >&2
+else
+	RELTAG="${1}"
 fi
-RELTAG="${1}"
 
 echo "(make sure the version is the next correct one)" >&2
 echo
