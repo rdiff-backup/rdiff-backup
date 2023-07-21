@@ -3,7 +3,7 @@ name: Deploy-Weekly
 
 on:
   schedule:  # Each Sunday (0) at 22:22 UTC
-    - cron: '22 22 * * *'  # FIXME make really weekly once the workflow runs
+    - cron: '22 22 * * 0'
 
 # necessary for Windows
 defaults:
