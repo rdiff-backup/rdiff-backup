@@ -135,8 +135,13 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0  # to have the correct version
-    - name: force create weekly tag and push it
-      run: git tag -f weekly && git push -f origin weekly
+    - name: force create weekly tag and push it and create release body
+      run: |
+        git tag -f weekly && git push -f origin weekly
+        echo "This weekly release has been built and uploaded automatically." > body.myown.adoc
+        echo "Feel free to use (at your own risk) and report issues." >> body.myown.adoc
+        echo >> body.myown.adoc
+        ./tools/get_changelog_since.sh >> body.myown.adoc
     - name: Download artifacts
       id: download
       uses: actions/download-artifact@v2
@@ -154,9 +159,7 @@ jobs:
         tag: weekly
         # commit: master
         name: Weekly Release ${{ github.event.repository.pushed_at }}
-        body: >
-          This weekly release has been built and uploaded automatically.
-          Feel free to use (at your own risk) and report issues.
+        bodyFile: body.myown.adoc
         prerelease: true
         artifacts: ${{ steps.export.outputs.artifact_files }}
         allowUpdates: true
