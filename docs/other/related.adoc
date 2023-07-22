@@ -24,6 +24,8 @@ is a graphical backup program included in https://wiki.debian.org/DebianEdu/[Deb
   In alpha state as of Dec 2005, and still so in 2022.
 * Julien Perez has written an alternative to rsnapshot called http://rbackup.lescigales.org/[rBackup] which uses rdiff-backup as the backend instead of rsync.
 It uses a configuration file to backup directories, subversion repositories, and mysql databases.
+* https://0xacab.org/liberate/backupninja[Backupninja] allows you to coordinate system backup by dropping a few simple configuration files into `/etc/backup.d/`.
+  Backupninja provides a centralized way to configure and coordinate many different backup utilities, including rdiff-backup.
 * http://rdiffweb.org/[rdiffweb] is a web interface to browse and restore data from a rdiff-backup repository.
   Provide an overview of backup failures, send notification on errors, manage users authentication and many more features.
 * http://minarca.org/[Minarca] is a backup software solution built on top of rdiff-backup and rdiffweb.
