@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # get a list of changes and authors since a given revision tag in Git
 # outputs changes marked with 'XYZ:' and a unique list of authors
 # if no tag is given, uses the latest valid one
