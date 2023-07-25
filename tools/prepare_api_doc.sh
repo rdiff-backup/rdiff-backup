@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # this function gathers all calls going through the client/server connection.
 # the result can only be used as a basis or validation for the actual API
 # documentation, especially because it can't make the difference between
