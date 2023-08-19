@@ -48,6 +48,20 @@ class ApiVersionTest(unittest.TestCase):
                                           b"info"])
         self.assertIn(b"DEBUG: Runtime information =>", output)
 
+    def test_env_var(self):
+        """Test usage of the environment variable"""
+        # Python under Windows needs the variable SYSTEMROOT
+        # or it fails with a randomization init error, hence we copy the
+        # environment and extend it instead of creating a new one.
+        local_env = os.environ.copy()
+        local_env["RDIFF_BACKUP_API_VERSION"] = "{min: 111, max: 999}"
+        output = subprocess.check_output([RBBin, b"info"], env=local_env)
+        api_version = yaml.safe_load(output)['exec']['api_version']
+        self.assertEqual(api_version['min'], 111)
+        self.assertEqual(api_version['max'], 999)
+        # make sure the untouched variables are really untouched
+        self.assertEqual(Globals.get_api_version(), api_version['default'])
+
 
 if __name__ == "__main__":
     unittest.main()
