@@ -49,7 +49,7 @@ except BaseException:  # if everything else fails...
 # makes the connection work within the min-max range, depending on the
 # API versions supported by the remote connection.
 api_version = {
-    "default": 201,
+    "default": 200,
     "min": 200,
     "max": 201,
     "actual": 0
