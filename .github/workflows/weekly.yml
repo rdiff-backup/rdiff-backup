@@ -141,7 +141,7 @@ jobs:
         echo "This weekly release has been built and uploaded automatically." > body.myown.adoc
         echo "Feel free to use (at your own risk) and report issues." >> body.myown.adoc
         echo >> body.myown.adoc
-        ./tools/get_changelog_since.sh >> body.myown.adoc
+        ./tools/get_changelog_since.sh -M >> body.myown.md
     - name: Download artifacts
       id: download
       uses: actions/download-artifact@v2
@@ -159,7 +159,7 @@ jobs:
         tag: weekly
         # commit: master
         name: Weekly Release ${{ github.event.repository.pushed_at }}
-        bodyFile: body.myown.adoc
+        bodyFile: body.myown.md
         prerelease: true
         artifacts: ${{ steps.export.outputs.artifact_files }}
         allowUpdates: true
