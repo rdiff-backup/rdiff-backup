@@ -14,7 +14,7 @@ are competing backup programs.
 
 == Software written for rdiff-backup
 
-* Filip Gruszczyski has written a http://fuse.sourceforge.net/[FUSE] plugin named *archfs*, still present but unmaintained under the namehttps://github.com/rdiff-backup/rdiff-backup-fs[rdiff-backup-fs] which allows browsing through rdiff-backup increments directly as a filesystem.
+* Filip Gruszczyski has written a http://fuse.sourceforge.net/[FUSE] plugin named *archfs*, still present but unmaintained under the name https://github.com/rdiff-backup/rdiff-backup-fs[rdiff-backup-fs] which allows browsing through rdiff-backup increments directly as a filesystem.
 * http://safekeep.sourceforge.net/[SafeKeep] for Linux is a front-end for rdiff-backup providing LVM snapshots and easy configuration.
 * https://launchpad.net/gnomeeasybackup[EasyBackup] is a graphical backup solution for Gnome which is integrated with the Nautilus file manager and uses rdiff-backup as the backend.
 * https://packages.debian.org/sid/slbackup[Skolelinux Backup System]

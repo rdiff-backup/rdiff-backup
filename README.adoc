@@ -140,6 +140,8 @@ Then drop the binary `rdiff-backup.exe` somewhere in your PATH and it should wor
 
 NOTE: starting with rdiff-backup 2.1.1 embedding Python 3.10, rdiff-backup https://www.python.org/downloads/windows/[cannot be used on Windows 7 or earlier].
 
+Another way to install rdiff-backup is to use https://chocolatey.org/[Chocolatey] and call https://community.chocolatey.org/packages/rdiff-backup#install[choco install rdiff-backup].
+
 For remote operations, you will need to have an SSH package installed.
 The standard one provided by Microsoft is probably your safest choice, else we recommend using OpenSSH from http://www.mls-software.com/opensshd.html[mls-software.com].
 
