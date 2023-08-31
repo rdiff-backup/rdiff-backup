@@ -78,7 +78,7 @@ def setcurtime_local(timeinseconds):
     curtime, curtimestr = timeinseconds, timetostring(timeinseconds)
 
 
-# compat200 - replace through direct reference to Globals.current_time
+# compat200 - simplify to reference to Globals.current_time
 def getcurtime():
     if Globals.get_api_version() < 201:
         return curtime
@@ -86,7 +86,7 @@ def getcurtime():
         return Globals.current_time
 
 
-# compat200 - replace through direct reference to Globals.current_time_string
+# compat200 - simplify through reference to Globals.current_time_string
 def getcurtimestr():
     if Globals.get_api_version() < 201:
         return curtimestr

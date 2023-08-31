@@ -3,6 +3,7 @@ import os
 from commontest import abs_output_dir, old_test_dir, Myrm, MakeOutputDir, \
     InternalRestore, compare_recursive
 from rdiff_backup import restore, Globals, rpath, Time, log
+from rdiffbackup.locations import _repo_shadow
 
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
@@ -37,8 +38,12 @@ class RestoreFileComparer:
         """Restore file, make sure it is the same at time t"""
         log.Log("Checking result at time %s" % (t, ), 7)
         tf = tempdir.get_temp_rpath()
-        restore.MirrorStruct._mirror_time = mirror_time
-        restore.MirrorStruct._rest_time = t
+        if Globals.get_api_version() < 201:  # compat200
+            restore.MirrorStruct._mirror_time = mirror_time
+            restore.MirrorStruct._rest_time = t
+        else:
+            _repo_shadow.RepoShadow._mirror_time = mirror_time
+            _repo_shadow.RepoShadow._restore_time = t
         self.rf.set_relevant_incs()
         out_rorpath = self.rf.get_attribs().getRORPath()
         correct_result = self.time_rp_dict[t]
@@ -77,7 +82,10 @@ class RestoreTimeTest(unittest.TestCase):
         rdiff-backup-data directory already being laid out.
 
         """
-        restore.MirrorStruct._mirror_time = None  # Reset
+        if Globals.get_api_version() < 201:  # compat200
+            restore.MirrorStruct._mirror_time = None  # Reset
+        else:
+            _repo_shadow.RepoShadow._mirror_time = None
         Globals.rbdir = rpath.RPath(
             lc,
             os.path.join(old_test_dir, b"restoretest3", b"rdiff-backup-data"))
@@ -95,7 +103,11 @@ class RestoreTest(unittest.TestCase):
 
     def get_rfcs(self):
         """Return available RestoreFileComparer objects"""
-        base_rf = restore.RestoreFile(restore_base_rp, restore_base_rp, [])
+        if Globals.get_api_version() < 201:  # compat200
+            base_rf = restore.RestoreFile(restore_base_rp, restore_base_rp, [])
+        else:
+            base_rf = _repo_shadow._RestoreFile(restore_base_rp,
+                                                restore_base_rp, [])
         rfs = base_rf.yield_sub_rfs()
         rfcs = []
         for rf in rfs:
@@ -127,6 +139,8 @@ class RestoreTest(unittest.TestCase):
         return restore_base_rp.append(b"%b.%b" %
                                       (basename, Time.timetobytes(test_time)))
 
+    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
+                     "Higher API version than 200 not supported")
     def testRestoreSingle(self):
         """Test restoring files one at at a time"""
         MakeOutputDir()
