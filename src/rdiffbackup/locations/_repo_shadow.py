@@ -87,6 +87,13 @@ class RepoShadow:
         cls._data_dir = data_dir
         cls._incs_dir = incs_dir
 
+        # FIXME this should belong in a more generic setup function
+        # we need this to be able to use multiple times the class
+        cls._mirror_time = None
+        cls._restore_time = None
+        cls._regress_time = None
+        cls._unsuccessful_backup_time = None
+
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
     def get_sigs(cls, baserp, source_iter, previous_time, is_remote):
@@ -1707,6 +1714,7 @@ class _RepoIncrementITRB(_RepoPatchITRB):
         tf = mirror_rp.get_temp_rpath(sibling=True)
         result = self._patch_to_temp(mirror_rp, diff_rorp, tf)
         if result == self.UNCHANGED:
+            log.Log("File content unchanged, only copying attributes", log.INFO)
             rpath.copy_attribs(diff_rorp, mirror_rp)
             self.CCPP.flag_success(index)
         elif result:

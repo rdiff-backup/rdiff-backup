@@ -1062,10 +1062,13 @@ class Repo2DirSetGlobals(SetGlobals):
         """
         Set chars_to_quote from rdiff-backup-data dir
         """
-        if Globals.chars_to_quote is not None:
-            return  # already overridden
+        if Globals.chars_to_quote is None:
+            ctq = repo.get_chars_to_quote()
+        else:
+            # value has been overwritten from the command line but still needs
+            # to be set across the connections and (un)regexp defined
+            ctq = Globals.chars_to_quote
 
-        ctq = repo.get_chars_to_quote()
         if ctq is not None:
             regexp, unregexp = map_filenames.get_quoting_regexps(
                 ctq, Globals.quoting_char)

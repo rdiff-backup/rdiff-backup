@@ -25,15 +25,17 @@ class TimeTest(unittest.TestCase):
     def testConversion(self):
         """test timetostring and stringtotime"""
         Time.set_current_time()
-        self.assertIsInstance(Time.curtime, (float, int))
-        self.assertIsInstance(Time.curtimestr, str)
+        curr_time = Time.getcurtime()
+        curr_time_str = Time.getcurtimestr()
+        self.assertIsInstance(curr_time, (float, int))
+        self.assertIsInstance(curr_time_str, str)
         self.assertTrue(
-            self.cmp_times(int(Time.curtime), Time.curtimestr) == 0
-            or self.cmp_times(int(Time.curtime) + 1, Time.curtimestr) == 0)
+            self.cmp_times(int(curr_time), curr_time_str) == 0
+            or self.cmp_times(int(curr_time) + 1, curr_time_str) == 0)
         time.sleep(1.05)
-        self.assertEqual(self.cmp_times(time.time(), Time.curtime), 1)
+        self.assertEqual(self.cmp_times(time.time(), curr_time), 1)
         self.assertEqual(self.cmp_times(Time.timetostring(time.time()),
-                                        Time.curtimestr), 1)
+                                        curr_time_str), 1)
 
     def testConversion_separator(self):
         """Same as testConversion, but change time Separator"""
