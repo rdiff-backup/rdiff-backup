@@ -56,6 +56,7 @@ api_version = {
     "actual": 0
 }
 # Allow overwrite from the environment variable RDIFF_BACKUP_API_VERSION
+# we don't do a lot of error handling because it's more of a dev option
 api_version.update(yaml.safe_load(
     os.environ.get('RDIFF_BACKUP_API_VERSION', '{}')))
 
