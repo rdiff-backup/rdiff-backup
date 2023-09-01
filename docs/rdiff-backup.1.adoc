@@ -706,6 +706,10 @@ RDIFF_BACKUP_DEBUG=[_address_][:__port__]::
 set a non-default listening address and/or port (default is `127.0.0.1:4444`) for  rpdb.
 Valid values are _address_, _address:port_ or _:port_.
 
+RDIFF_BACKUP_API_VERSION={[_dictionary_]}::
+Overwrite the 'actual', 'default', 'max' and/or 'min' value of the API VERSION using a YAML object, e.g. `{actual: 201, default: 201}`.
+This environment variable is rather meant for development and test purposes to change the values without modifying the code, so use with care.
+
 == RETURN CODES
 
 The following return codes have not been fully implemented so test before you rely on them.
