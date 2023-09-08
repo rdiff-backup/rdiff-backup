@@ -9,6 +9,49 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * *NEW* features and bug-**FIX**es are of course of interest as well.
 * **DOC**umentation (and website) changes are marked as such.
 
+== New in v2.2.6 (2023-09-08)
+
+=== Changes
+
+* DOC: clarify in man-page that regress on non-failed repository can 
+       only be forced with API 201, closes #878
+* DOC: reference the installation of rdiff-backup under Windows using 
+       Chocolatey
+* DOC: refresh Windows documentation, removing obsolete instructions
+* FIX: Call msvcrt.setmode under Windows only when main is called, 
+       allowing for stdout and stderr to be captured by testing framework like 
+       pytest, closes #885
+* FIX: clarify that hard- and symlinks are not supported by 
+       rdiff-backup under Windows (see #484 for enhancement), closes #880
+* FIX: extended variables were not correctly written if content of file 
+       hadn't changed and file was read-only (API 201).
+* FIX: failed parsing of arguments would return code 2 for warnings 
+       instead of 1 for errors
+* FIX: quoting variables where not correctly propagated when set from 
+       the command line (API 201).
+* FIX: some new functions were needed with higher security level and 
+       had to be sorted accordingly (API 201).
+* FIX: test action would fail with empty error message when using API 
+       201
+* FIX: timezone was not always correctly calculated in countries with 
+       historically changing DST, closes #902
+* NEW: add environment variable RDIFF_BACKUP_API_VERSION to 
+       artificially modify the API version dictionary, see the man page for 
+       details.
+* NEW: add warning that server will be called with deprecated CLI and 
+       how to avoid the corresponding warning (see also the FAQ)
+* NEW: there is now a weekly release with changelog for intermediate 
+       testing available at 
+       https://github.com/rdiff-backup/rdiff-backup/releases/tag/weekly
+
+=== Authors
+
+* BaelfireNightshd
+* Eric L
+* Klaatu symlink → gitlab.com/notklaatu
+* Patrik Dufresne
+
+
 == New in v2.2.5 (2023-05-06)
 
 === Changes
