@@ -80,7 +80,7 @@ class ProcessFuncs(unittest.TestCase):
 
         """
         mintime, maxtime = min_max_pair
-        pid = self.exec_rb(backup_time, None, arg1, arg2)
+        pid = self.exec_rb(backup_time, None, "backup", arg1, arg2)
         time.sleep(random.uniform(mintime, maxtime))
         # kill doesn't fail on finished but still defunct (not waited) processes
         os.kill(pid, self.killsignal)
@@ -151,7 +151,8 @@ class KillTest(ProcessFuncs):
 
         def run_once(current_time, input_rp, index):
             start_time = time.time()
-            self.exec_rb(current_time, 1, input_rp.path, Local.rpout.path)
+            self.exec_rb(current_time, 1, "backup",
+                         input_rp.path, Local.rpout.path)
             time_list[index].append(time.time() - start_time)
 
         for i in range(iterations):
@@ -217,7 +218,7 @@ class KillTest(ProcessFuncs):
         # Back up killtest3 first because it is big and the first case
         # is kind of special (there's no incrementing, so different
         # code)
-        self.exec_rb(10000, 1, Local.ktrp[2].path, Local.rpout.path)
+        self.exec_rb(10000, 1, "backup", Local.ktrp[2].path, Local.rpout.path)
         self.assertTrue(compare_recursive(Local.ktrp[2], Local.rpout))
 
         def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
@@ -226,8 +227,7 @@ class KillTest(ProcessFuncs):
             self.exec_and_kill(min_max_time_pair, curtime, input_rp.path,
                                Local.rpout.path)
             result = self.mark_incomplete(curtime, Local.rpout)
-            self.assertEqual(self.exec_rb(None, 1, '--check-destination-dir',
-                                          Local.rpout.path),
+            self.assertEqual(self.exec_rb(None, 1, "regress", Local.rpout.path),
                              Globals.RET_CODE_WARN)
             self.assertTrue(
                 compare_recursive(old_rp, Local.rpout, compare_hardlinks=0))
@@ -241,7 +241,7 @@ class KillTest(ProcessFuncs):
                 killed_too_late[0] += 1
             elif result == -1:
                 killed_too_soon[0] += 1
-        self.exec_rb(20000, 1, Local.ktrp[0].path, Local.rpout.path)
+        self.exec_rb(20000, 1, "backup", Local.ktrp[0].path, Local.rpout.path)
 
         # Now keep regressing from ktrp[1], only staying there at the end
         for i in range(count):
@@ -251,7 +251,7 @@ class KillTest(ProcessFuncs):
                 killed_too_late[1] += 1
             elif result == -1:
                 killed_too_soon[1] += 1
-        self.exec_rb(30000, 1, Local.ktrp[1].path, Local.rpout.path)
+        self.exec_rb(30000, 1, "backup", Local.ktrp[1].path, Local.rpout.path)
 
         # Now keep regressing from ktrp[2], only staying there at the end
         for i in range(count):
@@ -261,7 +261,7 @@ class KillTest(ProcessFuncs):
                 killed_too_late[2] += 1
             elif result == -1:
                 killed_too_soon[2] += 1
-        self.exec_rb(40000, 1, Local.ktrp[2].path, Local.rpout.path)
+        self.exec_rb(40000, 1, "backup", Local.ktrp[2].path, Local.rpout.path)
 
         # Now keep regressing from ktrp[3], only staying there at the end
         for i in range(count):

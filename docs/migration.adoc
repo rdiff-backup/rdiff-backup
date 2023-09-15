@@ -293,6 +293,10 @@ For example, you must call `rdiff-backup --force backup dir1 dir2` because `rdif
 | `--ssh-no-compression`
 | `--no-ssh-compression`
 
+| override quoted characters
+| `--override-chars-to-quote`
+| `--chars-to-quote`
+
 | calculate
 | `+rdiff-backup --calculate-average {stat-file1} {state-files...}+`
 | `+rdiff-backup calculate [--method average] {stat-file1} {state-files...}+`

@@ -65,15 +65,7 @@ def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
         # but we might miss important messages at the beginning of the process
         if term_verbosity is not None:
             cmd_schema += b" --terminal-verbosity %d" % term_verbosity
-        if Globals.get_api_version() > 200:  # compat200
-            cmd_schema += b" server"
-        else:
-            log.Log("Server will be called with deprecated command line "
-                    "interface to guarantee compatibility. It might lead to "
-                    "a deprecation warning from newer rdiff-backup versions. "
-                    "Use '--api-version 201' (or higher) to avoid it.",
-                    log.WARNING)
-            cmd_schema += b" --server"
+        cmd_schema += b" server"
 
     if not locations:
         return []

@@ -250,7 +250,7 @@ user.empty
                      1,
                      tempdir.path,
                      restore_dir.path,
-                     extra_options=b'-r 10000')
+                     extra_options=b'restore --at 10000')
         self.assertTrue(
             compare_recursive(self.ea_test1_rpath, restore_dir, compare_eas=1))
 
@@ -509,7 +509,7 @@ other::---
                      1,
                      tempdir.path,
                      restore_dir.path,
-                     extra_options=b'-r 10000')
+                     extra_options=b'restore --at 10000')
         self.assertTrue(
             compare_recursive(self.acl_test1_rpath, restore_dir,
                               compare_acls=1))
@@ -519,7 +519,7 @@ other::---
                      1,
                      tempdir.path,
                      restore_dir.path,
-                     extra_options=b'-r now')
+                     extra_options=b'restore --at now')
         self.assertTrue(
             compare_recursive(self.acl_test2_rpath, restore_dir,
                               compare_acls=1))
@@ -569,8 +569,9 @@ other::---""".format(self.current_user, self.current_group))
 
         rdiff_backup(
             1, 1, rootrp.path, tempdir.path,
-            extra_options=b"--user-mapping-file %b --group-mapping-file %b" % (
-                users_map_rp.path, groups_map_rp.path))
+            extra_options=b"backup --user-mapping-file %b "
+                          b"--group-mapping-file %b" % (
+                              users_map_rp.path, groups_map_rp.path))
 
         out_rp = tempdir.append('a1')
         self.assertTrue(out_rp.isreg())

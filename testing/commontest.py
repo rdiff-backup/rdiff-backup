@@ -95,7 +95,7 @@ def rdiff_backup(source_local,
                  src_dir,
                  dest_dir,
                  current_time=None,
-                 extra_options=b"",
+                 extra_options=b"backup",
                  input=None,
                  expected_ret_code=0):
     """Run rdiff-backup with the given options
@@ -122,12 +122,13 @@ def rdiff_backup(source_local,
     if dest_dir and not dest_local:
         dest_dir = (remote_exec % (abs_remote2_dir, RBBin, dest_dir))
 
-    cmdargs = [RBBin, extra_options]
+    cmdargs = [RBBin]
     if not (source_local and dest_local):
         cmdargs.append(b"--remote-schema {h}")
 
     if current_time:
         cmdargs.append(b"--current-time %i" % current_time)
+    cmdargs.append(extra_options)
     cmdargs.append(src_dir)
     if dest_dir:
         cmdargs.append(dest_dir)
