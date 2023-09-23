@@ -52,15 +52,6 @@ def get_generic_parsers():
     return rdiffbackup.actions.GENERIC_PARSERS
 
 
-def get_parent_parsers_compat200():
-    """
-    Return a list of all parent sub-options used by all actions
-
-    This list is solely used to simulate the old command line interface.
-    """
-    return rdiffbackup.actions.PARENT_PARSERS
-
-
 if __name__ == "__main__":  # pragma: no cover
     actions = get_actions_dict()
     for name, action_class in actions.items():

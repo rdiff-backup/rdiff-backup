@@ -67,11 +67,7 @@ COMMON_PARSER.add_argument(
     "--null-separator", action="store_true",
     help="[opt] use null instead of newline in input and output files")
 COMMON_PARSER.add_argument(
-    "--new", default=False, action=BooleanOptionalAction,
-    help="[opt] enforce (or not) the usage of the new parameters")
-COMMON_PARSER.add_argument(
-    "--chars-to-quote", "--override-chars-to-quote",
-    type=str, metavar="CHARS",
+    "--chars-to-quote", type=str, metavar="CHARS",
     help="[opt] string of characters to quote for safe storing")
 COMMON_PARSER.add_argument(
     "--parsable-output", action="store_true",
@@ -102,23 +98,6 @@ COMMON_PARSER.add_argument(
 
 # === DEFINE PARENT PARSERS ===
 
-
-COMMON_COMPAT200_PARSER = argparse.ArgumentParser(
-    add_help=False,
-    description="[parent] common options to all actions (compat200)")
-restrict_group = COMMON_COMPAT200_PARSER.add_mutually_exclusive_group()
-restrict_group.add_argument(
-    "--restrict", type=str, metavar="DIR_PATH",
-    help="[deprecated] restrict remote access to given path, in read-write mode")
-restrict_group.add_argument(
-    "--restrict-read-only", type=str, metavar="DIR_PATH",
-    help="[deprecated] restrict remote access to given path, in read-only mode")
-restrict_group.add_argument(
-    "--restrict-update-only", type=str, metavar="DIR_PATH",
-    help="[deprecated] restrict remote access to given path, in backup update mode")
-COMMON_COMPAT200_PARSER.add_argument(
-    "--ssh-no-compression", action="store_true",
-    help="[deprecated] use SSH without compression with default remote-schema")
 
 SELECTION_PARSER = argparse.ArgumentParser(
     add_help=False,
@@ -254,12 +233,6 @@ USER_GROUP_PARSER.add_argument(
     help="[sub] map users according to file")
 
 GENERIC_PARSERS = [COMMON_PARSER]
-PARENT_PARSERS = [
-    COMMON_COMPAT200_PARSER,  # compat200
-    CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
-    FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
-    TIMESTAMP_PARSER, RESTRICT_PARSER
-]
 
 
 class BaseAction:

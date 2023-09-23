@@ -16,6 +16,8 @@ Starting with `rdiff-backup` version 2.1, there have been two separate syntaxes 
 Legacy CLI commands follow the syntax `rdiff-backup [options…] [source…] [destination…]`, while the new CLI uses the syntax `rdiff-backup [global options…] action [action-specific options…] [locations…]`.
 The functionality of the commands are the same, but for completeness the examples in this document will be given in both the old and new syntax side-by-side.
 
+CAUTION: the old syntax doesn't work anymore with versions _newer_ than 2.2.x, the examples are only kept for migration purposes.
+
 == Backing up
 
 Simplest case: backup local directory `foo` to local directory `bar`.

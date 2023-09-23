@@ -66,15 +66,27 @@ class ActionCompleteTest(unittest.TestCase):
             return_stdout=True)
         self.assertTrue(full_output.startswith(b"--"))
         self.assertTrue(full_output.endswith(b"::file::\n"))
-        # we want to test the old CLI as well
+
         full_output = comtst.rdiff_backup_action(
             True, True, None, None,
             ("--api-version", "201"),
             b"complete", ("--cword", "1", "--", "rdiff-backup", ""),
             return_stdout=True)
         self.assertTrue(full_output.startswith(b"-V"))  # fragile!
-        self.assertTrue(full_output.endswith(b"::file::\n"))
-        self.assertGreater(full_output.count(b"\n"), 100)
+        self.assertTrue(full_output.endswith(b"--version\n"))
+        self.assertIn(b"complete\n", full_output)
+        self.assertIn(b"backup\n", full_output)
+
+        # if the action is already given, none should be listed again
+        full_output = comtst.rdiff_backup_action(
+            True, True, None, None,
+            ("--api-version", "201"),
+            b"complete", ("--cword", "1", "--", "rdiff-backup", "", "complete"),
+            return_stdout=True)
+        self.assertTrue(full_output.startswith(b"-V"))  # fragile!
+        self.assertTrue(full_output.endswith(b"--version\n"))
+        self.assertNotIn(b"complete\n", full_output)
+        self.assertNotIn(b"backup\n", full_output)
 
         self.assertEqual(comtst.rdiff_backup_action(
             True, True, None, None,

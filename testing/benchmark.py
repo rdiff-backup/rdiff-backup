@@ -167,14 +167,14 @@ benchmarks = {
         {
             'name': 'many_normal',
             'func': many,
-            'backup': b"rdiff-backup '%b' '%b'",
-            'restore': b"rdiff-backup --force -r now '%b' '%b'",
+            'backup': b"rdiff-backup backup '%b' '%b'",
+            'restore': b"rdiff-backup --force restore --at now '%b' '%b'",
         },
         {
             'name': 'many_no_fsync',
             'func': many,
-            'backup': b"rdiff-backup --no-fsync '%b' '%b'",
-            'restore': b"rdiff-backup --no-fsync --force -r now '%b' '%b'",
+            'backup': b"rdiff-backup --no-fsync backup '%b' '%b'",
+            'restore': b"rdiff-backup --no-fsync --force restore --at now '%b' '%b'",
         },
     ],
     'nested': [
@@ -187,14 +187,14 @@ benchmarks = {
         {
             'name': 'nested_normal',
             'func': nested,
-            'backup': b"rdiff-backup '%b' '%b'",
-            'restore': b"rdiff-backup --force -r now '%b' '%b'",
+            'backup': b"rdiff-backup backup '%b' '%b'",
+            'restore': b"rdiff-backup --force restore --at now '%b' '%b'",
         },
         {
             'name': 'nested_no_fsync',
             'func': nested,
-            'backup': b"rdiff-backup --no-fsync '%b' '%b'",
-            'restore': b"rdiff-backup --no-fsync --force -r now '%b' '%b'",
+            'backup': b"rdiff-backup --no-fsync backup '%b' '%b'",
+            'restore': b"rdiff-backup --no-fsync --force restore --at now '%b' '%b'",
         },
     ],
 }

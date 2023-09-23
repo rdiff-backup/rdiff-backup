@@ -295,7 +295,6 @@ setup(
     ],
     data_files=[
         ("share/man/man1", ["dist/rdiff-backup.1",
-                            "dist/rdiff-backup-old.1",
                             "dist/rdiff-backup-delete.1",
                             "dist/rdiff-backup-statistics.1"]),
         (
@@ -320,7 +319,6 @@ setup(
         'pre_build_templates': {'template_files': [
             ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
             ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
-            ("docs/rdiff-backup-old.1.template", "dist/rdiff-backup-old.1"),
         ]},
         "pre_build_exec": {"commands": [
             ("asciidoctor -b manpage -a revdate=\"{date}\" "

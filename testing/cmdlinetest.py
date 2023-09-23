@@ -137,17 +137,17 @@ class PathSetter(unittest.TestCase):
 
         # Restoring increment1
         rdiff_backup(from_local, to_local, inc_paths[0], Local.rpout1.path,
-                     extra_options=b"--restore")
+                     extra_options=b"restore")
         self.assertTrue(compare_recursive(Local.inc1rp, Local.rpout1))
 
         # Restoring increment2
         rdiff_backup(from_local, to_local, inc_paths[1], Local.rpout2.path,
-                     extra_options=b"--restore")
+                     extra_options=b"restore")
         self.assertTrue(compare_recursive(Local.inc2rp, Local.rpout2))
 
         # Restoring increment3
         rdiff_backup(from_local, to_local, inc_paths[2], Local.rpout3.path,
-                     extra_options=b"--restore")
+                     extra_options=b"restore")
         self.assertTrue(compare_recursive(Local.inc3rp, Local.rpout3))
 
         # Test restoration of a few random files
@@ -156,7 +156,7 @@ class PathSetter(unittest.TestCase):
             os.path.join(Local.rpout.path, b"rdiff-backup-data",
                          b"increments"))
         rdiff_backup(from_local, to_local, vft_paths[1], Local.vft_out.path,
-                     extra_options=b"--restore")
+                     extra_options=b"restore")
         self.refresh(Local.vft_in, Local.vft_out)
         self.assertTrue(compare_recursive(Local.vft_in, Local.vft_out))
 
@@ -166,7 +166,7 @@ class PathSetter(unittest.TestCase):
                          b"increments"))
         rdiff_backup(from_local, to_local, timbar_paths[0],
                      Local.timbar_out.path,
-                     extra_options=b"--restore")
+                     extra_options=b"restore")
         self.refresh(Local.timbar_in, Local.timbar_out)
         self.assertTrue(Local.timbar_in.equal_loose(Local.timbar_out))
 
@@ -174,7 +174,7 @@ class PathSetter(unittest.TestCase):
                      to_local,
                      Local.rpout.append('various_file_types').path,
                      Local.vft_recover.path,
-                     extra_options=b"--restore-as-of 25000")
+                     extra_options=b"restore --at 25000")
         self.refresh(Local.vft_recover, Local.vft_in)
         self.assertTrue(compare_recursive(Local.vft_recover, Local.vft_in))
 
@@ -308,7 +308,7 @@ class Final(PathSetter):
             delete_long(Local.wininc3)
 
         old_schema = self.rb_schema
-        self.rb_schema = old_schema + b" --override-chars-to-quote '^a-z0-9_ -.' "
+        self.rb_schema = old_schema + b" --chars-to-quote '^a-z0-9_ -.' "
         self.set_connections(None, None, None, None)
 
         self.delete_tmpdirs()
@@ -368,7 +368,7 @@ class Final(PathSetter):
                      True,
                      Local.rpout.path,
                      Local.rpout1.path,
-                     extra_options=b'-r0')
+                     extra_options=b'restore --at 0')
         self.assertTrue(
             compare_recursive(Local.vftrp, Local.rpout1, compare_hardlinks=0))
 
@@ -387,7 +387,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-increments')
+                     extra_options=b'list increments')
 
     def testListIncrementsRemote(self):
         """Test --list-increments mode remotely.  Uses restoretest3"""
@@ -395,7 +395,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-increments')
+                     extra_options=b'list increments')
 
     def testListChangeSinceLocal(self):
         """Test --list-changed-since mode locally.  Uses restoretest3"""
@@ -403,12 +403,12 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-changed-since 10000')
+                     extra_options=b'list files --changed-since 10000')
         rdiff_backup(True,
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-changed-since 2B')
+                     extra_options=b'list files --changed-since 2B')
 
     def testListChangeSinceRemote(self):
         """Test --list-changed-since mode remotely.  Uses restoretest3"""
@@ -416,7 +416,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-changed-since 10000')
+                     extra_options=b'list files --changed-since 10000')
 
     def testListAtTimeLocal(self):
         """Test --list-at-time mode locally.  Uses restoretest3"""
@@ -424,7 +424,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-at-time 20000')
+                     extra_options=b'list files --at 20000')
 
     def testListAtTimeRemote(self):
         """Test --list-at-time mode locally.  Uses restoretest3"""
@@ -432,7 +432,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-at-time 20000')
+                     extra_options=b'list files --at 20000')
 
     def testListIncrementSizesLocal(self):
         """Test --list-increment-sizes switch.  Uses restoretest3"""
@@ -440,7 +440,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-increment-sizes')
+                     extra_options=b'list increments --size')
 
     def testListIncrementSizesRemote(self):
         """Test --list-increment-sizes switch.  Uses restoretest3"""
@@ -448,7 +448,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.backup3rp.path,
                      None,
-                     extra_options=b'--list-increment-sizes')
+                     extra_options=b'list increments --size')
 
     def get_all_increments(self, rp):
         """Iterate all increments at or below given directory"""
@@ -464,40 +464,41 @@ class FinalMisc(PathSetter):
                     yield subsubrp
 
     def testRemoveOlderThan(self):
-        """Test --remove-older-than.  Uses restoretest3"""
+        """Test remove-older-than.  Uses restoretest3"""
         Myrm(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(True,
                      True,
                      Local.rpout.path,
                      None,
-                     extra_options=b"--remove-older-than 20000")
+                     extra_options=b"remove increments --older-than 20000")
         rbdir = Local.rpout.append("rdiff-backup-data")
         for inc in self.get_all_increments(rbdir):
             self.assertGreaterEqual(inc.getinctime(), 20000)
 
     def testRemoveOlderThan2(self):
-        """Test --remove-older-than, but '1B'.  Uses restoretest3"""
+        """Test remove-older-than, but '1B'.  Uses restoretest3"""
         Myrm(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(True,
                      True,
                      Local.rpout.path,
                      None,
-                     extra_options=b"--remove-older-than 1B --force")
+                     extra_options=b"--force remove increments --older-than 1B")
         rbdir = Local.rpout.append("rdiff-backup-data")
         for inc in self.get_all_increments(rbdir):
             self.assertGreaterEqual(inc.getinctime(), 30000)
 
     def testRemoveOlderThanCurrent(self):
-        """Make sure --remove-older-than doesn't delete current incs"""
+        """Make sure remove-older-than doesn't delete current incs"""
         Myrm(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(True,
                      True,
                      Local.rpout.path,
                      None,
-                     extra_options=b"--remove-older-than now --force")
+                     extra_options=b"--force remove increments "
+                                   b"--older-than now")
         rbdir = Local.rpout.append("rdiff-backup-data")
 
         has_cur_mirror, has_metadata = 0, 0
@@ -510,35 +511,35 @@ class FinalMisc(PathSetter):
         self.assertTrue(has_metadata)
 
     def testRemoveOlderThanQuoting(self):
-        """Test --remove-older-than when dest directory is quoted"""
+        """Test remove-older-than when dest directory is quoted"""
         Myrm(Local.rpout.path)
         rdiff_backup(True,
                      True,
                      Local.inc1rp.path,
                      Local.rpout.path,
-                     extra_options=b"--override-chars-to-quote '^a-z0-9_ -.'"
-                     b" --current-time 10000")
+                     current_time=1000,
+                     extra_options=b"--chars-to-quote '^a-z0-9_ -.' backup")
         rdiff_backup(True,
                      True,
                      Local.inc2rp.path,
                      Local.rpout.path,
-                     extra_options=b"--override-chars-to-quote '^a-z0-9_ -.'"
-                     b" --current-time 20000")
+                     current_time=2000,
+                     extra_options=b"--chars-to-quote '^a-z0-9_ -.' backup")
         rdiff_backup(True,
                      True,
                      Local.rpout.path,
                      None,
-                     extra_options=b"--remove-older-than now")
+                     extra_options=b"remove increments --older-than now")
 
     def testRemoveOlderThanRemote(self):
-        """Test --remove-older-than remotely"""
+        """Test remove-older-than remotely"""
         Myrm(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(False,
                      True,
                      Local.rpout.path,
                      None,
-                     extra_options=b"--remove-older-than 20000")
+                     extra_options=b"remove increments --older-than 20000")
         rbdir = Local.rpout.append("rdiff-backup-data")
         for inc in self.get_all_increments(rbdir):
             self.assertGreaterEqual(inc.getinctime(), 20000)
@@ -550,7 +551,7 @@ class FinalMisc(PathSetter):
                      True,
                      Local.vftrp.path,
                      Local.rpout.path,
-                     extra_options=b"--tempdir DoesSurelyNotExist",
+                     extra_options=b"--tempdir DoesSurelyNotExist backup",
                      expected_ret_code=Globals.RET_CODE_ERR)
 
 
@@ -572,7 +573,8 @@ class FinalSelection(PathSetter):
             True,
             inc2_rel,
             out_rel,
-            extra_options=b"--current-time 10000 --include %b --exclude '**' " %
+            current_time=10000,
+            extra_options=b"backup --include %b --exclude '**' " %
             os.path.join(inc2_rel, b"various_file_types"))
 
         # check that one included file exists and one excluded doesn't
@@ -585,7 +587,9 @@ class FinalSelection(PathSetter):
                      True,
                      inc2_rel,
                      out_rel,
-                     extra_options=b"--current-time 20000 --include-filelist-stdin --exclude '**' ",
+                     current_time=20000,
+                     extra_options=b"backup "
+                                   b"--include-filelist-stdin --exclude '**'",
                      input=b"\n%b\n%b" % (os.path.join(inc2_rel, b"test.py"),
                                           os.path.join(inc2_rel, b"changed_dir")))
 
@@ -606,7 +610,8 @@ class FinalSelection(PathSetter):
             True,
             restore_filename,
             rest1_rel,
-            extra_options=b"--include-filelist-stdin --exclude '**' --restore",
+            extra_options=b"restore "
+                          b"--include-filelist-stdin --exclude '**'",
             input=b"\n%b" % os.path.join(rest1_rel, b"various_file_types", b"regular_file"))
 
         self.assertTrue(os.lstat(
@@ -640,14 +645,15 @@ class FinalSelection(PathSetter):
                      False,
                      Local.vftrp.path,
                      Local.rpout.path,
-                     extra_options=b"--exclude-filelist %b --include-filelist %b"
-                     b" --exclude '**'" % (excluderp.path, includerp.path))
+                     extra_options=b"backup "
+                     b"--exclude-filelist %b --include-filelist %b "
+                     b"--exclude '**'" % (excluderp.path, includerp.path))
 
         rdiff_backup(False,
                      False,
                      Local.rpout.path,
                      Local.rpout1.path,
-                     extra_options=b"--restore-as-of now")
+                     extra_options=b"restore --at now")
         self.assertTrue(os.lstat(Local.rpout1.append('executable').path))
         self.assertTrue(os.lstat(Local.rpout1.append('symbolic_link').path))
         self.assertRaises(OSError, os.lstat,
@@ -669,13 +675,13 @@ class FinalSelection(PathSetter):
         existing_file = self.make_restore_existing_target()
         file1_target = Local.rpout1.append("file1")
         file2_target = Local.rpout1.append("file2")
-        excludes = (b"--exclude %b --exclude %b --force" %
+        excludes = (b"--exclude %b --exclude %b" %
                     (file1_target.path, existing_file.path))
         rdiff_backup(source_local,
                      dest_local,
                      Local.rpout.path,
                      Local.rpout1.path,
-                     extra_options=b"--restore-as-of now " + excludes,
+                     extra_options=b"--force restore --at now " + excludes,
                      expected_ret_code=Globals.RET_CODE_WARN)
         for rp in (file1_target, file2_target, existing_file):
             rp.setdata()
@@ -751,7 +757,7 @@ class FinalCorrupt(PathSetter):
                      True,
                      Local.rpout.path,
                      Local.rpout1.path,
-                     extra_options=b"--restore-as-of 10000")
+                     extra_options=b"restore --at 10000")
 
 
 class FinalBugs(PathSetter):
@@ -808,7 +814,7 @@ class FinalBugs(PathSetter):
                      Local.rpout.path,
                      None,
                      current_time=30000,
-                     extra_options=b'--check-destination-dir',
+                     extra_options=b"regress",
                      expected_ret_code=Globals.RET_CODE_WARN)
 
         # Check to see if file still there

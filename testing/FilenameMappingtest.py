@@ -48,7 +48,8 @@ class FilenameMappingTest(unittest.TestCase):
 
         ct.rdiff_backup(True, True,
                         inrp.path, outrp.path,
-                        100000, extra_options=b"--override-chars-to-quote A")
+                        100000,
+                        extra_options=b"--chars-to-quote A backup")
 
         longrp_out = outrp.append(long_filename)
         self.assertFalse(longrp_out.lstat())

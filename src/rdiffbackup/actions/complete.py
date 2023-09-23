@@ -81,82 +81,65 @@ class CompleteAction(actions.BaseAction):
         # get a dictionary of discovered action plugins
         discovered_actions = actions_mgr.get_actions_dict()
         generic_parsers = actions_mgr.get_generic_parsers()
-        parent_parsers = actions_mgr.get_parent_parsers_compat200()
         version_string = "rdiff-backup {ver}".format(ver=Globals.version)
 
-        parser_new = arguments.get_parser_new(
+        parser = arguments.get_parser(
             version_string, generic_parsers, discovered_actions)
-        parser_compat200 = arguments.get_parser_compat200(
-            version_string, generic_parsers + parent_parsers)
 
-        possible_options = self._get_possible_options2(
-            parser_new, parser_compat200, self.values.words, self.values.cword,
-            self.values.unique)
+        possible_options = self._get_possible_options(
+            parser, self.values.words, self.values.cword, self.values.unique)
 
         for option in possible_options:
             print(option)
 
         return ret_code
 
-    def _get_possible_options2(self, parser_new, parser_compat200,
-                               words, cword, unique):
+    def _get_possible_options(self, parser, words, cword, unique):
+
+        # a negative index needs to be made positive
+        # this can only happen when calling directly the complete action
+        if cword < 0:
+            cword += len(words)
+            if cword < 0:
+                log.Log("Word index is too negative, can't complete", log.ERROR)
+                return []
+        # a condition which can only happen
+        # this can only happen when calling directly the complete action
+        if len(words) == 1 or cword == 0:
+            return [words[0]]
+
         log.Log("Words '{ws}' with index '{cw}' being completed".format(
                 ws=words, cw=cword), log.DEBUG)
-        opts_new, subs_new, args_new = self._get_options_dict(parser_new)
-        opts_compat200, subs_compat200, args_compat200 = self._get_options_dict(
-            parser_compat200)
+        opts, subs, args = self._get_options_dict(parser)
+        opts_and_subs = dict(**opts, **subs)  # FIXME use | starting with 3.9
 
         # the simple case, the first option is being entered
         if len(words) == 2:
-            options = dict(
-                opts_compat200, **subs_compat200, **opts_new, **subs_new)
-            args = dict(args_compat200, **args_new)
-            return self._get_matching_options(options, args,
+            return self._get_matching_options(opts_and_subs, args,
                                               words, cword, unique)
 
-        # let's try to find out if the new or old CLI is used, and at the same
-        # time identify the action used with the new CLI
+        # we try to identify the action used with the new CLI
         action_idx = None
-        is_new = is_old = None  # we can't yet decide if new or old
         for idx, word in enumerate(words):
-            if word in subs_new:
+            if word in subs:
                 action_idx = idx
-                is_new = True
-                is_old = False
-                # because an option could be a sub-option of the command
-                # we forcefully assume that we're using the new CLI
                 break
-            elif word == "--new" or word.startswith("@"):
-                is_new = True
-            elif word == "--no-new":
-                is_old = True
-            elif word in opts_new and word not in opts_compat200:
-                is_new = True
-            elif word in opts_compat200 and word not in opts_new:
-                is_old = True
-        if is_new and is_old:
-            log.Log.FatalError("There is a mixture of old and new options")
 
-        if action_idx is not None:
+        if action_idx is None:
+            return self._get_matching_options(
+                opts_and_subs, args, words, cword, unique)
+        else:  # an action has been recognized
             if cword == action_idx:
                 return [word]
             elif cword > action_idx:
-                return self._get_possible_options(
-                    subs_new[word], words[action_idx:], cword - action_idx,
+                return self._get_possible_sub_options(
+                    subs[word], words[action_idx:], cword - action_idx,
                     unique)
-        elif is_old:
-            return self._get_matching_options(
-                dict(opts_compat200, **subs_compat200),
-                args_compat200, words, cword, unique)
-        elif is_new:
-            return self._get_matching_options(
-                dict(opts_new, **subs_new), args_new, words, cword, unique)
-        else:  # we don't know if old or new, so we send both back
-            return self._get_matching_options(
-                dict(opts_compat200, **subs_compat200, **opts_new, **subs_new),
-                dict(args_compat200, **args_new), words, cword, unique)
+            else:
+                return self._get_matching_options(
+                    opts, args, words, cword, unique)
 
-    def _get_possible_options(self, parser, words, cword, unique):
+    def _get_possible_sub_options(self, parser, words, cword, unique):
         log.Log("Words '{ws}' with index '{cw}' being completed".format(
                 ws=words, cw=cword), log.DEBUG)
         opts, subs, args = self._get_options_dict(parser)
@@ -178,7 +161,7 @@ class CompleteAction(actions.BaseAction):
             if cword == action_idx:
                 return {word}
             elif cword > action_idx:
-                return self._get_possible_options(
+                return self._get_possible_sub_options(
                     subs[word], words[action_idx:], cword - action_idx, unique)
         else:
             return self._get_matching_options(

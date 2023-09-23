@@ -32,7 +32,6 @@ Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remo
 ** xref:rdiff-backup.1.adoc[rdiff-backup(1)]
 ** xref:rdiff-backup-delete.1.adoc[rdiff-backup-delete(1)]
 ** xref:rdiff-backup-statistics.1.adoc[rdiff-backup-statistics(1)]
-** link:other/rdiff-backup-old.1.html[rdiff-backup-old(1)^] (generated with man2html)
 * External documents:
 ** http://arctic.org/~dean/rdiff-backup/unattended.html[Dean Gaudet's unattended rdiff-backup page^] details how to configure ssh to make unattended rdiff-backup sessions more secure.
 

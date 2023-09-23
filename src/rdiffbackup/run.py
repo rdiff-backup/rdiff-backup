@@ -54,7 +54,6 @@ def main_run(arglist, security_override=False):
     parsed_args = arguments.parse(
         arglist, "rdiff-backup {ver}".format(ver=Globals.version),
         actions_mgr.get_generic_parsers(),
-        actions_mgr.get_parent_parsers_compat200(),
         discovered_actions)
 
     # we need verbosity set properly asap
@@ -147,7 +146,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set("compression", arglist.compression)
         Globals.set("no_compression_regexp_string",
                     os.fsencode(arglist.not_compressed_regexp))
-    else:
+    else:  # FIXME how to get rid of this plug?
         Globals.set("no_compression_regexp_string",
                     os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
     if arglist.action in ('server'):
@@ -165,7 +164,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set_integer('current_time', arglist.current_time)
     if arglist.chars_to_quote is not None:
         Globals.set('chars_to_quote', os.fsencode(arglist.chars_to_quote))
-    if arglist.api_version is not None:  # FIXME
+    if arglist.api_version is not None:  # FIXME catch also env variable?
         Globals.set_api_version(arglist.api_version)
 
 

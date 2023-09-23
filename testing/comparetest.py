@@ -159,19 +159,19 @@ class CompareTest(unittest.TestCase):
                      local,
                      abs_output_dir,
                      None,
-                     extra_options=b"--verify")
+                     extra_options=b"verify")
         rdiff_backup(local,
                      local,
                      abs_output_dir,
                      None,
-                     extra_options=b"--verify-at-time 10000")
+                     extra_options=b"verify --at 10000")
         modify_diff()
         self.assertTrue(
             rdiff_backup(local,
                          local,
                          abs_output_dir,
                          None,
-                         extra_options=b"--verify-at-time 10000",
+                         extra_options=b"verify --at 10000",
                          expected_ret_code=None))
         change_file(
             rpath.RPath(Globals.local_connection,
@@ -181,7 +181,7 @@ class CompareTest(unittest.TestCase):
                          local,
                          abs_output_dir,
                          None,
-                         extra_options=b"--verify",
+                         extra_options=b"verify",
                          expected_ret_code=None))
 
     def testVerifyLocal(self):

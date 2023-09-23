@@ -91,7 +91,7 @@ class LongNameTest(unittest.TestCase):
                      in1.path,
                      self.out_rp.path,
                      10000,
-                     extra_options=extra_args)
+                     extra_options=extra_args + b" backup")
         if compare_back:
             self.check_dir1(self.out_rp)
         rdiff_backup(inlocal,
@@ -99,7 +99,7 @@ class LongNameTest(unittest.TestCase):
                      in2.path,
                      self.out_rp.path,
                      20000,
-                     extra_options=extra_args)
+                     extra_options=extra_args + b" backup ")
         if compare_back:
             self.check_dir2(self.out_rp)
 
@@ -110,7 +110,7 @@ class LongNameTest(unittest.TestCase):
                      self.out_rp.path,
                      restore_dir.path,
                      30000,
-                     extra_options=b"-r now " + extra_args)
+                     extra_options=extra_args + b" restore --at now ")
         self.check_dir2(restore_dir)
         Myrm(restore_dir.path)
         rdiff_backup(1,
@@ -118,7 +118,7 @@ class LongNameTest(unittest.TestCase):
                      self.out_rp.path,
                      restore_dir.path,
                      30000,
-                     extra_options=b"-r 10000 " + extra_args)
+                     extra_options=extra_args + b" restore --at 10000 ")
         self.check_dir1(restore_dir)
 
     def test_basic_local(self):
@@ -127,7 +127,7 @@ class LongNameTest(unittest.TestCase):
 
     def test_quoting_local(self):
         """Test backup session with quoting, so reg files also too long"""
-        self.generic_test(1, 1, b"--override-chars-to-quote A-Z", 0)
+        self.generic_test(1, 1, b"--chars-to-quote A-Z", 0)
 
     def generic_regress_test(self, extra_args):
         """Used for regress tests below"""
@@ -141,13 +141,13 @@ class LongNameTest(unittest.TestCase):
                      in1.path,
                      self.out_rp.path,
                      10000,
-                     extra_options=extra_args)
+                     extra_options=b"backup " + extra_args)
         rdiff_backup(1,
                      1,
                      in2.path,
                      self.out_rp.path,
                      20000,
-                     extra_options=extra_args)
+                     extra_options=b"backup " + extra_args)
 
         # Regress repository back to in1 condition
         Globals.rbdir = self.out_rp.append_path('rdiff-backup-data')
@@ -161,7 +161,7 @@ class LongNameTest(unittest.TestCase):
                      self.out_rp.path,
                      restore_dir.path,
                      30000,
-                     extra_options=b'-r now ' + extra_args)
+                     extra_options=b'restore --at now ' + extra_args)
         self.check_dir1(restore_dir)
 
     def add_current_mirror(self, time):
@@ -190,7 +190,7 @@ class LongNameTest(unittest.TestCase):
                      True,
                      output_dir,
                      restore_dir,
-                     extra_options=b'-r 0')
+                     extra_options=b'restore --at 0')
         compare_recursive(rpath.RPath(Globals.local_connection, input_dir),
                           rpath.RPath(Globals.local_connection, restore_dir))
 
