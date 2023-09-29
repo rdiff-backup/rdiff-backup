@@ -18,7 +18,7 @@
 # 02110-1301, USA
 """list, delete, and otherwise manage increments"""
 
-from . import Globals, log
+from rdiff_backup import Globals, log
 
 
 def delete_earlier_than(baserp, time):  # compat200

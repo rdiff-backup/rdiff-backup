@@ -346,14 +346,10 @@ def _time_from_session(session_num, rp=None, session_times=None):
     Return time in seconds of given backup
 
     The current mirror is session_num 0, the next oldest increment has
-    number 1, etc.  Requires that the Globals.rbdir directory be set by default.
+    number 1, etc.
 
     session_times is assumed to be a pre-sorted list of times as epochs.
     """
-    if session_times is None:  # compat200
-        if rp is None:
-            rp = Globals.rbdir
-        session_times = rp.conn.restore.MirrorStruct.get_increment_times()
     if len(session_times) <= session_num:
         return session_times[0]  # Use oldest if too few backups
     return session_times[-session_num - 1]

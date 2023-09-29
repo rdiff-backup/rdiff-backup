@@ -79,12 +79,6 @@ class VerifyAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if Globals.get_api_version() < 201:  # compat200
-            # set the filesystem properties of the repository
-            self.repo.base_dir.conn.fs_abilities.single_set_globals(
-                self.repo.base_dir, 1)  # read_only=True
-            self.repo.setup_quoting()
-
         self.action_time = self.repo.get_parsed_time(self.values.at)
         if self.action_time is None:
             return Globals.RET_CODE_ERR
@@ -96,11 +90,7 @@ class VerifyAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if Globals.get_api_version() < 201:  # compat200
-            return self.repo.base_dir.conn.compare.Verify(
-                self.repo.ref_path, self.repo.ref_inc, self.action_time)
-        else:
-            return self.repo.verify(self.action_time)
+        ret_code |= self.repo.verify(self.action_time)
 
         return ret_code
 

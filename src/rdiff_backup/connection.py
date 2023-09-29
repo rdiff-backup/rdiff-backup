@@ -32,23 +32,6 @@ import types  # noqa: F401
 import time
 import subprocess
 
-# The following EA and ACL modules may be used if available
-try:  # compat200
-    import xattr.pyxattr_compat as xattr  # noqa: F401
-except ImportError:
-    try:
-        import xattr  # noqa: F401
-    except ImportError:
-        pass
-try:  # compat200
-    import posix1e  # noqa: F401
-except ImportError:
-    pass
-try:  # compat200
-    import win32security  # noqa: F401
-except ImportError:
-    pass
-
 
 class ConnectionError(Exception):
     pass
@@ -181,8 +164,6 @@ class LowLevelPipeConnection(Connection):
             self._putbuf(obj, req_num)
         elif isinstance(obj, Connection):
             self._putconn(obj, req_num)
-        elif isinstance(obj, FilenameMapping.QuotedRPath):  # compat200
-            self._putqrpath(obj, req_num)
         elif isinstance(obj, map_filenames.QuotedRPath):
             self._putqrpath(obj, req_num)
         elif isinstance(obj, rpath.RPath):
@@ -354,12 +335,8 @@ class LowLevelPipeConnection(Connection):
     def _getqrpath(self, raw_qrpath_buf):
         """Return QuotedRPath object from raw buffer"""
         conn_number, base, index, data = pickle.loads(raw_qrpath_buf)
-        if Globals.get_api_version() < 201:  # compat200
-            return FilenameMapping.QuotedRPath(
-                Globals.connection_dict[conn_number], base, index, data)
-        else:
-            return map_filenames.QuotedRPath(
-                Globals.connection_dict[conn_number], base, index, data)
+        return map_filenames.QuotedRPath(
+            Globals.connection_dict[conn_number], base, index, data)
 
     def _close(self):
         """Close the pipes associated with the connection"""
@@ -673,11 +650,9 @@ def RedirectedRun(conn_number, func, *args):
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
 from rdiff_backup import (  # noqa: E402,F401
-    Globals, Time, Rdiff, Hardlink, FilenameMapping, Security,
-    Main, rorpiter, selection, increment, statistics, manage,
-    iterfile, rpath, robust, restore, backup,
-    SetConnections, librsync, log, regress, fs_abilities,
-    user_group, compare
+    Globals, increment, iterfile, librsync, log, manage,
+    Rdiff, robust, rorpiter, rpath,
+    SetConnections, selection, statistics, Security, Time
 )
 from rdiffbackup.locations import _dir_shadow, _repo_shadow  # noqa: E402,F401
 from rdiffbackup.locations.map import filenames as map_filenames  # noqa: E402,F401

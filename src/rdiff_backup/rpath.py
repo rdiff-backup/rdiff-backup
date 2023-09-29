@@ -767,12 +767,8 @@ class RPath(RORPath):
             # directories on Windows.
             if not self.isdir():
                 raise
-            if Globals.get_api_version() < 201:  # compat200
-                if self.conn.os.name != "nt":  # doesn't work, just historical
-                    raise
-            else:
-                if self.conn.platform.system() != "Windows":
-                    raise
+            if self.conn.platform.system() != "Windows":
+                raise
         else:
             self.data['mtime'] = modtime
 

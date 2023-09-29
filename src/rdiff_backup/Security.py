@@ -196,16 +196,6 @@ def _set_security_level(security_class, security_level, restrict_path,
         else:  # cp2 is local but not cp1
             sec_level = "read-write"
             rdir = getpath(cp2)
-    elif security_class == "mirror":  # compat200 not sure what this was?!?
-        if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
-            sec_level = "minimal"
-            rdir = tempfile.gettempdirb()
-        elif islocal(cp1):
-            sec_level = "read-only"
-            rdir = getpath(cp1)
-        else:  # cp2 is local but not cp1
-            sec_level = "read-write"
-            rdir = getpath(cp2)
     elif security_class == "validate":
         sec_level = "minimal"
         rdir = tempfile.gettempdirb()
