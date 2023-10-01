@@ -309,9 +309,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "backup.DestinationStruct.get_sigs",
             "backup.DestinationStruct.patch_and_increment",
             "fs_abilities.backup_set_globals",
-            "Main.backup_touch_curmirror_local",
-            "Main.backup_remove_curmirror_local",
-            "Main.backup_close_statistics",
             "regress.check_pids",
             # API >= 201
             "_repo_shadow.RepoShadow.close_statistics",

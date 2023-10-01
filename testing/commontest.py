@@ -7,7 +7,7 @@ import shlex
 import shutil
 import subprocess
 from rdiff_backup import (
-    Globals, Hardlink, hash, log, Main, rorpiter, rpath,
+    Globals, Hardlink, hash, log, rorpiter, rpath,
     Security, selection, SetConnections
 )
 from rdiffbackup import actions, run
@@ -323,7 +323,6 @@ def InternalRestore(mirror_local,
     the testing directory and will be modified for remote trials.
 
     """
-    Main._restore_root_set = 0  # FIXME required?
     args = []
     args.append("--force")
     if not (mirror_local and dest_local):
