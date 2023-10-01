@@ -57,7 +57,10 @@ class Manager:
         """
         self.rplist = []
         self.timerpmap, self.prefixmap = {}, {}
-        self.data_dir = data_dir
+        if data_dir is None:  # compat200 compat201
+            self.data_dir = Globals.rbdir
+        else:
+            self.data_dir = data_dir
         for filename in self.data_dir.listdir():
             rp = self.data_dir.append(filename)
             if rp.isincfile():

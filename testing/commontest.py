@@ -7,11 +7,12 @@ import shlex
 import shutil
 import subprocess
 from rdiff_backup import (
-    Globals, Hardlink, hash, log, rorpiter, rpath,
+    Globals, hash, log, rorpiter, rpath,
     Security, selection, SetConnections
 )
 from rdiffbackup import actions, run
 from rdiffbackup.meta import ea, acl_posix
+from rdiffbackup.locations.map import hardlinks as map_hardlinks
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
@@ -369,47 +370,47 @@ def _reset_connections(src_rp, dest_rp):
 def _hardlink_rorp_eq(src_rorp, dest_rorp):
     """Compare two files for hardlink equality, encompassing being hard-linked,
     having the same hashsum, and the same number of link counts."""
-    Hardlink.add_rorp(dest_rorp)
-    Hardlink.add_rorp(src_rorp, dest_rorp)
-    rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
+    map_hardlinks.add_rorp(dest_rorp)
+    map_hardlinks.add_rorp(src_rorp, dest_rorp)
+    rorp_eq = map_hardlinks.rorp_eq(src_rorp, dest_rorp)
     if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
         if not rorp_eq:
             log.Log("Hardlink compare error with when no links exist", 3)
-            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
             return False
-    elif src_rorp.getnumlinks() > 1 and not Hardlink.is_linked(src_rorp):
+    elif src_rorp.getnumlinks() > 1 and not map_hardlinks.is_linked(src_rorp):
         if rorp_eq:
             log.Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
-            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
             return False
         hash.compute_sha1(dest_rorp)
-        rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
+        rorp_eq = map_hardlinks.rorp_eq(src_rorp, dest_rorp)
         if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
             if rorp_eq:
                 log.Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
-                log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-                log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+                log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
+                log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
                 return False
         elif not rorp_eq:
             log.Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
-            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
             return False
     elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
         if rorp_eq:
             log.Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
-            log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
+            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
             return False
     elif not rorp_eq:
         log.Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
-        log.Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
-        log.Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
+        log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
+        log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
         return False
-    Hardlink.del_rorp(src_rorp)
-    Hardlink.del_rorp(dest_rorp)
+    map_hardlinks.del_rorp(src_rorp)
+    map_hardlinks.del_rorp(dest_rorp)
     return True
 
 
@@ -532,7 +533,7 @@ def compare_recursive(src_rp, dest_rp,
 
 def reset_hardlink_dicts():
     """Clear the hardlink dictionaries"""
-    Hardlink._inode_index = {}
+    map_hardlinks._inode_index = {}
 
 
 def BackupRestoreSeries(source_local,

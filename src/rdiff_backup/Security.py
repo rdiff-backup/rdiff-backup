@@ -245,7 +245,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "os.listdir",
             # API < 201
             "os.name",  # doesn't work because not callable but attribute!
-            "Hardlink.initialize_dictionaries",
             # API >= 201
             "platform.system",
             "_repo_shadow.RepoShadow.get_config",
