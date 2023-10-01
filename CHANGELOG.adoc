@@ -9,6 +9,28 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * *NEW* features and bug-**FIX**es are of course of interest as well.
 * **DOC**umentation (and website) changes are marked as such.
 
+== New in v2.4.0 (never released)
+
+=== Changes
+
+* CHG: embed Python 3.11.0 on Windows and use latest PyInstaller, no 
+       user should notice anything though
+* CHG: man page for the old rdiff-backup CLI syntax has been removed
+* CHG: option --override-chars-to-quote removed, use --chars-to-quote 
+       instead, as generic option
+* CHG: the old CLI syntax (the one without actions and sub-options) has 
+       been removed, check the migration docs and examples for mappings 
+       between old and new CLI, closes #793
+* FIX: the bash completion would sometimes fail when trying to complete 
+       _within_ already entered arguments
+* FIX: there was a spurious warning about server deprecation, this has 
+       disappeared because the old CLI isn't supported anymore, see #922
+
+=== Authors
+
+* Eric L
+
+
 == New in v2.2.6 (2023-09-08)
 
 === Changes
