@@ -220,7 +220,7 @@ Here a very short summary on how to create a virtualenv in the directory `.../rd
 python -m venv .../rdb
 source .../rdb/bin/activate  #<1>
 which pip                    #<2>
-pip install wheel
+pip install -r requirements.txt
 # install rdiff-backup       #<3>
 which rdiff-backup           #<2>
 # use rdiff-backup and do whatever you want actually
@@ -233,6 +233,8 @@ In all cases, you should have a prompt starting with `(rdb)`.
 <3> the different options to install rdiff-backup are listed below.
 <4> you're now leaving the virtualenv, the prompt should go back to normal.
 <5> you can of course keep and maintain the virtualenv instead, but why?
+
+TIP: the script `./tools/create_venv.sh` is available to execute all these steps at once.
 
 The different ways of installing rdiff-backup in such a virtualenv depend on the version type:
 
