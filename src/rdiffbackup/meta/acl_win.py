@@ -17,7 +17,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
 
-import re
 import os
 from rdiff_backup import C, Globals, log, rorpiter
 from rdiffbackup import meta
@@ -244,20 +243,12 @@ class ACL:
 
 class WACLExtractor(meta.FlatExtractor):
     """Iterate Windows ACL objects from the WACL information file"""
-    record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
 
     @staticmethod
     def _record_to_object(record):
         acl = get_meta_object()
         acl.from_string(record)
         return acl
-
-    def _filename_to_index(self, filename):
-        """Convert possibly quoted filename to index tuple"""
-        if filename == b'.':
-            return ()
-        else:
-            return tuple(C.acl_unquote(filename).split(b'/'))
 
 
 class WinAccessControlListFile(meta.FlatFile):

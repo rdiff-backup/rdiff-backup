@@ -36,7 +36,6 @@ from rdiff_backup import C, Globals, log, rorpiter
 from rdiffbackup import meta
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
-from rdiff_backup import ea  # compat200 ?
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name
@@ -253,12 +252,9 @@ class AccessControlLists:
         return 1
 
 
-class ACLExtractor(ea.EAExtractor):
+class ACLExtractor(meta.FlatExtractor):
     """
     Iterate AccessControlLists objects from the ACL information file
-
-    Except for the _record_to_object method, we can reuse everything in
-    the EAExtractor class because the file formats are so similar.
     """
 
     @staticmethod
