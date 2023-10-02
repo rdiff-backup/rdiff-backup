@@ -2,16 +2,23 @@ import os
 import time
 import unittest
 import commontest as ct
-from rdiff_backup import FilenameMapping, rpath, Globals
+from rdiff_backup import Globals, rpath
+from rdiffbackup.locations.map import filenames as map_filenames
 
 
 class FilenameMappingTest(unittest.TestCase):
-    """Test the FilenameMapping class, for quoting filenames"""
+    """Test the map_filenames module, for quoting filenames"""
 
     def setUp(self):
         """Just initialize quoting"""
-        Globals.chars_to_quote = b'A-Z'
-        FilenameMapping.set_init_quote_vals()
+        ctq = b'A-Z'
+        # FIXME possibly too much internas
+        regexp, unregexp = map_filenames.get_quoting_regexps(
+            ctq, Globals.quoting_char)
+
+        Globals.set_all('chars_to_quote', ctq)
+        Globals.set_all('chars_to_quote_regexp', regexp)
+        Globals.set_all('chars_to_quote_unregexp', unregexp)
 
     def testBasicQuote(self):
         """Test basic quoting and unquoting"""
@@ -19,14 +26,14 @@ class FilenameMappingTest(unittest.TestCase):
             b"hello", b"HeLLo", b"EUOeu/EUOeu", b":", b"::::EU", b"/:/:"
         ]
         for filename in filenames:
-            quoted = FilenameMapping.quote(filename)
-            self.assertEqual(FilenameMapping.unquote(quoted), filename)
+            quoted = map_filenames.quote(filename)
+            self.assertEqual(map_filenames.unquote(quoted), filename)
 
     def testQuotedRPath(self):
         """Test the QuotedRPath class"""
         path = (b"/usr/local/mirror_metadata"
                 b".1969-12-31;08421;05833;05820-07;05800.data.gz")
-        qrp = FilenameMapping.get_quotedrpath(
+        qrp = map_filenames.get_quotedrpath(
             rpath.RPath(Globals.local_connection, path), 1)
         self.assertEqual(qrp.base, b"/usr/local")
         self.assertEqual(len(qrp.index), 1)

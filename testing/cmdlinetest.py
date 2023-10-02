@@ -9,7 +9,7 @@ from commontest import (
 )
 import commontest as comtst
 import fileset
-from rdiff_backup import Globals, log, rpath, robust, FilenameMapping, Time, selection
+from rdiff_backup import Globals, log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
 
 """Regression tests"""
@@ -192,13 +192,8 @@ class PathSetter(unittest.TestCase):
         within a given directory."""
 
         if quoted:
-            if Globals.get_api_version() < 201:  # compat200
-                FilenameMapping.set_init_quote_vals()
-                dirrp = FilenameMapping.QuotedRPath(Globals.local_connection,
-                                                    directory)
-            else:
-                dirrp = map_filenames.QuotedRPath(Globals.local_connection,
-                                                  directory)
+            dirrp = map_filenames.QuotedRPath(Globals.local_connection,
+                                              directory)
         else:
             dirrp = rpath.RPath(Globals.local_connection, directory)
         incbasenames = [
