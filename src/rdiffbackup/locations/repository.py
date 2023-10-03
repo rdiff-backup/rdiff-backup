@@ -197,13 +197,14 @@ class Repo(locations.Location):
         # set globally by the fs_abilities.xxx_set_globals functions.
         if not Globals.chars_to_quote:
             return False
-        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
         self.base_dir = map_filenames.get_quotedrpath(self.base_dir)
         self.data_dir = map_filenames.get_quotedrpath(self.data_dir)
         self.incs_dir = map_filenames.get_quotedrpath(self.incs_dir)
         if self.ref_type:
             self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
             self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
+
+        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
 
         return True
 
