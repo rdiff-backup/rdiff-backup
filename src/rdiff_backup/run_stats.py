@@ -545,6 +545,12 @@ def set_chars_to_quote():
     if ctq_rp.lstat():
         Globals.chars_to_quote = ctq_rp.get_bytes()
     if Globals.chars_to_quote:
+        regexp, unregexp = map_filenames.get_quoting_regexps(
+            Globals.chars_to_quote, Globals.quoting_char)
+
+        Globals.set_all('chars_to_quote_regexp', regexp)
+        Globals.set_all('chars_to_quote_unregexp', unregexp)
+
         Globals.rbdir = map_filenames.get_quotedrpath(Globals.rbdir)
 
 
