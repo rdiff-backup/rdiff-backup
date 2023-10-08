@@ -26,12 +26,12 @@ import subprocess
 import sys
 
 from rdiff_backup import (
-    FilenameMapping,
     Globals,
     robust,
     rpath,
     Time,
 )
+from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.utils import safestr
 
 begin_time = None  # Parse statistics at or after this time...
@@ -545,8 +545,13 @@ def set_chars_to_quote():
     if ctq_rp.lstat():
         Globals.chars_to_quote = ctq_rp.get_bytes()
     if Globals.chars_to_quote:
-        FilenameMapping.set_init_quote_vals()
-        Globals.rbdir = FilenameMapping.get_quotedrpath(Globals.rbdir)
+        regexp, unregexp = map_filenames.get_quoting_regexps(
+            Globals.chars_to_quote, Globals.quoting_char)
+
+        Globals.set_all('chars_to_quote_regexp', regexp)
+        Globals.set_all('chars_to_quote_unregexp', unregexp)
+
+        Globals.rbdir = map_filenames.get_quotedrpath(Globals.rbdir)
 
 
 def main_run():

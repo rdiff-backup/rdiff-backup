@@ -57,7 +57,7 @@ class Manager:
         """
         self.rplist = []
         self.timerpmap, self.prefixmap = {}, {}
-        if data_dir is None:  # compat200
+        if data_dir is None:  # compat200 compat201
             self.data_dir = Globals.rbdir
         else:
             self.data_dir = data_dir

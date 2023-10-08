@@ -196,16 +196,6 @@ def _set_security_level(security_class, security_level, restrict_path,
         else:  # cp2 is local but not cp1
             sec_level = "read-write"
             rdir = getpath(cp2)
-    elif security_class == "mirror":  # compat200 not sure what this was?!?
-        if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
-            sec_level = "minimal"
-            rdir = tempfile.gettempdirb()
-        elif islocal(cp1):
-            sec_level = "read-only"
-            rdir = getpath(cp1)
-        else:  # cp2 is local but not cp1
-            sec_level = "read-write"
-            rdir = getpath(cp2)
     elif security_class == "validate":
         sec_level = "minimal"
         rdir = tempfile.gettempdirb()
@@ -255,7 +245,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "os.listdir",
             # API < 201
             "os.name",  # doesn't work because not callable but attribute!
-            "Hardlink.initialize_dictionaries",
             # API >= 201
             "platform.system",
             "_repo_shadow.RepoShadow.get_config",
@@ -319,9 +308,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "backup.DestinationStruct.get_sigs",
             "backup.DestinationStruct.patch_and_increment",
             "fs_abilities.backup_set_globals",
-            "Main.backup_touch_curmirror_local",
-            "Main.backup_remove_curmirror_local",
-            "Main.backup_close_statistics",
             "regress.check_pids",
             # API >= 201
             "_repo_shadow.RepoShadow.close_statistics",

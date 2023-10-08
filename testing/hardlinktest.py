@@ -10,8 +10,9 @@ from commontest import (
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, Hardlink, rpath, selection
+from rdiff_backup import Globals, rpath, selection
 from rdiffbackup.meta import stdattr
+from rdiffbackup.locations.map import hardlinks as map_hardlinks
 
 
 class HardlinkTest(unittest.TestCase):
@@ -45,23 +46,23 @@ class HardlinkTest(unittest.TestCase):
         Globals.preserve_hardlinks = 1
         reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp3).get_select_iter():
-            Hardlink.add_rorp(dsrp)
+            map_hardlinks.add_rorp(dsrp)
 
-        self.assertEqual(len(list(Hardlink._inode_index.keys())), 3)
+        self.assertEqual(len(list(map_hardlinks._inode_index.keys())), 3)
 
     def testCompletedDict(self):
         """See if the hardlink dictionaries are built correctly"""
         reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp1).get_select_iter():
-            Hardlink.add_rorp(dsrp)
-            Hardlink.del_rorp(dsrp)
-        self.assertEqual(Hardlink._inode_index, {})
+            map_hardlinks.add_rorp(dsrp)
+            map_hardlinks.del_rorp(dsrp)
+        self.assertEqual(map_hardlinks._inode_index, {})
 
         reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp2).get_select_iter():
-            Hardlink.add_rorp(dsrp)
-            Hardlink.del_rorp(dsrp)
-        self.assertEqual(Hardlink._inode_index, {})
+            map_hardlinks.add_rorp(dsrp)
+            map_hardlinks.del_rorp(dsrp)
+        self.assertEqual(map_hardlinks._inode_index, {})
 
     def testSeries(self):
         """Test hardlink system by backing up and restoring a few dirs"""

@@ -2,7 +2,8 @@ import unittest
 import os
 import time
 from commontest import abs_test_dir, Myrm
-from rdiff_backup import Globals, rpath, fs_abilities
+from rdiff_backup import Globals, rpath
+from rdiffbackup.locations import fs_abilities
 
 
 class FSAbilitiesTest(unittest.TestCase):
@@ -16,16 +17,16 @@ class FSAbilitiesTest(unittest.TestCase):
     """
     # Describes standard linux file system without acls/eas
     dir_to_test = abs_test_dir
-    eas = acls = 1
+    eas = acls = None
     chars_to_quote = ""
-    extended_filenames = 1
-    case_sensitive = 1
+    extended_filenames = True
+    case_sensitive = True
     ownership = (os.getuid() == 0)
-    hardlinks = fsync_dirs = 1
-    dir_inc_perms = 1
-    resource_forks = 0
-    carbonfile = 0
-    high_perms = 1
+    hardlinks = fsync_dirs = True
+    dir_inc_perms = True
+    resource_forks = False
+    carbonfile = False
+    high_perms = True
 
     # Describes MS-Windows style file system
     # dir_to_test = "/mnt/fat"
@@ -50,9 +51,9 @@ class FSAbilitiesTest(unittest.TestCase):
     def testReadOnly(self):
         """Test basic querying read only"""
         base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
-        fsa = fs_abilities.FSAbilities('read-only', base_dir, read_only=True)
+        fsa = fs_abilities.FSAbilities(base_dir, writable=False)
         print(fsa)
-        self.assertEqual(fsa.read_only, 1)
+        self.assertFalse(fsa.writable)
         self.assertEqual(fsa.eas, self.eas)
         self.assertEqual(fsa.acls, self.acls)
         self.assertEqual(fsa.resource_forks, self.resource_forks)
@@ -68,10 +69,10 @@ class FSAbilitiesTest(unittest.TestCase):
         new_dir.setdata()
         new_dir.mkdir()
         t = time.time()
-        fsa = fs_abilities.FSAbilities('read/write', new_dir)
+        fsa = fs_abilities.FSAbilities(new_dir)
         print("Time elapsed = ", time.time() - t)
         print(fsa)
-        self.assertEqual(fsa.read_only, 0)
+        self.assertTrue(fsa.writable)
         self.assertEqual(fsa.eas, self.eas)
         self.assertEqual(fsa.acls, self.acls)
         self.assertEqual(fsa.ownership, self.ownership)
@@ -91,8 +92,8 @@ class FSAbilitiesTest(unittest.TestCase):
     def test_case_sensitive(self):
         """Test a read-only case-INsensitive directory"""
         rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)
-        fsa = fs_abilities.FSAbilities('read-only', rp, read_only=True)
-        fsa.set_case_sensitive_readonly(rp)
+        fsa = fs_abilities.FSAbilities(rp, writable=False)
+        fsa._detect_case_sensitive_readonly(rp)
         self.assertEqual(fsa.case_sensitive, 0)
 
 

@@ -3,7 +3,8 @@ import errno
 import os
 from commontest import abs_test_dir, old_test_dir, Myrm, \
     rdiff_backup, compare_recursive
-from rdiff_backup import rpath, Globals, regress, Time
+import commontest as comtst
+from rdiff_backup import Globals, rpath, Time
 
 if os.name == "nt":
     NAME_MAX_LEN = 255
@@ -150,10 +151,9 @@ class LongNameTest(unittest.TestCase):
                      extra_options=b"backup " + extra_args)
 
         # Regress repository back to in1 condition
-        Globals.rbdir = self.out_rp.append_path('rdiff-backup-data')
-        self.add_current_mirror(10000)
-        self.out_rp.setdata()
-        regress.Regress(self.out_rp)
+        self.add_current_mirror(self.out_rp, 10000)
+        comtst.rdiff_backup_action(True, True, self.out_rp, None, (),
+                                   b"regress", ())
 
         # Restore in1 and compare
         rdiff_backup(1,
@@ -164,10 +164,11 @@ class LongNameTest(unittest.TestCase):
                      extra_options=b'restore --at now ' + extra_args)
         self.check_dir1(restore_dir)
 
-    def add_current_mirror(self, time):
+    def add_current_mirror(self, out_rp, time):
         """Add current_mirror marker at given time"""
-        cur_mirror_rp = Globals.rbdir.append("current_mirror.%s.data" %
-                                             (Time.timetostring(time), ))
+        data_rp = self.out_rp.append_path('rdiff-backup-data')
+        cur_mirror_rp = data_rp.append("current_mirror.%s.data" %
+                                       (Time.timetostring(time), ))
         cur_mirror_rp.touch()
 
     def test_regress_basic(self):

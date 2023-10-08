@@ -2,7 +2,7 @@ import unittest
 import os
 from commontest import abs_output_dir, old_test_dir, Myrm, MakeOutputDir, \
     InternalRestore, compare_recursive
-from rdiff_backup import restore, Globals, rpath, Time, log
+from rdiff_backup import Globals, log, rpath, Time
 from rdiffbackup.locations import _repo_shadow
 
 lc = Globals.local_connection
@@ -38,12 +38,8 @@ class RestoreFileComparer:
         """Restore file, make sure it is the same at time t"""
         log.Log("Checking result at time %s" % (t, ), 7)
         tf = tempdir.get_temp_rpath()
-        if Globals.get_api_version() < 201:  # compat200
-            restore.MirrorStruct._mirror_time = mirror_time
-            restore.MirrorStruct._rest_time = t
-        else:
-            _repo_shadow.RepoShadow._mirror_time = mirror_time
-            _repo_shadow.RepoShadow._restore_time = t
+        _repo_shadow.RepoShadow._mirror_time = mirror_time
+        _repo_shadow.RepoShadow._restore_time = t
         self.rf.set_relevant_incs()
         out_rorpath = self.rf.get_attribs().getRORPath()
         correct_result = self.time_rp_dict[t]
@@ -74,40 +70,13 @@ class RestoreFileComparer:
         return errors
 
 
-class RestoreTimeTest(unittest.TestCase):
-    def test_time_from_session(self):
-        """Test getting time from session number (as in Time._time_from_session)
-
-        Test here instead of in timetest because it depends on an
-        rdiff-backup-data directory already being laid out.
-
-        """
-        if Globals.get_api_version() < 201:  # compat200
-            restore.MirrorStruct._mirror_time = None  # Reset
-        else:
-            _repo_shadow.RepoShadow._mirror_time = None
-        Globals.rbdir = rpath.RPath(
-            lc,
-            os.path.join(old_test_dir, b"restoretest3", b"rdiff-backup-data"))
-        self.assertEqual(Time.genstrtotime("0B"), Time._time_from_session(0))
-        self.assertEqual(Time.genstrtotime("2B"), Time._time_from_session(2))
-        self.assertEqual(Time.genstrtotime("23B"), Time._time_from_session(23))
-
-        self.assertEqual(Time._time_from_session(0), 40000)
-        self.assertEqual(Time._time_from_session(2), 20000)
-        self.assertEqual(Time._time_from_session(5), 10000)
-
-
 class RestoreTest(unittest.TestCase):
     """Test Restore class"""
 
     def get_rfcs(self):
         """Return available RestoreFileComparer objects"""
-        if Globals.get_api_version() < 201:  # compat200
-            base_rf = restore.RestoreFile(restore_base_rp, restore_base_rp, [])
-        else:
-            base_rf = _repo_shadow._RestoreFile(restore_base_rp,
-                                                restore_base_rp, [])
+        base_rf = _repo_shadow._RestoreFile(restore_base_rp,
+                                            restore_base_rp, [])
         rfs = base_rf.yield_sub_rfs()
         rfcs = []
         for rf in rfs:

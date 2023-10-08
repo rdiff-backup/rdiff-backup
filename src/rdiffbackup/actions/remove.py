@@ -92,12 +92,6 @@ class RemoveAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        # set the filesystem properties of the repository
-        if Globals.get_api_version() < 201:  # compat200
-            self.repo.base_dir.conn.fs_abilities.single_set_globals(
-                self.repo.data_dir, 0)  # read_only=False
-            self.repo.setup_quoting()
-
         self.action_time = self._get_removal_time(self.values.older_than,
                                                   self.values.size)
         if self.action_time is None:

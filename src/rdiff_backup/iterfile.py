@@ -20,7 +20,7 @@
 
 import pickle
 import array
-from . import Globals, robust, rpath
+from rdiff_backup import Globals, robust, rpath
 
 
 class IterFileException(Exception):

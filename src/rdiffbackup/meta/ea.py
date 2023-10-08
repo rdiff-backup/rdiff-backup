@@ -212,13 +212,6 @@ class EAExtractor(meta.FlatExtractor):
                 ea.set(name, base64.b64decode(encoded_val))
         return ea
 
-    def _filename_to_index(self, filename):
-        """Convert possibly quoted filename to index tuple"""
-        if filename == b'.':
-            return ()
-        else:
-            return tuple(C.acl_unquote(filename).split(b'/'))
-
 
 class ExtendedAttributesFile(meta.FlatFile):
     """Store/retrieve EAs from extended_attributes file"""

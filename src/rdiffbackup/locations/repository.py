@@ -27,9 +27,7 @@ from rdiffbackup import locations
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import filenames as map_filenames
 
-from rdiff_backup import (
-    FilenameMapping, Globals, log, selection, Security, Time,
-)
+from rdiff_backup import (Globals, log, selection, Security, Time)
 
 
 class Repo(locations.Location):
@@ -105,63 +103,62 @@ class Repo(locations.Location):
                 and self.base_dir.conn is Globals.local_connection):
             Security.reset_restrict_path(self.base_dir)
 
-        Globals.set_all('rbdir', self.data_dir)  # compat200
+        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
 
         ret_code = Globals.RET_CODE_OK
 
-        if Globals.get_api_version() >= 201:  # compat200
-            if self.base_dir.conn is Globals.local_connection:
-                # should be more efficient than going through the connection
-                from rdiffbackup.locations import _repo_shadow
-                self._shadow = _repo_shadow.RepoShadow
+        if self.base_dir.conn is Globals.local_connection:
+            # should be more efficient than going through the connection
+            from rdiffbackup.locations import _repo_shadow
+            self._shadow = _repo_shadow.RepoShadow
+        else:
+            self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
+
+        lock_result = self.lock()
+        if lock_result is False:
+            if self.force:
+                log.Log("Repository is locked by file {lf}, another "
+                        "action is probably on-going. Enforcing anyway "
+                        "at your own risk".format(lf=self.lockfile),
+                        log.WARNING)
             else:
-                self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
-
-            lock_result = self.lock()
-            if lock_result is False:
-                if self.force:
-                    log.Log("Repository is locked by file {lf}, another "
-                            "action is probably on-going. Enforcing anyway "
-                            "at your own risk".format(lf=self.lockfile),
-                            log.WARNING)
-                else:
-                    log.Log("Repository is locked by file {lf}, another "
-                            "is probably on-going, or something went "
-                            "wrong. Either wait, remove the lock "
-                            "or use the --force option".format(
-                                lf=self.lockfile), log.ERROR)
-                    return Globals.RET_CODE_ERR
-            elif lock_result is None:
-                log.Log("Repository couldn't be locked by file {lf}, probably "
-                        "because the repository was never written with "
-                        "API >= 201, ignoring".format(lf=self.lockfile),
-                        log.NOTE)
-
-            self.fs_abilities = self.get_fs_abilities()
-            if not self.fs_abilities:
+                log.Log("Repository is locked by file {lf}, another "
+                        "is probably on-going, or something went "
+                        "wrong. Either wait, remove the lock "
+                        "or use the --force option".format(
+                            lf=self.lockfile), log.ERROR)
                 return Globals.RET_CODE_ERR
-            else:
-                log.Log("--- Repository file system capabilities ---\n"
-                        + str(self.fs_abilities), log.INFO)
+        elif lock_result is None:
+            log.Log("Repository couldn't be locked by file {lf}, probably "
+                    "because the repository was never written with "
+                    "API >= 201, ignoring".format(lf=self.lockfile),
+                    log.NOTE)
 
-            if src_dir is None:
-                self.remote_transfer = None  # just in case
-                ret_code |= fs_abilities.SingleRepoSetGlobals(self)()
-                if ret_code & Globals.RET_CODE_ERR:
-                    return ret_code
-            else:
-                # FIXME this shouldn't be necessary, and the setting of variable
-                # across the connection should happen through the shadow
-                Globals.set_all("backup_writer", self.base_dir.conn)
-                self.base_dir.conn.Globals.set_local("isbackup_writer", True)
-                # this is the new way, more dedicated but not sufficient yet
-                self.remote_transfer = (src_dir.base_dir.conn
-                                        is not self.base_dir.conn)
-                ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
-                if ret_code & Globals.RET_CODE_ERR:
-                    return ret_code
-            self.setup_quoting()
-            self.setup_paths()
+        self.fs_abilities = self.get_fs_abilities()
+        if not self.fs_abilities:
+            return Globals.RET_CODE_ERR
+        else:
+            log.Log("--- Repository file system capabilities ---\n"
+                    + str(self.fs_abilities), log.INFO)
+
+        if src_dir is None:
+            self.remote_transfer = None  # just in case
+            ret_code |= fs_abilities.SingleRepoSetGlobals(self)()
+            if ret_code & Globals.RET_CODE_ERR:
+                return ret_code
+        else:
+            # FIXME this shouldn't be necessary, and the setting of variable
+            # across the connection should happen through the shadow
+            Globals.set_all("backup_writer", self.base_dir.conn)
+            self.base_dir.conn.Globals.set_local("isbackup_writer", True)
+            # this is the new way, more dedicated but not sufficient yet
+            self.remote_transfer = (src_dir.base_dir.conn
+                                    is not self.base_dir.conn)
+            ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
+            if ret_code & Globals.RET_CODE_ERR:
+                return ret_code
+        self.setup_quoting()
+        self.setup_paths()
 
         if owners_map is not None:
             ret_code |= self.init_owners_mapping(**owners_map)
@@ -187,18 +184,7 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.get_mirror_time
         """
-        if Globals.get_api_version() < 201:  # compat200
-            incbase = self.data_dir.append_path(b"current_mirror")
-            mirror_rps = incbase.get_incfiles_list()
-            if mirror_rps:
-                if len(mirror_rps) == 1:
-                    return mirror_rps[0].getinctime()
-                else:  # there is a failed backup and 2+ current_mirror files
-                    return -1
-            else:  # it's the first backup
-                return Globals.RET_CODE_OK
-        else:
-            return self._shadow.get_mirror_time(must_exist, refresh)
+        return self._shadow.get_mirror_time(must_exist, refresh)
 
     def setup_quoting(self):
         """
@@ -211,24 +197,14 @@ class Repo(locations.Location):
         # set globally by the fs_abilities.xxx_set_globals functions.
         if not Globals.chars_to_quote:
             return False
+        self.base_dir = map_filenames.get_quotedrpath(self.base_dir)
+        self.data_dir = map_filenames.get_quotedrpath(self.data_dir)
+        self.incs_dir = map_filenames.get_quotedrpath(self.incs_dir)
+        if self.ref_type:
+            self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
+            self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
 
-        if Globals.get_api_version() < 201:  # compat200
-            FilenameMapping.set_init_quote_vals()
-            self.base_dir = FilenameMapping.get_quotedrpath(self.base_dir)
-            self.data_dir = FilenameMapping.get_quotedrpath(self.data_dir)
-            self.incs_dir = FilenameMapping.get_quotedrpath(self.incs_dir)
-            if self.ref_type:
-                self.ref_path = FilenameMapping.get_quotedrpath(self.ref_path)
-                self.ref_inc = FilenameMapping.get_quotedrpath(self.ref_inc)
-        else:
-            self.base_dir = map_filenames.get_quotedrpath(self.base_dir)
-            self.data_dir = map_filenames.get_quotedrpath(self.data_dir)
-            self.incs_dir = map_filenames.get_quotedrpath(self.incs_dir)
-            if self.ref_type:
-                self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
-                self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
-
-        Globals.set_all('rbdir', self.data_dir)  # compat200
+        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
 
         return True
 
@@ -276,54 +252,6 @@ class Repo(locations.Location):
         """
         return self._shadow.needs_regress(
             self.base_dir, self.data_dir, self.incs_dir, self.force)
-
-    def needs_regress_compat200(self):
-        """
-        Checks if the repository contains a previously failed backup and needs
-        to be regressed
-
-        Note that this function won't catch an initial failed backup, this
-        needs to be done during the repository creation phase.
-
-        Return None if the repository can't be found or is new,
-        True if it needs regressing, False otherwise.
-        """
-        # detect an initial repository which doesn't need a regression
-        if not (self.base_dir.isdir() and self.data_dir.isdir()
-                and self.incs_dir.isdir() and self.incs_dir.listdir()):
-            return None
-        curmirroot = self.data_dir.append(b"current_mirror")
-        curmir_incs = curmirroot.get_incfiles_list()
-        if not curmir_incs:
-            log.Log.FatalError(
-                """Bad rdiff-backup-data dir on destination side
-
-The rdiff-backup data directory
-{dd}
-exists, but we cannot find a valid current_mirror marker.  You can
-avoid this message by removing the rdiff-backup-data directory;
-however any data in it will be lost.
-
-Probably this error was caused because the first rdiff-backup session
-into a new directory failed.  If this is the case it is safe to delete
-the rdiff-backup-data directory because there is no important
-information in it.
-
-""".format(dd=self.data_dir))
-        elif len(curmir_incs) == 1:
-            return False
-        else:
-            if not self.force:
-                try:
-                    curmir_incs[0].conn.regress.check_pids(curmir_incs)
-                except OSError as exc:
-                    log.Log.FatalError(
-                        "Could not check if rdiff-backup is currently"
-                        "running due to exception '{ex}'".format(ex=exc))
-            assert len(curmir_incs) == 2, (
-                "Found more than 2 current_mirror incs in '{ci}'.".format(
-                    ci=self.data_dir))
-            return True
 
     def force_regress(self):
         """
@@ -381,12 +309,8 @@ information in it.
 
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
-            if Globals.get_api_version() >= 201:  # compat200
-                self._shadow.set_select(
-                    target_rp, select_opts, *list(map(io.BytesIO, select_data)))
-            else:
-                self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
-                    target_rp, select_opts, *list(map(io.BytesIO, select_data)))
+            self._shadow.set_select(
+                target_rp, select_opts, *list(map(io.BytesIO, select_data)))
 
     def get_sigs(self, source_iter, use_increment):
         """
@@ -470,11 +394,8 @@ information in it.
         number of past backups.
         """
         try:
-            if Globals.get_api_version() < 201:  # compat200
-                return Time.genstrtotime(timestr, rp=self.ref_inc)
-            else:
-                sessions = self.get_increment_times(self.ref_inc)
-                return Time.genstrtotime(timestr, session_times=sessions)
+            sessions = self.get_increment_times(self.ref_inc)
+            return Time.genstrtotime(timestr, session_times=sessions)
         except Time.TimeException as exc:
             log.Log("Time string '{ts}' couldn't be parsed "
                     "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)

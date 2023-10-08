@@ -41,19 +41,18 @@ class ReadDir(Dir, locations.ReadLocation):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if Globals.get_api_version() >= 201:  # compat200
-            if self.base_dir.conn is Globals.local_connection:
-                # should be more efficient than going through the connection
-                from rdiffbackup.locations import _dir_shadow
-                self._shadow = _dir_shadow.ReadDirShadow
-            else:
-                self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
-            self.fs_abilities = self.get_fs_abilities()
-            if not self.fs_abilities:
-                return ret_code | Globals.RET_CODE_ERR
-            else:
-                log.Log("--- Read directory file system capabilities ---\n"
-                        + str(self.fs_abilities), log.INFO)
+        if self.base_dir.conn is Globals.local_connection:
+            # should be more efficient than going through the connection
+            from rdiffbackup.locations import _dir_shadow
+            self._shadow = _dir_shadow.ReadDirShadow
+        else:
+            self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
+        self.fs_abilities = self.get_fs_abilities()
+        if not self.fs_abilities:
+            return ret_code | Globals.RET_CODE_ERR
+        else:
+            log.Log("--- Read directory file system capabilities ---\n"
+                    + str(self.fs_abilities), log.INFO)
 
         return ret_code
 
@@ -69,10 +68,7 @@ class ReadDir(Dir, locations.ReadLocation):
         side over its connection.
         """
 
-        if Globals.get_api_version() < 201:  # compat200
-            is_windows = self.base_dir.conn.os.name == "nt"
-        else:
-            is_windows = self.base_dir.conn.platform.system() == "Windows"
+        is_windows = self.base_dir.conn.platform.system() == "Windows"
 
         # FIXME not sure we couldn't support symbolic links nowadays on Windows
         # knowing that it would require specific handling when reading the link:
@@ -84,12 +80,8 @@ class ReadDir(Dir, locations.ReadLocation):
             log.Log("Symbolic links excluded on Windows",
                     log.NOTE)
             select_opts.insert(0, ("--exclude-symbolic-links", None))
-        if Globals.get_api_version() < 201:  # compat200
-            self.base_dir.conn.backup.SourceStruct.set_source_select(
-                self.base_dir, select_opts, *list(map(io.BytesIO, select_data)))
-        else:  # FIXME we're retransforming bytes into a file pointer
-            self._shadow.set_select(self.base_dir, select_opts,
-                                    *list(map(io.BytesIO, select_data)))
+        self._shadow.set_select(self.base_dir, select_opts,
+                                *list(map(io.BytesIO, select_data)))
 
     def get_fs_abilities(self):
         """
@@ -135,23 +127,22 @@ class WriteDir(Dir, locations.WriteLocation):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if Globals.get_api_version() >= 201:  # compat200
-            if self.base_dir.conn is Globals.local_connection:
-                # should be more efficient than going through the connection
-                from rdiffbackup.locations import _dir_shadow
-                self._shadow = _dir_shadow.WriteDirShadow
-            else:
-                self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
-            self.fs_abilities = self.get_fs_abilities()
-            if not self.fs_abilities:
-                return ret_code | Globals.RET_CODE_ERR
-            else:
-                log.Log("--- Write directory file system capabilities ---\n"
-                        + str(self.fs_abilities), log.INFO)
-            ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
+        if self.base_dir.conn is Globals.local_connection:
+            # should be more efficient than going through the connection
+            from rdiffbackup.locations import _dir_shadow
+            self._shadow = _dir_shadow.WriteDirShadow
+        else:
+            self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
+        self.fs_abilities = self.get_fs_abilities()
+        if not self.fs_abilities:
+            return ret_code | Globals.RET_CODE_ERR
+        else:
+            log.Log("--- Write directory file system capabilities ---\n"
+                    + str(self.fs_abilities), log.INFO)
+        ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
 
-            if ret_code & Globals.RET_CODE_ERR:
-                return ret_code
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         if owners_map is not None:
             ret_code |= self.init_owners_mapping(**owners_map)
@@ -194,13 +185,8 @@ class WriteDir(Dir, locations.WriteLocation):
 
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
-            if Globals.get_api_version() >= 201:  # compat200
-                self._shadow.set_select(self.base_dir, select_opts,
-                                        *list(map(io.BytesIO, select_data)))
-            else:
-                self.base_dir.conn.restore.TargetStruct.set_target_select(
-                    self.base_dir, select_opts,
-                    *list(map(io.BytesIO, select_data)))
+            self._shadow.set_select(self.base_dir, select_opts,
+                                    *list(map(io.BytesIO, select_data)))
 
     def get_fs_abilities(self):
         """

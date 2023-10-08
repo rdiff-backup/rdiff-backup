@@ -6,7 +6,8 @@ import unittest
 from commontest import old_test_dir, abs_test_dir
 from rdiff_backup.connection import LowLevelPipeConnection, PipeConnection, \
     VirtualFile, SetConnections
-from rdiff_backup import Globals, rpath, FilenameMapping, Security
+from rdiff_backup import Globals, rpath, Security
+from rdiffbackup.locations.map import filenames as map_filenames
 
 SourceDir = 'rdiff_backup'
 regfilename = os.path.join(old_test_dir, b"various_file_types",
@@ -169,7 +170,7 @@ class PipeConnectionTest(unittest.TestCase):
 
     def testQuotedRPaths(self):
         """Test transmission of quoted rpaths"""
-        qrp = FilenameMapping.QuotedRPath(self.conn, regfilename)
+        qrp = map_filenames.QuotedRPath(self.conn, regfilename)
         self.assertEqual(self.conn.reval("lambda qrp: qrp.data", qrp), qrp.data)
         self.assertTrue(qrp.isreg())
         qrp_class_str = self.conn.reval("lambda qrp: str(qrp.__class__)", qrp)
