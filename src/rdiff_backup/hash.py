@@ -19,7 +19,7 @@
 """Contains a file wrapper that returns a hash on close"""
 
 import hashlib
-from . import Globals
+from rdiff_backup import Globals
 
 
 class FileWrapper:

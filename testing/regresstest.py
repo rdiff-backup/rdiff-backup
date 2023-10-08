@@ -8,7 +8,8 @@ import unittest
 import os
 from commontest import abs_output_dir, abs_test_dir, old_test_dir, Myrm, \
     compare_recursive, rdiff_backup, os_system
-from rdiff_backup import regress, Time, rpath, Globals
+import commontest as comtst
+from rdiff_backup import Globals, rpath, Time
 
 
 class RegressTest(unittest.TestCase):
@@ -80,7 +81,8 @@ class RegressTest(unittest.TestCase):
         self.output_rp.setdata()
         self.output_rbdir_rp.setdata()
         self.add_current_mirror(time)
-        regress.Regress(self.output_rp)
+        comtst.rdiff_backup_action(True, True, self.output_rp, None, (),
+                                   b"regress", ())
 
     def add_current_mirror(self, time):
         """Add current_mirror marker at given time"""

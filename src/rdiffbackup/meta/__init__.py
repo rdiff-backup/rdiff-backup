@@ -20,7 +20,9 @@
 Base module for any metadata class to derive from.
 """
 
-from rdiff_backup import log
+import re
+
+from rdiff_backup import C, log
 
 
 class ParsingError(Exception):
@@ -35,20 +37,10 @@ class FlatExtractor:
     # beginning of next record.  The first group should start at the
     # beginning of the record.  The second group should contain the
     # (possibly quoted) filename.
-    record_boundary_regexp = None
+    record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
 
     # Set in subclass to function that converts text record to object
     _record_to_object = None
-
-    @staticmethod
-    def _filename_to_index(filename):
-        """
-        Translate filename, possibly quoted, into an index tuple
-
-        The filename is the first group matched by
-        regexp_boundary_regexp.
-        """
-        raise NotImplementedError(__class__ + '._filename_to_index')
 
     def __init__(self, fileobj):
         self.fileobj = fileobj  # holds file object we are reading from
@@ -128,6 +120,13 @@ class FlatExtractor:
                     return
                 else:
                     self.buf = self.buf[m.end(1):]
+
+    def _filename_to_index(self, quoted_filename):
+        """Convert possibly quoted filename to index tuple"""
+        if quoted_filename == b'.':
+            return ()
+        else:
+            return tuple(C.acl_unquote(quoted_filename).split(b'/'))
 
     def _get_next_pos(self):
         """Return position of next record in buffer, or end pos if none"""

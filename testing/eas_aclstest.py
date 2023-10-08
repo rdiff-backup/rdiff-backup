@@ -3,14 +3,15 @@ import os
 import io
 import pwd
 import grp
-from rdiff_backup import Globals, rpath, user_group
+from rdiff_backup import Globals, rpath
 from rdiffbackup import meta_mgr
+from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, ea
 from commontest import rdiff_backup, abs_test_dir, abs_output_dir, \
     abs_restore_dir, BackupRestoreSeries, compare_recursive
 
-user_group.init_user_mapping()
-user_group.init_group_mapping()
+map_owners.init_users_mapping()
+map_owners.init_groups_mapping()
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_dir = rpath.RPath(Globals.local_connection, abs_restore_dir)
 

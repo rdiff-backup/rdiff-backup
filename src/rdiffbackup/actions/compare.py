@@ -24,7 +24,7 @@ Comparaison can be done using metadata, file content or hashes.
 """
 
 import yaml
-from rdiff_backup import (compare, Globals, log, selection)
+from rdiff_backup import (Globals, log, selection)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 
@@ -91,12 +91,6 @@ class CompareAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        # set the filesystem properties of the repository
-        if Globals.get_api_version() < 201:  # compat200
-            self.repo.base_dir.conn.fs_abilities.single_set_globals(
-                self.repo.base_dir, 1)  # read_only=True
-            self.repo.setup_quoting()
-
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
         self.dir.set_select(select_opts, select_data)
@@ -112,27 +106,15 @@ class CompareAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        # call the right comparaison function for the chosen method
-        if Globals.get_api_version() < 201:  # compat200
-            compare_funcs = {
-                "meta": compare.Compare,
-                "hash": compare.Compare_hash,
-                "full": compare.Compare_full
-            }
-            ret_code |= compare_funcs[self.values.method](self.dir.base_dir,
-                                                          self.repo.ref_path,
-                                                          self.repo.ref_inc,
-                                                          self.action_time)
-        else:
-            compare_funcs = {
-                "meta": self._compare_meta,
-                "hash": self._compare_hash,
-                "full": self._compare_full
-            }
-            reports_iter = compare_funcs[self.values.method](self.action_time)
-            ret_code |= self._print_reports(reports_iter,
-                                            self.values.parsable_output)
-            self.repo.finish_loop()
+        compare_funcs = {
+            "meta": self._compare_meta,
+            "hash": self._compare_hash,
+            "full": self._compare_full
+        }
+        reports_iter = compare_funcs[self.values.method](self.action_time)
+        ret_code |= self._print_reports(reports_iter,
+                                        self.values.parsable_output)
+        self.repo.finish_loop()
 
         return ret_code
 

@@ -484,7 +484,6 @@ class BaseAction:
         Globals.set_all("client_conn", Globals.local_connection)
         for conn in Globals.connections:
             conn.robust.install_signal_handlers()
-            conn.Hardlink.initialize_dictionaries()  # compat200
 
         return Globals.RET_CODE_OK
 
@@ -513,45 +512,26 @@ class BaseAction:
             regress_verbosity = log.NOTE
         else:
             regress_verbosity = log.INFO
-        if Globals.get_api_version() < 201:  # compat200
-            if self.repo.needs_regress_compat200():
-                if not try_regress:
-                    return Globals.RET_CODE_ERR
-                log.Log("Previous backup seems to have failed, regressing "
-                        "destination now", log.WARNING)
-                try:
-                    self.repo.base_dir.conn.regress.Regress(self.repo.base_dir)
-                    return Globals.RET_CODE_WARN
-                except Security.Violation:
-                    log.Log(
-                        "Security violation while attempting to regress "
-                        "destination, perhaps due to --restrict-read-only or "
-                        "--restrict-update-only", log.ERROR)
-                    return Globals.RET_CODE_ERR
+
+        if self.repo.needs_regress():
+            if not try_regress:
+                return Globals.RET_CODE_ERR
+            log.Log("Previous backup seems to have failed, regressing "
+                    "destination now", log.WARNING)
+            return self.repo.regress() | Globals.RET_CODE_WARN
+        elif force:
+            if self.repo.force_regress():
+                log.Log("Given repository doesn't need to be regressed, "
+                        "but enforcing regression", log.WARNING)
+                return self.repo.regress()
             else:
-                log.Log("Given repository doesn't need to be regressed",
-                        regress_verbosity)
-                return Globals.RET_CODE_OK
+                log.Log("Given repository doesn't need and can't be "
+                        "regressed even if forced", log.WARNING)
+                return Globals.RET_CODE_WARN
         else:
-            if self.repo.needs_regress():
-                if not try_regress:
-                    return Globals.RET_CODE_ERR
-                log.Log("Previous backup seems to have failed, regressing "
-                        "destination now", log.WARNING)
-                return self.repo.regress() | Globals.RET_CODE_WARN
-            elif force:
-                if self.repo.force_regress():
-                    log.Log("Given repository doesn't need to be regressed, "
-                            "but enforcing regression", log.WARNING)
-                    return self.repo.regress()
-                else:
-                    log.Log("Given repository doesn't need and can't be "
-                            "regressed even if forced", log.WARNING)
-                    return Globals.RET_CODE_WARN
-            else:
-                log.Log("Given repository doesn't need to be regressed",
-                        regress_verbosity)
-                return Globals.RET_CODE_OK
+            log.Log("Given repository doesn't need to be regressed",
+                    regress_verbosity)
+            return Globals.RET_CODE_OK
 
     def _set_no_compression_regexp(self):
         """

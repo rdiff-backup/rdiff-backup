@@ -23,14 +23,7 @@ A built-in rdiff-backup action plug-in to backup a source to a target directory.
 
 import time
 
-from rdiff_backup import (
-    backup,
-    Globals,
-    log,
-    selection,
-    SetConnections,
-    Time,
-)
+from rdiff_backup import (Globals, log, selection, Time)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 
@@ -104,15 +97,6 @@ class BackupAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        # TODO validate how much of the following lines and methods
-        # should go into the directory/repository modules
-        if Globals.get_api_version() < 201:  # compat200
-            SetConnections.BackupInitConnections(self.dir.base_dir.conn,
-                                                 self.repo.base_dir.conn)
-            self.repo.base_dir.conn.fs_abilities.backup_set_globals(
-                self.dir.base_dir, self.values.force)
-            self.repo.setup_quoting()
-
         previous_time = self.repo.get_mirror_time()
         if previous_time >= Time.getcurtime():
             log.Log("The last backup is not in the past. Aborting.",
@@ -146,23 +130,8 @@ class BackupAction(actions.BaseAction):
                     "the last backup is not in the past. Aborting.",
                     log.ERROR)
             return ret_code | Globals.RET_CODE_ERR
-        if Globals.get_api_version() < 201:  # compat200
-            if previous_time:
-                Time.setprevtime_compat200(previous_time)
-                self.repo.base_dir.conn.Main.backup_touch_curmirror_local(
-                    self.dir.base_dir, self.repo.base_dir)
-                backup.mirror_and_increment_compat200(
-                    self.dir.base_dir, self.repo.base_dir,
-                    self.repo.incs_dir)
-                self.repo.base_dir.conn.Main.backup_remove_curmirror_local()
-            else:
-                backup.mirror_compat200(
-                    self.dir.base_dir, self.repo.base_dir)
-                self.repo.base_dir.conn.Main.backup_touch_curmirror_local(
-                    self.dir.base_dir, self.repo.base_dir)
-            self.repo.base_dir.conn.Main.backup_close_statistics(time.time())
-        else:  # API 201 and higher
-            ret_code |= self._operate_backup(previous_time)
+
+        ret_code |= self._operate_backup(previous_time)
 
         return ret_code
 

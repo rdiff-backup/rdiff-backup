@@ -75,9 +75,6 @@ class Logger:
                 "You can only log bytes or str, and not {lt}".format(
                     lt=type(message)))
 
-        if Globals.get_api_version() < 201:  # compat200
-            message = "{pre} {msg}".format(pre=_LOG_PREFIX[verbosity],
-                                           msg=message)
         if verbosity <= self.verbosity:
             self.log_to_file(message, verbosity)
         if verbosity <= self.term_verbosity:
@@ -96,10 +93,7 @@ class Logger:
                     self.logfp.write(_to_bytes(tmpstr))
                 self.logfp.flush()
             else:
-                if Globals.get_api_version() < 201:  # compat200
-                    self.log_file_conn.log.Log.log_to_file(message)
-                else:
-                    self.log_file_conn.log.Log.log_to_file(message, verbosity)
+                self.log_file_conn.log.Log.log_to_file(message, verbosity)
 
     def log_to_term(self, message, verbosity):
         """Write message to stdout/stderr"""
@@ -107,22 +101,19 @@ class Logger:
             termfp = sys.stderr
         else:
             termfp = sys.stdout
-        if Globals.get_api_version() < 201:  # compat200
-            tmpstr = self._format(message, self.term_verbosity)
-            termfp.write(tmpstr)
+
+        tmpstr = self._format(message, self.term_verbosity, verbosity)
+        # if the verbosity is below 9 and the string isn't deemed
+        # pre-formatted by newlines (we ignore the last character)
+        if self.verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
+            termfp.write(
+                textwrap.fill(
+                    tmpstr, subsequent_indent=" " * 9,
+                    break_long_words=False,
+                    break_on_hyphens=False,
+                    width=shutil.get_terminal_size().columns - 1) + "\n")
         else:
-            tmpstr = self._format(message, self.term_verbosity, verbosity)
-            # if the verbosity is below 9 and the string isn't deemed
-            # pre-formatted by newlines (we ignore the last character)
-            if self.verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
-                termfp.write(
-                    textwrap.fill(
-                        tmpstr, subsequent_indent=" " * 9,
-                        break_long_words=False,
-                        break_on_hyphens=False,
-                        width=shutil.get_terminal_size().columns - 1) + "\n")
-            else:
-                termfp.write(tmpstr)
+            termfp.write(tmpstr)
 
     def conn(self, direction, result, req_num):
         """Log some data on the connection
@@ -310,9 +301,10 @@ class ErrorLog:
                 time_string, compress)
         assert not cls._log_fileobj, "Log already open, can't be reopened"
 
+        # compat200 compat201
         base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
-        if compress:
-            from . import rpath
+        if compress:  # FIXME extract MaybeGzip from rpath and make it utils?
+            from rdiff_backup import rpath
             cls._log_fileobj = rpath.MaybeGzip(base_rp)
         else:
             cls._log_fileobj = base_rp.open("wb", compress=0)

@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import (Globals, log, restore, selection)
+from rdiff_backup import (Globals, log, selection)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 
@@ -143,12 +143,6 @@ class RestoreAction(actions.BaseAction):
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
 
-        # set the filesystem properties of the repository
-        if Globals.get_api_version() < 201:  # compat200
-            self.dir.base_dir.conn.fs_abilities.restore_set_globals(
-                self.dir.base_dir)
-            self.repo.setup_quoting()
-
         if self.values.at:
             self.action_time = self.repo.get_parsed_time(self.values.at)
             if self.action_time is None:
@@ -185,11 +179,7 @@ class RestoreAction(actions.BaseAction):
                         rp=self.repo.base_dir), log.ERROR)
             return ret_code
         try:
-            if Globals.get_api_version() < 201:  # compat200
-                restore.Restore(self.repo.ref_path, self.repo.ref_inc,
-                                self.dir.base_dir, self.action_time)
-            else:
-                ret_code |= self._operate_restore()
+            ret_code |= self._operate_restore()
         except OSError as exc:
             log.Log("Could not complete restore due to exception '{ex}'".format(
                 ex=exc), log.ERROR)

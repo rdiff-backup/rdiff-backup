@@ -50,8 +50,8 @@ except BaseException:  # if everything else fails...
 # makes the connection work within the min-max range, depending on the
 # API versions supported by the remote connection.
 api_version = {
-    "default": 200,
-    "min": 200,
+    "default": 201,
+    "min": 201,
     "max": 201,
     "actual": 0
 }
@@ -191,7 +191,7 @@ isdest = None
 changed_settings = []
 
 # The RPath or QuotedRPath of the rdiff-backup-data directory.
-rbdir = None
+rbdir = None  # compat200 compat201
 
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be set if certain characters in filenames on the source side

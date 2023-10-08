@@ -94,12 +94,6 @@ class ListAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        # set the filesystem properties of the repository
-        if Globals.get_api_version() < 201:  # compat200
-            self.repo.base_dir.conn.fs_abilities.single_set_globals(
-                self.repo.base_dir, 1)  # read_only=True
-            self.repo.setup_quoting()
-
         if self.values.entity == "files":
             self.action_time = self.repo.get_parsed_time(
                 self.values.changed_since or self.values.at)
