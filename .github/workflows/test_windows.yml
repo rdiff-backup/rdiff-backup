@@ -17,7 +17,7 @@ defaults:
     shell: bash
 
 env:
-  WIN_PYTHON_VERSION: 3.10.7
+  WIN_PYTHON_VERSION: 3.11.0
   WIN_LIBRSYNC_VERSION: v2.3.2
 
 jobs:
@@ -27,29 +27,24 @@ jobs:
       matrix:
         arch: [x86, x64]
     steps:
-    - name: skip workflow if only docs PR
-      id: skip-docs # id used for referencing step
-      uses: saulmaldonado/skip-workflow@v1.1.1
-      with:
-        phrase: '[DOC]'
-        search: '["pull_request"]'
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: skip on pull requests purely for documentation
+      run: echo SKIP=${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, '[DOC] ') }} >> "$GITHUB_ENV"
     - uses: actions/checkout@v3
-      if: '!steps.skip-docs.outputs.skip'
+      if: ${{ env.SKIP != 'true' }}
       with:
         fetch-depth: 0  # to have the correct version
     - name: Set up Python ${{ env.WIN_PYTHON_VERSION }}
-      if: '!steps.skip-docs.outputs.skip'
+      if: ${{ env.SKIP != 'true' }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.WIN_PYTHON_VERSION }}
         architecture: ${{ matrix.arch }}
     - name: Install dependencies
-      if: '!steps.skip-docs.outputs.skip'
+      if: ${{ env.SKIP != 'true' }}
       run: tools/win_provision.sh asciidoc
     - name: Build librsync
-      if: '!steps.skip-docs.outputs.skip'
+      if: ${{ env.SKIP != 'true' }}
       run: tools/win_build_librsync.sh ${{ matrix.arch }} ${WIN_LIBRSYNC_VERSION}
     - name: Test rdiff-backup
-      if: '!steps.skip-docs.outputs.skip'
+      if: ${{ env.SKIP != 'true' }}
       run: tools/win_test_rdiffbackup.sh ${{ matrix.arch }} ${WIN_PYTHON_VERSION}
