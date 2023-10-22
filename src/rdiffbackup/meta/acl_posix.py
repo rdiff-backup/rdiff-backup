@@ -532,13 +532,8 @@ def get_meta_object(*params):
     """
     Returns a Metadata object as corresponds to the current type
 
-    Necessary to guarantee compatibility between rdiff-backup 2.0 and 2.1+
     """
-    if Globals.get_api_version() < 201:  # compat200
-        from rdiff_backup import eas_acls
-        return eas_acls.AccessControlLists(*params)
-    else:
-        return AccessControlLists(*params)
+    return AccessControlLists(*params)
 
 
 def get_plugin_class():

@@ -650,7 +650,7 @@ def RedirectedRun(conn_number, func, *args):
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
 from rdiff_backup import (  # noqa: E402,F401
-    Globals, increment, iterfile, librsync, log, manage,
+    Globals, increment, iterfile, librsync, log,
     Rdiff, robust, rorpiter, rpath,
     SetConnections, selection, statistics, Security, Time
 )

@@ -176,6 +176,10 @@ class Repo(locations.Location):
         """
         Close the repository, mainly unlock it if it's been previously locked
         """
+        # FIXME this shouldn't be necessary, and the setting of variable
+        # across the connection should happen through the shadow
+        Globals.set_all("backup_writer", None)
+        self.base_dir.conn.Globals.set_local("isbackup_writer", False)
         self.unlock()
         if self.logging_to_file:
             log.Log.close_logfile()

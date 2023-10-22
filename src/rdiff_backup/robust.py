@@ -95,9 +95,8 @@ def check_common_error(error_handler, function, args=[]):
     except (Exception, KeyboardInterrupt, SystemExit) as exc:
         if catch_error(exc):
             log.Log.exception()
-            conn = Globals.backup_writer
-            if conn is not None:
-                conn.statistics.record_error()
+            if Globals.backup_writer is not None:
+                Globals.backup_writer.statistics.record_error()
             if error_handler:
                 return error_handler(exc, *args)
             else:
