@@ -21,7 +21,7 @@
 import os
 import sys
 from rdiff_backup import Globals, log
-from rdiffbackup import arguments, actions_mgr, actions
+from rdiffbackup import arguments, actions_mgr
 
 if os.name == "nt":
     import msvcrt
@@ -144,11 +144,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set("never_drop_acls", arglist.never_drop_acls)
     if arglist.action in ('backup', 'regress', 'restore'):
         Globals.set("compression", arglist.compression)
-        Globals.set("no_compression_regexp_string",
-                    os.fsencode(arglist.not_compressed_regexp))
-    else:  # FIXME how to get rid of this plug?
-        Globals.set("no_compression_regexp_string",
-                    os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
     if arglist.action in ('server'):
         Globals.server = True
     if arglist.action in ('backup'):

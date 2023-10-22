@@ -37,13 +37,13 @@ class SecurityTest(unittest.TestCase):
                 rpath.RPath(Globals.local_connection, b"blahblah"),
                 rpath.RPath(conn, b"foo/bar")
         ]:
-            conn.Globals.set("TEST_var", rp)
+            conn.Globals.set_local("TEST_var", rp)
             self.assertEqual(conn.Globals.get("TEST_var").path, rp.path)
 
         for path in [b"foobar", b"/usr/local", b"foo/../bar"]:
             with self.assertRaises(Security.Violation):
                 rp = rpath.RPath(conn, path)
-                conn.Globals.set("TEST_var", rp)
+                conn.Globals.set_local("TEST_var", rp)
 
         SetConnections.CloseConnections()
 
@@ -55,7 +55,7 @@ class SecurityTest(unittest.TestCase):
                 rpath.RPath(Globals.local_connection, "blahblah"),
                 rpath.RPath(conn, "foo/bar")
         ]:
-            conn.Globals.set("TEST_var", rp)
+            conn.Globals.set_local("TEST_var", rp)
             self.assertEqual(conn.Globals.get("TEST_var").path, rp.path)
         SetConnections.CloseConnections()
 

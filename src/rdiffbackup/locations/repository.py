@@ -22,6 +22,8 @@ A location module to define repository classes as created by rdiff-backup
 """
 
 import io
+import os
+import re
 
 from rdiffbackup import locations
 from rdiffbackup.locations import fs_abilities
@@ -95,7 +97,8 @@ class Repo(locations.Location):
 
         return ret_code
 
-    def setup(self, src_dir=None, owners_map=None, action_name=None):
+    def setup(self, src_dir=None, owners_map=None, action_name=None,
+              not_compressed_regexp=None):
         if self.must_be_writable and not self._create():
             return Globals.RET_CODE_ERR
 
@@ -160,6 +163,11 @@ class Repo(locations.Location):
         self.setup_quoting()
         self.setup_paths()
 
+        if not_compressed_regexp is not None:
+            ret_code |= self.setup_not_compressed_regexp(not_compressed_regexp)
+            if ret_code & Globals.RET_CODE_ERR:
+                return ret_code
+
         if owners_map is not None:
             ret_code |= self.init_owners_mapping(**owners_map)
             if ret_code & Globals.RET_CODE_ERR:
@@ -218,6 +226,23 @@ class Repo(locations.Location):
         """
         return self._shadow.setup_paths(
             self.base_dir, self.data_dir, self.incs_dir)
+
+    @classmethod  # so that we can easily use in tests
+    def setup_not_compressed_regexp(cls, not_compressed_regexp=None):
+        """
+        Sets the no_compression_regexp setting globally
+        """
+        not_compressed_regexp = os.fsencode(not_compressed_regexp)
+        try:
+            not_compressed_regexp = re.compile(not_compressed_regexp)
+        except re.error:
+            log.Log("No compression regular expression '{ex}' doesn't "
+                    "compile".format(ex=not_compressed_regexp), log.ERROR)
+            return Globals.RET_CODE_ERR
+
+        Globals.set_all('no_compression_regexp', not_compressed_regexp)
+
+        return Globals.RET_CODE_OK
 
     def get_fs_abilities(self):
         """

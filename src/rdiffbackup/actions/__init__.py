@@ -25,7 +25,6 @@ plugins can inheritate default behaviors.
 
 import argparse
 import os
-import re
 import sys
 import tempfile
 import yaml
@@ -35,7 +34,6 @@ from rdiff_backup import (
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
 # The default regexp for not compressing those files
-# compat200: it is also used by run.py parsing to avoid having a 2nd default
 DEFAULT_NOT_COMPRESSED_REGEXP = (
     "(?i).*\\.("
     "7z|aac|arj|asc|avi|bik|bz|bz2|deb|docx|flac|flv|gif|gpg|gz|jp2|jpeg|jpg|"
@@ -189,7 +187,8 @@ COMPRESSION_PARSER.add_argument(
 COMPRESSION_PARSER.add_argument(
     "--not-compressed-regexp", "--no-compression-regexp", metavar="REGEXP",
     default=DEFAULT_NOT_COMPRESSED_REGEXP,
-    help="[sub] regexp to select files not being compressed")
+    help="[sub] regexp to select files not being compressed "
+         "(default is '{}')".format(DEFAULT_NOT_COMPRESSED_REGEXP))
 
 RESTRICT_PARSER = argparse.ArgumentParser(
     add_help=False,
@@ -533,27 +532,6 @@ class BaseAction:
             log.Log("Given repository doesn't need to be regressed",
                     regress_verbosity)
             return Globals.RET_CODE_OK
-
-    def _set_no_compression_regexp(self):
-        """
-        Sets the no_compression_regexp setting globally
-        """
-        try:  # compat200
-            no_compression_string = os.fsencode(
-                Globals.no_compression_regexp_string)
-        except AttributeError:
-            no_compression_string = os.fsencode(
-                self.values.not_compressed_regexp)
-        try:
-            no_compression_regexp = re.compile(no_compression_string)
-        except re.error:
-            log.Log("No compression regular expression '{ex}' doesn't "
-                    "compile".format(ex=no_compression_string), log.ERROR)
-            return Globals.RET_CODE_ERR
-
-        Globals.set_all('no_compression_regexp', no_compression_regexp)
-
-        return Globals.RET_CODE_OK
 
 
 def get_plugin_class():
