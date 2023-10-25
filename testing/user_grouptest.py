@@ -37,11 +37,11 @@ class UserGroupTest(unittest.TestCase):
         Globals.isdest = 1
         rootid = 0
         binid = pwd.getpwnam('bin')[2]
-        syncid = pwd.getpwnam('sync')[2]
+        mailid = pwd.getpwnam('mail')[2]
         map_owners.init_users_mapping()
         self.assertEqual(map_owners._user_map(0), rootid)
         self.assertEqual(map_owners._user_map(0, 'bin'), binid)
-        self.assertEqual(map_owners._user_map(0, 'sync'), syncid)
+        self.assertEqual(map_owners._user_map(0, 'mail'), mailid)
         self.assertIsNone(map_owners._user_map.map_acl(0, 'aoeuth3t2ug89'))
 
     def test_user_mapping(self):
@@ -50,26 +50,26 @@ class UserGroupTest(unittest.TestCase):
 root:bin
 bin:root
 500:501
-0:sync
-sync:0"""
+0:mail
+mail:0"""
         Globals.isdest = 1
         rootid = 0
         binid = pwd.getpwnam('bin')[2]
-        syncid = pwd.getpwnam('sync')[2]
+        mailid = pwd.getpwnam('mail')[2]
         daemonid = pwd.getpwnam('daemon')[2]
         map_owners.init_users_mapping(mapping_string)
 
         self.assertEqual(map_owners._user_map(rootid, 'root'), binid)
         self.assertEqual(map_owners._user_map(binid, 'bin'), rootid)
-        self.assertEqual(map_owners._user_map(0), syncid)
-        self.assertEqual(map_owners._user_map(syncid, 'sync'), 0)
+        self.assertEqual(map_owners._user_map(0), mailid)
+        self.assertEqual(map_owners._user_map(mailid, 'mail'), 0)
         self.assertEqual(map_owners._user_map(500), 501)
 
         self.assertEqual(map_owners._user_map(501), 501)
         self.assertEqual(map_owners._user_map(123, 'daemon'), daemonid)
 
         self.assertIsNone(map_owners._user_map.map_acl(29378, 'aoeuth3t2ug89'))
-        self.assertIs(map_owners._user_map.map_acl(0, 'aoeuth3t2ug89'), syncid)
+        self.assertIs(map_owners._user_map.map_acl(0, 'aoeuth3t2ug89'), mailid)
 
         if 0:
             code.InteractiveConsole(globals()).interact()
