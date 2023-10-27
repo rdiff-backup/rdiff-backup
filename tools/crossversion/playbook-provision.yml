@@ -13,18 +13,22 @@
   - name: install python 3 and other build dependencies
     package:
       name:
-      - rh-python36
+      - rh-python{{ python_version }}
+      - rh-python{{ python_version }}-python-devel
       - gcc
       - libacl-devel
       state: present
   - name: install rdiff-backup and dependencies using pip within the SCL environment
     command: >
-      scl enable rh-python36
+      scl enable rh-python{{ python_version }}
       -- pip install --upgrade rdiff-backup=={{ rdiff_backup_old_version }} pyxattr pylibacl
   - name: create rdiff-backup wrapper to always use the SCL version
     copy:
       dest: /usr/bin/rdiff-backup
       content: |
         #!/bin/sh
-        exec scl enable rh-python36 -- rdiff-backup "$@"
+        exec scl enable rh-python{{ python_version }} -- rdiff-backup "$@"
       mode: a+rx
+  - name: call rdiff-backup to verify version and installation
+    command: rdiff-backup --version
+    changed_when: false
