@@ -106,7 +106,7 @@ class Repo(locations.Location):
                 and self.base_dir.conn is Globals.local_connection):
             Security.reset_restrict_path(self.base_dir)
 
-        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
+        Globals.set_all('rbdir', self.data_dir)  # compat201
 
         ret_code = Globals.RET_CODE_OK
 
@@ -216,7 +216,7 @@ class Repo(locations.Location):
             self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
             self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
 
-        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
+        Globals.set_all('rbdir', self.data_dir)  # compat201
 
         return True
 
@@ -336,7 +336,7 @@ class Repo(locations.Location):
         side over its connection.
         """
 
-        # FIXME we're retransforming bytes into a file pointer
+        # compat201 we're retransforming bytes into a file pointer
         if select_opts:
             self._shadow.set_select(
                 target_rp, select_opts, *list(map(io.BytesIO, select_data)))
@@ -579,8 +579,8 @@ class Repo(locations.Location):
         elif not self.incs_dir.isdir():
             log.Log("Data directory '{dd}' doesn't have an 'increments' "
                     "sub-directory".format(dd=self.data_dir),
-                    log.WARNING)  # used to be normal  # compat200
-            # return False # compat200
+                    log.WARNING)  # used to be normal  # compat200repo
+            # return False # compat200repo
         return True
 
     def _is_writable(self):

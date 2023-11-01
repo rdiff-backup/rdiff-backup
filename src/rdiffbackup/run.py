@@ -62,7 +62,7 @@ def main_run(arglist, security_override=False):
     log.Log.setverbosity(parsed_args.verbosity)
 
     # compatibility plug
-    _parse_cmdlineoptions_compat200(parsed_args)
+    _parse_cmdlineoptions_compat201(parsed_args)
 
     # instantiate the action object from the dictionary, handing over the
     # parsed arguments
@@ -127,7 +127,7 @@ def main_run(arglist, security_override=False):
     return ret_val
 
 
-def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
+def _parse_cmdlineoptions_compat201(arglist):  # noqa: C901
     """
     Parse argument list and set global preferences, compatibility function
     between old and new way of parsing parameters.

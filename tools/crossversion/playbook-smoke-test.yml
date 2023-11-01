@@ -7,7 +7,7 @@
     test_user: vagrant
     test_server: oldrdiffbackup
     ssh_config: ssh.local.cfg
-    remote_schema: 'ssh -F {{ ssh_config }} -C %s rdiff-backup server'
+    remote_schema: 'ssh -F {{ ssh_config }} -C {h} rdiff-backup server'
     remote_base_dir: '/home/{{ test_user }}/smoke.local.d'
     local_base_dir: '../smoke.local.d'
 

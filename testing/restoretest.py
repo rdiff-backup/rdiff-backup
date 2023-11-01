@@ -1,7 +1,8 @@
 import unittest
 import os
-from commontest import abs_output_dir, old_test_dir, Myrm, MakeOutputDir, \
-    InternalRestore, compare_recursive
+from commontest import (
+    abs_output_dir, old_test_dir, Myrm, InternalRestore, compare_recursive
+)
 from rdiff_backup import Globals, log, rpath, Time
 from rdiffbackup.locations import _repo_shadow
 
@@ -107,18 +108,6 @@ class RestoreTest(unittest.TestCase):
         # Correct rp must be empty
         return restore_base_rp.append(b"%b.%b" %
                                       (basename, Time.timetobytes(test_time)))
-
-    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
-                     "Higher API version than 200 not supported")
-    def testRestoreSingle(self):
-        """Test restoring files one at at a time"""
-        MakeOutputDir()
-        for rfc in self.get_rfcs():
-            if rfc.rf.inc_rp.isincfile():
-                continue
-            log.Log("Comparing %a" % (rfc.rf.inc_rp.path, ), 5)
-            # compare all returns an empty list if everything is OK
-            self.assertFalse(rfc.compare_all())
 
     def testBothLocal(self):
         """Test directory restore everything local"""

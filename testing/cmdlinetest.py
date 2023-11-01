@@ -208,29 +208,6 @@ class PathSetter(unittest.TestCase):
 
 
 class Final(PathSetter):
-    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
-                     "Higher API version than 200 not supported")
-    def testLocal(self):
-        """Run test sequence everything local"""
-        self.runtest(True, True)
-
-    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
-                     "Higher API version than 200 not supported")
-    def testRemoteAll(self):
-        """Run test sequence everything remote"""
-        self.runtest(False, False)
-
-    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
-                     "Higher API version than 200 not supported")
-    def testRemoteSource(self):
-        """Run test sequence when remote side is source"""
-        self.runtest(False, True)
-
-    @unittest.skipIf(Globals.get_api_version() > 200,  # compat200
-                     "Higher API version than 200 not supported")
-    def testRemoteDest(self):
-        """Run test sequence when remote side is destination"""
-        self.runtest(True, False)
 
     # FIXME see issue #35 for backup of proc filesystems
     # https://github.com/ericzolf/rdiff-backup/issues/35

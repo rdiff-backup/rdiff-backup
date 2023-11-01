@@ -85,12 +85,8 @@ class Logger:
         """Write the message to the log file, if possible"""
         if self.log_file_open:
             if self.log_file_local:
-                if Globals.get_api_version() < 201:
-                    tmpstr = self._format(message, self.verbosity)
-                    self.logfp.write(_to_bytes(tmpstr))
-                else:
-                    tmpstr = self._format(message, self.verbosity, verbosity)
-                    self.logfp.write(_to_bytes(tmpstr))
+                tmpstr = self._format(message, self.verbosity, verbosity)
+                self.logfp.write(_to_bytes(tmpstr))
                 self.logfp.flush()
             else:
                 self.log_file_conn.log.Log.log_to_file(message, verbosity)
@@ -248,18 +244,15 @@ class Logger:
              (value, type, "".join(traceback.format_tb(tb))))
         return s
 
-    def _format(self, message, verbosity, msg_verbosity=None):
+    def _format(self, message, verbosity, msg_verbosity):
         """Format the message, possibly adding date information"""
         if verbosity <= DEBUG:
-            if msg_verbosity:
-                # pre-formatted informative messages are returned as such
-                if msg_verbosity == INFO and "\n" in message[:-1]:
-                    return "{msg}\n".format(msg=message)
-                else:
-                    return "{pre:<9}{msg}\n".format(
-                        pre=_LOG_PREFIX[msg_verbosity], msg=message)
-            else:  # compat200
+            # pre-formatted informative messages are returned as such
+            if msg_verbosity == INFO and "\n" in message[:-1]:
                 return "{msg}\n".format(msg=message)
+            else:
+                return "{pre:<9}{msg}\n".format(
+                    pre=_LOG_PREFIX[msg_verbosity], msg=message)
         else:
             timestamp = datetime.datetime.now(
                 datetime.timezone.utc).astimezone().strftime(
@@ -268,13 +261,9 @@ class Logger:
                 role = "SERVER"
             else:
                 role = "CLIENT"
-            if msg_verbosity:
-                return "{time}  <{role}-{pid}>  {pre} {msg}\n".format(
-                    time=timestamp, role=role, pid=os.getpid(),
-                    pre=_LOG_PREFIX[msg_verbosity], msg=message)
-            else:  # compat200
-                return "{time}  <{role}-{pid}>  {msg}\n".format(
-                    time=timestamp, role=role, pid=os.getpid(), msg=message)
+            return "{time}  <{role}-{pid}>  {pre} {msg}\n".format(
+                time=timestamp, role=role, pid=os.getpid(),
+                pre=_LOG_PREFIX[msg_verbosity], msg=message)
 
 
 Log = Logger()
@@ -301,7 +290,7 @@ class ErrorLog:
                 time_string, compress)
         assert not cls._log_fileobj, "Log already open, can't be reopened"
 
-        # compat200 compat201
+        # Globals.rbdir compat201
         base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
         if compress:  # FIXME extract MaybeGzip from rpath and make it utils?
             from rdiff_backup import rpath

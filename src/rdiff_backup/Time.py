@@ -24,7 +24,6 @@ import time
 from rdiff_backup import Globals
 
 
-curtime = curtimestr = None  # compat200
 _interval_conv_dict = {
     "s": 1,
     "m": 60,
