@@ -78,10 +78,11 @@ class AttrExtractor(meta.FlatExtractor):
     }
     # mapping for metadata fields to transform into ascii strings
     _decode_mapping = {
-        'Type': 'type',
-        'SHA1Digest': 'sha1',
-        'Uname': 'uname',
-        'Gname': 'gname',
+        'Type': {'key': 'type', 'enc': 'ascii'},
+        'SHA1Digest': {'key': 'sha1', 'enc': 'ascii'},
+        # non-ascii users and groups are seldom and not recommended, but possible
+        'Uname': {'key': 'uname', 'enc': 'utf-8'},
+        'Gname': {'key': 'gname', 'enc': 'utf-8'},
     }
 
     @staticmethod
@@ -108,9 +109,10 @@ class AttrExtractor(meta.FlatExtractor):
                 data_dict[cls._integer_mapping[field]] = int(data)
             elif field in cls._decode_mapping:
                 if data == b":" or data == b"None":
-                    data_dict[cls._decode_mapping[field]] = None
+                    data_dict[cls._decode_mapping[field]['key']] = None
                 else:
-                    data_dict[cls._decode_mapping[field]] = data.decode('ascii')
+                    data_dict[cls._decode_mapping[field]['key']] = data.decode(
+                        cls._decode_mapping[field]['enc'])
             elif field == "File":
                 index = cls._filename_to_index(data)
             elif field == "ResourceFork":  # pragma: no cover
