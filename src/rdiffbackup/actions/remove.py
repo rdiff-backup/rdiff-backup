@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import (Globals, log, manage, statistics, Time)
+from rdiff_backup import (Globals, log, statistics, Time)
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
@@ -112,10 +112,7 @@ class RemoveAction(actions.BaseAction):
                 ot=self.values.older_than), log.WARNING)
             return ret_code | Globals.RET_CODE_WARN
 
-        if Globals.get_api_version() < 201:
-            manage.delete_earlier_than(self.repo.data_dir, self.action_time)
-        else:
-            self.repo.remove_increments_older_than(self.action_time)
+        self.repo.remove_increments_older_than(self.action_time)
 
         return ret_code
 

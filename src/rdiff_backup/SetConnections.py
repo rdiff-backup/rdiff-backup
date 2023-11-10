@@ -127,14 +127,6 @@ def add_redirected_conn(conn_number):
         connection.RedirectedConnection(conn_number)
 
 
-def BackupInitConnections(reading_conn, writing_conn):  # compat200
-    """Backup specific connection initialization"""
-    reading_conn.Globals.set_local("isbackup_reader", True)
-    writing_conn.Globals.set_local("isbackup_writer", True)
-    Globals.set_all("backup_reader", reading_conn)
-    Globals.set_all("backup_writer", writing_conn)
-
-
 def CloseConnections():
     """Close all connections.  Run by client"""
     assert not Globals.server, "Connections can't be closed by server"
@@ -143,8 +135,6 @@ def CloseConnections():
             conn.quit()
     del Globals.connections[1:]  # Only leave local connection
     Globals.connection_dict = {0: Globals.local_connection}
-    Globals.backup_reader = Globals.backup_writer = None
-    Globals.isbackup_reader = Globals.isbackup_writer = False
 
 
 def test_connections(rpaths):

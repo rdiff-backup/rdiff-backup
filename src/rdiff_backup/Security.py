@@ -79,8 +79,6 @@ _file_requests = {
 # functions to set global values
 _globals_requests = {
     "Globals.set_local",
-    # API < 201
-    "Globals.set",
 }
 
 
@@ -114,7 +112,6 @@ def reset_restrict_path(rp):
         "Function works locally not over '{conn}'.".format(conn=rp.conn))
     global _restrict_path, _restrict_path_list
     _restrict_path = rp.normalize().path
-    Globals.restrict_path = _restrict_path  # compat200
     _restrict_path_list = _restrict_path.split(b"/")
 
 
@@ -224,9 +221,6 @@ def _set_allowed_requests(sec_class, sec_level):
         # "gzip.GzipFile",  # ??? perhaps covered by VirtualFile
         # "open",  # ??? perhaps covered by VirtualFile
         "sys.stdout.write",
-        # API < 201
-        "FilenameMapping.set_init_quote_vals_local",
-        "Time.setcurtime_local",
         # API >= 201
         "_repo_shadow.RepoShadow.is_locked",
         "_repo_shadow.RepoShadow.lock",
@@ -243,8 +237,6 @@ def _set_allowed_requests(sec_class, sec_level):
             # System
             "os.getuid",
             "os.listdir",
-            # API < 201
-            "os.name",  # doesn't work because not callable but attribute!
             # API >= 201
             "platform.system",
             "_repo_shadow.RepoShadow.get_config",
@@ -253,27 +245,6 @@ def _set_allowed_requests(sec_class, sec_level):
         ])
     if sec_level == "read-only" or sec_level == "read-write":
         requests.update([
-            # API < 201
-            "backup.SourceStruct.get_source_select",
-            "backup.SourceStruct.set_source_select",
-            "backup.SourceStruct.get_diffs",
-            "compare.DataSide.get_source_select",  # inherited from SourceStruct
-            "compare.DataSide.compare_fast",
-            "compare.DataSide.compare_hash",
-            "compare.DataSide.compare_full",
-            "compare.RepoSide.init_and_get_iter",
-            "compare.RepoSide.close_rf_cache",  # inherited from MirrorStruct
-            "compare.RepoSide.attach_files",
-            "compare.Verify",
-            "fs_abilities.get_readonly_fsa",
-            "restore.MirrorStruct.get_increment_times",
-            "restore.MirrorStruct.set_mirror_and_rest_times",
-            "restore.MirrorStruct.set_mirror_select",
-            "restore.MirrorStruct.initialize_rf_cache",
-            "restore.MirrorStruct.close_rf_cache",
-            "restore.MirrorStruct.get_diffs",
-            "restore.ListChangedSince",
-            "restore.ListAtTime",
             # API >= 201
             "_dir_shadow.ReadDirShadow.compare_full",
             "_dir_shadow.ReadDirShadow.compare_hash",
@@ -303,12 +274,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "log.Log.close_logfile_local",
             "log.Log.open_logfile_local",
             "statistics.record_error",
-            # API < 201
-            "backup.DestinationStruct.set_rorp_cache",
-            "backup.DestinationStruct.get_sigs",
-            "backup.DestinationStruct.patch_and_increment",
-            "fs_abilities.backup_set_globals",
-            "regress.check_pids",
             # API >= 201
             "_repo_shadow.RepoShadow.close_statistics",
             "_repo_shadow.RepoShadow.get_fs_abilities_readwrite",
@@ -341,15 +306,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "os.unlink",
             "os.utime",
             "shutil.rmtree",
-            # API < 201
-            "backup.DestinationStruct.patch",
-            "manage.delete_earlier_than_local",
-            "fs_abilities.restore_set_globals",
-            "fs_abilities.single_set_globals",
-            "regress.Regress",
-            "restore.TargetStruct.get_initial_iter",
-            "restore.TargetStruct.patch",
-            "restore.TargetStruct.set_target_select",
             # API >= 201
             "_repo_shadow.RepoShadow.regress",
             "_repo_shadow.RepoShadow.remove_increments_older_than",
@@ -363,11 +319,6 @@ def _set_allowed_requests(sec_class, sec_level):
             "log.Log.setverbosity",
             "log.Log.setterm_verbosity",
             "SetConnections.init_connection_remote",
-            # API < 201
-            "Globals.postset_regexp_local",
-            "Time.setprevtime_local",
-            "user_group.init_user_mapping",
-            "user_group.init_group_mapping",
             # API >= 201
             "_repo_shadow.RepoShadow.init_owners_mapping",
             "_dir_shadow.WriteDirShadow.init_owners_mapping",
