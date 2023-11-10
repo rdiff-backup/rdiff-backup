@@ -1,6 +1,8 @@
-import unittest
-import pwd
 import code
+import getpass
+import os
+import pwd
+import unittest
 from rdiff_backup import Globals
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
@@ -51,7 +53,12 @@ root:bin
 bin:root
 500:501
 0:mail
-mail:0"""
+mail:0
+"""
+        curr_user_name = getpass.getuser()
+        curr_user_uid = os.getuid()
+        # testing UTF-8 user names
+        mapping_string += "éłephänt:" + curr_user_name
         Globals.isdest = 1
         rootid = 0
         binid = pwd.getpwnam('bin')[2]
@@ -61,6 +68,7 @@ mail:0"""
 
         self.assertEqual(map_owners._user_map(rootid, 'root'), binid)
         self.assertEqual(map_owners._user_map(binid, 'bin'), rootid)
+        self.assertEqual(map_owners._user_map(-1, 'éłephänt'), curr_user_uid)
         self.assertEqual(map_owners._user_map(0), mailid)
         self.assertEqual(map_owners._user_map(mailid, 'mail'), 0)
         self.assertEqual(map_owners._user_map(500), 501)
