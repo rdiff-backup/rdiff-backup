@@ -161,10 +161,10 @@ connection_dict = {}
 
 # True if the script is the end that writes to the increment and
 # mirror directories.  True for purely local sessions.
-isbackup_writer = None  # compat200
+isbackup_writer = None  # compat201
 
 # Connection of the backup writer
-backup_writer = None  # compat200
+backup_writer = None  # compat201
 
 # Connection of the client
 client_conn = None
@@ -182,7 +182,7 @@ isdest = None
 changed_settings = []
 
 # The RPath or QuotedRPath of the rdiff-backup-data directory.
-rbdir = None  # compat200 compat201
+rbdir = None  # compat201
 
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be set if certain characters in filenames on the source side
@@ -242,10 +242,6 @@ file_statistics = 1
 # On the backup writer connection, holds the root incrementing branch
 # object.  Access is provided to increment error counts.
 ITRB = None
-
-# If this is set, it indicates that the remote connection should only
-# deal with paths inside of restrict_path.
-restrict_path = None  # compat200
 
 # If set, a file will be marked as changed if its inode changes.  See
 # the man page under --no-compare-inode for more information.

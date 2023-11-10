@@ -130,6 +130,24 @@ Then repeat this procedure, moving backward in time, applying earlier
 and earlier diffs. The final restoration candidate is the source file as
 it was at time *T*.
 
+== Changelog
+
+Changes to the repository format haven't been properly tracked in the past, so here is a tentative start.
+
+=== API 201 (v2.2.x)
+
+- the directory `rdiff-backup-data/increments` does always exist from the start
+- meta data files are now correctly _not_ compressed when using the `--no-compression` parameter during a backup or regression
+- introduction of the lock file `rdiff-backup-data/lock.yml`
+
+NOTE: to the best of my knowledge, none of those changes breaks the backward compatibility with older versions of rdiff-backup.
+
+=== Older changes
+
+This list is most probably incomplete:
+
+- SHA1 digest was added in v1.1.1
+
 == Concluding remarks
 
 Well, that's all. I realize that the above falls short of mathematical

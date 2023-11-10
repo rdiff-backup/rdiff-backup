@@ -482,9 +482,7 @@ For example, if you have rdiff-backup 2.1.5 and 2.2.1 installed in virtual envir
 The client will then use the correct version of rdiff-backup based on its own version '[.code]``x.y.z``'.
 You'll find more explanations in the *migration* file in the documentation.
 
-If you need to include a literal '[.code]``%``' in the string specified by *--remote-schema*, quote it with another '[.code]``%``', as in '[.code]``%%``' (this is due to the compatibility with the deprecated host placeholder '[.code]``%s``', which you shouldn't use anymore).
-
-And finally, if you need to include literal '[.code]``{ }``' (curly braces) in the the string specified by *--remote-schema*, quote them (both) by doubling each of them up, as in '[.code]``{{ foo=0; }}``'.
+If you need to include literal '[.code]``{ }``' (curly braces) in the the string specified by *--remote-schema*, quote them (both) by doubling each of them up, as in '[.code]``{{ foo=0; }}``'.
 
 Although ssh itself may be secure, using rdiff-backup in the default way presents some security risks.
 For instance if the server is run as root, then an attacker who compromised the client could then use rdiff-backup to overwrite arbitrary server files by "backing up" over them.
