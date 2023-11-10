@@ -123,11 +123,8 @@ class RestoreAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self._set_no_compression_regexp()
-        if ret_code & Globals.RET_CODE_ERR:
-            return ret_code
-
-        ret_code |= self.repo.setup(action_name=self.name)
+        ret_code |= self.repo.setup(action_name=self.name,
+                                    not_compressed_regexp=self.values.not_compressed_regexp)
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 

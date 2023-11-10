@@ -72,17 +72,14 @@ class RegressAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code = self._set_no_compression_regexp()
-        if ret_code & Globals.RET_CODE_ERR:
-            return ret_code
-
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
             "preserve_num_ids": self.values.preserve_numerical_ids
         }
         ret_code = self.repo.setup(owners_map=owners_map,
-                                   action_name=self.name)
+                                   action_name=self.name,
+                                   not_compressed_regexp=self.values.not_compressed_regexp)
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 

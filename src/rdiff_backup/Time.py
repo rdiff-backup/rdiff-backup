@@ -24,7 +24,6 @@ import time
 from rdiff_backup import Globals
 
 
-curtime = curtimestr = None  # compat200
 _interval_conv_dict = {
     "s": 1,
     "m": 60,
@@ -61,58 +60,16 @@ def set_current_time(reftime=None):
     """
     if reftime is None:
         reftime = time.time()
-    if Globals.get_api_version() < 201:  # compat200
-        for conn in Globals.connections:
-            conn.Time.setcurtime_local(int(reftime))
-    else:
-        Globals.set_all("current_time", reftime)
-        Globals.set_all("current_time_string", timetostring(reftime))
+    Globals.set_all("current_time", reftime)
+    Globals.set_all("current_time_string", timetostring(reftime))
 
 
-# @API(setcurtime_local, 200, 200)
-def setcurtime_local(timeinseconds):
-    """
-    Only set the current time locally
-    """
-    global curtime, curtimestr
-    curtime, curtimestr = timeinseconds, timetostring(timeinseconds)
-
-
-# compat200 - simplify to reference to Globals.current_time
 def getcurtime():
-    if Globals.get_api_version() < 201:
-        return curtime
-    else:
-        return Globals.current_time
+    return Globals.current_time
 
 
-# compat200 - simplify through reference to Globals.current_time_string
 def getcurtimestr():
-    if Globals.get_api_version() < 201:
-        return curtimestr
-    else:
-        return Globals.current_time_string
-
-
-def setprevtime_compat200(timeinseconds):
-    """
-    Sets the previous inc time in prevtime and prevtimestr on all connections
-    """
-    assert 0 < timeinseconds < getcurtime(), (
-        "Time {secs} is either negative or in the future".format(
-            secs=timeinseconds))
-    timestr = timetostring(timeinseconds)
-    for conn in Globals.connections:
-        conn.Time.setprevtime_local(timeinseconds, timestr)
-
-
-# @API(setprevtime_local, 200, 200)
-def setprevtime_local(timeinseconds, timestr):
-    """
-    Like setprevtime but only set the local version
-    """
-    global prevtime, prevtimestr
-    prevtime, prevtimestr = timeinseconds, timestr
+    return Globals.current_time_string
 
 
 def timetostring(timeinseconds):

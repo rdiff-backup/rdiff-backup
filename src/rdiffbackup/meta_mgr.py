@@ -57,7 +57,7 @@ class Manager:
         """
         self.rplist = []
         self.timerpmap, self.prefixmap = {}, {}
-        if data_dir is None:  # compat200 compat201
+        if data_dir is None:  # Globals.rbdir compat201
             self.data_dir = Globals.rbdir
         else:
             self.data_dir = data_dir
@@ -123,11 +123,9 @@ class Manager:
         def callback(rp):
             temprp[0] = rp
 
-        # Before API 201, metafiles couldn't be compressed
         writer = self._meta_main_class(
             temprp[0], 'wb',
-            compress=(Globals.compression
-                      or Globals.get_api_version() < 201),
+            compress=Globals.compression,
             check_path=0, callback=callback)
         for rorp in self._get_meta_main_at_time(regress_time, None):
             writer.write_object(rorp)
@@ -197,8 +195,7 @@ class Manager:
         if meta_class.is_active() or force:
             # Before API 201, metafiles couldn't be compressed
             return meta_class(rp, 'w',
-                              compress=(Globals.compression
-                                        or Globals.get_api_version() < 201),
+                              compress=Globals.compression,
                               callback=self._add_incrp)
         else:
             return None

@@ -127,14 +127,6 @@ def add_redirected_conn(conn_number):
         connection.RedirectedConnection(conn_number)
 
 
-def BackupInitConnections(reading_conn, writing_conn):  # compat200
-    """Backup specific connection initialization"""
-    reading_conn.Globals.set_local("isbackup_reader", True)
-    writing_conn.Globals.set_local("isbackup_writer", True)
-    Globals.set_all("backup_reader", reading_conn)
-    Globals.set_all("backup_writer", writing_conn)
-
-
 def CloseConnections():
     """Close all connections.  Run by client"""
     assert not Globals.server, "Connections can't be closed by server"
@@ -143,8 +135,6 @@ def CloseConnections():
             conn.quit()
     del Globals.connections[1:]  # Only leave local connection
     Globals.connection_dict = {0: Globals.local_connection}
-    Globals.backup_reader = Globals.backup_writer = None
-    Globals.isbackup_reader = Globals.isbackup_writer = False
 
 
 def test_connections(rpaths):
@@ -281,17 +271,14 @@ def _fill_schema(host_info, cmd_schema):
         # using a simple negative-lookbehind
         if ((re.findall(b"(?<!{){[^{}]*}", cmd_schema)
              != re.findall(b"{h}|{V[xyz]}", cmd_schema))
-                or (b"{h}" not in cmd_schema
-                    and b"%s" not in cmd_schema)):  # compat200
+                or b"{h}" not in cmd_schema):
             raise KeyError
-        if b"{h}" in cmd_schema:
+        else:
             ver_split = Globals.version.split(".")
             # bytes doesn't have a format method, hence the conversions
             return os.fsencode(os.fsdecode(cmd_schema).format(
                 h=os.fsdecode(host_info),
                 Vx=ver_split[0], Vy=ver_split[1], Vz=ver_split[2]))
-        else:  # compat200: accepts "%s" as host place-holder
-            return cmd_schema % host_info
     except (TypeError, KeyError):
         log.Log.FatalError("Invalid remote schema: {rs}".format(
             rs=safestr.to_str(cmd_schema)))

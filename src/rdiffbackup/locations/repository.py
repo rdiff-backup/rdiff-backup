@@ -22,6 +22,8 @@ A location module to define repository classes as created by rdiff-backup
 """
 
 import io
+import os
+import re
 
 from rdiffbackup import locations
 from rdiffbackup.locations import fs_abilities
@@ -95,7 +97,8 @@ class Repo(locations.Location):
 
         return ret_code
 
-    def setup(self, src_dir=None, owners_map=None, action_name=None):
+    def setup(self, src_dir=None, owners_map=None, action_name=None,
+              not_compressed_regexp=None):
         if self.must_be_writable and not self._create():
             return Globals.RET_CODE_ERR
 
@@ -103,7 +106,7 @@ class Repo(locations.Location):
                 and self.base_dir.conn is Globals.local_connection):
             Security.reset_restrict_path(self.base_dir)
 
-        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
+        Globals.set_all('rbdir', self.data_dir)  # compat201
 
         ret_code = Globals.RET_CODE_OK
 
@@ -160,6 +163,11 @@ class Repo(locations.Location):
         self.setup_quoting()
         self.setup_paths()
 
+        if not_compressed_regexp is not None:
+            ret_code |= self.setup_not_compressed_regexp(not_compressed_regexp)
+            if ret_code & Globals.RET_CODE_ERR:
+                return ret_code
+
         if owners_map is not None:
             ret_code |= self.init_owners_mapping(**owners_map)
             if ret_code & Globals.RET_CODE_ERR:
@@ -176,6 +184,10 @@ class Repo(locations.Location):
         """
         Close the repository, mainly unlock it if it's been previously locked
         """
+        # FIXME this shouldn't be necessary, and the setting of variable
+        # across the connection should happen through the shadow
+        Globals.set_all("backup_writer", None)
+        self.base_dir.conn.Globals.set_local("isbackup_writer", False)
         self.unlock()
         if self.logging_to_file:
             log.Log.close_logfile()
@@ -204,7 +216,7 @@ class Repo(locations.Location):
             self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
             self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
 
-        Globals.set_all('rbdir', self.data_dir)  # compat200 compat201
+        Globals.set_all('rbdir', self.data_dir)  # compat201
 
         return True
 
@@ -214,6 +226,23 @@ class Repo(locations.Location):
         """
         return self._shadow.setup_paths(
             self.base_dir, self.data_dir, self.incs_dir)
+
+    @classmethod  # so that we can easily use in tests
+    def setup_not_compressed_regexp(cls, not_compressed_regexp=None):
+        """
+        Sets the no_compression_regexp setting globally
+        """
+        not_compressed_regexp = os.fsencode(not_compressed_regexp)
+        try:
+            not_compressed_regexp = re.compile(not_compressed_regexp)
+        except re.error:
+            log.Log("No compression regular expression '{ex}' doesn't "
+                    "compile".format(ex=not_compressed_regexp), log.ERROR)
+            return Globals.RET_CODE_ERR
+
+        Globals.set_all('no_compression_regexp', not_compressed_regexp)
+
+        return Globals.RET_CODE_OK
 
     def get_fs_abilities(self):
         """
@@ -307,7 +336,7 @@ class Repo(locations.Location):
         side over its connection.
         """
 
-        # FIXME we're retransforming bytes into a file pointer
+        # compat201 we're retransforming bytes into a file pointer
         if select_opts:
             self._shadow.set_select(
                 target_rp, select_opts, *list(map(io.BytesIO, select_data)))
@@ -550,8 +579,8 @@ class Repo(locations.Location):
         elif not self.incs_dir.isdir():
             log.Log("Data directory '{dd}' doesn't have an 'increments' "
                     "sub-directory".format(dd=self.data_dir),
-                    log.WARNING)  # used to be normal  # compat200
-            # return False # compat200
+                    log.WARNING)  # used to be normal  # compat200repo
+            # return False # compat200repo
         return True
 
     def _is_writable(self):

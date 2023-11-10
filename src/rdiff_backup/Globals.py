@@ -18,7 +18,6 @@
 # 02110-1301, USA
 """Hold a variety of constants usually set at initialization."""
 
-import re
 import os
 import platform
 import sys
@@ -160,20 +159,12 @@ connection_number = 0
 # SetConnections for all connections.
 connection_dict = {}
 
-# True if the script is the end that reads the source directory
-# for backups.  It is true for purely local sessions.
-isbackup_reader = None  # compat200
-
-# Connection of the real backup reader (for which isbackup_reader
-# is true)
-backup_reader = None  # compat200
-
 # True if the script is the end that writes to the increment and
 # mirror directories.  True for purely local sessions.
-isbackup_writer = None
+isbackup_writer = None  # compat201
 
 # Connection of the backup writer
-backup_writer = None
+backup_writer = None  # compat201
 
 # Connection of the client
 client_conn = None
@@ -191,7 +182,7 @@ isdest = None
 changed_settings = []
 
 # The RPath or QuotedRPath of the rdiff-backup-data directory.
-rbdir = None  # compat200 compat201
+rbdir = None  # compat201
 
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be set if certain characters in filenames on the source side
@@ -252,10 +243,6 @@ file_statistics = 1
 # object.  Access is provided to increment error counts.
 ITRB = None
 
-# If this is set, it indicates that the remote connection should only
-# deal with paths inside of restrict_path.
-restrict_path = None  # compat200
-
 # If set, a file will be marked as changed if its inode changes.  See
 # the man page under --no-compare-inode for more information.
 compare_inode = 1
@@ -307,7 +294,6 @@ def get(name):
     return globals()[name]
 
 
-# @API(set, 200, 200)
 def set(name, val):
     """
     Set the value of something in this module on this connection and, delayed,
@@ -348,16 +334,6 @@ def set_integer(name, val):
         log.Log.FatalError("Variable {vr} must be set to an integer, received "
                            "value '{vl}' instead".format(vr=name, vl=val))
     set(name, intval)
-
-
-# @API(postset_regexp_local, 200, 200)
-def postset_regexp_local(name, re_string, flags):
-    """Set name to compiled re_string locally"""
-    re_string = os.fsencode(re_string)
-    if flags:
-        globals()[name] = re.compile(re_string, flags)
-    else:
-        globals()[name] = re.compile(re_string)
 
 
 # @API(set_api_version, 201)

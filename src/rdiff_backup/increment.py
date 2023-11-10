@@ -37,9 +37,6 @@ def Increment(new, mirror, incpref, inc_time=None):
     if ((new and new.isdir()) or mirror.isdir()) and not incpref.lstat():
         incpref.mkdir()
 
-    if inc_time is None:  # compat200
-        inc_time = Time.prevtime
-
     if not mirror.lstat():
         incrp = _make_missing_increment(incpref, inc_time)
     elif mirror.isdir():
@@ -59,9 +56,6 @@ def get_inc(rp, typestr, inc_time):
     To avoid any quoting, the returned rpath has empty index, and the
     whole filename is in the base (which is not quoted).
     """
-    if inc_time is None:  # compat200
-        inc_time = Time.prevtime
-
     def addtostr(s):
         return b'.'.join(map(os.fsencode,
                              (s, Time.timetostring(inc_time), typestr)))
@@ -91,8 +85,8 @@ def _make_missing_increment(incpref, inc_time):
 
 def _is_compressed(mirror):
     """Return true if mirror's increments should be compressed"""
-    return (Globals.compression
-            and not Globals.no_compression_regexp.match(mirror.path))
+    return (Globals.compression and (Globals.no_compression_regexp is None
+            or not Globals.no_compression_regexp.match(mirror.path)))
 
 
 def _make_snapshot_increment(mirror, incpref, inc_time):

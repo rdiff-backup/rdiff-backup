@@ -879,7 +879,7 @@ def get_prepared_selections(selections):
         return buf
 
     if selections:
-        # the following loop is a compatibility measure # compat200
+        # the following loop is a compatibility measure # compat201
         for selection in selections:
             if 'filelist' in selection[0]:
                 if selection[0].endswith("-stdin"):

@@ -153,12 +153,8 @@ class ListAction(actions.BaseAction):
         """
         incs = self.repo.get_increments()
         if self.values.parsable_output:
-            if Globals.get_api_version() < 201:
-                for inc in incs:
-                    print("{ti} {it}".format(ti=inc["time"], it=inc["type"]))
-            else:
-                print(yaml.safe_dump(incs,
-                                     explicit_start=True, explicit_end=True))
+            print(yaml.safe_dump(incs,
+                                 explicit_start=True, explicit_end=True))
         else:
             print("Found {ni} increments:".format(ni=len(incs) - 1))
             for inc in incs[:-1]:
@@ -170,25 +166,16 @@ class ListAction(actions.BaseAction):
 
     def _list_files_changed_since(self):
         """List all the files under rp that have changed since restoretime"""
-        if Globals.get_api_version() < 201:
-            rorp_iter = self.repo.base_dir.conn.restore.ListChangedSince(
-                self.repo.ref_path, self.repo.ref_inc, self.action_time)
-        else:
-            rorp_iter = self.repo.list_files_changed_since(self.action_time)
+        rorp_iter = self.repo.list_files_changed_since(self.action_time)
         for rorp in rorp_iter:
-            # This is a hack, see restore.ListChangedSince for rationale
-            print(str(rorp))
+            print(str(rorp))  # this is a hack to transfer information
         return Globals.RET_CODE_OK
 
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
-        if Globals.get_api_version() < 201:
-            rorp_iter = self.repo.base_dir.conn.restore.ListAtTime(
-                self.repo.ref_path, self.repo.ref_inc, self.action_time)
-        else:
-            rorp_iter = self.repo.list_files_at_time(self.action_time)
+        rorp_iter = self.repo.list_files_at_time(self.action_time)
         for rorp in rorp_iter:
-            print(str(rorp))
+            print(str(rorp))  # this is a hack to transfer information
         return Globals.RET_CODE_OK
 
 
