@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rdiff-backup"
+authors = [
+    {name = "The rdiff-backup project", email = "rdiff-backup-users@nongnu.org"}
+]
+description = "Backup and Restore utility, easy to use, efficient, locally and remotely usable"
+readme = {file = "pyproject.readme.md", content-type = "text/markdown"}
+requires-python = ">=3.6"
+keywords = [
+	'backup', 'simple', 'easy', 'remote', 'incremental', 'efficient', 'cross-platform'
+]
+license = {text = "GPLv2+"}
+classifiers = [
+	'Development Status :: 5 - Production/Stable',
+	'Environment :: Console',
+	'Intended Audience :: End Users/Desktop',
+	'Intended Audience :: System Administrators',
+	'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+	'Natural Language :: English',
+	'Operating System :: POSIX :: Linux',
+	'Operating System :: POSIX',  # generic because users reported FreeBSD to work
+	'Operating System :: Microsoft :: Windows',
+	'Programming Language :: Python :: 3',
+	'Topic :: System :: Archiving :: Backup',
+]
+dependencies = [
+	'importlib-metadata ; python_version < "3.8"',
+	'pywin32 ; platform_system == "Windows"',
+	'PyYAML',
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+meta = [
+	'pylibacl ; os_name == "posix"',
+	'pyxattr ; platform_system == "Linux"',
+	'psutil',
+]
+
+[project.urls]
+Homepage = "https://rdiff-backup.net"
+Documentation = "https://rdiff-backup.net/#documentation"
+Repository = "https://github.com/rdiff-backup/rdiff-backup"
+Changelog = "https://github.com/rdiff-backup/rdiff-backup/blob/master/CHANGELOG.adoc"
+Downloads = "https://github.com/rdiff-backup/rdiff-backup/releases"
+
+[project.scripts]
+rdiff-backup = "rdiffbackup.run:main"
+rdiff-backup-delete = "rdiff_backup.run_delete:main"
+rdiff-backup-statistics = "rdiff_backup.run_stats:main"
+
+[tool.setuptools]
+platforms = ['linux', 'win32']
+include-package-data = true
+package-data = {"rdiff_backup" = ["*.dll"]}
+
+[tool.setuptools.data-files]
+"share/man/man1" = [
+	"dist/rdiff-backup.1",
+	"dist/rdiff-backup-delete.1",
+	"dist/rdiff-backup-statistics.1",
+]
+"share/doc/rdiff-backup" = [
+	"CHANGELOG.adoc",
+	"COPYING",
+	"README.adoc",
+	"docs/credits.adoc",
+	"docs/DEVELOP.adoc",
+	"docs/examples.adoc",
+	"docs/FAQ.adoc",
+	"docs/migration.adoc",
+	"docs/Windows-README.adoc",
+	"docs/Windows-DEVELOP.adoc",
+]
+"share/bash-completion/completions" = ["tools/completions/bash/rdiff-backup"]
+
+[tool.setuptools_scm]
