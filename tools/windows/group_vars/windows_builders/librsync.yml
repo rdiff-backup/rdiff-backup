@@ -1,6 +1,6 @@
 ---
 # Always needed, the version of librsync
-librsync_version: 2.3.2
+librsync_version: 2.3.4
 
 # where to install the compiled librsync
 librsync_install_dir: "C:/Users/{{ ansible_user }}/librsync{{ win_bits }}"
