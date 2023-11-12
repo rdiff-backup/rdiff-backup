@@ -226,61 +226,7 @@ class clean(distutils.command.clean.clean):
 
 
 setup(
-    name="rdiff-backup",
     use_scm_version=True,
-    description="Backup and Restore utility, easy to use, efficient, locally and remotely usable",
-    long_description="""
-        rdiff-backup is a simple backup tool which can be used locally and remotely,
-        on Linux and Windows, and even cross-platform between both.
-        Users have reported using it successfully on FreeBSD and MacOS X.
-
-        Beside it's ease of use, one of the main advantages of rdiff-backup is that it
-        does use the same efficient protocol as rsync to transfer and store data.
-        Because rdiff-backup only stores the differences from the previous backup to
-        the next one (a so called reverse incremental backup),
-        the latest backup is always a full backup, making it easiest
-        and fastest to restore the most recent backups, combining the space
-        advantages of incremental backups while keeping the speed advantages of full
-        backups (at least for recent ones).
-
-        If the optional dependencies pylibacl and pyxattr are installed,
-        rdiff-backup will support Access Control Lists and Extended Attributes
-        provided the file system(s) also support these features.""",
-    keywords=['backup', 'simple', 'easy', 'remote', 'incremental', 'efficient', 'cross-platform'],
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'Intended Audience :: End Users/Desktop',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
-        'Natural Language :: English',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: POSIX',  # generic because users reported FreeBSD to work
-        'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python :: 3',
-        'Topic :: System :: Archiving :: Backup',
-    ],
-    license="GPLv2+",
-    author="The rdiff-backup project",
-    author_email="rdiff-backup-users@nongnu.org",
-    # maintainer and maintainer_email could be used to differentiate the package owner
-    url="https://rdiff-backup.net/",
-    download_url="https://github.com/rdiff-backup/rdiff-backup/releases",
-    python_requires='~=3.6',
-    platforms=['linux', 'win32'],
-    entry_points={
-        'console_scripts': [
-            'rdiff-backup = rdiffbackup.run:main',
-            'rdiff-backup-delete = rdiff_backup.run_delete:main',
-            'rdiff-backup-statistics = rdiff_backup.run_stats:main',
-        ]
-    },
-    packages=["rdiff_backup", "rdiffbackup",
-              "rdiffbackup.actions", "rdiffbackup.utils", "rdiffbackup.meta",
-              "rdiffbackup.locations", "rdiffbackup.locations.map"],
-    package_dir={"": "src"},  # tell distutils packages are under src
-    include_package_data=True,
-    package_data={"rdiff_backup": ["*.dll"]},
     ext_modules=[
         Extension("rdiff_backup.C", ["src/cmodule.c"]),
         Extension(
@@ -292,26 +238,6 @@ setup(
             libraries=libname,
             extra_link_args=lflags_arg,
         ),
-    ],
-    data_files=[
-        ("share/man/man1", ["dist/rdiff-backup.1",
-                            "dist/rdiff-backup-delete.1",
-                            "dist/rdiff-backup-statistics.1"]),
-        (
-            "share/doc/rdiff-backup", [
-                "CHANGELOG.adoc",
-                "COPYING",
-                "README.adoc",
-                "docs/credits.adoc",
-                "docs/DEVELOP.adoc",
-                "docs/examples.adoc",
-                "docs/FAQ.adoc",
-                "docs/migration.adoc",
-                "docs/Windows-README.adoc",
-                "docs/Windows-DEVELOP.adoc",
-            ],
-        ),
-        ("share/bash-completion/completions", ["tools/completions/bash/rdiff-backup"]),
     ],
     # options is a hash of hash with command -> option -> value
     # the value happens here to be a list of file couples/tuples
@@ -341,17 +267,4 @@ setup(
         'sdist': sdist,
         'clean': clean,
     },
-    install_requires=[
-        'importlib-metadata ; python_version < "3.8"',
-        'pywin32 ; platform_system == "Windows"',
-        'PyYAML',
-    ],
-    extras_require={
-        'meta': [
-            'pylibacl ; os_name == "posix"',
-            'pyxattr ; platform_system == "Linux"',
-            'psutil',
-        ]
-    },
-    setup_requires=['setuptools_scm'],
 )

@@ -158,7 +158,7 @@ All of those should come packaged with your system or available from https://pyp
 ** tox.ini, tox_root.ini, tox_dist.ini and tox_slow.ini - check for `envlist`
 ** .github/workflows/test_linux.yml - check for `python-version`
 ** .github/workflows/deploy.yml - check for `/opt/python/cp3...` (and possibly `many-linux`)
-** setup.py - check for `python-requires`
+** pyproject.tom - check for `requires-python`
 ** README.adoc - check for Python references
 
 ===== Python libraries and binary dependencies
@@ -449,7 +449,7 @@ mprof clean
 ----
 
 NOTE: sometimes calling rdiff-backup this way fails, it's due to the script having a wrong interpreter (because of wheel building).
-Call `./setup.sh clean --all && ./setup.py build` to fix it.
+Call `./setup.py clean --all && ./setup.py build` to fix it.
 
 TIP: there is also a https://pypi.org/project/line-profiler/[line-profiler], but I didn't try it because it requires changes to the code (again the `@profile` decorator).
 
