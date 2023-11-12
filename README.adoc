@@ -227,4 +227,4 @@ sudo pip3 install rdiff-backup --pre
 
 == Packaging status in distros
 
-image::https://repology.org/badge/vertical-allrepos/rdiff-backup.svg[Packaging status,link=https://repology.org/project/rdiff-backup/versions]
+image::https://repology.org/badge/vertical-allrepos/rdiff-backup.svg?columns=4&minversion=2.2[Packaging status,link=https://repology.org/project/rdiff-backup/versions]
