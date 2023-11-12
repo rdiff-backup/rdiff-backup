@@ -58,7 +58,7 @@
       dest: "."
   - name: install and validate necessary Python libraries
     ansible.builtin.script:
-      cmd: "{{ playbook_dir }}/../win_provision.sh 32 64"
+      cmd: "{{ playbook_dir }}/../win_provision.sh"
       executable: "\"{{ git_bash_exe | regex_replace('/', '\\\\') }}\""
     register: pipcmd
     changed_when: "'Successfully installed ' in pipcmd.stdout"
@@ -71,9 +71,6 @@
       name: Pscx
       state: present
       allow_clobber: true
-  - name: refresh the environment variables as we need gem in the PATH
-    ansible.windows.win_command: refreshenv.cmd
-    changed_when: false
   - name: install asciidoctor gem
     ansible.windows.win_command: gem.cmd install asciidoctor
 
