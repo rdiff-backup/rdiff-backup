@@ -25,15 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # we could do it also as matrix but it takes longer
-        #python-version: [3.10,3.9,3.8,3.7]
         #--- Build and deploy Linux wheels using manylinux containers ---
-        # - build manylinux2010 x64 and i686
-        # - build manylinux2014 x64
-        # - build manylinux_2_28 x64
-        # avoiding manylinux2014_i686 because does not provide librsync-devel
-        # manylinux_2_24 is already deprecated
-        many-linux: [2010_x86_64, 2010_i686, 2014_x86_64, _2_28_x86_64]
+        many-linux: [_2_28_x86_64]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -47,7 +40,7 @@ jobs:
           if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
           #py=$(echo ${{ matrix.python-version }} | tr -d .)
           plat=manylinux${{ matrix.many-linux }}
-          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{10,9,8,7}*/bin
+          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{12,11,10,9}*/bin
     - name: Upload wheel artifacts
       uses: actions/upload-artifact@v3
       with:
