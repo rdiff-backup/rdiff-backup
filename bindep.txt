@@ -18,7 +18,8 @@
 # - if you've worked it out, improved version of this bindep.txt
 
 epel-release [platform:redhat !platform:fedora]
-librsync
+librsync [!platform:dpkg]
+librsync2 [platform:dpkg]
 
 # Packages for usage of rdiff-backup
 
