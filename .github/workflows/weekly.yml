@@ -54,7 +54,9 @@ jobs:
         sudo apt-get --assume-yes update
         sudo apt-get --assume-yes install asciidoctor
     - name: create source dist package
-      run: python setup.py sdist
+      run: |
+        pip install --upgrade setuptools setuptools-scm  # workaround for old versions
+        python setup.py sdist
     - name: Upload sdist artifact
       uses: actions/upload-artifact@v3
       with:
