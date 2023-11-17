@@ -518,4 +518,6 @@ There is no magic method, even databases get corrupt if their disk space dwindle
 You need to monitor the disk space and regularly remove old increments, or increase the file system size.
 One simple measure can be to call `df -h /mnt/bak` at the end of each backup and keep an eye on space left.
 
+TIP: There is an https://github.com/rdiff-backup/rdiff-backup/blob/master/tools/misc/verify_disk_space.sh[example script] showing how to verify free disk space before starting a backup.
+
 To avoid issues with inodes, use a file system format which doesn't have the issue like XFS, and avoid ones having the limitation like ext4.
