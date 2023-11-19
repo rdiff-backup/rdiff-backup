@@ -1,6 +1,8 @@
 
 #--- building packages ---
 
+setuptools >= 67.0.0
+setuptools-scm >= 7.1.0
 build
 twine
 wheel
