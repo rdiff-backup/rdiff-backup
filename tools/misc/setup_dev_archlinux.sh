@@ -3,8 +3,9 @@
 # run it as root, it was developed under the conditions of a container,
 # e.g. created with:
 #     podman run -it docker.io/library/archlinux
-# CAUTION: it is more meant as an example of helpful commands for a developer/tester
-#          not fully knowledgeable of the platform than as a truly and fully tested script.
+# CAUTION: it is more meant as an example of helpful commands for a
+#          developer/tester not fully knowledgeable of the platform than as
+#          a truly and fully tested script.
 
 DEVUSER=devuser
 
@@ -38,8 +39,5 @@ tar xvf ./rdiff-backup-filesrepo/rdiff-backup_testfiles.tar
 #./rdiff-backup-filesrepo/rdiff-backup_testfiles.fix.sh 1234 1234
 
 # after that, as `DEVUSER`, following commands should be possible (for example)
-#  ./setup.py clean --all
-#  ./setup.py build
-#  PATH=$PWD/build/scripts-3.8:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.8 rdiff-backup --version
-#  PATH=$PWD/build/scripts-3.8:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.8 python testing/eas_aclstest.py
-
+#  pip install .
+#  rdiff-backup [...]

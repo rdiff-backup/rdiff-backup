@@ -45,7 +45,7 @@ fi
 
 echo "(make sure the version is the next correct one)" >&2
 echo
-echo "${H}${H} New in v$($(dirname $0)/../setup.py --version) ($(date -I))"
+echo "${H}${H} New in v$(python -m setuptools_scm) ($(date -I))"
 
 echo -e "\n${H}${H}${H} Changes\n"
 git log ${RELTAG}.. |

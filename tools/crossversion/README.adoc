@@ -18,13 +18,5 @@ You may call the smoke tests using the following command and validate that nothi
 ansible-playbook -v playbook-smoke-test.yml
 ----
 
-You can use the current development version by using something like the following, after having built from source using `./setup.py build`:
-
-----
-PATH=../../build/scripts-3.8:$PATH PYTHONPATH=../../build/lib.linux-x86_64-3.8 \
-	ansible-playbook -v playbook-smoke-test.yml
-----
-
-____
-*CAUTION:* the version shown locally might be DEV or any other version 	installed elsewhere locally, but the version used is definitely the 	built development version.
-____
+You can use the current development version by creating and activating a virtualenv and installing the current code into it with `pip install .`.
+Use `pip install .[meta]` (the dot is still there) to install also optional dependencies to manage metadata (ACL, EA...).
