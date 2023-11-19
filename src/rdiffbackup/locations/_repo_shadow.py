@@ -2306,11 +2306,15 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
             "Metadata path '{mp}' can only be regular file.".format(
                 mp=rf.metadata_rorp))
         if rf.mirror_rp.isreg():
-            tf = rf.mirror_rp.get_temp_rpath(sibling=True)
-            tf.write_from_fileobj(rf.get_restore_fp())
-            tf.fsync_with_dir()  # make sure tf fully written before move
-            rpath.copy_attribs(rf.metadata_rorp, tf)
-            rpath.rename(tf, rf.mirror_rp)  # move is atomic
+            # Before restoring file from history, check if the versions are already identical.
+            if rf.mirror_rp.getsize() == rf.metadata_rorp.getsize() and rf.metadata_rorp.has_sha1() and rf.metadata_rorp.get_sha1() == hash.compute_sha1(rf.mirror_rp):
+                rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
+            else:
+                tf = rf.mirror_rp.get_temp_rpath(sibling=True)
+                tf.write_from_fileobj(rf.get_restore_fp())
+                tf.fsync_with_dir()  # make sure tf fully written before move
+                rpath.copy_attribs(rf.metadata_rorp, tf)
+                rpath.rename(tf, rf.mirror_rp)  # move is atomic
         else:
             if rf.mirror_rp.lstat():
                 rf.mirror_rp.delete()
