@@ -49,12 +49,14 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0  # to have the correct version
-    - name: Install asciidoctor to generate manpages
+    - name: Install asciidoctor to generate manpages and other dependencies
       run: |
         sudo apt-get --assume-yes update
         sudo apt-get --assume-yes install asciidoctor
     - name: create source dist package
-      run: pyproject-build
+      run: |
+        pip install build  # package python3-build is too old
+        pyproject-build --sdist
     - name: Upload sdist artifact
       uses: actions/upload-artifact@v3
       with:
