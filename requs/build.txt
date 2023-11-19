@@ -1,6 +1,7 @@
 
 #--- building packages ---
 
+build
 twine
 wheel
 #py2exe; platform_system=="Windows"

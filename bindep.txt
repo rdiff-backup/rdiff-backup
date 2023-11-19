@@ -35,6 +35,7 @@ python-pyxattr [platform:pacman usage]
 
 python3-devel [platform:redhat devel]
 python3-dev [platform:dpkg devel]
+python3-build
 python-devtools [platform:pacman devel]
 python3-wheel [!platform:pacman devel]
 python-wheel [platform:pacman devel]

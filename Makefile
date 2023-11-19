@@ -37,20 +37,9 @@ test-runtime-slow: test-runtime-files
 test-misc: clean build test-static test-runtime-slow
 
 build:
-	# Build rdiff-backup (assumes src/ is in directory 'rdiff-backup' and it's
-	# parent is writeable)
-	${RUN_COMMAND} ./setup.py build
-
-bdist_wheel:
-	# Prepare wheel for deployment.
-	# See the notes for target "build"
-	# auditwheel unfortunately does not work with modern glibc
-	${RUN_COMMAND} ./setup.py bdist_wheel
-	# ${RUN_COMMAND} auditwheel repair dist/*.whl
-
-sdist:
-	# Prepare wheel for deployment.
-	${RUN_COMMAND} ./setup.py sdist
+	# Build rdiff-backup (assumes src/ is in directory 'rdiff-backup' and
+	# its parent is writeable)
+	${RUN_COMMAND} pyproject-build
 
 dist_deb:
 	${RUN_COMMAND} debian/autobuild.sh

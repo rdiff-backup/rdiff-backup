@@ -126,9 +126,7 @@ The options are sorted by ignoring the hyphens, this means that actions and opti
 It should be pretty simple in most cases, if you know how to create a fork and a pull request against rdiff-backup's Git repo:
 
 . add a subdirectory and script to `tools/completions`, e.g. `bash/rdiff-backup` (the script must have its definitive name on the file system, hence the sub-directory)
-. add an entry of the form `("<relative-target-directory>", ["tools/completions/myshell/myscript"]),` in the `data_file` parameter of the `setup.py` script.
-  Take the already existing bash entry `("share/bash-completion/completions", ["tools/completions/bash/rdiff-backup"]),` as sample.
-+
-IMPORTANT: pay attention to the final comma!
+. add an entry of the form `"<relative-target-directory>" = ["tools/completions/myshell/myscript"]` in the `[tool.setuptools.data-files]` section of the `pyproject.toml` file.
+  Take the already existing bash entry `"share/bash-completion/completions" = ["tools/completions/bash/rdiff-backup"]` as sample.
 
 That's it, test (e.g. using `pip install .`), commit and push, a pull request is then just a click or two away.
