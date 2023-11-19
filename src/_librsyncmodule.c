@@ -35,6 +35,15 @@ static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
 #define Py_SET_TYPE(ob, type) _Py_SET_TYPE((PyObject*)(ob), type)
 #endif
 
+/* ----------------------------------------------------------------------- *
+ * Update for Python 3.13/3.14 - Contributed by Victor Stinner in gh-108765
+ * https://docs.python.org/3.13/whatsnew/3.13.html#id8 - see issue #934
+ * The change was retracted but might come back in 3.14 so we keep this fix.
+ * ----------------------------------------------------------------------- */
+#if (defined(HAVE_UNISTD_H) && !defined(_UNISTD_H))
+#  include <unistd.h>
+#endif
+
 static PyObject *librsyncError;
 
 /* Sets python error string from result */
