@@ -180,7 +180,7 @@ By default the `Makefile` runs all of it's command in a clean Docker container, 
 
 The CI pipeline also uses the `Makefile`, so if all commands in the `Makefile` succeed locally, the CI is most likely to pass as well.
 
-=== Build and install with setup.py
+=== Build and install with pyproject-build
 
 To install, simply run:
 
@@ -188,25 +188,16 @@ To install, simply run:
 
 TIP: if pip isn't present on your system, or too old, you can install or upgrade it with `python -m ensurepip --upgrade`
 
-The build process can be also be run separately:
+The build process can be also be run separately using `pyproject-build`.
 
- python3 setup.py build
-
-The setup script expects to find librsync headers and libraries in the default location, usually /usr/include and /usr/lib.
-If you want the setup script to check different locations, use the --librsync-dir switch or the LIBRSYNC_DIR environment variable.
+The setup.py script expects to find librsync headers and libraries in the default location, usually `/usr/include` and `/usr/lib`.
+If you want the setup script to check different locations, use the LIBRSYNC_DIR environment variable.
 For instance to instruct the setup program to look in `/usr/local/include` and `/usr/local/lib` for the librsync files run:
 
- python3 setup.py --librsync-dir=/usr/local build
+ LIBRSYNC_DIR=/usr/local python3 setup.py build
 
-Finally, the `--lflags` and `--libs` options, and the `LFLAGS` and `LIBS` environment variables are also recognized.
+Finally, the `LFLAGS` and `LIBS` environment variables are also recognized.
 Running setup.py with no arguments will display some help.
-Additional help is displayed by the command:
-
- python3 setup.py install --help
-
-More information about using setup.py and how rdiff-backup is installed is available from the Python guide, Installing Python Modules for System Administrators, located at https://docs.python.org/3/install/index.html
-
-NOTE: if you plan to use `./setup.py bdist_rpm` to create an RPM, you would need rpm-build but be aware that it will currently fail due to a https://github.com/pypa/setuptools/issues/1277[known bug in setuptools with compressed man pages].
 
 To build from source on Windows, check the link:../tools/windows[Windows tools] to build a single executable file which contains Python, librsync, and all required modules.
 
