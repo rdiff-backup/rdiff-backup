@@ -12,7 +12,7 @@ MANIFEST
 *[._]local[._]*
 
 # setup.py installation files
-src/rdiff_backup.egg-info/
+*.egg-info/
 .eggs/
 
 # Windows build file

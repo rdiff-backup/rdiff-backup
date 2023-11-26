@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coverage-pth"
+version = "0.0.1"
+authors = [
+    {name = "The rdiff-backup project", email = "rdiff-backup-users@nongnu.org"}
+]
+description = "write the hook file which will make sure that coverage is loaded"
+
+[tool.setuptools]
+package-dir = {""="src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.pth"]
