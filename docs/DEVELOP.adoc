@@ -16,7 +16,10 @@ NOTE: Suggest https://github.com/rdiff-backup/rdiff-backup/issues/new?title=Docs
 
 Simply clone the source with:
 
- git clone https://github.com/rdiff-backup/rdiff-backup.git
+[source,shell]
+----
+git clone https://github.com/rdiff-backup/rdiff-backup.git
+----
 
 NOTE: If you plan to provide your own code, you should first fork our repo and clone your own forked repo (probably using ssh not https).
 How is described at https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks
@@ -180,24 +183,29 @@ By default the `Makefile` runs all of it's command in a clean Docker container, 
 
 The CI pipeline also uses the `Makefile`, so if all commands in the `Makefile` succeed locally, the CI is most likely to pass as well.
 
-=== Build and install with pyproject-build
+=== Build and install
 
 To install, simply run:
 
- pip install .
+[source,shell]
+----
+pip install .
+----
 
 TIP: if pip isn't present on your system, or too old, you can install or upgrade it with `python -m ensurepip --upgrade`
 
 The build process can be also be run separately using `pyproject-build`.
 
-The setup.py script expects to find librsync headers and libraries in the default location, usually `/usr/include` and `/usr/lib`.
+The `setup.py` script expects to find librsync headers and libraries in the default location, usually `/usr/include` and `/usr/lib`.
 If you want the setup script to check different locations, use the LIBRSYNC_DIR environment variable.
 For instance to instruct the setup program to look in `/usr/local/include` and `/usr/local/lib` for the librsync files run:
 
- LIBRSYNC_DIR=/usr/local python3 setup.py build
+[source,shell]
+----
+LIBRSYNC_DIR=/usr/local pyproject-build
+----
 
 Finally, the `LFLAGS` and `LIBS` environment variables are also recognized.
-Running setup.py with no arguments will display some help.
 
 To build from source on Windows, check the link:../tools/windows[Windows tools] to build a single executable file which contains Python, librsync, and all required modules.
 
@@ -330,10 +338,14 @@ At this stage, it seems that the core file has given most of its secrets and we 
 
 [source,console]
 ----
-$ PYTHONTRACEMALLOC=1 gdb -args python3-debug -m rdiffbackup.run backup /some/source/dir /some/target/dir
-(gdb) break src/_librsyncmodule.c:_librsync_new_patchmaker
+$ PYTHONTRACEMALLOC=1 gdb -args python3-debug -m rdiffbackup.run backup \
+	/some/source/dir /some/target/dir
+(gdb) break rdiff_backup/_librsyncmodule.c:_librsync_new_patchmaker
 (gdb) run
 ----
+
+FIXME:: I didn't yet find the correct `break` statement identifying the function.
+The path to the C-file is apparently not the same when installed with pip.
 
 The debugger runs until the breakpoint is reached, after which a succession of `next` and `print <SomeVar>` allows me to analyze the code step by step, and to come to the conclusion that `+cfile = fdopen(python_fd, ...+` is somehow wrong as it creates a null file pointer whereas `python_fd` looks like a valid file descriptor (an integer equal to 5).
 
@@ -355,9 +367,12 @@ NOTE: See https://docs.python.org/3/library/tracemalloc.html for more informatio
 In order to make sure the debug messages are properly sorted, you need to have the verbosity level 9 set-up, mix stdout and stderr, and then use the date/time output to properly sort the lines coming both from server and client, while making sure that lines belonging together stay together.
 The result command line might look as follows:
 
- rdiff-backup -v9 localhost::/sourcedir /backupdir 2>&1 | awk \
- 	'/^2019-09-16/ { if (line) print line; line = $0 } ! /^2019-09-16/ { line = line " ## " $0 }' \
- 	| sort | sed 's/ ## /\n/g'
+[source,shell]
+----
+rdiff-backup -v9 localhost::/sourcedir /backupdir 2>&1 | awk \
+	'/^2019-09-16/ { if (line) print line; line = $0 } ! /^2019-09-16/ { line = line " ## " $0 }' \
+	| sort | sed 's/ ## /\n/g'
+----
 
 Since version 2.1+, you can use the server's `--debug` option to debug remotely the server process.
 Make sure first that you've installed rpdb (remote pdb) and netcat (also called nc or ncat).
@@ -365,23 +380,22 @@ Make sure first that you've installed rpdb (remote pdb) and netcat (also called 
 If you make sure that you run the latest code version, and set all the environment variables correctly, you can then connect remotely to the spawned server process:
 
 ----
-./setup.py build
-PATH=$PWD/build/scripts-3.9:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.9 \
-	python -m pdb -m rdiffbackup.run --remote-schema \
-		"ssh -C {h}  # <1>
-		RDIFF_BACKUP_DEBUG=0.0.0.0:4445  # <2>
-		PATH=$PWD/build/scripts-3.9:$PATH
-		PYTHONPATH=$PWD/build/lib.linux-x86_64-3.9
-		rdiff-backup server --debug" \  # <3>
-	backup source_dir localhost::/target_dir
+source .../rdb/bin/activate  # <1>
+pip install .
+python -m pdb -m rdiffbackup.run --remote-schema \
+	"ssh -C {h}
+	RDIFF_BACKUP_DEBUG=0.0.0.0:4445  # <2>
+	.../rdb/bin/rdiff-backup server --debug" \  # <3>
+backup source_dir localhost::/target_dir
 pdb is running on 0.0.0.0:4445  # <4>
 ----
-<1> the double quotes are important to make sure that the PATH variable is resolved locally
+<1> see above how to create a virtualenv fit for rdiff-backup
 <2> this variable is optional and only required if you want another address/port
 <3> note the `--debug` option necessary to set a breakpoint early in the process
 <4> here the address:port where the debug process is listening, the default is 127.0.0.1:4444
 
-Once you've done this, in another terminal, you can call `ncat localhost 4445` (or 4444 by default) and you'll arrive in the pdb command line. You're one or two `n(ext)` steps away from the pre-check method, so you can start to debug the server process relatively early (not the argument parsing step though).
+Once you've done this, in another terminal, you can call `netcat localhost 4445` (resp. `ncat` or `nc`, and 4444 by default) and you'll arrive on the pdb command line.
+You're one or two `n(ext)` steps away from the pre-check method, so you can start to debug the server process relatively early (not the argument parsing step though).
 
 TIP: rpdb is just a wrapper around pdb so it acts very similarly.
 
@@ -425,12 +439,10 @@ But don't do it because you can but only because you must!
 
 ==== Profiling without code changes
 
-After having called `./setup.py build`, you may call something like the following to profile the current code (adapt to your Python version):
+After having created and activated the usual virtualenv, you may call something like the following to profile the current code (adapt to your Python version):
 
 ----
-PATH=$PWD/build/scripts-3.8:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.8 \
-	python -m cProfile -s tottime \
-	build/scripts-3.8/rdiff-backup [... rdiff-backup parameters ...]
+python -m cProfile -s tottime -m rdiffbackup.run [... rdiff-backup parameters ...]
 ----
 
 The `-s tottime` option _sorts_ by total time spent in the function.
@@ -442,16 +454,11 @@ at  https://pythonhosted.org//ProfileEye/ ?
 You may also do memory profiling using the https://pypi.org/project/memory-profiler/[memory-profiler], though more detailed information requires changes to the code by adding the `@profile` decorator to functions:
 
 ----
-pip install --user memory-profiler
-PATH=$PWD/build/scripts-3.8:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.8 \
-	mprof run \
-	build/scripts-3.8/rdiff-backup [... rdiff-backup parameters ...]
-mprof plot
-mprof clean
+pip install memory-profiler matplotlib
+mprof run rdiff-backup [... rdiff-backup parameters ...]
+mprof plot --output mprofile.png
+mprof clean && rm mprofile.png
 ----
-
-NOTE: sometimes calling rdiff-backup this way fails, it's due to the script having a wrong interpreter (because of wheel building).
-Call `./setup.py clean --all && ./setup.py build` to fix it.
 
 TIP: there is also a https://pypi.org/project/line-profiler/[line-profiler], but I didn't try it because it requires changes to the code (again the `@profile` decorator).
 

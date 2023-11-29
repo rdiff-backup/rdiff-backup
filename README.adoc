@@ -113,7 +113,7 @@ sudo pip3 install rdiff-backup
 You need to make sure that the following requirements are met, using your system's package/software/application manager, searching there for the following keywords:
 
 * __Python__, 3.9 or higher
-* Python __pip__ or __pip3__
+* Python __pip__ or __pip3__, e.g. with `python -m ensurepip --upgrade`
 * __librsync__ or __librsync2__, 2.0.0 or higher
 * __libacl__ or __libacl1__ or simply __acl__ (optional, to support ACLs)
 * SSH, generally __OpenSSH__, client and/or server (optional, for remote operations)
