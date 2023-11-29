@@ -131,6 +131,9 @@ SELECTION_PARSER.add_argument(
     "--SELECT-other-filesystems", action=SelectAction, type=bool, default=True,
     help="[sub] SELECT files from other file systems than the source one")
 SELECTION_PARSER.add_argument(
+    "--SELECT-filesystem-type", action=SelectAction, metavar="FSTYPE",
+    help="[sub] SELECT files from given file system type")
+SELECTION_PARSER.add_argument(
     "--SELECT-regexp", action=SelectAction, metavar="REGEXP",
     help="[sub] SELECT files according to regexp pattern")
 SELECTION_PARSER.add_argument(

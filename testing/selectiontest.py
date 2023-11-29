@@ -337,6 +337,17 @@ rdiff-backup_testfiles/select/1/1
                     "Assumption: {dir} is on a different filesystem".format(
                         dir=check_dir))
 
+    @unittest.skipIf(sys.platform.startswith("win"), "can't work with Windows")
+    def testFilesystemsType(self):
+        """Test to see if --exclude-filesystem-type works correctly"""
+        root = rpath.RPath(Globals.local_connection, "/")
+        select = Select(root)
+        sf = select._filesystem_type_get_sf('sysfs', 0)
+        self.assertIsNone(sf(root))
+        self.assertEqual(
+            sf(rpath.RPath(Globals.local_connection, "/sys")), 0,
+            "Assumption: /sys is a sysfs")
+
 
 class ParseSelectionArgsTest(unittest.TestCase):
     """Test argument parsing as well as filelist globbing"""

@@ -336,6 +336,8 @@ Contrary to the general rule, symlinks are excluded by default under Windows so 
 
 --include-special-files,--exclude-special-files:: Include/exclude all the special files listed above.
 
+--include-filesystem-type,--exclude-filesystem-type:: Include/exclude files from given file system type.
+
 === Other selections
 
 --include-other-filesystems,--exclude-other-filesystems::
