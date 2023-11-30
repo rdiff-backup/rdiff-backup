@@ -28,6 +28,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 "itemY": {"type": "file"},
                 "longDiRnAm" * long_multi: {"type": "dir"},
                 "longFiLnAm" * long_multi: {"content": "not so long content"},
+                "aaBcDeFGHi" * long_multi: {"content": "some content"},
                 # it should be aux.123 but it can't be created under Windows
                 # and isn't special under Linux
                 "aux123": {"content": "looks like DOS file"},
@@ -44,6 +45,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 "itemY": {"type": "dir"},
                 "longDiRnAm" * long_multi: {"type": "dir"},
                 "longFiLnAm" * long_multi: {"content": "differently long"},
+                "aaBcDeFGHi" * long_multi: {"content": "other content"},
                 # it should be aux.123 but it can't be created under Windows
                 # and isn't special under Linux
                 "aux123": {"content": "still looks like DOS file"},
@@ -104,6 +106,11 @@ class LocationMapFilenamesTest(unittest.TestCase):
             ("--api-version", "201", "--current-time", "10000",
              "--chars-to-quote", "A-P:"),
             b"backup", ()), 0)
+        self.assertEqual(comtst.rdiff_backup_action(
+            False, False, self.from2_path, self.bak_path,
+            ("--api-version", "201", "--current-time", "11000",
+             "--chars-to-quote", "A-P:"),
+            b"backup", ()), 0)
         # we try the 2nd time to change the chars-to-quote, which fails
         self.assertNotEqual(comtst.rdiff_backup_action(
             False, True, self.from2_path, self.bak_path,
@@ -118,10 +125,22 @@ class LocationMapFilenamesTest(unittest.TestCase):
 
         # then we restore the last mirror to a directory without issue
         self.assertEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, self.to2_path,
+            ("--api-version", "201"),
+            b"restore", ()), 0)
+        self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
+
+        # then we run a --force regress
+        self.assertEqual(comtst.rdiff_backup_action(
+            True, True, self.bak_path, None,
+            ("--api-version", "201", "--force"),
+            b"regress", ()), 0)
+
+        # then we restore the last mirror to a directory without issue
+        self.assertEqual(comtst.rdiff_backup_action(
             True, True, self.bak_path, self.to1_path,
             ("--api-version", "201"),
             b"restore", ()), 0)
-
         self.assertFalse(fileset.compare_paths(self.from1_path, self.to1_path))
 
         # all tests were successful

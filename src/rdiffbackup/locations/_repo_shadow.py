@@ -968,6 +968,9 @@ information in it.
                             pa=metadata_rorp), log.WARNING)
                 continue
             raw_rf.set_metadata_rorp(metadata_rorp)
+            # Return filename stored in metadata to handle long filename.
+            if metadata_rorp:
+                raw_rf.index = metadata_rorp.index
             yield raw_rf
 
     @classmethod
