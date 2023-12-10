@@ -278,17 +278,14 @@ References:
 * Debugging dynamically loaded extensions: https://www.oreilly.com/library/view/python-cookbook/0596001673/ch16s08.html
 * Debugging Memory Problems: https://www.oreilly.com/library/view/python-cookbook/0596001673/ch16s09.html
 
-NOTE: This assumes gdb was already installed.
-
 . First install:
 +
 [source,shell]
 ----
-sudo dnf install python3-debug
-sudo dnf debuginfo-install python3-debug
+sudo dnf install python3-debug gdb
 sudo dnf debuginfo-install --exclude "*.i686" \  #<1>
-	bzip2-libs glibc librsync libxcrypt openssl-libs popt \
-	sssd-client xz-libs zlib
+	python3-debug bzip2-libs glibc librsync libxcrypt openssl-libs \
+	popt sssd-client xz-libs zlib
 ----
 <1>The exclude pattern was necessary to avoid installing 32 bits library
 
@@ -297,7 +294,7 @@ sudo dnf debuginfo-install --exclude "*.i686" \  #<1>
 
 [source,console]
 ----
-$ CFLAGS='-Wall -O0 -g' pip --python $(which python3-debug) install .  # to be verified!!!
+$ CFLAGS='-Wall -O0 -g' pip install .  # to be verified!!!
 $ python3-debug -m rdiffbackup.run -v 10 backup /some/dir1 /some/dir2
 [...]
 Segmentation fault (core dumped)
@@ -305,7 +302,7 @@ Segmentation fault (core dumped)
 
 NOTE: The CFLAGS avoids optimizations making debugging too complicated
 
-At this stage `coredumpctl list` shows that coredump is the last one, so that one can call `coredumpctl gdb`, which itself tells (in multiple steps) that we missing some more debug information, hence the above `debuginfo-install` statements (assuming guess you could install the packages without version information if you're sure they fit the installed package versions).
+At this stage `coredumpctl list` shows that coredump is the last one, so that one can call `coredumpctl gdb`, which itself tells (in multiple steps) that we missing some more debug information, hence the above `debuginfo-install` statements.
 
 So now back into `coredumpctl gdb`, with some commands:
 
@@ -313,18 +310,17 @@ So now back into `coredumpctl gdb`, with some commands:
 ----
 help
 help stack
-backtrace
-bt full
-py-bt
-frame <FrameNumber>
-p <SomeVar>
+backtrace  #<1>
+bt full  #<2>
+py-bt  #<3>
+frame <FrameNumber>  #<4>
+p __SomeVar__  #<5>
 ----
-
-. get a backtrace of all function calls leading to the coredump (also `bt`)
-. backtrace with local vars
-. py-bt is the Python version of backtrace
-. jump between frames as listed by bt using their `#FrameNumber`
-. print some variable/expression in the context of the selected frame
+<1>get a backtrace of all function calls leading to the coredump (also `bt`)
+<2>backtrace with local vars
+<3>py-bt is the Python version of backtrace
+<4>jump between frames as listed by bt using their `#FrameNumber`
+<5>print some variable/expression in the context of the selected frame
 
 Jumping between frames and printing the different variables, we can recognize that:
 
