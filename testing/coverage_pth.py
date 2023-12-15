@@ -14,7 +14,7 @@ for site_path in sys.path:
 if site.ENABLE_USER_SITE:
     site_packages = [site.getusersitepackages()]
 else:  # we're probably in a virtualenv
-    site_packages = site.getsitepackages()
+    site_packages = reversed(site.getsitepackages())
 
 for site_path in site_packages:
     coverage_pth = os.path.join(site_path, "coverage.pth")
