@@ -229,10 +229,6 @@ setup(
     # options is a hash of hash with command -> option -> value
     # the value happens here to be a list of file couples/tuples
     options={
-        'pre_build_templates': {'template_files': [
-            ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
-            ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
-        ]},
         "pre_build_exec": {"commands": [
             ("asciidoctor -b manpage -a revdate=\"{date}\" "
              "-a revnumber=\"{ver}\" -o {outfile} {infile}",

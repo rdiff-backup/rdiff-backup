@@ -197,7 +197,7 @@ TIP: if pip isn't present on your system, or too old, you can install or upgrade
 The build process can be also be run separately using `pyproject-build`.
 
 The `setup.py` script expects to find librsync headers and libraries in the default location, usually `/usr/include` and `/usr/lib`.
-If you want the setup script to check different locations, use the LIBRSYNC_DIR environment variable.
+If you want the setup script to check different locations, use the `LIBRSYNC_DIR` environment variable.
 For instance to instruct the setup program to look in `/usr/local/include` and `/usr/local/lib` for the librsync files run:
 
 [source,shell]
@@ -294,7 +294,7 @@ sudo dnf debuginfo-install --exclude "*.i686" \  #<1>
 
 [source,console]
 ----
-$ CFLAGS='-Wall -O0 -g' pip install .  # to be verified!!!
+$ CFLAGS='-Wall -O0 -g' pip install .
 $ python3-debug -m rdiffbackup.run -v 10 backup /some/dir1 /some/dir2
 [...]
 Segmentation fault (core dumped)
@@ -340,8 +340,8 @@ $ PYTHONTRACEMALLOC=1 gdb -args python3-debug -m rdiffbackup.run backup \
 (gdb) run
 ----
 
-FIXME:: I didn't yet find the correct `break` statement identifying the function.
-The path to the C-file is apparently not the same when installed with pip.
+TIP: if you are not sure about the correct break statement, run once the program without it.
+Then the module will have been loaded, and autocompletion on the `break` command (with twice <TAB>) can help you find the right file and place.
 
 The debugger runs until the breakpoint is reached, after which a succession of `next` and `print <SomeVar>` allows me to analyze the code step by step, and to come to the conclusion that `+cfile = fdopen(python_fd, ...+` is somehow wrong as it creates a null file pointer whereas `python_fd` looks like a valid file descriptor (an integer equal to 5).
 
