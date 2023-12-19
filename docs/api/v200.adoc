@@ -148,3 +148,9 @@ bytes).
 * `pow`
 * `str`
 * `tempfile.mktemp`
+
+== Repository format
+
+This list is most probably incomplete and covers  older changes:
+
+* SHA1 digest was added in v1.1.1
