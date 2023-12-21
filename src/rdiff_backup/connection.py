@@ -32,6 +32,12 @@ import types  # noqa: F401
 import time
 import subprocess
 
+# psutil is optional
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 
 class ConnectionError(Exception):
     pass

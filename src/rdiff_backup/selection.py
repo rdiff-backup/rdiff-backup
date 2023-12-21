@@ -193,9 +193,11 @@ class Select:
             "--exclude": (self._glob_get_sf, Select.EXCLUDE),
             "--exclude-regexp": (self._regexp_get_sf, Select.EXCLUDE),
             "--exclude-if-present": (self._presence_get_sf, Select.EXCLUDE),
+            "--exclude-filesystem-type": (self._filesystem_type_get_sf, Select.EXCLUDE),
             "--include": (self._glob_get_sf, Select.INCLUDE),
             "--include-regexp": (self._regexp_get_sf, Select.INCLUDE),
             "--include-if-present": (self._presence_get_sf, Select.INCLUDE),
+            "--include-filesystem-type": (self._filesystem_type_get_sf, Select.INCLUDE),
             "--min-file-size": (self._size_get_sf, Select.MIN),
             "--max-file-size": (self._size_get_sf, Select.MAX),
         }
@@ -456,6 +458,26 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
                 yield self._glob_get_sf(line[2:], 0)
             else:
                 yield self._glob_get_sf(line, inc_default)
+
+    def _filesystem_type_get_sf(self, fstype, include):
+        """Return selection function matching filesystem type."""
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
+        # FIXME Raise an exception on Windows ?
+        # Since it's too costly to get the filesystem type of each file, will identify the mountpoint using devloc
+        psutil = self.rpath.conn.psutil
+        assert psutil, "psutil must be installed"  # FIXME Raise an exception is psutil is not installed ?
+        partitions = self.rpath.conn.psutil.disk_partitions(all=True)
+        devlocs = [self.rpath.conn.os.lstat(p.mountpoint).st_dev for p in partitions if p.fstype == fstype]
+
+        def sel_func(rp):
+            if rp.getdevloc() in devlocs:
+                return include
+            return None
+
+        sel_func.exclude = not include
+        sel_func.name = (include and "include" or "exclude") + " filesystem type " + fstype
+        return sel_func
 
     def _other_filesystems_get_sf(self, include):
         """Return selection function matching files on other filesystems"""
