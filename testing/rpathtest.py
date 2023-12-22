@@ -66,10 +66,15 @@ class CheckTypes(RPathTest):
         self.assertTrue(rpath.RPath(self.lc, self.prefix, ("fifo", )).isfifo())
         self.assertFalse(rpath.RPath(self.lc, self.prefix, ()).isfifo())
 
-    @unittest.skipUnless(os.path.exists('/dev/tty2'), "Test requires /dev/tty2")
+    @unittest.skipUnless(
+        os.path.exists('/dev/null') or os.path.exists("/dev/zero"),
+        "Test requires /dev/null or /dev/zero")
     def testCharDev(self):
         """Char special files identified"""
-        self.assertTrue(rpath.RPath(self.lc, "/dev/tty2", ()).ischardev())
+        if os.path.exists('/dev/null'):
+            self.assertTrue(rpath.RPath(self.lc, "/dev/null", ()).ischardev())
+        else:  # then /dev/zero must exist
+            self.assertTrue(rpath.RPath(self.lc, "/dev/zero", ()).ischardev())
         self.assertFalse(
             rpath.RPath(self.lc, self.prefix, ("regular_file", )).ischardev())
 
@@ -82,7 +87,7 @@ class CheckTypes(RPathTest):
         # reasonable, especially as it doesn't solve minor/major questions
         # somediskdev = os.path.realpath(psutil.disk_partitions()[0].device)
         # We assume that anybody must have a hard drive, SSD or NVMe
-        if (os.path.exists('/dev/sda')):
+        if os.path.exists('/dev/sda'):
             self.assertTrue(rpath.RPath(self.lc, '/dev/sda', ()).isblkdev())
         else:
             self.assertTrue(rpath.RPath(self.lc, '/dev/nvme0n1', ()).isblkdev())
@@ -304,18 +309,22 @@ class FilenameOps(RPathTest):
 
     @unittest.skipUnless(
         (os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'))
-        and os.path.exists('/dev/tty2'),
-        "Test requires either /dev/sda or /dev/nvme0n1")
+        and (os.path.exists('/dev/null') or os.path.exists('/dev/zero')),
+        "Test requires either /dev/sda or /dev/nvme0n1, and /dev/null or /dev/zero")
     def testGetnums(self):
         """Test getting file numbers"""
-        if (os.path.exists(b'/dev/sda')):
+        if os.path.exists(b'/dev/sda'):
             devnums = rpath.RPath(self.lc, b"/dev/sda", ()).getdevnums()
             self.assertEqual(devnums, ('b', 8, 0))
         else:
             devnums = rpath.RPath(self.lc, b"/dev/nvme0n1", ()).getdevnums()
             self.assertEqual(devnums, ('b', 259, 0))
-        devnums = rpath.RPath(self.lc, b"/dev/tty2", ()).getdevnums()
-        self.assertEqual(devnums, ('c', 4, 2))
+        if os.path.exists(b'/dev/null'):
+            devnums = rpath.RPath(self.lc, b"/dev/null", ()).getdevnums()
+            self.assertEqual(devnums, ('c', 1, 3))
+        else:
+            devnums = rpath.RPath(self.lc, b"/dev/zero", ()).getdevnums()
+            self.assertEqual(devnums, ('c', 1, 5))
 
 
 class FileIO(RPathTest):
