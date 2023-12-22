@@ -196,3 +196,11 @@ toc::[]
 * `pow`
 * `str`
 * `tempfile.mktemp`
+
+== Repository format
+
+* the directory `rdiff-backup-data/increments` does always exist from the start
+* meta data files are now correctly _not_ compressed when using the `--no-compression` parameter during a backup or regression
+* introduction of the lock file `rdiff-backup-data/lock.yml`
+
+NOTE: to the best of my knowledge, none of those changes breaks the backward compatibility with older versions of rdiff-backup.

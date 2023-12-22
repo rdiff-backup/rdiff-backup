@@ -41,7 +41,7 @@ Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remo
 ** xref:Windows-DEVELOP.adoc[Windows specific Developer documentation]
 * xref:CODING.adoc[Coding conventions]
 * xref:DOCUMENTATION.adoc[Documentation guidelines]
-* link:./api[Client-server API documentation] (i.e. when used over SSH)
+* link:./api[Client-server API documentation] (i.e. when used over SSH), with repository format changelog
 * link:./arch[Architecture documentation], if you want/need to know the internas of rdiff-backup
 * http://www.w3.org/TR/NOTE-datetime[W3 note describing a time format rdiff-backup uses^]
 
