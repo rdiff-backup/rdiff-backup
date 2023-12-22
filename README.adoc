@@ -96,7 +96,7 @@ ARM/MIPS/etc, you may need the build dependencies `build-essentials`, `librsync-
 sudo yum install centos-release-scl
 sudo yum install rh-python36 gcc libacl-devel
 scl enable rh-python36 bash
-sudo pip install rdiff-backup pyxattr pylibacl
+sudo pip install rdiff-backup pyxattr pylibacl  # or rdiff-backup[meta]
 echo 'exec scl enable rh-python36 -- rdiff-backup "$@"' | sudo tee /usr/bin/rdiff-backup
 sudo chmod +x /usr/bin/rdiff-backup
 ----
@@ -110,24 +110,24 @@ sudo pip3 install rdiff-backup
 
 === Other Linux and UN*X-oid systems, e.g. BSD (from PyPi)
 
-You need to make sure that the following requirements are met:
+You need to make sure that the following requirements are met, using your system's package/software/application manager, searching there for the following keywords:
 
-* Python 3.9 or higher
-* pip3 e.g. installed with `+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; sudo python3 get-pip.py+`.
-* librsync 2.0.0 or higher (also named librsync2)
-* pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
-* psutil as an optional dependency (else rdiff-backup uses `ps`/`tasklist`)
-* SSH for remote operations
+* __Python__, 3.9 or higher
+* Python __pip__ or __pip3__, e.g. with `python -m ensurepip --upgrade`
+* __librsync__ or __librsync2__, 2.0.0 or higher
+* __libacl__ or __libacl1__ or simply __acl__ (optional, to support ACLs)
+* SSH, generally __OpenSSH__, client and/or server (optional, for remote operations)
 
-Then you should only need to call the following before you can use rdiff-backup:
+Then you should only need to call one of the following before you can use rdiff-backup:
 
+[source,shell]
 ----
-sudo pip3 install rdiff-backup
+sudo pip3 install rdiff-backup        # without optional dependencies
+sudo pip3 install rdiff-backup[meta]  # with support for metadata, ACLs and EAs
 ----
 
-NOTE: especially if your platform is not i386 or amd64, e.g.
-ARM/MIPS/PowerPC/etc, but also if the pip3 installation fails with `+include [...].h+` files missing, you may need the build dependencies named like `python3-devel` or `librsync-dev`.
+NOTE: especially if your platform is _not_ i386 or amd64, e.g.
+ARM/MIPS/PowerPC/etc, but also if the pip3 installation fails with `#include [...].h` files missing, you may need the build dependencies named like `python3-devel`, `librsync-dev` or `libacl1-dev`.
 
 === Windows
 

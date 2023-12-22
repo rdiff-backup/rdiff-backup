@@ -28,6 +28,6 @@ Few things could still be addressed in due time:
 
 . https://github.com/asciidoctor/jekyll-asciidoc/#stylesheet-for-code-highlighting[code hightlighting] doesn't seem to work (didn't try yet)
 . https://github.com/asciidoctor/jekyll-asciidoc/#font-based-admonition-and-inline-icons[Font-based Admonition and Inline Icons] don't seem to work (tried, failed).
-. a clearer separation of user and developer documentation might be helpful, also physically in different sub-folders (to be reflected in setup.py for packaging).
+. a clearer separation of user and developer documentation might be helpful, also physically in different sub-folders (to be reflected in pyproject.toml for packaging).
 . a more automated generation of the navigation bar could then possibly be addressed, with an overarching Table of Content accross the whole site.
 . the whole style could use a professional revamp, especially the footer looks uncool to my eyes.

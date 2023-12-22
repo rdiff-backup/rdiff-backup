@@ -13,7 +13,7 @@ requires-python = ">=3.6"
 keywords = [
 	'backup', 'simple', 'easy', 'remote', 'incremental', 'efficient', 'cross-platform'
 ]
-license = {text = "GPLv2+"}
+license = {text = "GPL-2.0-or-later"}
 classifiers = [
 	'Development Status :: 5 - Production/Stable',
 	'Environment :: Console',

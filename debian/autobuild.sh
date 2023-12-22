@@ -4,7 +4,7 @@ set -e
 
 # Automatically update changelog with new version number as the deb package
 # version will be what the latest entry in debian/changelog states
-VERSION="$(./setup.py --version)"
+VERSION="$(./tools/get_project_metadata.py Version)"
 # e.g. VERSION=2.2.3.dev5+gf11a1d0.d20230116
 dch -b -v "${VERSION}" "Automatic build"
 

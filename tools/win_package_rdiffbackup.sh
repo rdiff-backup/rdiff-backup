@@ -23,7 +23,7 @@ then
 	PYEXE=${py_dir}/${PYEXE}
 fi
 
-ver_name=rdiff-backup-$(${PYEXE} setup.py --version)
+ver_name=rdiff-backup-$(./tools/get_project_metadata.py Version)
 
 cp CHANGELOG.adoc COPYING README.adoc docs/*.adoc \
 	build/${ver_name}-${bits}

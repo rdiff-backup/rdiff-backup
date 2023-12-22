@@ -27,43 +27,30 @@ if os.name == "posix" or os.name == "nt":
     LFLAGS = os.environ.get("LFLAGS", [])
     LIBS = os.environ.get("LIBS", [])
 
-    # Handle --librsync-dir=[PATH] and --lflags=[FLAGS]
-    args = sys.argv[:]
-    for arg in args:
-        if arg.startswith("--librsync-dir="):
-            LIBRSYNC_DIR = arg.split("=")[1]
-            sys.argv.remove(arg)
-        elif arg.startswith("--lflags="):
-            LFLAGS = arg.split("=")[1].split()
-            sys.argv.remove(arg)
-        elif arg.startswith("--libs="):
-            LIBS = arg.split("=")[1].split()
-            sys.argv.remove(arg)
-
-        if LFLAGS or LIBS:
-            lflags_arg = LFLAGS + LIBS
-
-        if LIBRSYNC_DIR and len(sys.argv) > 1:
-            incdir_list = [os.path.join(LIBRSYNC_DIR, "include")]
-            libdir_list = [os.path.join(LIBRSYNC_DIR, "lib")]
-            if os.name == "nt":
-                rsyncdll_src = os.path.join(LIBRSYNC_DIR, "bin", "rsync.dll")
-                rsyncdll_dst = os.path.join("src", "rdiff_backup", "rsync.dll")
-                # rather ugly workaround, but it should be good enough
-                if "clean" in sys.argv:
-                    if os.path.exists(rsyncdll_dst) and "--all" in sys.argv:
-                        print(f"removing {rsyncdll_dst}")
-                        if "--dry-run" not in sys.argv:
-                            os.remove(rsyncdll_dst)
-                elif ("--version" not in sys.argv and "-V" not in sys.argv
-                      and "--help" not in sys.argv):
-                    if (not os.path.exists(rsyncdll_dst)
-                            or not filecmp.cmp(rsyncdll_src, rsyncdll_dst)):
-                        print(f"copying {rsyncdll_src} -> {rsyncdll_dst}")
-                        if "--dry-run" not in sys.argv:
-                            shutil.copyfile(rsyncdll_src, rsyncdll_dst)
+    if LFLAGS or LIBS:
+        lflags_arg = LFLAGS + LIBS
         if "-lrsync" in LIBS:
             libname = []
+    if LIBRSYNC_DIR:
+        incdir_list = [os.path.join(LIBRSYNC_DIR, "include")]
+        libdir_list = [os.path.join(LIBRSYNC_DIR, "lib")]
+
+        if os.name == "nt":
+            rsyncdll_src = os.path.join(LIBRSYNC_DIR, "bin", "rsync.dll")
+            rsyncdll_dst = os.path.join("src", "rdiff_backup", "rsync.dll")
+            # rather ugly workaround, but it should be good enough
+            if "clean" in sys.argv:
+                if os.path.exists(rsyncdll_dst) and "--all" in sys.argv:
+                    print(f"removing {rsyncdll_dst}")
+                    if "--dry-run" not in sys.argv:
+                        os.remove(rsyncdll_dst)
+            elif ("--version" not in sys.argv and "-V" not in sys.argv
+                  and "--help" not in sys.argv):
+                if (not os.path.exists(rsyncdll_dst)
+                        or not filecmp.cmp(rsyncdll_src, rsyncdll_dst)):
+                    print(f"copying {rsyncdll_src} -> {rsyncdll_dst}")
+                    if "--dry-run" not in sys.argv:
+                        shutil.copyfile(rsyncdll_src, rsyncdll_dst)
 
 if os.name == "nt":
     # We rely on statically linked librsync
@@ -242,10 +229,6 @@ setup(
     # options is a hash of hash with command -> option -> value
     # the value happens here to be a list of file couples/tuples
     options={
-        'pre_build_templates': {'template_files': [
-            ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
-            ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
-        ]},
         "pre_build_exec": {"commands": [
             ("asciidoctor -b manpage -a revdate=\"{date}\" "
              "-a revnumber=\"{ver}\" -o {outfile} {infile}",
