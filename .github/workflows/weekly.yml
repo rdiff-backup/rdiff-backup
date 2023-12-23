@@ -130,6 +130,10 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0  # to have the correct version
+    - name: Install setuptools-scm to be able to detect current version
+      run: |
+        sudo apt-get --assume-yes update
+        sudo apt-get --assume-yes install python3-setuptools-scm
     - name: force create weekly tag and push it and create release body
       run: |
         git tag -f weekly && git push -f origin weekly
