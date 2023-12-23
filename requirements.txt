@@ -15,21 +15,18 @@
 
 #--- mandatory ---
 
-# we need specific versions to properly support pyproject.toml and git archives
-importlib-metadata ; python_version < "3.8"
 pywin32 ; platform_system=="Windows"
 PyYAML  # for rdiff-backup >= 2.1
 
 #--- building packages ---
 
+# we need specific versions to properly support pyproject.toml and git archives
 setuptools >= 67.0.0
 setuptools-scm >= 7.1.0
 build >= 0.8.0
 twine
 wheel
-#py2exe; platform_system=="Windows"
 pyinstaller; platform_system=="Windows"
-#certifi; platform_system=="Windows"
 
 #--- optional ---
 

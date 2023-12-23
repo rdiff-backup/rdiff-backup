@@ -1,14 +1,10 @@
 import os
-import sys
-
-from commontest import old_test_dir, abs_test_dir, rdiff_backup
-from distutils import spawn
-from rdiff_backup import Globals
+import shutil
 import subprocess
 import unittest
 
-PY2 = sys.version_info < (3,)
-PY3 = sys.version_info > (3,)
+from commontest import old_test_dir, abs_test_dir, rdiff_backup
+from rdiff_backup import Globals
 
 
 class RdiffBackupDeleteTest(unittest.TestCase):
@@ -18,9 +14,9 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     def _rdiff_backup_delete(
         self, to_delete=None, extra_args=[], expected_ret_code=0, expected_output=None
     ):
-        bin = spawn.find_executable("rdiff-backup-delete")
+        bin = shutil.which(b"rdiff-backup-delete")
         self.assertTrue(bin, "can't find rdiff-backup-delete")
-        cmdargs = [bin.encode("utf8")]
+        cmdargs = [bin]
         if extra_args:
             cmdargs.extend(extra_args)
         if to_delete:
