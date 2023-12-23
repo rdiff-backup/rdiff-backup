@@ -23,40 +23,48 @@ A built-in rdiff-backup action plug-in to backup a source to a target directory.
 
 import time
 
-from rdiff_backup import (Globals, log, selection, Time)
+from rdiff_backup import Globals, log, selection, Time
 from rdiffbackup import actions
-from rdiffbackup.locations import (directory, repository)
+from rdiffbackup.locations import directory, repository
 
 
 class BackupAction(actions.BaseAction):
     """
     Backup a source directory to a target backup repository.
     """
+
     name = "backup"
     security = "backup"
     parent_parsers = [
-        actions.CREATION_PARSER, actions.COMPRESSION_PARSER,
-        actions.SELECTION_PARSER, actions.FILESYSTEM_PARSER,
-        actions.USER_GROUP_PARSER, actions.STATISTICS_PARSER,
+        actions.CREATION_PARSER,
+        actions.COMPRESSION_PARSER,
+        actions.SELECTION_PARSER,
+        actions.FILESYSTEM_PARSER,
+        actions.USER_GROUP_PARSER,
+        actions.STATISTICS_PARSER,
     ]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
-            help="locations of SOURCE_DIR and to which REPOSITORY to backup")
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=2,
+            help="locations of SOURCE_DIR and to which REPOSITORY to backup",
+        )
         return subparser
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
-            self.dir = directory.ReadDir(self.connected_locations[0],
-                                         self.values.force)
+            self.dir = directory.ReadDir(self.connected_locations[0], self.values.force)
             self.repo = repository.Repo(
-                self.connected_locations[1], self.values.force,
-                must_be_writable=True, must_exist=False,
-                create_full_path=self.values.create_full_path
+                self.connected_locations[1],
+                self.values.force,
+                must_be_writable=True,
+                must_exist=False,
+                create_full_path=self.values.create_full_path,
             )
         return conn_value
 
@@ -86,28 +94,31 @@ class BackupAction(actions.BaseAction):
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
-            "preserve_num_ids": self.values.preserve_numerical_ids
+            "preserve_num_ids": self.values.preserve_numerical_ids,
         }
-        ret_code = self.repo.setup(self.dir, owners_map=owners_map,
-                                   action_name=self.name,
-                                   not_compressed_regexp=self.values.not_compressed_regexp)
+        ret_code = self.repo.setup(
+            self.dir,
+            owners_map=owners_map,
+            action_name=self.name,
+            not_compressed_regexp=self.values.not_compressed_regexp,
+        )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
         previous_time = self.repo.get_mirror_time()
         if previous_time >= Time.getcurtime():
-            log.Log("The last backup is not in the past. Aborting.",
-                    log.ERROR)
+            log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return ret_code | Globals.RET_CODE_ERR
 
-        log.ErrorLog.open(Time.getcurtimestr(),
-                          compress=self.values.compression)
+        log.ErrorLog.open(Time.getcurtimestr(), compress=self.values.compression)
 
         (select_opts, select_data) = selection.get_prepared_selections(
-            self.values.selections)
+            self.values.selections
+        )
         self.dir.set_select(select_opts, select_data)
-        ret_code |= self._warn_if_infinite_recursion(self.dir.base_dir,
-                                                     self.repo.base_dir)
+        ret_code |= self._warn_if_infinite_recursion(
+            self.dir.base_dir, self.repo.base_dir
+        )
 
         return ret_code
 
@@ -123,9 +134,11 @@ class BackupAction(actions.BaseAction):
             return ret_code
         previous_time = self.repo.get_mirror_time(refresh=True)
         if previous_time < 0 or previous_time >= Time.getcurtime():
-            log.Log("Either there is more than one current_mirror or "
-                    "the last backup is not in the past. Aborting.",
-                    log.ERROR)
+            log.Log(
+                "Either there is more than one current_mirror or "
+                "the last backup is not in the past. Aborting.",
+                log.ERROR,
+            )
             return ret_code | Globals.RET_CODE_ERR
 
         ret_code |= self._operate_backup(previous_time)
@@ -138,8 +151,9 @@ class BackupAction(actions.BaseAction):
         """
         log.Log(
             "Starting backup operation from source path {sp} to destination "
-            "path {dp}".format(sp=self.dir.base_dir,
-                               dp=self.repo.base_dir), log.NOTE)
+            "path {dp}".format(sp=self.dir.base_dir, dp=self.repo.base_dir),
+            log.NOTE,
+        )
 
         if previous_time:
             self.repo.touch_current_mirror(Time.getcurtimestr())
@@ -167,15 +181,17 @@ class BackupAction(actions.BaseAction):
             return Globals.RET_CODE_OK
         if len(rpout.path) <= len(rpin.path) + 1:
             return Globals.RET_CODE_OK
-        if rpout.path[:len(rpin.path) + 1] != rpin.path + b'/':
+        if rpout.path[: len(rpin.path) + 1] != rpin.path + b"/":
             return Globals.RET_CODE_OK
 
-        log.Log("The target directory '{td}' may be contained in the "
-                "source directory '{sd}'. "
-                "This could cause an infinite recursion. "
-                "You may need to use the --exclude option "
-                "(which you might already have done).".format(
-                    td=rpout, sd=rpin), log.WARNING)
+        log.Log(
+            "The target directory '{td}' may be contained in the "
+            "source directory '{sd}'. "
+            "This could cause an infinite recursion. "
+            "You may need to use the --exclude option "
+            "(which you might already have done).".format(td=rpout, sd=rpin),
+            log.WARNING,
+        )
         return Globals.RET_CODE_WARN
 
 

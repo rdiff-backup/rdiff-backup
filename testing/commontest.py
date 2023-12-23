@@ -7,8 +7,14 @@ import shlex
 import shutil
 import subprocess
 from rdiff_backup import (
-    Globals, hash, log, rorpiter, rpath,
-    Security, selection, SetConnections
+    Globals,
+    hash,
+    log,
+    rorpiter,
+    rpath,
+    Security,
+    selection,
+    SetConnections,
 )
 from rdiffbackup import actions, run
 from rdiffbackup.meta import ea, acl_posix
@@ -17,20 +23,21 @@ from rdiffbackup.locations.map import hardlinks as map_hardlinks
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
 # Working directory is defined by Tox, venv or the current build directory
-abs_work_dir = os.fsencode(os.getenv(
-    'TOX_ENV_DIR',
-    os.getenv('VIRTUAL_ENV', os.path.join(os.getcwd(), 'build'))))
-abs_test_dir = os.path.join(abs_work_dir, b'testfiles')
-abs_output_dir = os.path.join(abs_test_dir, b'output')
-abs_restore_dir = os.path.join(abs_test_dir, b'restore')
+abs_work_dir = os.fsencode(
+    os.getenv(
+        "TOX_ENV_DIR", os.getenv("VIRTUAL_ENV", os.path.join(os.getcwd(), "build"))
+    )
+)
+abs_test_dir = os.path.join(abs_work_dir, b"testfiles")
+abs_output_dir = os.path.join(abs_test_dir, b"output")
+abs_restore_dir = os.path.join(abs_test_dir, b"restore")
 
 # the directory with the testfiles used as input is in the parent directory of the Git clone
-old_test_dir = os.path.join(os.path.dirname(os.getcwdb()),
-                            b'rdiff-backup_testfiles')
-old_inc1_dir = os.path.join(old_test_dir, b'increment1')
-old_inc2_dir = os.path.join(old_test_dir, b'increment2')
-old_inc3_dir = os.path.join(old_test_dir, b'increment3')
-old_inc4_dir = os.path.join(old_test_dir, b'increment4')
+old_test_dir = os.path.join(os.path.dirname(os.getcwdb()), b"rdiff-backup_testfiles")
+old_inc1_dir = os.path.join(old_test_dir, b"increment1")
+old_inc2_dir = os.path.join(old_test_dir, b"increment2")
+old_inc3_dir = os.path.join(old_test_dir, b"increment3")
+old_inc4_dir = os.path.join(old_test_dir, b"increment4")
 
 # the directory in which all testing scripts are placed is the one
 abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(sys.argv[0])))
@@ -79,8 +86,8 @@ def re_init_subdir(maindir, subdir):
 
 
 # two temporary directories to simulate remote actions
-abs_remote1_dir = re_init_subdir(abs_test_dir, b'remote1')
-abs_remote2_dir = re_init_subdir(abs_test_dir, b'remote2')
+abs_remote1_dir = re_init_subdir(abs_test_dir, b"remote1")
+abs_remote2_dir = re_init_subdir(abs_test_dir, b"remote2")
 
 
 def MakeOutputDir():
@@ -91,14 +98,16 @@ def MakeOutputDir():
     return rp
 
 
-def rdiff_backup(source_local,
-                 dest_local,
-                 src_dir,
-                 dest_dir,
-                 current_time=None,
-                 extra_options=b"backup",
-                 input=None,
-                 expected_ret_code=0):
+def rdiff_backup(
+    source_local,
+    dest_local,
+    src_dir,
+    dest_dir,
+    current_time=None,
+    extra_options=b"backup",
+    input=None,
+    expected_ret_code=0,
+):
     """Run rdiff-backup with the given options
 
     source_local and dest_local are boolean values.  If either is
@@ -119,9 +128,9 @@ def rdiff_backup(source_local,
     remote_exec = CMD_SEP.join([b'"cd %s', b'%s server::%s"'])
 
     if not source_local:
-        src_dir = (remote_exec % (abs_remote1_dir, RBBin, src_dir))
+        src_dir = remote_exec % (abs_remote1_dir, RBBin, src_dir)
     if dest_dir and not dest_local:
-        dest_dir = (remote_exec % (abs_remote2_dir, RBBin, dest_dir))
+        dest_dir = remote_exec % (abs_remote2_dir, RBBin, dest_dir)
 
     cmdargs = [RBBin]
     if not (source_local and dest_local):
@@ -137,18 +146,28 @@ def rdiff_backup(source_local,
     print("Executing: ", " ".join(map(shlex.quote, map(os.fsdecode, cmdargs))))
     ret_val = os_system(cmdline, input=input, universal_newlines=False)
     if expected_ret_code is not None:
-        assert (expected_ret_code == ret_val), \
-            "Return code %d of command `%a` isn't as expected %d." % \
-            (ret_val, cmdline, expected_ret_code)
+        assert (
+            expected_ret_code == ret_val
+        ), "Return code %d of command `%a` isn't as expected %d." % (
+            ret_val,
+            cmdline,
+            expected_ret_code,
+        )
     return ret_val
 
 
-def rdiff_backup_action(source_local, dest_local,
-                        src_dir, dest_dir,
-                        generic_opts, action, specific_opts,
-                        std_input=None,
-                        return_stdout=False,
-                        return_stderr=False):
+def rdiff_backup_action(
+    source_local,
+    dest_local,
+    src_dir,
+    dest_dir,
+    generic_opts,
+    action,
+    specific_opts,
+    std_input=None,
+    return_stdout=False,
+    return_stderr=False,
+):
     """
     Run rdiff-backup with the given action and options, faking remote locations
 
@@ -169,10 +188,10 @@ def rdiff_backup_action(source_local, dest_local,
 
     is_remote = False
     if src_dir and not source_local:
-        src_dir = (remote_exec % (abs_remote1_dir, RBBin, src_dir))
+        src_dir = remote_exec % (abs_remote1_dir, RBBin, src_dir)
         is_remote = True
     if dest_dir and not dest_local:
-        dest_dir = (remote_exec % (abs_remote2_dir, RBBin, dest_dir))
+        dest_dir = remote_exec % (abs_remote2_dir, RBBin, dest_dir)
         is_remote = True
 
     if is_remote:
@@ -188,12 +207,16 @@ def rdiff_backup_action(source_local, dest_local,
     if return_stdout or return_stderr:
         try:
             if return_stderr:  # add stderr to stdout
-                ret_val = subprocess.check_output(cmdargs, input=std_input,
-                                                  stderr=subprocess.STDOUT,
-                                                  universal_newlines=False)
+                ret_val = subprocess.check_output(
+                    cmdargs,
+                    input=std_input,
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=False,
+                )
             else:
-                ret_val = subprocess.check_output(cmdargs, input=std_input,
-                                                  universal_newlines=False)
+                ret_val = subprocess.check_output(
+                    cmdargs, input=std_input, universal_newlines=False
+                )
         except subprocess.CalledProcessError as exc:
             ret_val = exc.output
         # normalize line endings under Windows
@@ -217,14 +240,16 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
         src_dir = remote_location.format(
             rdir=os.fsdecode(abs_remote1_dir),
             tdir=os.fsdecode(abs_testing_dir),
-            dir=os.fsdecode(src_dir))
+            dir=os.fsdecode(src_dir),
+        )
     else:
         src_dir = os.fsdecode(src_dir)
     if not dest_local:
         dest_dir = remote_location.format(
             rdir=os.fsdecode(abs_remote2_dir),
             tdir=os.fsdecode(abs_testing_dir),
-            dir=os.fsdecode(dest_dir))
+            dir=os.fsdecode(dest_dir),
+        )
     else:
         dest_dir = os.fsdecode(dest_dir)
     return (src_dir, dest_dir)
@@ -237,7 +262,7 @@ def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
     Note that the function relies on the global variables
     abs_remote1_dir, abs_remote2_dir and abs_testing_dir."""
 
-    remote_schema = b'{h}'
+    remote_schema = b"{h}"
     remote_format = b"cd %s; %s/server.py::%s"
 
     if not src_local:
@@ -251,14 +276,16 @@ def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
         return SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
 
 
-def InternalBackup(source_local,
-                   dest_local,
-                   src_dir,
-                   dest_dir,
-                   current_time=None,
-                   eas=None,
-                   acls=None,
-                   force=False):
+def InternalBackup(
+    source_local,
+    dest_local,
+    src_dir,
+    dest_dir,
+    current_time=None,
+    eas=None,
+    acls=None,
+    force=False,
+):
     """Backup src to dest internally
 
     This is like rdiff_backup but instead of running a separate
@@ -310,13 +337,9 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
     rpath.copy_attribs(src_root, dest_root)
 
 
-def InternalRestore(mirror_local,
-                    dest_local,
-                    mirror_dir,
-                    dest_dir,
-                    time,
-                    eas=None,
-                    acls=None):
+def InternalRestore(
+    mirror_local, dest_local, mirror_dir, dest_dir, time, eas=None, acls=None
+):
     """Restore mirror_dir to dest_dir at given time
 
     This will automatically find the increments.XXX.dir representing
@@ -364,7 +387,7 @@ def _reset_connections(src_rp, dest_rp):
     """Reset some global connection information"""
     Security._security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
-    Globals.set_all('rbdir', None)
+    Globals.set_all("rbdir", None)
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):
@@ -373,41 +396,85 @@ def _hardlink_rorp_eq(src_rorp, dest_rorp):
     map_hardlinks.add_rorp(dest_rorp)
     map_hardlinks.add_rorp(src_rorp, dest_rorp)
     rorp_eq = map_hardlinks.rorp_eq(src_rorp, dest_rorp)
-    if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
+    if (
+        not src_rorp.isreg()
+        or not dest_rorp.isreg()
+        or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1
+    ):
         if not rorp_eq:
             log.Log("Hardlink compare error with when no links exist", 3)
-            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
+            log.Log(
+                "%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3
+            )
+            log.Log(
+                "%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3
+            )
             return False
     elif src_rorp.getnumlinks() > 1 and not map_hardlinks.is_linked(src_rorp):
         if rorp_eq:
-            log.Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
-            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
+            log.Log(
+                "Hardlink compare error with first linked src_rorp and no dest_rorp sha1",
+                3,
+            )
+            log.Log(
+                "%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3
+            )
+            log.Log(
+                "%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3
+            )
             return False
         hash.compute_sha1(dest_rorp)
         rorp_eq = map_hardlinks.rorp_eq(src_rorp, dest_rorp)
         if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
             if rorp_eq:
-                log.Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
-                log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
-                log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
+                log.Log(
+                    "Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts",
+                    3,
+                )
+                log.Log(
+                    "%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)),
+                    3,
+                )
+                log.Log(
+                    "%s: %s"
+                    % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)),
+                    3,
+                )
                 return False
         elif not rorp_eq:
-            log.Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
-            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
+            log.Log(
+                "Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts",
+                3,
+            )
+            log.Log(
+                "%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3
+            )
+            log.Log(
+                "%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3
+            )
             return False
     elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
         if rorp_eq:
-            log.Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
-            log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
-            log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
+            log.Log(
+                "Hardlink compare error with non-first linked src_rorp and with differing link counts",
+                3,
+            )
+            log.Log(
+                "%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3
+            )
+            log.Log(
+                "%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3
+            )
             return False
     elif not rorp_eq:
-        log.Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
+        log.Log(
+            "Hardlink compare error with non-first linked src_rorp and with equal link counts",
+            3,
+        )
         log.Log("%s: %s" % (src_rorp.index, map_hardlinks._get_inode_key(src_rorp)), 3)
-        log.Log("%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3)
+        log.Log(
+            "%s: %s" % (dest_rorp.index, map_hardlinks._get_inode_key(dest_rorp)), 3
+        )
         return False
     map_hardlinks.del_rorp(src_rorp)
     map_hardlinks.del_rorp(dest_rorp)
@@ -432,19 +499,21 @@ def _acl_compare_rps(rp1, rp2):
     return acl1 == acl2
 
 
-def _files_rorp_eq(src_rorp, dest_rorp,
-                   compare_hardlinks=True,
-                   compare_symlinks=None,
-                   compare_ownership=False,
-                   compare_eas=False,
-                   compare_acls=False):
+def _files_rorp_eq(
+    src_rorp,
+    dest_rorp,
+    compare_hardlinks=True,
+    compare_symlinks=None,
+    compare_ownership=False,
+    compare_eas=False,
+    compare_acls=False,
+):
     """Combined eq func returns true if two files compare same"""
     # default value depends on OS, symlinks aren't supported under Windows
     if compare_symlinks is None:
-        compare_symlinks = (os.name != "nt")
+        compare_symlinks = os.name != "nt"
     if not compare_symlinks:
-        if (src_rorp and src_rorp.issym()
-                or dest_rorp and dest_rorp.issym()):
+        if src_rorp and src_rorp.issym() or dest_rorp and dest_rorp.issym():
             return True
     if not src_rorp:
         log.Log("Source rorp missing: %s" % str(dest_rorp), 3)
@@ -452,27 +521,30 @@ def _files_rorp_eq(src_rorp, dest_rorp,
     if not dest_rorp:
         log.Log("Dest rorp missing: %s" % str(src_rorp), 3)
         return False
-    if not src_rorp._equal_verbose(dest_rorp,
-                                   compare_ownership=compare_ownership):
+    if not src_rorp._equal_verbose(dest_rorp, compare_ownership=compare_ownership):
         return False
     if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
         return False
     if compare_eas and not _ea_compare_rps(src_rorp, dest_rorp):
         log.Log(
-            "Different EAs in files %s and %s" %
-            (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
+            "Different EAs in files %s and %s"
+            % (src_rorp.get_indexpath(), dest_rorp.get_indexpath()),
+            3,
+        )
         return False
     if compare_acls and not _acl_compare_rps(src_rorp, dest_rorp):
         log.Log(
-            "Different ACLs in files %s and %s" %
-            (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
+            "Different ACLs in files %s and %s"
+            % (src_rorp.get_indexpath(), dest_rorp.get_indexpath()),
+            3,
+        )
         return False
     return True
 
 
-def _get_selection_functions(src_rp, dest_rp,
-                             exclude_rbdir=True,
-                             ignore_tmp_files=False):
+def _get_selection_functions(
+    src_rp, dest_rp, exclude_rbdir=True, ignore_tmp_files=False
+):
     """Return generators of files in source, dest"""
     src_rp.setdata()
     dest_rp.setdata()
@@ -484,9 +556,11 @@ def _get_selection_functions(src_rp, dest_rp,
         # correctness of a backup which aborted in the middle.  In
         # these cases it is OK to have tmp files lying around.
         src_select._add_selection_func(
-            src_select._regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
+            src_select._regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0)
+        )
         dest_select._add_selection_func(
-            dest_select._regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
+            dest_select._regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0)
+        )
 
     if exclude_rbdir:  # Exclude rdiff-backup-data directory
         src_select.parse_rbdir_exclude()
@@ -495,13 +569,16 @@ def _get_selection_functions(src_rp, dest_rp,
     return src_select.get_select_iter(), dest_select.get_select_iter()
 
 
-def compare_recursive(src_rp, dest_rp,
-                      compare_hardlinks=True,
-                      exclude_rbdir=True,
-                      ignore_tmp_files=False,
-                      compare_ownership=False,
-                      compare_eas=False,
-                      compare_acls=False):
+def compare_recursive(
+    src_rp,
+    dest_rp,
+    compare_hardlinks=True,
+    exclude_rbdir=True,
+    ignore_tmp_files=False,
+    compare_ownership=False,
+    compare_eas=False,
+    compare_acls=False,
+):
     """Compare src_rp and dest_rp, which can be directories
 
     This only compares file attributes, not the actual data.  This
@@ -513,20 +590,28 @@ def compare_recursive(src_rp, dest_rp,
     log.Log(
         "Comparing {srp} and {drp}, hardlinks {chl}, "
         "eas {cea}, acls {cacl}".format(
-            srp=src_rp, drp=dest_rp, chl=compare_hardlinks,
-            cea=compare_eas, cacl=compare_acls), 3)
+            srp=src_rp,
+            drp=dest_rp,
+            chl=compare_hardlinks,
+            cea=compare_eas,
+            cacl=compare_acls,
+        ),
+        3,
+    )
     if compare_hardlinks:
         reset_hardlink_dicts()
     src_iter, dest_iter = _get_selection_functions(
-        src_rp, dest_rp,
-        exclude_rbdir=exclude_rbdir,
-        ignore_tmp_files=ignore_tmp_files)
+        src_rp, dest_rp, exclude_rbdir=exclude_rbdir, ignore_tmp_files=ignore_tmp_files
+    )
     for src_rorp, dest_rorp in rorpiter.Collate2Iters(src_iter, dest_iter):
-        if not _files_rorp_eq(src_rorp, dest_rorp,
-                              compare_hardlinks=compare_hardlinks,
-                              compare_ownership=compare_ownership,
-                              compare_eas=compare_eas,
-                              compare_acls=compare_acls):
+        if not _files_rorp_eq(
+            src_rorp,
+            dest_rorp,
+            compare_hardlinks=compare_hardlinks,
+            compare_ownership=compare_ownership,
+            compare_eas=compare_eas,
+            compare_acls=compare_acls,
+        ):
             return 0
     return 1
 
@@ -536,16 +621,18 @@ def reset_hardlink_dicts():
     map_hardlinks._inode_index = {}
 
 
-def BackupRestoreSeries(source_local,
-                        dest_local,
-                        list_of_dirnames,
-                        compare_hardlinks=1,
-                        dest_dirname=abs_output_dir,
-                        restore_dirname=abs_restore_dir,
-                        compare_backups=1,
-                        compare_eas=0,
-                        compare_acls=0,
-                        compare_ownership=0):
+def BackupRestoreSeries(
+    source_local,
+    dest_local,
+    list_of_dirnames,
+    compare_hardlinks=1,
+    dest_dirname=abs_output_dir,
+    restore_dirname=abs_restore_dir,
+    compare_backups=1,
+    compare_eas=0,
+    compare_acls=0,
+    compare_ownership=0,
+):
     """Test backing up/restoring of a series of directories
 
     The dirnames correspond to a single directory at different times.
@@ -554,9 +641,11 @@ def BackupRestoreSeries(source_local,
     restore_dirname and compared.
 
     """
-    Globals.set('preserve_hardlinks', compare_hardlinks)
-    Globals.set("no_compression_regexp_string",
-                os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
+    Globals.set("preserve_hardlinks", compare_hardlinks)
+    Globals.set(
+        "no_compression_regexp_string",
+        os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP),
+    )
     time = 10000
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
     restore_rp = rpath.RPath(Globals.local_connection, restore_dirname)
@@ -567,40 +656,48 @@ def BackupRestoreSeries(source_local,
         reset_hardlink_dicts()
         _reset_connections(src_rp, dest_rp)
 
-        InternalBackup(source_local,
-                       dest_local,
-                       dirname,
-                       dest_dirname,
-                       time,
-                       eas=compare_eas,
-                       acls=compare_acls)
+        InternalBackup(
+            source_local,
+            dest_local,
+            dirname,
+            dest_dirname,
+            time,
+            eas=compare_eas,
+            acls=compare_acls,
+        )
         time += 10000
         _reset_connections(src_rp, dest_rp)
         if compare_backups:
-            assert compare_recursive(src_rp,
-                                     dest_rp,
-                                     compare_hardlinks,
-                                     compare_eas=compare_eas,
-                                     compare_acls=compare_acls,
-                                     compare_ownership=compare_ownership)
+            assert compare_recursive(
+                src_rp,
+                dest_rp,
+                compare_hardlinks,
+                compare_eas=compare_eas,
+                compare_acls=compare_acls,
+                compare_ownership=compare_ownership,
+            )
 
     time = 10000
     for dirname in list_of_dirnames[:-1]:
         reset_hardlink_dicts()
         Myrm(restore_dirname)
-        InternalRestore(dest_local,
-                        source_local,
-                        dest_dirname,
-                        restore_dirname,
-                        time,
-                        eas=compare_eas,
-                        acls=compare_acls)
+        InternalRestore(
+            dest_local,
+            source_local,
+            dest_dirname,
+            restore_dirname,
+            time,
+            eas=compare_eas,
+            acls=compare_acls,
+        )
         src_rp = rpath.RPath(Globals.local_connection, dirname)
-        assert compare_recursive(src_rp,
-                                 restore_rp,
-                                 compare_eas=compare_eas,
-                                 compare_acls=compare_acls,
-                                 compare_ownership=compare_ownership)
+        assert compare_recursive(
+            src_rp,
+            restore_rp,
+            compare_eas=compare_eas,
+            compare_acls=compare_acls,
+            compare_ownership=compare_ownership,
+        )
 
         # Restore should default back to newest time older than it
         # with a backup then.
@@ -610,15 +707,19 @@ def BackupRestoreSeries(source_local,
         time += 10000
 
 
-def MirrorTest(source_local,
-               dest_local,
-               list_of_dirnames,
-               compare_hardlinks=1,
-               dest_dirname=abs_output_dir):
+def MirrorTest(
+    source_local,
+    dest_local,
+    list_of_dirnames,
+    compare_hardlinks=1,
+    dest_dirname=abs_output_dir,
+):
     """Mirror each of list_of_dirnames, and compare after each"""
-    Globals.set('preserve_hardlinks', compare_hardlinks)
-    Globals.set("no_compression_regexp_string",
-                os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
+    Globals.set("preserve_hardlinks", compare_hardlinks)
+    Globals.set(
+        "no_compression_regexp_string",
+        os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP),
+    )
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
 
     Myrm(dest_dirname)
@@ -627,8 +728,7 @@ def MirrorTest(source_local,
         reset_hardlink_dicts()
         _reset_connections(src_rp, dest_rp)
 
-        InternalMirror(source_local, dest_local, dirname, dest_dirname,
-                       force=True)
+        InternalMirror(source_local, dest_local, dirname, dest_dirname, force=True)
         _reset_connections(src_rp, dest_rp)
         assert compare_recursive(src_rp, dest_rp, compare_hardlinks)
 
@@ -647,11 +747,12 @@ def getrefs(i, depth):
     import sys
     import gc
     import types
+
     o = sys.getobjects(i)[-1]
     for d in range(depth):
         for ref in gc.get_referrers(o):
             if type(ref) in (list, dict, types.InstanceType):
-                if type(ref) is dict and 'copyright' in ref:
+                if type(ref) is dict and "copyright" in ref:
                     continue
                 o = ref
                 break
@@ -672,7 +773,7 @@ def iter_equal(iter1, iter2, verbose=None, operator=lambda x, y: x == y):
             i2 = next(iter2)
         except StopIteration:
             if verbose:
-                print("End when i1 = %s" % (i1, ))
+                print("End when i1 = %s" % (i1,))
             return False
         if not operator(i1, i2):
             if verbose:
@@ -683,7 +784,7 @@ def iter_equal(iter1, iter2, verbose=None, operator=lambda x, y: x == y):
     except StopIteration:
         return True
     if verbose:
-        print("End when i2 = %s" % (i2, ))
+        print("End when i2 = %s" % (i2,))
     return False
 
 
@@ -720,11 +821,11 @@ def xcopytree(source, dest, content=False):
     else:
         subs = (source,)
     for sub in subs:
-        if shutil.which('cp'):
-            os_system((b'cp', b'-a', sub, dest), check=True)
+        if shutil.which("cp"):
+            os_system((b"cp", b"-a", sub, dest), check=True)
         else:
             shutil.copytree(sub, dest, symlinks=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     os.makedirs(abs_test_dir, exist_ok=True)

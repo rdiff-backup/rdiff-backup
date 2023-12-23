@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import (Globals, log, statistics, Time)
+from rdiff_backup import Globals, log, statistics, Time
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
@@ -32,31 +32,42 @@ class RemoveAction(actions.BaseAction):
     """
     Remove the oldest increments from a backup repository.
     """
+
     name = "remove"
     security = "validate"  # FIXME doesn't sound right, rather backup
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
-        entity_parsers = cls._get_subparsers(
-            subparser, "entity", "increments")
+        entity_parsers = cls._get_subparsers(subparser, "entity", "increments")
         entity_parsers["increments"].add_argument(
-            "--older-than", metavar="TIME", required=True,
-            help="remove increments older than given time")
+            "--older-than",
+            metavar="TIME",
+            required=True,
+            help="remove increments older than given time",
+        )
         entity_parsers["increments"].add_argument(
-            "--size", action=BooleanOptionalAction, default=False,
-            help="also output size of each increment (might take longer)")
+            "--size",
+            action=BooleanOptionalAction,
+            default=False,
+            help="also output size of each increment (might take longer)",
+        )
         entity_parsers["increments"].add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
-            help="location of repository to remove increments from")
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=1,
+            help="location of repository to remove increments from",
+        )
         return subparser
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
-                self.connected_locations[0], self.values.force,
-                must_be_writable=True, must_exist=True
+                self.connected_locations[0],
+                self.values.force,
+                must_be_writable=True,
+                must_exist=True,
             )
         return conn_value
 
@@ -72,11 +83,14 @@ class RemoveAction(actions.BaseAction):
         # the source directory must directly point at the base directory of
         # the repository
         if self.repo.ref_index:
-            log.Log("Increments for sub-directory '{sd}' cannot be removed "
-                    "separately. "
-                    "Instead run on entire directory '{ed}'.".format(
-                        sd=self.repo.orig_path,
-                        ed=self.repo.base_dir), log.ERROR)
+            log.Log(
+                "Increments for sub-directory '{sd}' cannot be removed "
+                "separately. "
+                "Instead run on entire directory '{ed}'.".format(
+                    sd=self.repo.orig_path, ed=self.repo.base_dir
+                ),
+                log.ERROR,
+            )
             ret_code |= Globals.RET_CODE_ERR
 
         return ret_code
@@ -92,8 +106,9 @@ class RemoveAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        self.action_time = self._get_removal_time(self.values.older_than,
-                                                  self.values.size)
+        self.action_time = self._get_removal_time(
+            self.values.older_than, self.values.size
+        )
         if self.action_time is None:
             return ret_code | Globals.RET_CODE_ERR
 
@@ -108,8 +123,10 @@ class RemoveAction(actions.BaseAction):
             return ret_code
 
         if self.action_time < 0:  # no increment is old enough
-            log.Log("No increment is older than '{ot}'".format(
-                ot=self.values.older_than), log.WARNING)
+            log.Log(
+                "No increment is older than '{ot}'".format(ot=self.values.older_than),
+                log.WARNING,
+            )
             return ret_code | Globals.RET_CODE_WARN
 
         self.repo.remove_increments_older_than(self.action_time)
@@ -133,25 +150,29 @@ class RemoveAction(actions.BaseAction):
             times_in_secs = [triple["time"] for triple in triples]
         else:
             times_in_secs = [
-                inc.getinctime() for inc
-                in self.repo.incs_dir.get_incfiles_list()
+                inc.getinctime() for inc in self.repo.incs_dir.get_incfiles_list()
             ]
         times_in_secs = [t for t in times_in_secs if t < action_time]
         if not times_in_secs:
-            log.Log("No increments older than {at} found, exiting.".format(
-                at=Time.timetopretty(action_time)), log.NOTE)
+            log.Log(
+                "No increments older than {at} found, exiting.".format(
+                    at=Time.timetopretty(action_time)
+                ),
+                log.NOTE,
+            )
             return -1
 
         times_in_secs.sort()
         if self.values.size:
-            sizes = [triple["size"] for triple in triples
-                     if triple["time"] in times_in_secs]
+            sizes = [
+                triple["size"] for triple in triples if triple["time"] in times_in_secs
+            ]
             stat_obj = statistics.StatsObj()  # used for byte summary string
 
             def format_time_and_size(time, size):
                 return "{: <24} {: >17}".format(
-                    Time.timetopretty(time),
-                    stat_obj.get_byte_summary_string(size))
+                    Time.timetopretty(time), stat_obj.get_byte_summary_string(size)
+                )
 
             pretty_times_map = map(format_time_and_size, times_in_secs, sizes)
             pretty_times = "\n".join(pretty_times_map)
@@ -163,14 +184,21 @@ class RemoveAction(actions.BaseAction):
                     "Found {ri} relevant increments, dates/times:\n{dt}\n"
                     "If you want to delete multiple increments in this way, "
                     "use the --force option.".format(
-                        ri=len(times_in_secs), dt=pretty_times), log.ERROR)
+                        ri=len(times_in_secs), dt=pretty_times
+                    ),
+                    log.ERROR,
+                )
                 return None
             else:
-                log.Log("Deleting increments at dates/times:\n{dt}".format(
-                    dt=pretty_times), log.NOTE)
+                log.Log(
+                    "Deleting increments at dates/times:\n{dt}".format(dt=pretty_times),
+                    log.NOTE,
+                )
         else:
-            log.Log("Deleting increment at date/time: {dt}".format(
-                dt=pretty_times), log.NOTE)
+            log.Log(
+                "Deleting increment at date/time: {dt}".format(dt=pretty_times),
+                log.NOTE,
+            )
         # make sure we don't delete current increment
         return times_in_secs[-1] + 1
 

@@ -40,8 +40,13 @@ class SetConnectionsException(Exception):
     pass
 
 
-def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
-                  remote_tempdir=None, term_verbosity=None):
+def get_cmd_pairs(
+    locations,
+    remote_schema=None,
+    ssh_compression=True,
+    remote_tempdir=None,
+    term_verbosity=None,
+):
     """Map the given file descriptions into command pairs
 
     Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
@@ -60,7 +65,7 @@ def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
         else:
             cmd_schema = b"ssh {h} rdiff-backup"
         if remote_tempdir:
-            cmd_schema += (b" --tempdir=" + remote_tempdir)
+            cmd_schema += b" --tempdir=" + remote_tempdir
         # we could wait until the verbosity is "transferred" to the remote side
         # but we might miss important messages at the beginning of the process
         if term_verbosity is not None:
@@ -77,8 +82,9 @@ def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
 
     if remote_schema and not [x for x in desc_triples if x[0]]:
         # remote schema defined but no remote location found
-        log.Log("Remote schema option ignored - no remote file descriptions",
-                log.WARNING)
+        log.Log(
+            "Remote schema option ignored - no remote file descriptions", log.WARNING
+        )
 
     # strip the error field from the triples to get pairs
     desc_pairs = [triple[:2] for triple in desc_triples]
@@ -123,8 +129,7 @@ def init_connection_remote(conn_number):
 # @API(add_redirected_conn, 200)
 def add_redirected_conn(conn_number):
     """Run on server side - tell about redirected connection"""
-    Globals.connection_dict[conn_number] = \
-        connection.RedirectedConnection(conn_number)
+    Globals.connection_dict[conn_number] = connection.RedirectedConnection(conn_number)
 
 
 def CloseConnections():
@@ -148,18 +153,19 @@ def test_connections(rpaths):
     # an error or log file to use.
     conn_len = len(Globals.connections)
     if conn_len == 1:
-        log.Log("No remote connections specified, only local one available",
-                log.ERROR)
+        log.Log("No remote connections specified, only local one available", log.ERROR)
         return Globals.RET_CODE_FILE_ERR
     elif conn_len != len(rpaths) + 1:
-        print("All {pa} parameters must be remote of the form "
-              "'server::path'".format(pa=len(rpaths)), log.ERROR)
+        print(
+            "All {pa} parameters must be remote of the form "
+            "'server::path'".format(pa=len(rpaths)),
+            log.ERROR,
+        )
         return Globals.RET_CODE_FILE_ERR
 
     # we create a list of all test results, skipping the connection 0, which
     # is the local one.
-    results = map(lambda i: _test_connection(i, rpaths[i - 1]),
-                  range(1, conn_len))
+    results = map(lambda i: _test_connection(i, rpaths[i - 1]), range(1, conn_len))
     if all(results):
         return Globals.RET_CODE_OK
     else:
@@ -180,8 +186,9 @@ def parse_location(file_desc):
     # paths and similar objects must always be bytes
     file_desc = os.fsencode(file_desc)
     # match double colon not preceded by an odd number of backslashes
-    file_parts = [x for x in re.split(rb"(?<!\\)(\\{2})*::", file_desc)
-                  if x is not None]
+    file_parts = [
+        x for x in re.split(rb"(?<!\\)(\\{2})*::", file_desc) if x is not None
+    ]
     # because even numbers of backslashes are grouped as part of the split,
     # we need to stitch them back together,e.g.
     # "host\\\\::path" becomes ["host","\\\\","path"]
@@ -199,53 +206,64 @@ def parse_location(file_desc):
     concat_parts.reverse()
 
     if len(concat_parts) > 2:
-        return (None, None,
-                "Too many parts separated by double colon in '{desc}'".format(
-                    desc=file_desc))
+        return (
+            None,
+            None,
+            "Too many parts separated by double colon in '{desc}'".format(
+                desc=file_desc
+            ),
+        )
     elif len(concat_parts) == 0:  # it's probably not possible but...
-        return (None, None,
-                "No location could be identified in '{desc}'".format(
-                    desc=file_desc))
+        return (
+            None,
+            None,
+            "No location could be identified in '{desc}'".format(desc=file_desc),
+        )
     elif len(concat_parts) == 1:  # a local path without remote host
         file_host = None
         file_path = concat_parts[0]
     else:  # length of 2 is given
         if not concat_parts[0]:
-            return (None, None,
-                    "No file host in location '{lo}' starting with '::'".format(
-                        lo=file_desc))
+            return (
+                None,
+                None,
+                "No file host in location '{lo}' starting with '::'".format(
+                    lo=file_desc
+                ),
+            )
         elif not concat_parts[1]:
-            return (None, None,
-                    "No file path in location '{lo}' ending with '::'".format(
-                        lo=file_desc))
+            return (
+                None,
+                None,
+                "No file path in location '{lo}' ending with '::'".format(lo=file_desc),
+            )
         file_host = concat_parts[0]
         file_path = concat_parts[1]
 
     # According to description, the backslashes must be unquoted, i.e.
     # double backslashes replaced by single ones, and single ones removed
     # before colons.
-    sbs = b'\\'  # single backslash
-    dbs = rb'\\'  # double backslash (r for raw)
+    sbs = b"\\"  # single backslash
+    dbs = rb"\\"  # double backslash (r for raw)
     # Hence we split along double ones, remove single ones in each element,
     # and join back with a single backslash.
     if file_host:
         file_host = sbs.join(
-            [x.replace(sbs + b':', b':') for x in file_host.split(dbs)])
+            [x.replace(sbs + b":", b":") for x in file_host.split(dbs)]
+        )
     # handle the special case of an UNC path '\\hostname\some\path'
-    if (file_path.startswith(dbs)
-            and len(file_path) > 2 and file_path[2:3] != sbs):
+    if file_path.startswith(dbs) and len(file_path) > 2 and file_path[2:3] != sbs:
         is_unc_path = True
     else:
         # it could still be an UNC path using forward slashes
         # but we don't need to care
         is_unc_path = False
-    file_path = sbs.join(
-        [x.replace(sbs + b':', b':') for x in file_path.split(dbs)])
+    file_path = sbs.join([x.replace(sbs + b":", b":") for x in file_path.split(dbs)])
     # And then we make sure that paths under Windows use / instead of \
     # (we don't do it for the host part because it could be a shell command)
     file_path = file_path.replace(b"\\", b"/")
     if is_unc_path:
-        file_path = b'/' + file_path
+        file_path = b"/" + file_path
 
     return (file_host, file_path, None)
 
@@ -256,9 +274,9 @@ def _fill_schema(host_info, cmd_schema):
 
     Returns the filled remote command
     """
-    assert isinstance(host_info, bytes), (
-        "host_info parameter must be bytes not {thi}".format(
-            thi=type(host_info)))
+    assert isinstance(
+        host_info, bytes
+    ), "host_info parameter must be bytes not {thi}".format(thi=type(host_info))
     try:
         # for security reasons, we accept only specific format placeholders
         # h for host_info, Vx,Vy,Vz for version x.y.z
@@ -269,19 +287,26 @@ def _fill_schema(host_info, cmd_schema):
         # escape mechanism of doubling-up the braces {{ }}, so our findall
         # check must ignore the doubled-up ones in its validation check
         # using a simple negative-lookbehind
-        if ((re.findall(b"(?<!{){[^{}]*}", cmd_schema)
-             != re.findall(b"{h}|{V[xyz]}", cmd_schema))
-                or b"{h}" not in cmd_schema):
+        if (
+            re.findall(b"(?<!{){[^{}]*}", cmd_schema)
+            != re.findall(b"{h}|{V[xyz]}", cmd_schema)
+        ) or b"{h}" not in cmd_schema:
             raise KeyError
         else:
             ver_split = Globals.version.split(".")
             # bytes doesn't have a format method, hence the conversions
-            return os.fsencode(os.fsdecode(cmd_schema).format(
-                h=os.fsdecode(host_info),
-                Vx=ver_split[0], Vy=ver_split[1], Vz=ver_split[2]))
+            return os.fsencode(
+                os.fsdecode(cmd_schema).format(
+                    h=os.fsdecode(host_info),
+                    Vx=ver_split[0],
+                    Vy=ver_split[1],
+                    Vz=ver_split[2],
+                )
+            )
     except (TypeError, KeyError):
-        log.Log.FatalError("Invalid remote schema: {rs}".format(
-            rs=safestr.to_str(cmd_schema)))
+        log.Log.FatalError(
+            "Invalid remote schema: {rs}".format(rs=safestr.to_str(cmd_schema))
+        )
 
 
 def _init_connection(remote_cmd):
@@ -295,24 +320,24 @@ def _init_connection(remote_cmd):
     if not remote_cmd:
         return Globals.local_connection
 
-    log.Log("Executing remote command {rc}".format(
-        rc=safestr.to_str(remote_cmd)), log.INFO)
+    log.Log(
+        "Executing remote command {rc}".format(rc=safestr.to_str(remote_cmd)), log.INFO
+    )
     try:
         # we need buffered read on SSH communications, hence using
         # default value for bufsize parameter
-        if os.name == 'nt':
+        if os.name == "nt":
             # FIXME workaround because python 3.7 doesn't yet accept bytes
             process = subprocess.Popen(
                 os.fsdecode(remote_cmd),
                 shell=True,
                 stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE)
+                stdout=subprocess.PIPE,
+            )
         else:
             process = subprocess.Popen(
-                remote_cmd,
-                shell=True,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE)
+                remote_cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE
+            )
         (stdin, stdout) = (process.stdin, process.stdout)
     except OSError:
         (stdin, stdout) = (None, None)
@@ -336,7 +361,7 @@ def _validate_connection_version(conn, remote_cmd):
     be found, else returns True (also in warning case)."""
 
     try:
-        remote_version = conn.Globals.get('version')
+        remote_version = conn.Globals.get("version")
     except connection.ConnectionError as exception:
         log.Log(
             """Couldn't start up the remote connection by executing '{rc}'
@@ -346,8 +371,11 @@ Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version ({lv})
-""".format(ex=exception, rc=safestr.to_str(remote_cmd), lv=Globals.version),
-            log.ERROR)
+""".format(
+                ex=exception, rc=safestr.to_str(remote_cmd), lv=Globals.version
+            ),
+            log.ERROR,
+        )
         return False
     except OverflowError:
         log.Log(
@@ -359,31 +387,37 @@ command executes. Try running this command: {co}
 
 which should only print out the text: rdiff-backup <version>""".format(
                 rc=safestr.to_str(remote_cmd),
-                co=safestr.to_str(
-                    remote_cmd.replace(b"--server", b"--version"))),
-            log.ERROR)
+                co=safestr.to_str(remote_cmd.replace(b"--server", b"--version")),
+            ),
+            log.ERROR,
+        )
         return False
 
     try:
-        remote_api_version = conn.Globals.get('api_version')
+        remote_api_version = conn.Globals.get("api_version")
     except KeyError:  # the remote side doesn't know yet about api_version
         # Only version 2.0 could _not_ understand api_version but still be
         # compatible with version 200 of the API
-        if (remote_version.startswith("2.0.")
-                and (Globals.api_version["actual"]
-                     or Globals.api_version["min"]) == 200):
+        if (
+            remote_version.startswith("2.0.")
+            and (Globals.api_version["actual"] or Globals.api_version["min"]) == 200
+        ):
             Globals.api_version["actual"] == 200
-            log.Log("Remote version {rv} doesn't know about API "
-                    "versions but should be compatible with 200".format(
-                        rv=remote_version), log.NOTE)
+            log.Log(
+                "Remote version {rv} doesn't know about API "
+                "versions but should be compatible with 200".format(rv=remote_version),
+                log.NOTE,
+            )
             return True
         else:
             log.Log(
                 "Remote version {rv} isn't compatible with local "
                 "API version {av}".format(
                     rv=remote_version,
-                    av=(Globals.api_version["actual"]
-                        or Globals.api_version["min"])), log.ERROR)
+                    av=(Globals.api_version["actual"] or Globals.api_version["min"]),
+                ),
+                log.ERROR,
+            )
             return False
 
     # servers don't validate the API version, client does
@@ -393,8 +427,9 @@ which should only print out the text: rdiff-backup <version>""".format(
     # Now compare the remote and local API versions and agree actual version
 
     # if client and server have no common API version
-    if (min(remote_api_version["max"], Globals.api_version["max"])
-            < max(remote_api_version["min"], Globals.api_version["min"])):
+    if min(remote_api_version["max"], Globals.api_version["max"]) < max(
+        remote_api_version["min"], Globals.api_version["min"]
+    ):
         log.Log(
             """Local and remote rdiff-backup have no common API version:
 Remote API version for {rv} must be between min {ri} and max {ra}.
@@ -405,17 +440,25 @@ Please make sure you have compatible versions of rdiff-backup""".format(
                 ra=remote_api_version["max"],
                 lv=Globals.version,
                 li=Globals.api_version["min"],
-                la=Globals.api_version["max"]), log.ERROR)
+                la=Globals.api_version["max"],
+            ),
+            log.ERROR,
+        )
         return False
     # is there an actual API version and does it fit the other side?
     if Globals.api_version["actual"]:
-        if (Globals.api_version["actual"] >= remote_api_version["min"]
-                and Globals.api_version["actual"] <= remote_api_version["max"]):
+        if (
+            Globals.api_version["actual"] >= remote_api_version["min"]
+            and Globals.api_version["actual"] <= remote_api_version["max"]
+        ):
             conn.Globals.set_api_version(Globals.api_version["actual"])
-            log.Log("API version agreed to be actual {av} "
-                    "with command {co}".format(
-                        av=Globals.api_version["actual"], co=remote_cmd),
-                    log.INFO)
+            log.Log(
+                "API version agreed to be actual {av} "
+                "with command {co}".format(
+                    av=Globals.api_version["actual"], co=remote_cmd
+                ),
+                log.INFO,
+            )
             return True
         else:  # the actual version doesn't fit the other side
             log.Log(
@@ -425,18 +468,26 @@ Please make sure you have compatible versions of rdiff-backup""".format(
                 "Use '--api-version' to set another API version".format(
                     av=Globals.api_version["actual"],
                     ri=remote_api_version["min"],
-                    ra=remote_api_version["max"]), log.ERROR)
+                    ra=remote_api_version["max"],
+                ),
+                log.ERROR,
+            )
             return False
     else:
         # use the default local value but make make sure it's between min
         # and max on the remote side, while using the highest acceptable value:
-        actual_api_version = max(remote_api_version["min"],
-                                 min(remote_api_version["max"],
-                                     Globals.api_version["default"]))
+        actual_api_version = max(
+            remote_api_version["min"],
+            min(remote_api_version["max"], Globals.api_version["default"]),
+        )
         Globals.api_version["actual"] = actual_api_version
         conn.Globals.set_api_version(actual_api_version)
-        log.Log("API version agreed to be {av} with command {co}".format(
-            av=actual_api_version, co=remote_cmd), log.INFO)
+        log.Log(
+            "API version agreed to be {av} with command {co}".format(
+                av=actual_api_version, co=remote_cmd
+            ),
+            log.INFO,
+        )
         return True
 
 
@@ -474,12 +525,15 @@ def _test_connection(conn_number, rp):
     # FIXME the tests don't sound right, the path given needs to pre-exist
     # on Windows but not on Linux? What are we exactly testing here?
     try:
-        remote_time = conn.Globals.get('current_time')
-        assert remote_time == Globals.current_time, (
-            "connection not returning current time {ct1} but {ct2}".format(
-                ct1=Globals.current_time, ct2=remote_time))
-        assert type(conn.os.listdir(rp.path)) is list, (
-            "connection not listing directory '{rp}'".format(rp=rp))
+        remote_time = conn.Globals.get("current_time")
+        assert (
+            remote_time == Globals.current_time
+        ), "connection not returning current time {ct1} but {ct2}".format(
+            ct1=Globals.current_time, ct2=remote_time
+        )
+        assert (
+            type(conn.os.listdir(rp.path)) is list
+        ), "connection not listing directory '{rp}'".format(rp=rp)
     except BaseException as exc:
         sys.stderr.write("- Server tests failed due to {exc}\n".format(exc=exc))
         return False

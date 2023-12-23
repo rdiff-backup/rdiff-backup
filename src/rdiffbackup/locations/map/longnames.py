@@ -77,7 +77,9 @@ def get_mirror_rp(mirror_base, mirror_rorp):
         if rp:
             return rp
         else:
-            raise Exception("the following line doesn't make any sense but does it matter?")
+            raise Exception(
+                "the following line doesn't make any sense but does it matter?"
+            )
             # FIXME index isn't defined anywhere, is mirror_rorp.index meant?
             # return mirror_base.new_index_empty(index)
 
@@ -90,7 +92,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
     and see if that raises an error.
     """
     if not inc_root:  # make fake inc_root if not available
-        inc_root = mirror_root.append_path(b'rdiff-backup-data/increments')
+        inc_root = mirror_root.append_path(b"rdiff-backup-data/increments")
 
     def mir_triple_old(old_rorp):
         """
@@ -138,7 +140,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         elif not index:
             return (None, inc_root)
 
-        trial_inc_index = index[:-1] + (index[-1] + (b'a' * 50), )
+        trial_inc_index = index[:-1] + (index[-1] + (b"a" * 50),)
         if _check_new_index(inc_root, trial_inc_index, make_dirs=1):
             return (None, inc_root.new_index(index))
         alt_inc = _get_next_free_filename()
@@ -154,7 +156,9 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
     else:
         log.Log.FatalError(
             "Neither old '{op}' nor new path '{np}' is existing".format(
-                op=old_rorp, np=new_rorp))
+                op=old_rorp, np=new_rorp
+            )
+        )
 
     alt_inc, inc_rp = find_inc_pair(index, mirror_rp, alt_mirror, alt_inc)
     update_rorp(new_rorp, alt_mirror, alt_inc)
@@ -177,8 +181,12 @@ def update_rf(rf, rorp, mirror_root, rf_class):
         """
         Swap inclist in rf with those with base inc_base and return
         """
-        log.Log("Restoring with increment base {ib} for file {rp}".format(
-            ib=safestr.to_str(inc_base), rp=rf), log.DEBUG)
+        log.Log(
+            "Restoring with increment base {ib} for file {rp}".format(
+                ib=safestr.to_str(inc_base), rp=rf
+            ),
+            log.DEBUG,
+        )
         rf.inc_rp = _get_long_rp(inc_base)
         rf.inc_list = _get_inclist(inc_base, rf_class)
         rf.set_relevant_incs()
@@ -189,7 +197,9 @@ def update_rf(rf, rorp, mirror_root, rf_class):
         """
         if rorp.has_alt_mirror_name():
             inc_name = rorp.get_alt_mirror_name()
-            raise Exception("the following line doesn't make any sense but does it matter?")
+            raise Exception(
+                "the following line doesn't make any sense but does it matter?"
+            )
             # FIXME mirror_name isn't defined anywhere, is inc_name meant?
             # rf.mirror_rp = _get_long_rp(mirror_name)
         elif rorp.has_alt_inc_name():
@@ -261,7 +271,7 @@ def _get_next_free_filename():
         cur_high = 0
         for filename in _get_long_rp().listdir():
             try:
-                i = int(filename.split(b'.')[0])
+                i = int(filename.split(b".")[0])
             except ValueError:
                 continue
             if i > cur_high:
@@ -291,10 +301,9 @@ def _get_next_free_filename():
         _free_name_counter = read_next_free()
     if not _free_name_counter:
         _free_name_counter = scan_next_free()
-    filename = b'%i' % _free_name_counter
+    filename = b"%i" % _free_name_counter
     rp = _get_long_rp(filename)
-    assert not rp.lstat(), (
-        "Unexpected file '{rp}' found".format(rp=rp))
+    assert not rp.lstat(), "Unexpected file '{rp}' found".format(rp=rp)
     _free_name_counter += 1
     write_next_free(_free_name_counter)
     return filename
@@ -315,9 +324,11 @@ def _check_new_index(base, index, make_dirs=0):
             # Windows with enabled long paths seems to consider too long
             # filenames as having an incorrect syntax, but only under certain
             # circumstances
-            if (exc.errno == errno.ENAMETOOLONG
-                    or (exc.errno == errno.EINVAL
-                        and hasattr(exc, "winerror") and exc.winerror == 123)):
+            if exc.errno == errno.ENAMETOOLONG or (
+                exc.errno == errno.EINVAL
+                and hasattr(exc, "winerror")
+                and exc.winerror == 123
+            ):
                 return None
             raise
         return result

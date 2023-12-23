@@ -27,19 +27,35 @@ from rdiff_backup import librsync, C, rpath, Globals, log, connection
 # Those are the signals we want to catch because they relate to conditions
 # impacting only a single file, especially on remote file systems.
 # We list first only the POSIX conform signals, present on all platforms.
-_robust_errno_list = [errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
-                      errno.EEXIST, errno.ENOTDIR, errno.EILSEQ, errno.EBADF,
-                      errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
-                      errno.ENOTEMPTY, errno.EIO, errno.ETXTBSY,
-                      errno.ESRCH, errno.EINVAL, errno.EDEADLK,
-                      errno.EOPNOTSUPP, errno.ETIMEDOUT]
+_robust_errno_list = [
+    errno.EPERM,
+    errno.ENOENT,
+    errno.EACCES,
+    errno.EBUSY,
+    errno.EEXIST,
+    errno.ENOTDIR,
+    errno.EILSEQ,
+    errno.EBADF,
+    errno.ENAMETOOLONG,
+    errno.EINTR,
+    errno.ESTALE,
+    errno.ENOTEMPTY,
+    errno.EIO,
+    errno.ETXTBSY,
+    errno.ESRCH,
+    errno.EINVAL,
+    errno.EDEADLK,
+    errno.EOPNOTSUPP,
+    errno.ETIMEDOUT,
+]
 # Skip on resource deadlock only if the error is defined (_not_ on MacOSX)
-if hasattr(errno, 'EDEADLOCK'):
+if hasattr(errno, "EDEADLOCK"):
     _robust_errno_list.append(errno.EDEADLOCK)
 
 
 class SignalException(Exception):
     """SignalException(signum) means signal signum has been received"""
+
     pass
 
 
@@ -112,15 +128,26 @@ def catch_error(exc):
     """
     Return True if exception exc should be caught, else False.
     """
-    if isinstance(exc, (rpath.SkipFileException, rpath.RPathException,
-                        librsync.librsyncError, C.UnknownFileTypeError,
-                        zlib.error)):
+    if isinstance(
+        exc,
+        (
+            rpath.SkipFileException,
+            rpath.RPathException,
+            librsync.librsyncError,
+            C.UnknownFileTypeError,
+            zlib.error,
+        ),
+    ):
         return True
-    if (isinstance(exc, OSError)
-            # the invalid mode shows up in backups of /proc for some reason
-            and ('invalid mode: rb' in str(exc)
-                 or 'Not a gzipped file' in str(exc)
-                 or exc.errno in _robust_errno_list)):
+    if (
+        isinstance(exc, OSError)
+        # the invalid mode shows up in backups of /proc for some reason
+        and (
+            "invalid mode: rb" in str(exc)
+            or "Not a gzipped file" in str(exc)
+            or exc.errno in _robust_errno_list
+        )
+    ):
         return True
     return False
 
@@ -138,9 +165,9 @@ def is_routine_fatal(exc):
     elif isinstance(exc, connection.ConnectionError):
         return "Lost connection to the remote system"
     elif isinstance(exc, SignalException):
-        return "Killed with signal %s" % (exc, )
+        return "Killed with signal %s" % (exc,)
     elif isinstance(exc, OSError) and exc.errno == errno.ENOTCONN:
-        return ("Filesystem reports connection failure:\n%s" % exc)
+        return "Filesystem reports connection failure:\n%s" % exc
     return None
 
 

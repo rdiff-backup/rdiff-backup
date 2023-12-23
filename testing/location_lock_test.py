@@ -28,25 +28,26 @@ class LocationLockTest(unittest.TestCase):
         verify that exclusive locking mechanisms do work properly
         """
         self.assertFalse(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=True))
-        self.assertTrue(
-            _repo_shadow.RepoShadow.lock(self.lockfile, exclusive=True))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=True)
+        )
+        self.assertTrue(_repo_shadow.RepoShadow.lock(self.lockfile, exclusive=True))
         # we tweak another process
         fd1 = _repo_shadow.RepoShadow._lockfd
         _repo_shadow.RepoShadow._lockfd = None
         self.assertTrue(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False)
+        )
         self.assertTrue(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=True))
-        self.assertFalse(
-            _repo_shadow.RepoShadow.lock(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=True)
+        )
+        self.assertFalse(_repo_shadow.RepoShadow.lock(self.lockfile, exclusive=False))
         self.assertIsNone(_repo_shadow.RepoShadow._lockfd)
         _repo_shadow.RepoShadow._lockfd = fd1
-        self.assertIsNone(
-            _repo_shadow.RepoShadow.unlock(self.lockfile, exclusive=True))
+        self.assertIsNone(_repo_shadow.RepoShadow.unlock(self.lockfile, exclusive=True))
         self.assertIsNone(_repo_shadow.RepoShadow._lockfd)
         self.assertFalse(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False)
+        )
         self.success = True
 
     def test_location_lock_shared(self):
@@ -58,30 +59,33 @@ class LocationLockTest(unittest.TestCase):
         if self.lockfile.lstat():
             self.lockfile.delete()
         self.assertFalse(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False)
+        )
         self.lockfile.touch()
-        self.assertTrue(
-            _repo_shadow.RepoShadow.lock(self.lockfile, exclusive=False))
+        self.assertTrue(_repo_shadow.RepoShadow.lock(self.lockfile, exclusive=False))
         # we tweak another process
         fd1 = _repo_shadow.RepoShadow._lockfd
         _repo_shadow.RepoShadow._lockfd = None
         self.assertFalse(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False)
+        )
         self.assertTrue(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=True))
-        self.assertFalse(
-            _repo_shadow.RepoShadow.lock(self.lockfile, exclusive=True))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=True)
+        )
+        self.assertFalse(_repo_shadow.RepoShadow.lock(self.lockfile, exclusive=True))
         self.assertIsNone(_repo_shadow.RepoShadow._lockfd)
-        self.assertTrue(
-            _repo_shadow.RepoShadow.lock(self.lockfile, exclusive=False))
+        self.assertTrue(_repo_shadow.RepoShadow.lock(self.lockfile, exclusive=False))
         self.assertIsNone(
-            _repo_shadow.RepoShadow.unlock(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.unlock(self.lockfile, exclusive=False)
+        )
         _repo_shadow.RepoShadow._lockfd = fd1
         self.assertIsNone(
-            _repo_shadow.RepoShadow.unlock(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.unlock(self.lockfile, exclusive=False)
+        )
         self.assertIsNone(_repo_shadow.RepoShadow._lockfd)
         self.assertFalse(
-            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False))
+            _repo_shadow.RepoShadow.is_locked(self.lockfile, exclusive=False)
+        )
         self.success = True
 
     def tearDown(self):

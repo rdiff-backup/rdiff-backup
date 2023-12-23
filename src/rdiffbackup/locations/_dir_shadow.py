@@ -25,7 +25,15 @@ be instantiated.
 """
 
 from rdiff_backup import (
-    Globals, hash, iterfile, log, Rdiff, robust, rorpiter, rpath, selection
+    Globals,
+    hash,
+    iterfile,
+    log,
+    Rdiff,
+    robust,
+    rorpiter,
+    rpath,
+    selection,
 )
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
@@ -39,6 +47,7 @@ class ReadDirShadow:
     """
     Shadow read directory for the local directory representation
     """
+
     _select = None  # will be set to source Select iterator
 
     # @API(ReadDirShadow.set_select, 201)
@@ -86,37 +95,41 @@ class ReadDirShadow:
         def attach_snapshot(diff_rorp, src_rp):
             """Attach file of snapshot to diff_rorp, w/ error checking"""
             fileobj = robust.check_common_error(
-                error_handler, rpath.RPath.open, (src_rp, "rb"))
+                error_handler, rpath.RPath.open, (src_rp, "rb")
+            )
             if fileobj:
                 diff_rorp.setfile(hash.FileWrapper(fileobj))
             else:
                 diff_rorp.zero()
-            diff_rorp.set_attached_filetype('snapshot')
+            diff_rorp.set_attached_filetype("snapshot")
 
         def attach_diff(diff_rorp, src_rp, dest_sig):
             """Attach file of diff to diff_rorp, w/ error checking"""
             fileobj = robust.check_common_error(
-                error_handler, Rdiff.get_delta_sigrp_hash, (dest_sig, src_rp))
+                error_handler, Rdiff.get_delta_sigrp_hash, (dest_sig, src_rp)
+            )
             if fileobj:
                 diff_rorp.setfile(fileobj)
-                diff_rorp.set_attached_filetype('diff')
+                diff_rorp.set_attached_filetype("diff")
             else:
                 diff_rorp.zero()
-                diff_rorp.set_attached_filetype('snapshot')
+                diff_rorp.set_attached_filetype("snapshot")
 
         for dest_sig in dest_sigiter:
             if dest_sig is iterfile.MiscIterFlushRepeat:
                 yield iterfile.MiscIterFlush  # Flush buffer when get_sigs does
                 continue
-            src_rp = (cls._select.get(dest_sig.index)
-                      or rpath.RORPath(dest_sig.index))
+            src_rp = cls._select.get(dest_sig.index) or rpath.RORPath(dest_sig.index)
             diff_rorp = src_rp.getRORPath()
             if dest_sig.isflaglinked():
                 diff_rorp.flaglinked(dest_sig.get_link_flag())
             elif src_rp.isreg():
                 reset_perms = False
-                if (Globals.process_uid != 0 and not src_rp.readable()
-                        and src_rp.isowner()):
+                if (
+                    Globals.process_uid != 0
+                    and not src_rp.readable()
+                    and src_rp.isowner()
+                ):
                     reset_perms = True
                     src_rp.chmod(0o400 | src_rp.getperms())
 
@@ -129,7 +142,7 @@ class ReadDirShadow:
                     src_rp.chmod(src_rp.getperms() & ~0o400)
             else:
                 dest_sig.close_if_necessary()
-                diff_rorp.set_attached_filetype('snapshot')
+                diff_rorp.set_attached_filetype("snapshot")
             yield diff_rorp
 
     # @API(ReadDirShadow.compare_meta, 201)
@@ -153,11 +166,16 @@ class ReadDirShadow:
             """Return 0 if their data hashes same, 1 otherwise"""
             verify_sha1 = map_hardlinks.get_hash(mir_rorp)
             if not verify_sha1:
-                log.Log("Metadata file has no digest for mirror file {mf}, "
-                        "unable to compare.".format(mf=mir_rorp), log.WARNING)
+                log.Log(
+                    "Metadata file has no digest for mirror file {mf}, "
+                    "unable to compare.".format(mf=mir_rorp),
+                    log.WARNING,
+                )
                 return 0
-            elif (src_rp.getsize() == mir_rorp.getsize()
-                  and hash.compute_sha1(src_rp) == verify_sha1):
+            elif (
+                src_rp.getsize() == mir_rorp.getsize()
+                and hash.compute_sha1(src_rp) == verify_sha1
+            ):
                 return 0
             return 1
 
@@ -175,16 +193,16 @@ class ReadDirShadow:
         """Given repo iter with full data attached, return report iter"""
 
         def error_handler(exc, src_rp, repo_rorp):
-            log.Log("Error reading source file {sf}".format(sf=src_rp),
-                    log.WARNING)
+            log.Log("Error reading source file {sf}".format(sf=src_rp), log.WARNING)
             return 0  # They aren't the same if we get an error
 
         def data_changed(src_rp, repo_rorp):
             """Return 0 if full compare of data matches, 1 otherwise"""
             if src_rp.getsize() != repo_rorp.getsize():
                 return 1
-            return not robust.check_common_error(error_handler, rpath.cmp,
-                                                 (src_rp, repo_rorp))
+            return not robust.check_common_error(
+                error_handler, rpath.cmp, (src_rp, repo_rorp)
+            )
 
         for repo_rorp in repo_iter:
             src_rp = src_root.new_index(repo_rorp.index)
@@ -256,6 +274,7 @@ class _CompareReport:
     the compare information can be pipelined back to the client
     connection as an iter of _CompareReports.
     """
+
     # self.file is added so that _CompareReports can masquerade as
     # RORPaths when in an iterator, and thus get pipelined.
     file = None
@@ -268,6 +287,7 @@ class _CompareReport:
 # @API(WriteDirShadow, 201)
 class WriteDirShadow:
     """Hold functions to be run on the target side when restoring"""
+
     _select = None
 
     # @API(WriteDirShadow.set_select, 201)
@@ -336,8 +356,9 @@ class _DirPatchITRB(rorpiter.ITRBranch):
 
     def __init__(self, basis_root_rp):
         """Set basis_root_rp, the base of the tree to be incremented"""
-        assert basis_root_rp.conn is Globals.local_connection, (
-            "Function shall be called only locally.")
+        assert (
+            basis_root_rp.conn is Globals.local_connection
+        ), "Function shall be called only locally."
         self.basis_root_rp = basis_root_rp
         self.dir_replacement, self.dir_update = None, None
         self.cached_rp = None
@@ -360,7 +381,9 @@ class _DirPatchITRB(rorpiter.ITRBranch):
         assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index, (
             "Either difference '{drp}' or base '{brp}' path must be a "
             "directory or the index of the base be empty.".format(
-                drp=diff_rorp, brp=base_rp))
+                drp=diff_rorp, brp=base_rp
+            )
+        )
         if diff_rorp.isdir():
             self._prepare_dir(diff_rorp, base_rp)
         else:
@@ -369,13 +392,12 @@ class _DirPatchITRB(rorpiter.ITRBranch):
     def end_process_directory(self):
         """Finish processing directory"""
         if self.dir_update:
-            assert self.base_rp.isdir(), (
-                "Base path '{brp}' must be a directory.".format(
-                    brp=self.base_rp))
+            assert (
+                self.base_rp.isdir()
+            ), "Base path '{brp}' must be a directory.".format(brp=self.base_rp)
             rpath.copy_attribs(self.dir_update, self.base_rp)
         else:
-            assert self.dir_replacement, (
-                "Replacement directory must be defined.")
+            assert self.dir_replacement, "Replacement directory must be defined."
             self.base_rp.rmdir()
             if self.dir_replacement.lstat():
                 rpath.rename(self.dir_replacement, self.base_rp)
@@ -391,12 +413,14 @@ class _DirPatchITRB(rorpiter.ITRBranch):
         if diff_rorp.isflaglinked():
             map_hardlinks.link_rp(diff_rorp, new, self.basis_root_rp)
             return
-        if diff_rorp.get_attached_filetype() == 'snapshot':
+        if diff_rorp.get_attached_filetype() == "snapshot":
             copy_report = rpath.copy(diff_rorp, new)
         else:
-            assert diff_rorp.get_attached_filetype() == 'diff', (
-                "File '{drp}' must be of type '{dtype}'.".format(
-                    drp=diff_rorp, dtype='diff'))
+            assert (
+                diff_rorp.get_attached_filetype() == "diff"
+            ), "File '{drp}' must be of type '{dtype}'.".format(
+                drp=diff_rorp, dtype="diff"
+            )
             copy_report = Rdiff.patch_local(basis_rp, diff_rorp, new)
         self._check_hash(copy_report, diff_rorp)
         if new.lstat():
@@ -407,16 +431,25 @@ class _DirPatchITRB(rorpiter.ITRBranch):
         if not diff_rorp.isreg():
             return
         if not diff_rorp.has_sha1():
-            log.Log("Hash for file {fi} missing, cannot check".format(
-                fi=diff_rorp), log.WARNING)
+            log.Log(
+                "Hash for file {fi} missing, cannot check".format(fi=diff_rorp),
+                log.WARNING,
+            )
         elif copy_report.sha1_digest == diff_rorp.get_sha1():
-            log.Log("Hash {ha} of file {fi} verified".format(
-                ha=diff_rorp.get_sha1(), fi=diff_rorp), log.DEBUG)
+            log.Log(
+                "Hash {ha} of file {fi} verified".format(
+                    ha=diff_rorp.get_sha1(), fi=diff_rorp
+                ),
+                log.DEBUG,
+            )
         else:
-            log.Log("Calculated hash {ch} of file {fi} "
-                    "doesn't match recorded hash {rh}".format(
-                        ch=copy_report.sha1_digest, fi=diff_rorp,
-                        rh=diff_rorp.get_sha1()), log.WARNING)
+            log.Log(
+                "Calculated hash {ch} of file {fi} "
+                "doesn't match recorded hash {rh}".format(
+                    ch=copy_report.sha1_digest, fi=diff_rorp, rh=diff_rorp.get_sha1()
+                ),
+                log.WARNING,
+            )
 
     def _prepare_dir(self, diff_rorp, base_rp):
         """Prepare base_rp to turn into a directory"""
@@ -433,9 +466,11 @@ class _DirPatchITRB(rorpiter.ITRBranch):
         This is used when base_rp is a dir, and diff_rorp is not.
 
         """
-        assert diff_rorp.get_attached_filetype() == 'snapshot', (
-            "File '{drp!r}' must be of type '{dtype}'.".format(
-                drp=diff_rorp, dtype='snapshot'))
+        assert (
+            diff_rorp.get_attached_filetype() == "snapshot"
+        ), "File '{drp!r}' must be of type '{dtype}'.".format(
+            drp=diff_rorp, dtype="snapshot"
+        )
         self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
         rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
         if base_rp.isdir():

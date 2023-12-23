@@ -4,8 +4,14 @@ import os
 import sys
 from commontest import iter_equal, abs_output_dir, Myrm
 from rdiff_backup import rpath, Globals
-from rdiff_backup.iterfile import IterWrappingFile, FileWrappingIter, \
-    FileToMiscIter, MiscIterToFile, MiscIterFlush, MiscIterFlushRepeat
+from rdiff_backup.iterfile import (
+    IterWrappingFile,
+    FileWrappingIter,
+    FileToMiscIter,
+    MiscIterToFile,
+    MiscIterFlush,
+    MiscIterFlushRepeat,
+)
 
 
 class FileException:
@@ -34,7 +40,8 @@ class testIterFile(unittest.TestCase):
         """Test iter to file conversion"""
         for itm in [self.iter1maker, self.iter2maker]:
             self.assertTrue(
-                iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm()))))
+                iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm())))
+            )
 
     def testFile(self):
         """Test sending files through iters"""
@@ -147,8 +154,7 @@ class testMiscIters(unittest.TestCase):
         """Test flushing property of MiscIterToFile"""
         rplist = [self.outputrp, MiscIterFlush, self.outputrp]
         filelike = MiscIterToFile(iter(rplist))
-        new_filelike = io.BytesIO(
-            (filelike.read() + b"z" + filelike._i2b(0, 7)))
+        new_filelike = io.BytesIO((filelike.read() + b"z" + filelike._i2b(0, 7)))
 
         i_out = FileToMiscIter(new_filelike)
         self.assertEqual(next(i_out), self.outputrp)
@@ -163,8 +169,7 @@ class testMiscIters(unittest.TestCase):
         """Test flushing like above, but have Flush obj emerge from iter"""
         rplist = [self.outputrp, MiscIterFlushRepeat, self.outputrp]
         filelike = MiscIterToFile(iter(rplist))
-        new_filelike = io.BytesIO(
-            (filelike.read() + b"z" + filelike._i2b(0, 7)))
+        new_filelike = io.BytesIO((filelike.read() + b"z" + filelike._i2b(0, 7)))
 
         i_out = FileToMiscIter(new_filelike)
         self.assertEqual(next(i_out), self.outputrp)

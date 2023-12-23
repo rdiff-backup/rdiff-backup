@@ -10,16 +10,22 @@ import build.util
 def get_args():
     """Parse the command line arguments"""
     args_parser = argparse.ArgumentParser(
-        description="Output some or all metadata of a given project")
-    args_parser.add_argument('--path', '-p', default='.',
-                             help="Path where to find the project (default: current path)")
-    args_parser.add_argument('keys', nargs='*',
-                             help="Metadata keys to output (else output all metadata)")
+        description="Output some or all metadata of a given project"
+    )
+    args_parser.add_argument(
+        "--path",
+        "-p",
+        default=".",
+        help="Path where to find the project (default: current path)",
+    )
+    args_parser.add_argument(
+        "keys", nargs="*", help="Metadata keys to output (else output all metadata)"
+    )
     args = args_parser.parse_args()
     return args
 
 
-def get_metadata(path='.'):
+def get_metadata(path="."):
     """Get project metadata from the given path"""
     path = pathlib.Path(path)
     try:
@@ -41,5 +47,5 @@ def main():
         print(metadata)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -33,6 +33,7 @@ class InfoAction(actions.BaseAction):
     Output information about the current system, so that it can be used in
     in a bug report, and exits.
     """
+
     name = "info"
     security = None
     # information has no specific sub-options
@@ -47,8 +48,7 @@ class InfoAction(actions.BaseAction):
             return ret_code
 
         runtime_info = Globals.get_runtime_info()
-        print(yaml.safe_dump(runtime_info,
-                             explicit_start=True, explicit_end=True))
+        print(yaml.safe_dump(runtime_info, explicit_start=True, explicit_end=True))
         return ret_code
 
 

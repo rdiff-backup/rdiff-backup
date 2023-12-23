@@ -37,6 +37,7 @@ class FSAbilities:
     """
     Store capabilities of given file system
     """
+
     extended_filenames = None  # True if filenames can have non-ASCII chars
     win_reserved_filenames = None  # True if filenames can't have ",*,: etc.
     case_sensitive = None  # True if "foobar" and "FoObAr" are different files
@@ -61,9 +62,9 @@ class FSAbilities:
         """
         FSAbilities initializer.
         """
-        assert root_rp.conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}.".format(
-                conn=root_rp.conn))
+        assert (
+            root_rp.conn is Globals.local_connection
+        ), "Action only foreseen locally and not over {conn}.".format(conn=root_rp.conn)
         self.root_rp = root_rp
         self.writable = writable
         if self.writable:
@@ -75,49 +76,54 @@ class FSAbilities:
         """
         Return pretty printable version of file system abilities
         """
-        s = ['-' * 65]
+        s = ["-" * 65]
 
         def addline(desc, val_text):
             """Add description line to s"""
-            s.append('  %s%s%s' % (desc, ' ' * (45 - len(desc)), val_text))
+            s.append("  %s%s%s" % (desc, " " * (45 - len(desc)), val_text))
 
         def add_boolean_list(pair_list):
             """Add lines from list of (desc, boolean) pairs"""
             for desc, boolean in pair_list:
                 if boolean:
-                    val_text = 'On'
+                    val_text = "On"
                 elif boolean is None:
-                    val_text = 'N/A'
+                    val_text = "N/A"
                 else:
-                    val_text = 'Off'
+                    val_text = "Off"
                 addline(desc, val_text)
 
         if self.writable:
             s.append("Detected abilities for read/write file system")
-            add_boolean_list([
-                ('Ownership changing', self.ownership),
-                ('Hard linking', self.hardlinks),
-                ('fsync() directories', self.fsync_dirs),
-                ('Directory inc permissions', self.dir_inc_perms),
-                ('High-bit permissions', self.high_perms),
-                ('Symlink permissions', self.symlink_perms),
-                ('Extended filenames', self.extended_filenames),
-                ('Windows reserved filenames', self.win_reserved_filenames),
-            ])
+            add_boolean_list(
+                [
+                    ("Ownership changing", self.ownership),
+                    ("Hard linking", self.hardlinks),
+                    ("fsync() directories", self.fsync_dirs),
+                    ("Directory inc permissions", self.dir_inc_perms),
+                    ("High-bit permissions", self.high_perms),
+                    ("Symlink permissions", self.symlink_perms),
+                    ("Extended filenames", self.extended_filenames),
+                    ("Windows reserved filenames", self.win_reserved_filenames),
+                ]
+            )
         else:
             s.append("Detected abilities for read-only file system")
 
         add_boolean_list(
-            [('Access control lists', self.acls),
-             ('Extended attributes', self.eas),
-             ('Windows access control lists', self.win_acls),
-             ('Case sensitivity', self.case_sensitive),
-             ('Escape DOS devices', self.escape_dos_devices),
-             ('Escape trailing spaces', self.escape_trailing_spaces),
-             ('Mac OS X style resource forks', self.resource_forks),
-             ('Mac OS X Finder information', self.carbonfile)])
+            [
+                ("Access control lists", self.acls),
+                ("Extended attributes", self.eas),
+                ("Windows access control lists", self.win_acls),
+                ("Case sensitivity", self.case_sensitive),
+                ("Escape DOS devices", self.escape_dos_devices),
+                ("Escape trailing spaces", self.escape_trailing_spaces),
+                ("Mac OS X style resource forks", self.resource_forks),
+                ("Mac OS X Finder information", self.carbonfile),
+            ]
+        )
         s.append(s[0])
-        return '\n'.join(s)
+        return "\n".join(s)
 
     def _init_readonly(self):
         """
@@ -147,7 +153,8 @@ class FSAbilities:
         if not self.root_rp.isdir():
             assert not self.root_rp.lstat(), (
                 "Root path '{rp}' can't be writable, exist and not be "
-                "a directory.".format(rp=self.root_rp))
+                "a directory.".format(rp=self.root_rp)
+            )
             self.root_rp.mkdir()
         subdir = self.root_rp.get_temp_rpath()
         subdir.mkdir()
@@ -196,8 +203,11 @@ class FSAbilities:
             self.hardlinks = None
             return
         elif not Globals.preserve_hardlinks:
-            log.Log("Hard linking test skipped as rdiff-backup was started "
-                    "with --no-hard-links option", log.INFO)
+            log.Log(
+                "Hard linking test skipped as rdiff-backup was started "
+                "with --no-hard-links option",
+                log.INFO,
+            )
             self.hardlinks = None
             return
         hl_source = testdir.append("hardlinked_file1")
@@ -210,9 +220,11 @@ class FSAbilities:
             if hl_source.getinode() != hl_dest.getinode():
                 raise OSError(errno.EOPNOTSUPP, "Hard links don't compare")
         except (OSError, AttributeError):
-            log.Log("Hard linking not supported by filesystem at "
-                    "path {pa}, hard links will be copied instead".format(
-                        pa=self.root_rp), log.NOTE)
+            log.Log(
+                "Hard linking not supported by filesystem at "
+                "path {pa}, hard links will be copied instead".format(pa=self.root_rp),
+                log.NOTE,
+            )
             self.hardlinks = False
         else:
             self.hardlinks = True
@@ -224,9 +236,11 @@ class FSAbilities:
         try:
             testdir.fsync()
         except OSError:
-            log.Log("Directories on file system at path {pa} are not "
-                    "fsyncable. Assuming it's unnecessary.".format(pa=testdir),
-                    log.INFO)
+            log.Log(
+                "Directories on file system at path {pa} are not "
+                "fsyncable. Assuming it's unnecessary.".format(pa=testdir),
+                log.INFO,
+            )
             self.fsync_dirs = False
         else:
             self.fsync_dirs = True
@@ -239,18 +253,18 @@ class FSAbilities:
 
         # Make sure ordinary filenames ok
         try:
-            ordinary_filename = b'5-_ a.snapshot.gz'
+            ordinary_filename = b"5-_ a.snapshot.gz"
             ord_rp = subdir.append(ordinary_filename)
             ord_rp.touch()
             ord_rp.delete()
         except OSError as exc:
             log.Log.FatalError(
                 "File with normal name '{nn}' couldn't be created, "
-                "and failed with exception '{ex}'.".format(nn=ord_rp, ex=exc))
+                "and failed with exception '{ex}'.".format(nn=ord_rp, ex=exc)
+            )
 
         # Try path with UTF-8 encoded character
-        extended_filename = (
-            'uni' + chr(225) + chr(132) + chr(137)).encode('utf-8')
+        extended_filename = ("uni" + chr(225) + chr(132) + chr(137)).encode("utf-8")
         ext_rp = None
         try:
             ext_rp = subdir.append(extended_filename)
@@ -270,8 +284,8 @@ class FSAbilities:
                 log.Log.FatalError(
                     "Could not delete extended filenames test file {tf}. "
                     "If you are using a CIFS share, please see the FAQ entry "
-                    "about characters being transformed to a '?'".format(
-                        tf=ext_rp))
+                    "about characters being transformed to a '?'".format(tf=ext_rp)
+                )
             self.extended_filenames = True
 
     def _detect_win_reserved_filenames(self, subdir):
@@ -305,25 +319,34 @@ class FSAbilities:
         Does not write. Needs to be local
         """
         if not Globals.acls_active:
-            log.Log("POSIX ACLs test skipped as rdiff-backup was started "
-                    "with --no-acls option", log.INFO)
+            log.Log(
+                "POSIX ACLs test skipped as rdiff-backup was started "
+                "with --no-acls option",
+                log.INFO,
+            )
             self.acls = None
             return
 
         try:
             import posix1e
         except ImportError:
-            log.Log("Unable to import module posix1e from pylibacl package. "
-                    "POSIX ACLs not supported on filesystem at "
-                    "path {pa}".format(pa=rp), log.INFO)
+            log.Log(
+                "Unable to import module posix1e from pylibacl package. "
+                "POSIX ACLs not supported on filesystem at "
+                "path {pa}".format(pa=rp),
+                log.INFO,
+            )
             self.acls = False
             return
 
         try:
             posix1e.ACL(file=rp.path)
         except OSError as exc:
-            log.Log("POSIX ACLs not supported by filesystem at path {pa} "
-                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
+            log.Log(
+                "POSIX ACLs not supported by filesystem at path {pa} "
+                "due to exception '{ex}'".format(pa=rp, ex=exc),
+                log.INFO,
+            )
             self.acls = False
         else:
             self.acls = True
@@ -346,7 +369,8 @@ class FSAbilities:
                     "We're sorry but the target file system at path '{pa}' "
                     "isn't deemed reliable enough for a backup. "
                     "It takes too long or doesn't register case insensitive "
-                    "deletion of files.".format(pa=subdir))
+                    "deletion of files.".format(pa=subdir)
+                )
             self.case_sensitive = False
         else:
             upper_a.delete()
@@ -397,7 +421,9 @@ class FSAbilities:
                 "because we can't find any files with letters in them. "
                 "It will be treated as case sensitive: unnecessary but "
                 "harmless quoting of capital letters might happen if the "
-                "target repository is case insensitive".format(sd=rp), log.NOTE)
+                "target repository is case insensitive".format(sd=rp),
+                log.NOTE,
+            )
             self.case_sensitive = True
             return
 
@@ -407,13 +433,16 @@ class FSAbilities:
         """
         Set extended attributes from rp. Tests writing if write is true.
         """
-        assert rp.conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}.".format(
-                conn=rp.conn))
+        assert (
+            rp.conn is Globals.local_connection
+        ), "Action only foreseen locally and not over {conn}.".format(conn=rp.conn)
         assert rp.lstat(), "Path '{rp}' must exist to test EAs.".format(rp=rp)
         if not Globals.eas_active:
-            log.Log("Extended attributes test skipped as rdiff-backup was "
-                    "started with --no-eas option", log.INFO)
+            log.Log(
+                "Extended attributes test skipped as rdiff-backup was "
+                "started with --no-eas option",
+                log.INFO,
+            )
             self.eas = None
             return
         try:
@@ -425,7 +454,8 @@ class FSAbilities:
                 log.Log(
                     "Unable to import module (py)xattr. Extended attributes "
                     "not supported on filesystem at path {pa}".format(pa=rp),
-                    log.INFO)
+                    log.INFO,
+                )
                 self.eas = False
                 return
 
@@ -437,9 +467,11 @@ class FSAbilities:
                 read_ea = xattr.get(rp.path, b"user.test")
                 xattr.remove(rp.path, b"user.test")
         except OSError as exc:
-            log.Log("Extended attributes not supported by filesystem at "
-                    "path {pa} due to exception '{ex}'".format(pa=rp, ex=exc),
-                    log.NOTE)
+            log.Log(
+                "Extended attributes not supported by filesystem at "
+                "path {pa} due to exception '{ex}'".format(pa=rp, ex=exc),
+                log.NOTE,
+            )
             self.eas = False
         else:
             if write and read_ea != test_ea:
@@ -448,7 +480,9 @@ class FSAbilities:
                     "path {pa}. Please upgrade the filesystem driver, contact "
                     "the developers, or use the --no-eas option to disable "
                     "extended attributes support and suppress this "
-                    "message".format(pa=rp), log.WARNING)
+                    "message".format(pa=rp),
+                    log.WARNING,
+                )
                 self.eas = False
             else:
                 self.eas = True
@@ -457,14 +491,16 @@ class FSAbilities:
         """
         Test if windows access control lists are supported
         """
-        assert dir_rp.conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}.".format(
-                conn=dir_rp.conn))
-        assert dir_rp.lstat(), "Path '{rp}' must exist to test ACLs.".format(
-            rp=dir_rp)
+        assert (
+            dir_rp.conn is Globals.local_connection
+        ), "Action only foreseen locally and not over {conn}.".format(conn=dir_rp.conn)
+        assert dir_rp.lstat(), "Path '{rp}' must exist to test ACLs.".format(rp=dir_rp)
         if not Globals.win_acls_active:
-            log.Log("Windows ACLs test skipped as rdiff-backup was started "
-                    "with --no-acls option", log.INFO)
+            log.Log(
+                "Windows ACLs test skipped as rdiff-backup was started "
+                "with --no-acls option",
+                log.INFO,
+            )
             self.win_acls = None
             return
 
@@ -472,39 +508,52 @@ class FSAbilities:
             import win32security
             import pywintypes
         except ImportError:
-            log.Log("Unable to import win32security module. Windows ACLs not "
-                    "supported by filesystem at path {pa}".format(pa=dir_rp),
-                    log.INFO)
+            log.Log(
+                "Unable to import win32security module. Windows ACLs not "
+                "supported by filesystem at path {pa}".format(pa=dir_rp),
+                log.INFO,
+            )
             self.win_acls = False
             return
         try:
             sd = win32security.GetNamedSecurityInfo(
-                os.fsdecode(dir_rp.path), win32security.SE_FILE_OBJECT,
+                os.fsdecode(dir_rp.path),
+                win32security.SE_FILE_OBJECT,
                 win32security.OWNER_SECURITY_INFORMATION
                 | win32security.GROUP_SECURITY_INFORMATION
-                | win32security.DACL_SECURITY_INFORMATION)
+                | win32security.DACL_SECURITY_INFORMATION,
+            )
             acl = sd.GetSecurityDescriptorDacl()
             acl.GetAceCount()  # to verify that it works
             if write:
                 win32security.SetNamedSecurityInfo(
-                    os.fsdecode(dir_rp.path), win32security.SE_FILE_OBJECT,
+                    os.fsdecode(dir_rp.path),
+                    win32security.SE_FILE_OBJECT,
                     win32security.OWNER_SECURITY_INFORMATION
                     | win32security.GROUP_SECURITY_INFORMATION
                     | win32security.DACL_SECURITY_INFORMATION,
                     sd.GetSecurityDescriptorOwner(),
                     sd.GetSecurityDescriptorGroup(),
-                    sd.GetSecurityDescriptorDacl(), None)
+                    sd.GetSecurityDescriptorDacl(),
+                    None,
+                )
         except (OSError, AttributeError, pywintypes.error):
-            log.Log("Unable to load a Windows ACL. Windows ACLs not supported "
-                    "by filesystem at path {pa}".format(pa=dir_rp), log.INFO)
+            log.Log(
+                "Unable to load a Windows ACL. Windows ACLs not supported "
+                "by filesystem at path {pa}".format(pa=dir_rp),
+                log.INFO,
+            )
             self.win_acls = False
             return
 
         try:
             acl_win.init_acls()  # FIXME there should be no cross-dependency
         except (OSError, AttributeError, pywintypes.error):
-            log.Log("Unable to init win_acls. Windows ACLs not supported by "
-                    "filesystem at path {pa}".format(pa=dir_rp), log.INFO)
+            log.Log(
+                "Unable to init win_acls. Windows ACLs not supported by "
+                "filesystem at path {pa}".format(pa=dir_rp),
+                log.INFO,
+            )
             self.win_acls = False
             return
         self.win_acls = True
@@ -513,7 +562,7 @@ class FSAbilities:
         """
         See if increments can have full permissions like a directory
         """
-        test_rp = rp.append('dir_inc_check')
+        test_rp = rp.append("dir_inc_check")
         test_rp.touch()
         try:
             test_rp.chmod(0o7777, 4)
@@ -541,7 +590,7 @@ class FSAbilities:
             return
 
         try:
-            Carbon.File.FSSpec('.')  # just to verify that it works
+            Carbon.File.FSSpec(".")  # just to verify that it works
         except BaseException:
             self.carbonfile = False
             return
@@ -552,27 +601,25 @@ class FSAbilities:
         """
         Test for resource forks by writing to regular_file/..namedfork/rsrc
         """
-        assert dir_rp.conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}.".format(
-                conn=dir_rp.conn))
-        reg_rp = dir_rp.append('regfile')
+        assert (
+            dir_rp.conn is Globals.local_connection
+        ), "Action only foreseen locally and not over {conn}.".format(conn=dir_rp.conn)
+        reg_rp = dir_rp.append("regfile")
         reg_rp.touch()
 
-        s = b'test string---this should end up in resource fork'
+        s = b"test string---this should end up in resource fork"
         try:
-            fp_write = open(
-                os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'wb')
+            fp_write = open(os.path.join(reg_rp.path, b"..namedfork", b"rsrc"), "wb")
             fp_write.write(s)
             fp_write.close()
 
-            fp_read = open(
-                os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'rb')
+            fp_read = open(os.path.join(reg_rp.path, b"..namedfork", b"rsrc"), "rb")
             s_back = fp_read.read()
             fp_read.close()
         except OSError:
             self.resource_forks = False
         else:
-            self.resource_forks = (s_back == s)
+            self.resource_forks = s_back == s
         reg_rp.delete()
 
     def _detect_resource_fork_readonly(self, dir_rp):
@@ -586,8 +633,8 @@ class FSAbilities:
         for rp in selection.Select(dir_rp).get_select_iter():
             if rp.isreg():
                 try:
-                    rfork = rp.append(b'..namedfork', b'rsrc')
-                    fp = rfork.open('rb')
+                    rfork = rp.append(b"..namedfork", b"rsrc")
+                    fp = rfork.open("rb")
                     fp.read()
                     fp.close()
                 except OSError:
@@ -661,7 +708,7 @@ class FSAbilities:
                 self.escape_dos_devices = True
             else:
                 self.escape_dos_devices = False
-        except (OSError):
+        except OSError:
             self.escape_dos_devices = True
 
     def _detect_escape_trailing_spaces_readwrite(self, testdir):
@@ -678,15 +725,16 @@ class FSAbilities:
         if period_rp.lstat():
             log.Log.FatalError(
                 "Test file '{tf}' already exists where it shouldn't, something "
-                "is very wrong with your file system".format(tf=period_rp))
+                "is very wrong with your file system".format(tf=period_rp)
+            )
 
         tmp_rp = testdir.append("foo")
         tmp_rp.touch()
         if not tmp_rp.lstat():
             log.Log.FatalError(
                 "Test file '{tf}' doesn't exist even though it's been created, "
-                "something is very wrong with your file system".format(
-                    tf=tmp_rp))
+                "something is very wrong with your file system".format(tf=tmp_rp)
+            )
 
         period_rp.setdata()
         # either the foo and foo. files are the same, or foo. can't be created,
@@ -700,7 +748,7 @@ class FSAbilities:
                     self.escape_trailing_spaces = False
                 else:
                     self.escape_trailing_spaces = True
-            except (OSError):
+            except OSError:
                 self.escape_trailing_spaces = True
 
         tmp_rp.delete()
@@ -722,7 +770,7 @@ class FSAbilities:
                 self.escape_trailing_spaces = False
                 return
             # we test only periods and assume the same result for spaces
-            period = filename + b'.'
+            period = filename + b"."
             if period in dirlist:
                 self.escape_trailing_spaces = False
                 return
@@ -735,12 +783,15 @@ class FSAbilities:
                 return
 
         # no file could be found to do any test
-        log.Log("Could not determine if source directory {sd} permits "
-                "trailing spaces or periods in filenames because we can't "
-                "find any files with trailing dot/period. "
-                "It will be treated as permitting such files, but none will "
-                "exist if it doesn't, so it doesn't really matter and is "
-                "harmless".format(sd=rp), log.INFO)
+        log.Log(
+            "Could not determine if source directory {sd} permits "
+            "trailing spaces or periods in filenames because we can't "
+            "find any files with trailing dot/period. "
+            "It will be treated as permitting such files, but none will "
+            "exist if it doesn't, so it doesn't really matter and is "
+            "harmless".format(sd=rp),
+            log.INFO,
+        )
         self.escape_trailing_spaces = False
 
 
@@ -762,52 +813,63 @@ class SetGlobals:
         self.dest_loc = dest_loc
 
     def set_eas(self):
-        self._update_triple(self.src_fsa.eas, self.dest_fsa.eas,
-                            ('eas_active', 'eas_write', 'eas_conn'))
+        self._update_triple(
+            self.src_fsa.eas, self.dest_fsa.eas, ("eas_active", "eas_write", "eas_conn")
+        )
 
     def set_acls(self):
-        self._update_triple(self.src_fsa.acls, self.dest_fsa.acls,
-                            ('acls_active', 'acls_write', 'acls_conn'))
+        self._update_triple(
+            self.src_fsa.acls,
+            self.dest_fsa.acls,
+            ("acls_active", "acls_write", "acls_conn"),
+        )
         if Globals.never_drop_acls and not Globals.acls_active:
-            log.Log.FatalError("--never-drop-acls specified, but ACL support "
-                               "missing from source filesystem")
+            log.Log.FatalError(
+                "--never-drop-acls specified, but ACL support "
+                "missing from source filesystem"
+            )
 
     def set_win_acls(self):
         self._update_triple(
-            self.src_fsa.win_acls, self.dest_fsa.win_acls,
-            ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
+            self.src_fsa.win_acls,
+            self.dest_fsa.win_acls,
+            ("win_acls_active", "win_acls_write", "win_acls_conn"),
+        )
 
     def set_resource_forks(self):
         self._update_triple(
-            self.src_fsa.resource_forks, self.dest_fsa.resource_forks,
-            ('resource_forks_active', 'resource_forks_write',
-             'resource_forks_conn'))
+            self.src_fsa.resource_forks,
+            self.dest_fsa.resource_forks,
+            ("resource_forks_active", "resource_forks_write", "resource_forks_conn"),
+        )
 
     def set_carbonfile(self):
         self._update_triple(
-            self.src_fsa.carbonfile, self.dest_fsa.carbonfile,
-            ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
+            self.src_fsa.carbonfile,
+            self.dest_fsa.carbonfile,
+            ("carbonfile_active", "carbonfile_write", "carbonfile_conn"),
+        )
 
     def set_hardlinks(self):
         if Globals.preserve_hardlinks != 0:
-            Globals.set_all('preserve_hardlinks', self.dest_fsa.hardlinks)
+            Globals.set_all("preserve_hardlinks", self.dest_fsa.hardlinks)
 
     def set_fsync_directories(self):
-        Globals.set_all('fsync_directories', self.dest_fsa.fsync_dirs)
+        Globals.set_all("fsync_directories", self.dest_fsa.fsync_dirs)
 
     def set_change_ownership(self):
-        Globals.set_all('change_ownership', self.dest_fsa.ownership)
+        Globals.set_all("change_ownership", self.dest_fsa.ownership)
 
     def set_high_perms(self):
         if not self.dest_fsa.high_perms:
-            Globals.set_all('permission_mask', 0o777)
+            Globals.set_all("permission_mask", 0o777)
 
     def set_symlink_perms(self):
-        Globals.set_all('symlink_perms', self.dest_fsa.symlink_perms)
+        Globals.set_all("symlink_perms", self.dest_fsa.symlink_perms)
 
     def set_compatible_timestamps(self):
         if Globals.chars_to_quote.find(b":") > -1:
-            Globals.set_all('use_compatible_timestamps', 1)
+            Globals.set_all("use_compatible_timestamps", 1)
             # Update the current time string to new timestamp format
             Time.set_current_time(Time.getcurtime())
             log.Log("Enabled use_compatible_timestamps", log.INFO)
@@ -856,10 +918,13 @@ class Dir2RepoSetGlobals(SetGlobals):
         not require it.
         """
 
-        suggested_edd = (self.dest_fsa.escape_dos_devices
-                         and not self.src_fsa.escape_dos_devices)
-        suggested_ets = (self.dest_fsa.escape_trailing_spaces
-                         and not self.src_fsa.escape_trailing_spaces)
+        suggested_edd = (
+            self.dest_fsa.escape_dos_devices and not self.src_fsa.escape_dos_devices
+        )
+        suggested_ets = (
+            self.dest_fsa.escape_trailing_spaces
+            and not self.src_fsa.escape_trailing_spaces
+        )
 
         se = repo.get_special_escapes()
         if se is None:
@@ -871,26 +936,27 @@ class Dir2RepoSetGlobals(SetGlobals):
                 se.add("escape_trailing_spaces")
             repo.set_special_escapes(se)
         else:
-            actual_edd = ("escape_dos_devices" in se)
-            actual_ets = ("escape_trailing_spaces" in se)
+            actual_edd = "escape_dos_devices" in se
+            actual_ets = "escape_trailing_spaces" in se
 
             if actual_edd != suggested_edd and not suggested_edd:
-                log.Log("System no longer needs DOS devices to be escaped, "
-                        "but we will retain for backwards compatibility",
-                        log.WARNING)
+                log.Log(
+                    "System no longer needs DOS devices to be escaped, "
+                    "but we will retain for backwards compatibility",
+                    log.WARNING,
+                )
             if actual_ets != suggested_ets and not suggested_ets:
                 log.Log(
                     "System no longer needs trailing spaces or periods to be "
                     "escaped, but we will retain for backwards compatibility",
-                    log.WARNING)
+                    log.WARNING,
+                )
 
-        Globals.set_all('escape_dos_devices', actual_edd)
-        log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd),
-                log.INFO)
+        Globals.set_all("escape_dos_devices", actual_edd)
+        log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd), log.INFO)
 
-        Globals.set_all('escape_trailing_spaces', actual_ets)
-        log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
-                log.INFO)
+        Globals.set_all("escape_trailing_spaces", actual_ets)
+        log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets), log.INFO)
 
     def set_chars_to_quote(self, repo):
         """
@@ -901,12 +967,11 @@ class Dir2RepoSetGlobals(SetGlobals):
         directory, not just the current fs features.
         """
         ctq = self._compare_ctq_file(repo, self._get_ctq_from_fsas())
-        regexp, unregexp = map_filenames.get_quoting_regexps(
-            ctq, Globals.quoting_char)
+        regexp, unregexp = map_filenames.get_quoting_regexps(ctq, Globals.quoting_char)
 
-        Globals.set_all('chars_to_quote', ctq)
-        Globals.set_all('chars_to_quote_regexp', regexp)
-        Globals.set_all('chars_to_quote_unregexp', unregexp)
+        Globals.set_all("chars_to_quote", ctq)
+        Globals.set_all("chars_to_quote_regexp", regexp)
+        Globals.set_all("chars_to_quote_unregexp", unregexp)
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """
@@ -935,13 +1000,13 @@ class Dir2RepoSetGlobals(SetGlobals):
             ctq.append(b"A-Z")  # Quote upper case
         # on a read-only file system, the variable would be None, to be ignored
         if self.dest_fsa.extended_filenames is False:
-            ctq.append(b'\000-\037')  # Quote 0 - 31
-            ctq.append(b'\200-\377')  # Quote non-ASCII characters 0x80 - 0xFF
+            ctq.append(b"\000-\037")  # Quote 0 - 31
+            ctq.append(b"\200-\377")  # Quote non-ASCII characters 0x80 - 0xFF
         if self.dest_fsa.win_reserved_filenames:
             if self.dest_fsa.extended_filenames:
-                ctq.append(b'\000-\037')  # Quote 0 - 31
+                ctq.append(b"\000-\037")  # Quote 0 - 31
             # Quote ", *, /, :, <, >, ?, \, |, and 127 (DEL)
-            ctq.append(b'\"*/:<>?\\\\|\177')
+            ctq.append(b'"*/:<>?\\\\|\177')
 
         # Quote quoting char if quoting anything
         if ctq:
@@ -961,11 +1026,14 @@ class Dir2RepoSetGlobals(SetGlobals):
             else:
                 actual_ctq = Globals.chars_to_quote
                 if actual_ctq != suggested_ctq:
-                    log.Log("File system at '{fs}' suggested quoting '{sq}' "
-                            "but override quoting '{oq}' will be used. "
-                            "Assuming you know what you are doing".format(
-                                fs=repo, sq=suggested_ctq, oq=actual_ctq),
-                            log.NOTE)
+                    log.Log(
+                        "File system at '{fs}' suggested quoting '{sq}' "
+                        "but override quoting '{oq}' will be used. "
+                        "Assuming you know what you are doing".format(
+                            fs=repo, sq=suggested_ctq, oq=actual_ctq
+                        ),
+                        log.NOTE,
+                    )
             repo.set_chars_to_quote(actual_ctq)
             return actual_ctq
 
@@ -976,17 +1044,23 @@ class Dir2RepoSetGlobals(SetGlobals):
             else:
                 actual_ctq = previous_ctq
                 if previous_ctq and not suggested_ctq:
-                    log.Log("File system at '{fs}' no longer needs quoting "
-                            "but we will retain for backwards "
-                            "compatibility".format(fs=repo), log.NOTE)
+                    log.Log(
+                        "File system at '{fs}' no longer needs quoting "
+                        "but we will retain for backwards "
+                        "compatibility".format(fs=repo),
+                        log.NOTE,
+                    )
         else:
             actual_ctq = Globals.chars_to_quote  # Globals override
             if actual_ctq != suggested_ctq:
-                log.Log("File system at '{fs}' suggested quoting '{sq}' "
-                        "but override quoting '{oq}' will be used. "
-                        "Assuming you know what you are doing".format(
-                            fs=repo, sq=suggested_ctq, oq=actual_ctq),
-                        log.NOTE)
+                log.Log(
+                    "File system at '{fs}' suggested quoting '{sq}' "
+                    "but override quoting '{oq}' will be used. "
+                    "Assuming you know what you are doing".format(
+                        fs=repo, sq=suggested_ctq, oq=actual_ctq
+                    ),
+                    log.NOTE,
+                )
 
         # the quoting didn't change so all is good
         if actual_ctq == previous_ctq:
@@ -997,7 +1071,9 @@ class Dir2RepoSetGlobals(SetGlobals):
                 "old quoting chars '{oq}' to new quoting chars '{nq}'. "
                 "This may mean that the repository has been moved between "
                 "different file systems, and isn't supported".format(
-                    rq=repo, oq=previous_ctq, nq=actual_ctq))
+                    rq=repo, oq=previous_ctq, nq=actual_ctq
+                )
+            )
 
 
 class Repo2DirSetGlobals(SetGlobals):
@@ -1037,26 +1113,28 @@ class Repo2DirSetGlobals(SetGlobals):
         """
         se = repo.get_special_escapes()
         if se is not None:
-            actual_edd = ("escape_dos_devices" in se)
-            actual_ets = ("escape_trailing_spaces" in se)
+            actual_edd = "escape_dos_devices" in se
+            actual_ets = "escape_trailing_spaces" in se
         else:
             if getattr(self, "src_fsa", None) is not None:
-                actual_edd = (self.src_fsa.escape_dos_devices
-                              and not self.dest_fsa.escape_dos_devices)
-                actual_ets = (self.src_fsa.escape_trailing_spaces
-                              and not self.dest_fsa.escape_trailing_spaces)
+                actual_edd = (
+                    self.src_fsa.escape_dos_devices
+                    and not self.dest_fsa.escape_dos_devices
+                )
+                actual_ets = (
+                    self.src_fsa.escape_trailing_spaces
+                    and not self.dest_fsa.escape_trailing_spaces
+                )
             else:
                 # Single filesystem operation
                 actual_edd = self.dest_fsa.escape_dos_devices
                 actual_ets = self.dest_fsa.escape_trailing_spaces
 
-        Globals.set_all('escape_dos_devices', actual_edd)
-        log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd),
-                log.INFO)
+        Globals.set_all("escape_dos_devices", actual_edd)
+        log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd), log.INFO)
 
-        Globals.set_all('escape_trailing_spaces', actual_ets)
-        log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets),
-                log.INFO)
+        Globals.set_all("escape_trailing_spaces", actual_ets)
+        log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets), log.INFO)
 
     def set_chars_to_quote(self, repo):
         """
@@ -1071,14 +1149,17 @@ class Repo2DirSetGlobals(SetGlobals):
 
         if ctq is not None:
             regexp, unregexp = map_filenames.get_quoting_regexps(
-                ctq, Globals.quoting_char)
+                ctq, Globals.quoting_char
+            )
             Globals.set_all("chars_to_quote", ctq)
-            Globals.set_all('chars_to_quote_regexp', regexp)
-            Globals.set_all('chars_to_quote_unregexp', unregexp)
+            Globals.set_all("chars_to_quote_regexp", regexp)
+            Globals.set_all("chars_to_quote_unregexp", unregexp)
         else:
-            log.Log("chars_to_quote config not found, assuming no quoting "
-                    "required in backup repository".format(),
-                    log.WARNING)
+            log.Log(
+                "chars_to_quote config not found, assuming no quoting "
+                "required in backup repository".format(),
+                log.WARNING,
+            )
             Globals.set_all("chars_to_quote", b"")
 
     def _update_triple(self, src_support, dest_support, attr_triple):
@@ -1136,28 +1217,30 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         return Globals.RET_CODE_OK
 
     def set_eas(self):
-        self._update_triple(
-            self.dest_fsa.eas, ('eas_active', 'eas_write', 'eas_conn'))
+        self._update_triple(self.dest_fsa.eas, ("eas_active", "eas_write", "eas_conn"))
 
     def set_acls(self):
         self._update_triple(
-            self.dest_fsa.acls, ('acls_active', 'acls_write', 'acls_conn'))
+            self.dest_fsa.acls, ("acls_active", "acls_write", "acls_conn")
+        )
 
     def set_win_acls(self):
         self._update_triple(
             self.dest_fsa.win_acls,
-            ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
+            ("win_acls_active", "win_acls_write", "win_acls_conn"),
+        )
 
     def set_resource_forks(self):
         self._update_triple(
             self.dest_fsa.resource_forks,
-            ('resource_forks_active', 'resource_forks_write',
-             'resource_forks_conn'))
+            ("resource_forks_active", "resource_forks_write", "resource_forks_conn"),
+        )
 
     def set_carbonfile(self):
         self._update_triple(
             self.dest_fsa.carbonfile,
-            ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
+            ("carbonfile_active", "carbonfile_write", "carbonfile_conn"),
+        )
 
     def _update_triple(self, fsa_support, attr_triple):
         """

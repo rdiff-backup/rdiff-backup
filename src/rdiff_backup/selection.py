@@ -32,16 +32,19 @@ from rdiffbackup.utils import safestr
 
 class SelectError(Exception):
     """Some error dealing with the Select class"""
+
     pass
 
 
 class FilePrefixError(SelectError):
     """Signals that a specified file doesn't start with correct prefix"""
+
     pass
 
 
 class GlobbingError(SelectError):
     """Something has gone wrong when parsing a glob string"""
+
     pass
 
 
@@ -79,6 +82,7 @@ class Select:
     be redundant and presumably isn't what the user intends.
 
     """
+
     # This re should not match normal filenames, but usually just globs
     glob_re = re.compile(b"(.*[*?[\\\\]|ignorecase\\:)", re.I | re.S)
 
@@ -91,8 +95,9 @@ class Select:
 
     def __init__(self, rootrp):
         """Select initializer.  rpath is the root directory"""
-        assert isinstance(rootrp, rpath.RPath), (
-            "Root path '{rp}' must be a real remote path.".format(rp=rootrp))
+        assert isinstance(
+            rootrp, rpath.RPath
+        ), "Root path '{rp}' must be a real remote path.".format(rp=rootrp)
         self.selection_functions = []
         self.rpath = rootrp
         self.prefix = self.rpath.path
@@ -147,31 +152,39 @@ class Select:
                 elif opt in self._sel_filelist_mapping:
                     self._add_selection_func(
                         self._filelist_get_sf(
-                            filelists[filelists_index], self._sel_filelist_mapping[opt], arg))
+                            filelists[filelists_index],
+                            self._sel_filelist_mapping[opt],
+                            arg,
+                        )
+                    )
                     filelists_index += 1
                 elif opt in self._sel_globfilelist_mapping:
                     list(
                         map(
                             self._add_selection_func,
                             self._filelist_globbing_get_sfs(
-                                filelists[filelists_index], self._sel_globfilelist_mapping[opt], arg)))
+                                filelists[filelists_index],
+                                self._sel_globfilelist_mapping[opt],
+                                arg,
+                            ),
+                        )
+                    )
                     filelists_index += 1
                 else:
-                    raise RuntimeError(
-                        "Bad selection option {opt}.".format(opt=opt))
+                    raise RuntimeError("Bad selection option {opt}.".format(opt=opt))
         except SelectError as e:
             self._parse_catch_error(e)
         assert filelists_index == len(filelists), (
             "There must be as many selection options with arguments than "
-            "lists of files.")
+            "lists of files."
+        )
 
         self._parse_last_excludes()
         self.parse_rbdir_exclude()
 
     def parse_rbdir_exclude(self):
         """Add exclusion of rdiff-backup-data dir to front of list"""
-        self._add_selection_func(
-            self._glob_get_tuple_sf((b"rdiff-backup-data", ), 0), 1)
+        self._add_selection_func(self._glob_get_tuple_sf((b"rdiff-backup-data",), 0), 1)
 
     def _init_parsing_mapping(self):
         """
@@ -185,7 +198,10 @@ class Select:
             "--exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
             "--exclude-sockets": (self._sockets_get_sf, Select.EXCLUDE),
             "--exclude-fifos": (self._fifos_get_sf, Select.EXCLUDE),
-            "--exclude-other-filesystems": (self._other_filesystems_get_sf, Select.EXCLUDE),
+            "--exclude-other-filesystems": (
+                self._other_filesystems_get_sf,
+                Select.EXCLUDE,
+            ),
             "--include-special-files": (self._special_get_sf, Select.INCLUDE),
             "--include-symbolic-links": (self._symlinks_get_sf, Select.INCLUDE),
         }
@@ -217,8 +233,7 @@ class Select:
         """
 
         def error_handler(exc, filename):
-            log.ErrorLog.write_if_open("ListError", rpath.index + (filename, ),
-                                       exc)
+            log.ErrorLog.write_if_open("ListError", rpath.index + (filename,), exc)
             return None
 
         def diryield(rpath):
@@ -231,7 +246,8 @@ class Select:
             """
             for filename in self._listdir_sorted(rpath):
                 new_rpath = robust.check_common_error(
-                    error_handler, rpath.append, (filename, ))
+                    error_handler, rpath.append, (filename,)
+                )
                 if new_rpath and new_rpath.lstat():
                     s = sel_func(new_rpath)
                     if s == 1:
@@ -272,9 +288,9 @@ class Select:
         fileindex = tuple([x for x in filename.split(b"/") if x])
 
         # are the first elements of the path the same?
-        if fileindex[:len(self.prefixindex)] != self.prefixindex:
+        if fileindex[: len(self.prefixindex)] != self.prefixindex:
             raise FilePrefixError(filename)
-        return fileindex[len(self.prefixindex):]
+        return fileindex[len(self.prefixindex) :]
 
     def _listdir_sorted(self, dir_rp):
         """List directory rpath with error logging and sorting entries"""
@@ -290,25 +306,32 @@ class Select:
     def _parse_catch_error(self, exc):
         """Deal with selection error exc"""
         if isinstance(exc, FilePrefixError):
-            log.Log.FatalError("""The file specification '{fs}'
+            log.Log.FatalError(
+                """The file specification '{fs}'
 cannot match any files in the base directory '{bd}'.
 Useful file specifications begin with the base directory or some
 pattern (such as '**') which matches the base directory""".format(
-                fs=exc, bd=self.prefix))
+                    fs=exc, bd=self.prefix
+                )
+            )
         elif isinstance(exc, GlobbingError):
-            log.Log.FatalError("Fatal Error while processing expression "
-                               "'{ex}'".format(ex=exc))
+            log.Log.FatalError(
+                "Fatal Error while processing expression " "'{ex}'".format(ex=exc)
+            )
         else:
             raise
 
     def _parse_last_excludes(self):
         """Exit with error if last selection function isn't an exclude"""
-        if (self.selection_functions
-                and not self.selection_functions[-1].exclude):
-            log.Log.FatalError("""Last selection expression {se}
+        if self.selection_functions and not self.selection_functions[-1].exclude:
+            log.Log.FatalError(
+                """Last selection expression {se}
 only specifies that files be included.  Because the default is to
 include all files, the expression is redundant.  Exiting because this
-probably isn't what you meant""".format(se=self.selection_functions[-1].name))
+probably isn't what you meant""".format(
+                    se=self.selection_functions[-1].name
+                )
+            )
 
     def _add_selection_func(self, sel_func, add_to_start=None):
         """Add another selection function at the end or beginning"""
@@ -328,8 +351,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
         """
         log.Log("Reading filelist {fl}".format(fl=filelist_name), log.INFO)
-        tuple_list, something_excluded = \
-            self._filelist_read(filelist_fp, inc_default, filelist_name)
+        tuple_list, something_excluded = self._filelist_read(
+            filelist_fp, inc_default, filelist_name
+        )
         log.Log("Sorting filelist {fl}".format(fl=filelist_name), log.INFO)
         tuple_list.sort()
         i = [0]  # We have to put index in list because of stupid scoping rules
@@ -360,15 +384,17 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
                 log.Log(
                     "File specification '{fs}' in filelist {fl} "
                     "doesn't start with correct prefix {cp}. Ignoring.".format(
-                        fs=exc, fl=filelist_name, cp=self.prefix), log.WARNING)
+                        fs=exc, fl=filelist_name, cp=self.prefix
+                    ),
+                    log.WARNING,
+                )
                 if prefix_warnings[0] == 5:
-                    log.Log("Future prefix errors will not be logged",
-                            log.WARNING)
+                    log.Log("Future prefix errors will not be logged", log.WARNING)
 
         something_excluded, tuple_list = None, []
         separator = Globals.null_separator and b"\0" or b"\n"
         for line in filelist_fp.read().split(separator):
-            line = line.rstrip(b'\r')  # for Windows/DOS endings
+            line = line.rstrip(b"\r")  # for Windows/DOS endings
             if not line:
                 continue  # skip blanks
             try:
@@ -380,8 +406,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
             if not tuple[1]:
                 something_excluded = 1
         if filelist_fp.close():
-            log.Log("Failed closing filelist {fl}".format(fl=filelist_name),
-                    log.WARNING)
+            log.Log(
+                "Failed closing filelist {fl}".format(fl=filelist_name), log.WARNING
+            )
         return (tuple_list, something_excluded)
 
     def _filelist_parse_line(self, line, include):
@@ -420,12 +447,12 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
                 return (None, True)
             if index == rp.index:
                 return (Select.INCLUDE, True)
-            elif index[:len(rp.index)] == rp.index:
+            elif index[: len(rp.index)] == rp.index:
                 return (Select.INCLUDE, False)  # /foo/bar implicitly includes /foo
             else:
                 return (None, False)  # rp greater, not initial sequence
         elif include == Select.EXCLUDE:
-            if rp.index[:len(index)] == index:
+            if rp.index[: len(index)] == index:
                 return (Select.EXCLUDE, False)  # /foo implicitly excludes /foo/bar
             elif index < rp.index:
                 return (None, True)
@@ -433,7 +460,8 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
                 return (None, False)  # rp greater, not initial sequence
         else:
             raise ValueError(
-                "Include is {ival}, should be 0 or 1.".format(ival=include))
+                "Include is {ival}, should be 0 or 1.".format(ival=include)
+            )
 
     def _filelist_globbing_get_sfs(self, filelist_fp, inc_default, list_name):
         """Return list of selection functions by reading fileobj
@@ -447,7 +475,7 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         log.Log("Reading globbing filelist {gf}".format(gf=list_name), log.INFO)
         separator = Globals.null_separator and b"\0" or b"\n"
         for line in filelist_fp.read().split(separator):
-            line = line.rstrip(b'\r')  # for Windows/DOS endings
+            line = line.rstrip(b"\r")  # for Windows/DOS endings
             if not line:
                 continue  # skip blanks
             if line[:2] == b"+ ":
@@ -459,8 +487,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
     def _other_filesystems_get_sf(self, include):
         """Return selection function matching files on other filesystems"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
-            "Include is {ival}, should be 0 or 1.".format(ival=include))
+        assert (
+            include == Select.EXCLUDE or include == Select.INCLUDE
+        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
         root_devloc = self.rpath.getdevloc()
 
         def sel_func(rp):
@@ -475,13 +504,16 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
     def _regexp_get_sf(self, regexp_string, include):
         """Return selection function given by regexp_string"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
-            "Include is {ival}, should be 0 or 1.".format(ival=include))
+        assert (
+            include == Select.EXCLUDE or include == Select.INCLUDE
+        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
         try:
             regexp = re.compile(os.fsencode(regexp_string))
         except re.error:
-            log.Log("Failed compiling regular expression {rx}".format(
-                rx=regexp_string), log.ERROR)
+            log.Log(
+                "Failed compiling regular expression {rx}".format(rx=regexp_string),
+                log.ERROR,
+            )
             raise
 
         def sel_func(rp):
@@ -496,15 +528,18 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
     def _presence_get_sf(self, presence_filename, include):
         """Return selection function given by a file if present"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
-            "Include is {ival}, should be 0 or 1.".format(ival=include))
+        assert (
+            include == Select.EXCLUDE or include == Select.INCLUDE
+        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
 
         def sel_func(rp):
-            if (rp.isdir() and rp.readable()
-                    and rp.append(presence_filename).lstat()):
+            if rp.isdir() and rp.readable() and rp.append(presence_filename).lstat():
                 return include
-            elif (include and not rp.isdir()
-                    and rp.get_parent_rp().append(presence_filename).lstat()):
+            elif (
+                include
+                and not rp.isdir()
+                and rp.get_parent_rp().append(presence_filename).lstat()
+            ):
                 return include
             return None
 
@@ -567,37 +602,42 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         except ValueError:
             log.Log.FatalError(
                 "Max and min file size must be a positive integer "
-                "and not '{fs}'".format(fs=sizestr))
+                "and not '{fs}'".format(fs=sizestr)
+            )
 
         def sel_func(rp):
             if not rp.isreg():
                 return None
             if min_max:
-                return ((rp.getsize() <= size) and None)
+                return (rp.getsize() <= size) and None
             else:
-                return ((rp.getsize() >= size) and None)
+                return (rp.getsize() >= size) and None
 
         sel_func.exclude = True  # min/max-file-size are exclusions
-        sel_func.name = "%s size %d" % (min_max and "Maximum" or "Minimum",
-                                        size)
+        sel_func.name = "%s size %d" % (min_max and "Maximum" or "Minimum", size)
         return sel_func
 
     def _glob_get_sf(self, glob_str, include):
         """Return selection function given by glob string"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
-            "Include is {ival}, should be 0 or 1.".format(ival=include))
+        assert (
+            include == Select.EXCLUDE or include == Select.INCLUDE
+        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
         glob_str = os.fsencode(glob_str)  # paths and glob must be bytes
         if glob_str == b"**":
+
             def sel_func(rp):
                 return include
+
         elif not self.glob_re.match(glob_str):  # normal file
             sel_func = self._glob_get_filename_sf(glob_str, include)
         else:
             sel_func = self._glob_get_normal_sf(glob_str, include)
 
         sel_func.exclude = not include
-        sel_func.name = "Command-line %s glob: %s" % \
-            (include and "include" or "exclude", glob_str)
+        sel_func.name = "Command-line %s glob: %s" % (
+            include and "include" or "exclude",
+            glob_str,
+        )
         return sel_func
 
     def _glob_get_filename_sf(self, filename, include):
@@ -616,14 +656,13 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """Return selection function based on tuple"""
 
         def include_sel_func(rp):
-            if (rp.index == tuple[:len(rp.index)]
-                    or rp.index[:len(tuple)] == tuple):
+            if rp.index == tuple[: len(rp.index)] or rp.index[: len(tuple)] == tuple:
                 return 1  # /foo/bar implicitly matches /foo, vice-versa
             else:
                 return None
 
         def exclude_sel_func(rp):
-            if rp.index[:len(tuple)] == tuple:
+            if rp.index[: len(tuple)] == tuple:
                 return 0  # /foo excludes /foo/bar, not vice-versa
             else:
                 return None
@@ -633,7 +672,7 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         elif include == Select.EXCLUDE:
             sel_func = exclude_sel_func
         sel_func.exclude = not include
-        sel_func.name = "Tuple select %s" % (tuple, )
+        sel_func.name = "Tuple select %s" % (tuple,)
         return sel_func
 
     def _glob_get_normal_sf(self, glob_str, include):
@@ -652,10 +691,13 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
         """
         if glob_str.lower().startswith(b"ignorecase:"):
+
             def re_comp(r):
                 return re.compile(r, re.I | re.S)
-            glob_str = glob_str[len(b"ignorecase:"):]
+
+            glob_str = glob_str[len(b"ignorecase:") :]
         else:
+
             def re_comp(r):
                 return re.compile(r, re.S)
 
@@ -663,10 +705,11 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         glob_comp_re = re_comp(b"^%b($|/)" % self._glob_to_re(glob_str))
 
         if glob_str.find(b"**") != -1:
-            glob_str = glob_str[:glob_str.find(b"**") + 2]  # truncate after **
+            glob_str = glob_str[: glob_str.find(b"**") + 2]  # truncate after **
 
         scan_comp_re = re_comp(
-            b"^(%s)$" % b"|".join(self._glob_get_prefix_res(glob_str)))
+            b"^(%s)$" % b"|".join(self._glob_get_prefix_res(glob_str))
+        )
 
         def include_sel_func(rp):
             if glob_comp_re.match(rp.path):
@@ -695,15 +738,14 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """Return list of regexps equivalent to prefixes of glob_str"""
 
         glob_parts = glob_str.split(b"/")
-        if b"" in glob_parts[1:
-                             -1]:  # "" OK if comes first or last, as in /foo/
+        if b"" in glob_parts[1:-1]:  # "" OK if comes first or last, as in /foo/
             raise GlobbingError(
                 "Consecutive '/'s found in globbing string {gs}".format(
-                    gs=safestr.to_str(glob_str)))
+                    gs=safestr.to_str(glob_str)
+                )
+            )
 
-        prefixes = [
-            b"/".join(glob_parts[:i + 1]) for i in range(len(glob_parts))
-        ]
+        prefixes = [b"/".join(glob_parts[: i + 1]) for i in range(len(glob_parts))]
         # we must make exception for root "/", or "X:/" under Windows,
         # only dirs to end in slash
         if prefixes[0] == b"" or re.fullmatch(b"[a-zA-Z]:", prefixes[0]):
@@ -723,36 +765,36 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """
         # trying to analyze bytes would be quite complicated hence back to str
         str_pat = os.fsdecode(pat)
-        i, n, res = 0, len(str_pat), ''
+        i, n, res = 0, len(str_pat), ""
         while i < n:
-            c, s = str_pat[i], str_pat[i:i + 2]
+            c, s = str_pat[i], str_pat[i : i + 2]
             i = i + 1
-            if c == '\\':
+            if c == "\\":
                 res = res + re.escape(s[-1])
                 i = i + 1
-            elif s == '**':
-                res = res + '.*'
+            elif s == "**":
+                res = res + ".*"
                 i = i + 1
-            elif c == '*':
-                res = res + '[^/]*'
-            elif c == '?':
-                res = res + '[^/]'
-            elif c == '[':
+            elif c == "*":
+                res = res + "[^/]*"
+            elif c == "?":
+                res = res + "[^/]"
+            elif c == "[":
                 j = i
-                if j < n and str_pat[j] in '!^':
+                if j < n and str_pat[j] in "!^":
                     j = j + 1
-                if j < n and str_pat[j] == ']':
+                if j < n and str_pat[j] == "]":
                     j = j + 1
-                while j < n and str_pat[j] != ']':
+                while j < n and str_pat[j] != "]":
                     j = j + 1
                 if j >= n:
-                    res = res + '\\['  # interpret the [ literally
+                    res = res + "\\["  # interpret the [ literally
                 else:  # Deal with inside of [..]
-                    stuff = str_pat[i:j].replace('\\', '\\\\')
+                    stuff = str_pat[i:j].replace("\\", "\\\\")
                     i = j + 1
-                    if stuff[0] in '!^':
-                        stuff = '^' + stuff[1:]
-                    res = res + '[' + stuff + ']'
+                    if stuff[0] in "!^":
+                        stuff = "^" + stuff[1:]
+                    res = res + "[" + stuff + "]"
             else:
                 res = res + re.escape(c)
         return os.fsencode(res)  # but we want a bytes matching pattern
@@ -772,9 +814,9 @@ class FilterIter:
         self.rorp_iter = rorp_iter
         self.base_rp = select.rpath
         self.stored_rorps = []
-        self.ITR = rorpiter.IterTreeReducer(_FilterIterITRB,
-                                            [select.select_default,
-                                             self.stored_rorps])
+        self.ITR = rorpiter.IterTreeReducer(
+            _FilterIterITRB, [select.select_default, self.stored_rorps]
+        )
         self.itr_finished = 0
 
     def __iter__(self):
@@ -792,8 +834,12 @@ class FilterIter:
                     self.ITR.finish_processing()
                     self.itr_finished = 1
             else:
-                next_rp = rpath.RPath(self.base_rp.conn, self.base_rp.base,
-                                      next_rorp.index, next_rorp.data)
+                next_rp = rpath.RPath(
+                    self.base_rp.conn,
+                    self.base_rp.base,
+                    next_rorp.index,
+                    next_rorp.data,
+                )
                 self.ITR(next_rorp.index, next_rp, next_rorp)
         return self.stored_rorps.pop(0)
 
@@ -881,11 +927,11 @@ def get_prepared_selections(selections):
     if selections:
         # the following loop is a compatibility measure # compat201
         for selection in selections:
-            if 'filelist' in selection[0]:
+            if "filelist" in selection[0]:
                 if selection[0].endswith("-stdin"):
-                    select_opts.append((
-                        "--" + selection[0][:-6],  # remove '-stdin'
-                        "standard input"))
+                    select_opts.append(
+                        ("--" + selection[0][:-6], "standard input")  # remove '-stdin'
+                    )
                 else:
                     select_opts.append(("--" + selection[0], selection[1]))
                 select_data.append(sel_fl(selection[1]))

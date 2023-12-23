@@ -63,8 +63,7 @@ def create_fileset(base_dir, structure, recurse={}):
     recurse["inodes"] = {}
     _create_directory(SetPath(base_dir, {"type": "directory"}, recurse))
     for name in structure:
-        _multi_create_fileset(os.fsdecode(base_dir), name,
-                              structure[name], recurse)
+        _multi_create_fileset(os.fsdecode(base_dir), name, structure[name], recurse)
 
 
 def remove_fileset(base_dir, structure):
@@ -126,11 +125,15 @@ def compare_paths(path1, path2):
     if len(files1 - files2):
         differences.append(
             "Files {fi} are in base dir {bd1} but not in {bd2}".format(
-                fi=files1 - files2, bd1=path1, bd2=path2))
+                fi=files1 - files2, bd1=path1, bd2=path2
+            )
+        )
     if len(files2 - files1):
         differences.append(
             "Files {fi} are not in base dir {bd1} but in {bd2}".format(
-                fi=files2 - files1, bd1=path1, bd2=path2))
+                fi=files2 - files1, bd1=path1, bd2=path2
+            )
+        )
     if files1.isdisjoint(files2):
         return differences  # there are no files in common
 
@@ -142,11 +145,12 @@ def compare_paths(path1, path2):
     return differences
 
 
-class SetPath():
+class SetPath:
     """
     Holds a path's own settings and the recursive ones, so that they can be
     transparently combined
     """
+
     defaults = {
         "dmode": 0o755,
         "fmode": 0o644,
@@ -207,8 +211,10 @@ class SetPath():
         """
         Get the file access rights according to file type and current settings
         """
-        assert self.path_type in ["file", "directory"], (
-            "Type {pt} can't get a mode".format(pt=self.path_type))
+        assert self.path_type in [
+            "file",
+            "directory",
+        ], "Type {pt} can't get a mode".format(pt=self.path_type)
         generic = "mode"
         if self.path_type == "file":
             specific = "fmode"
@@ -217,10 +223,11 @@ class SetPath():
         default = self.defaults.get(specific)
 
         mode = self.values.get(
-            specific, self.values.get(
-                generic, self.recurse.get(
-                    specific, self.recurse.get(
-                        generic, default))))
+            specific,
+            self.values.get(
+                generic, self.recurse.get(specific, self.recurse.get(generic, default))
+            ),
+        )
 
         if isinstance(mode, int):
             return mode
@@ -282,8 +289,9 @@ def _multi_create_fileset(base_dir, name, structure, recurse):
         if isinstance(range_count, int):
             range_count = [range_count]
         for count in range(*range_count):
-            _create_fileset(os.path.join(base_dir, name.format(count)),
-                            structure, recurse)
+            _create_fileset(
+                os.path.join(base_dir, name.format(count)), structure, recurse
+            )
     else:
         _create_fileset(os.path.join(base_dir, name), structure, recurse)
 
@@ -296,8 +304,9 @@ def _create_fileset(fullname, struct, recurse={}):
     if set_path.get_type() == "directory":
         _create_directory(set_path, always_delete=True)
         for name in struct.get("contents", {}):
-            _multi_create_fileset(fullname, name, struct["contents"][name],
-                                  set_path.recurse)
+            _multi_create_fileset(
+                fullname, name, struct["contents"][name], set_path.recurse
+            )
         _finish_directory(set_path)
     else:
         if set_path.is_hardlinked():
@@ -439,9 +448,12 @@ def _compare_files(file1, stat1, file2, stat2):
     if stat.S_IFMT(stat1.st_mode) != stat.S_IFMT(stat2.st_mode):
         differences.append(
             "Paths {pa1} and {pa2} have different types {ft1} vs. {ft2}".format(
-                pa1=file1, pa2=file2,
+                pa1=file1,
+                pa2=file2,
                 ft1=stat.S_IFMT(stat1.st_mode),
-                ft2=stat.S_IFMT(stat2.st_mode)))
+                ft2=stat.S_IFMT(stat2.st_mode),
+            )
+        )
         # if the files don't have the same type, there is no point comparing
         # them further...
         return differences
@@ -450,21 +462,28 @@ def _compare_files(file1, stat1, file2, stat2):
         differences.append(
             "Paths {pa1} and {pa2} have different "
             "access rights {ar1} vs. {ar2}".format(
-                pa1=file1, pa2=file2,
+                pa1=file1,
+                pa2=file2,
                 ar1=stat.S_IMODE(stat1.st_mode),
-                ar2=stat.S_IMODE(stat2.st_mode)))
+                ar2=stat.S_IMODE(stat2.st_mode),
+            )
+        )
 
     if stat1.st_nlink != stat2.st_nlink:
         differences.append(
             "Paths {pa1} and {pa2} have different "
             "link numbers {ln1} vs. {ln2}".format(
-                pa1=file1, pa2=file2, ln1=stat1.st_nlink, ln2=stat2.st_nlink))
+                pa1=file1, pa2=file2, ln1=stat1.st_nlink, ln2=stat2.st_nlink
+            )
+        )
 
     if stat1.st_size != stat2.st_size:
         differences.append(
             "Paths {pa1} and {pa2} have different "
             "file sizes {fs1} vs. {fs2}".format(
-                pa1=file1, pa2=file2, fs1=stat1.st_size, fs2=stat2.st_size))
+                pa1=file1, pa2=file2, fs1=stat1.st_size, fs2=stat2.st_size
+            )
+        )
     elif stat.S_ISREG(stat1.st_mode) and stat.S_ISREG(stat2.st_mode):
         with open(file1) as fd1, open(file2) as fd2:
             content1 = fd1.read()
@@ -477,7 +496,9 @@ def _compare_files(file1, stat1, file2, stat2):
             differences.append(
                 "Paths {pa1} and {pa2} have different "
                 "regular file' contents '{rc1}' vs. '{rc2}'".format(
-                    pa1=file1, pa2=file2, rc1=content1, rc2=content2))
+                    pa1=file1, pa2=file2, rc1=content1, rc2=content2
+                )
+            )
 
     # we compare only the modification seconds, because rdiff-backup doesn't
     # save milliseconds.
@@ -485,20 +506,25 @@ def _compare_files(file1, stat1, file2, stat2):
         differences.append(
             "Paths {pa1} and {pa2} have different "
             "modification times {mt1} vs. {mt2}".format(
-                pa1=file1, pa2=file2,
-                mt1=int(stat1.st_mtime), mt2=int(stat2.st_mtime)))
+                pa1=file1, pa2=file2, mt1=int(stat1.st_mtime), mt2=int(stat2.st_mtime)
+            )
+        )
 
     if stat1.st_uid != stat2.st_uid:
         differences.append(
             "Paths {pa1} and {pa2} have different "
             "user owners {uo1} vs. {uo2}".format(
-                pa1=file1, pa2=file2, uo1=stat1.st_uid, uo2=stat2.st_uid))
+                pa1=file1, pa2=file2, uo1=stat1.st_uid, uo2=stat2.st_uid
+            )
+        )
 
     if stat1.st_gid != stat2.st_gid:
         differences.append(
             "Paths {pa1} and {pa2} have different "
             "group owners {go1} vs. {go2}".format(
-                pa1=file1, pa2=file2, go1=stat1.st_uid, go2=stat2.st_uid))
+                pa1=file1, pa2=file2, go1=stat1.st_uid, go2=stat2.st_uid
+            )
+        )
 
     return differences
 
@@ -520,7 +546,8 @@ if __name__ == "__main__":
                 "fileD": {"inode": "B", "mtime": 30_000},  # last hardlink wins!
                 "fileE": {"size": 200},
             },
-            "atime": 50_000, "mtime": 50_001,  # tree doesn't show atime
+            "atime": 50_000,
+            "mtime": 50_001,  # tree doesn't show atime
         },
         "empty_dir": {"type": "dir", "dmode": 0o777},
         "a_bin_file": {"content": b"some_binary_content", "size": 64, "open": "b"},
@@ -534,8 +561,7 @@ if __name__ == "__main__":
 
     print("base directory: {bd}".format(bd=base_temp_dir))
     create_fileset(base_temp_dir, structure)
-    subprocess.call(["tree", "-aDJps", "--inodes", "--timefmt", "%s",
-                     base_temp_dir])
+    subprocess.call(["tree", "-aDJps", "--inodes", "--timefmt", "%s", base_temp_dir])
     remove_fileset(base_temp_dir, structure)
 
 """

@@ -4,8 +4,12 @@ import sys
 import unittest
 import time
 from commontest import (
-    old_test_dir, abs_test_dir, re_init_subdir, abs_output_dir,
-    re_init_rpath_dir, os_system
+    old_test_dir,
+    abs_test_dir,
+    re_init_subdir,
+    abs_output_dir,
+    re_init_rpath_dir,
+    os_system,
 )
 import commontest as comtst
 import fileset
@@ -24,7 +28,7 @@ class RORPStateTest(RPathTest):
     """Test Pickling of RORPaths"""
 
     def testPickle(self):
-        rorp = rpath.RPath(self.lc, self.prefix, ("regular_file", )).getRORPath()
+        rorp = rpath.RPath(self.lc, self.prefix, ("regular_file",)).getRORPath()
         rorp.file = sys.stdin  # try to confuse pickler
         self.assertTrue(rorp.isreg())
         rorp2 = pickle.loads(pickle.dumps(rorp, 1))
@@ -44,55 +48,55 @@ class CheckTypes(RPathTest):
     def testDir(self):
         """Directories identified correctly"""
         self.assertTrue(rpath.RPath(self.lc, self.prefix, ()).isdir())
-        self.assertFalse(
-            rpath.RPath(self.lc, self.prefix, ("regular_file", )).isdir())
+        self.assertFalse(rpath.RPath(self.lc, self.prefix, ("regular_file",)).isdir())
 
     def testSym(self):
         """Symbolic links identified"""
-        self.assertTrue(
-            rpath.RPath(self.lc, self.prefix, ("symbolic_link", )).issym())
+        self.assertTrue(rpath.RPath(self.lc, self.prefix, ("symbolic_link",)).issym())
         self.assertFalse(rpath.RPath(self.lc, self.prefix, ()).issym())
 
     def testReg(self):
         """Regular files identified"""
-        self.assertTrue(
-            rpath.RPath(self.lc, self.prefix, ("regular_file", )).isreg())
-        self.assertFalse(
-            rpath.RPath(self.lc, self.prefix, ("symbolic_link", )).isreg())
+        self.assertTrue(rpath.RPath(self.lc, self.prefix, ("regular_file",)).isreg())
+        self.assertFalse(rpath.RPath(self.lc, self.prefix, ("symbolic_link",)).isreg())
 
     @unittest.skipIf(os.name == "nt", "Fifo don't exist under Windows")
     def testFifo(self):
         """Fifo's identified"""
-        self.assertTrue(rpath.RPath(self.lc, self.prefix, ("fifo", )).isfifo())
+        self.assertTrue(rpath.RPath(self.lc, self.prefix, ("fifo",)).isfifo())
         self.assertFalse(rpath.RPath(self.lc, self.prefix, ()).isfifo())
 
     @unittest.skipUnless(
-        os.path.exists('/dev/null') or os.path.exists("/dev/zero"),
-        "Test requires /dev/null or /dev/zero")
+        os.path.exists("/dev/null") or os.path.exists("/dev/zero"),
+        "Test requires /dev/null or /dev/zero",
+    )
     def testCharDev(self):
         """Char special files identified"""
-        if os.path.exists('/dev/null'):
+        if os.path.exists("/dev/null"):
             self.assertTrue(rpath.RPath(self.lc, "/dev/null", ()).ischardev())
         else:  # then /dev/zero must exist
             self.assertTrue(rpath.RPath(self.lc, "/dev/zero", ()).ischardev())
         self.assertFalse(
-            rpath.RPath(self.lc, self.prefix, ("regular_file", )).ischardev())
+            rpath.RPath(self.lc, self.prefix, ("regular_file",)).ischardev()
+        )
 
     @unittest.skipUnless(
-        os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'),
-        "Test requires either /dev/sda or /dev/nvme0n1")
+        os.path.exists("/dev/sda") or os.path.exists("/dev/nvme0n1"),
+        "Test requires either /dev/sda or /dev/nvme0n1",
+    )
     def testBlockDev(self):
         """Block special files identified"""
         # Introducing a new dependency just for a few tests doesn't sound
         # reasonable, especially as it doesn't solve minor/major questions
         # somediskdev = os.path.realpath(psutil.disk_partitions()[0].device)
         # We assume that anybody must have a hard drive, SSD or NVMe
-        if os.path.exists('/dev/sda'):
-            self.assertTrue(rpath.RPath(self.lc, '/dev/sda', ()).isblkdev())
+        if os.path.exists("/dev/sda"):
+            self.assertTrue(rpath.RPath(self.lc, "/dev/sda", ()).isblkdev())
         else:
-            self.assertTrue(rpath.RPath(self.lc, '/dev/nvme0n1', ()).isblkdev())
+            self.assertTrue(rpath.RPath(self.lc, "/dev/nvme0n1", ()).isblkdev())
         self.assertFalse(
-            rpath.RPath(self.lc, self.prefix, ("regular_file", )).isblkdev())
+            rpath.RPath(self.lc, self.prefix, ("regular_file",)).isblkdev()
+        )
 
 
 @unittest.skipIf(os.name == "nt", "Windows doesn't handle well rights")
@@ -101,21 +105,22 @@ class CheckPerms(RPathTest):
 
     def testExecReport(self):
         """Check permissions for executable files"""
-        self.assertEqual(self.rp_prefix.append('executable').getperms(), 0o755)
-        self.assertEqual(self.rp_prefix.append('executable2').getperms(), 0o700)
+        self.assertEqual(self.rp_prefix.append("executable").getperms(), 0o755)
+        self.assertEqual(self.rp_prefix.append("executable2").getperms(), 0o700)
 
     def testhighbits(self):
         """Test reporting of highbit permissions"""
-        p = rpath.RPath(self.lc, os.path.join(self.mainprefix, b"rpath2",
-                                              b"foobar")).getperms()
+        p = rpath.RPath(
+            self.lc, os.path.join(self.mainprefix, b"rpath2", b"foobar")
+        ).getperms()
         self.assertEqual(p, 0o4100)
 
     def testOrdinaryReport(self):
         """Ordinary file permissions..."""
+        self.assertEqual(self.rp_prefix.append("regular_file").getperms(), 0o644)
         self.assertEqual(
-            self.rp_prefix.append("regular_file").getperms(), 0o644)
-        self.assertEqual(
-            self.rp_prefix.append('two_hardlinked_files1').getperms(), 0o640)
+            self.rp_prefix.append("two_hardlinked_files1").getperms(), 0o640
+        )
 
     def testChmod(self):
         """Test changing file permission"""
@@ -128,8 +133,8 @@ class CheckPerms(RPathTest):
     def testExceptions(self):
         """What happens when file absent"""
         self.assertRaises(
-            Exception,
-            rpath.RPath(self.lc, self.prefix, ("aoeunto", )).getperms())
+            Exception, rpath.RPath(self.lc, self.prefix, ("aoeunto",)).getperms()
+        )
 
 
 class CheckTimes(RPathTest):
@@ -137,7 +142,7 @@ class CheckTimes(RPathTest):
 
     def testSet(self):
         """Check to see if times set properly"""
-        rp = rpath.RPath(self.lc, self.prefix, ("timetest.foo", ))
+        rp = rpath.RPath(self.lc, self.prefix, ("timetest.foo",))
         rp.touch()
         rp.settime(10000, 20000)
         rp.setdata()
@@ -148,8 +153,8 @@ class CheckTimes(RPathTest):
     @unittest.skipIf(os.name == "nt", "Windows doesn't handle ctime correctly")
     def testCtime(self):
         """Check to see if ctime read, compared"""
-        rp = rpath.RPath(self.lc, self.prefix, ("ctimetest.1", ))
-        rp2 = rpath.RPath(self.lc, self.prefix, ("ctimetest.2", ))
+        rp = rpath.RPath(self.lc, self.prefix, ("ctimetest.1",))
+        rp2 = rpath.RPath(self.lc, self.prefix, ("ctimetest.2",))
         rp.touch()
         rp.chmod(0o700)
         rpath.copy_with_attribs(rp, rp2)
@@ -179,7 +184,7 @@ class CheckDir(RPathTest):
 
     def testExceptions(self):
         """Should raise os.errors when no files"""
-        d = rpath.RPath(self.lc, self.prefix, ("suthosutho", ))
+        d = rpath.RPath(self.lc, self.prefix, ("suthosutho",))
         self.assertRaises(os.error, d.rmdir)
         d.mkdir()
         self.assertRaises(os.error, d.mkdir)
@@ -187,8 +192,7 @@ class CheckDir(RPathTest):
 
     def testListdir(self):
         """Checking dir listings"""
-        dirlist = rpath.RPath(self.lc, self.mainprefix,
-                              ("sampledir", )).listdir()
+        dirlist = rpath.RPath(self.lc, self.mainprefix, ("sampledir",)).listdir()
         dirlist.sort()
         self.assertEqual(dirlist, [b"1", b"2", b"3", b"4"])
 
@@ -200,12 +204,13 @@ class CheckSyms(RPathTest):
     def testRead(self):
         """symlink read"""
         self.assertEqual(
-            rpath.RPath(self.lc, self.prefix, ("symbolic_link", )).readlink(),
-            b"regular_file")
+            rpath.RPath(self.lc, self.prefix, ("symbolic_link",)).readlink(),
+            b"regular_file",
+        )
 
     def testMake(self):
         """Creating symlink"""
-        link = rpath.RPath(self.lc, self.write_dir, ("symlink", ))
+        link = rpath.RPath(self.lc, self.write_dir, ("symlink",))
         self.assertFalse(link.lstat())
         link.symlink("abcdefg")
         self.assertTrue(link.issym())
@@ -219,7 +224,7 @@ class CheckSockets(RPathTest):
 
     def testMake(self):
         """Create socket, then read it"""
-        sock = rpath.RPath(self.lc, self.write_dir, ("socket", ))
+        sock = rpath.RPath(self.lc, self.write_dir, ("socket",))
         self.assertFalse(sock.lstat())
         sock.mksock()
         self.assertTrue(sock.issock())
@@ -228,9 +233,13 @@ class CheckSockets(RPathTest):
     def testLongSock(self):
         """Test making a socket with a long name.
         It shouldn't be an issue anymore on modern systems"""
-        sock = rpath.RPath(self.lc, self.write_dir, (
-            "socketaoeusthaoeaoeutnhaonseuhtansoeuthasoneuthasoeutnhasonuthaoensuhtasoneuhtsanouhonetuhasoneuthsaoenaonsetuaosenuhtaoensuhaoeu",
-        ))
+        sock = rpath.RPath(
+            self.lc,
+            self.write_dir,
+            (
+                "socketaoeusthaoeaoeutnhaonseuhtansoeuthasoneuthasoeutnhasonuthaoensuhtasoneuhtsanouhonetuhasoneuthsaoenaonsetuaosenuhtaoensuhaoeu",
+            ),
+        )
         self.assertFalse(sock.lstat())
         sock.mksock()
         sock.setdata()
@@ -243,7 +252,7 @@ class TouchDelete(RPathTest):
 
     def testTouch(self):
         """Creation of 0 length files"""
-        t = rpath.RPath(self.lc, self.write_dir, ("testtouch", ))
+        t = rpath.RPath(self.lc, self.write_dir, ("testtouch",))
         self.assertFalse(t.lstat())
         t.touch()
         self.assertTrue(t.lstat())
@@ -251,7 +260,7 @@ class TouchDelete(RPathTest):
 
     def testDelete(self):
         """Deletion of files"""
-        d = rpath.RPath(self.lc, self.write_dir, ("testdelete", ))
+        d = rpath.RPath(self.lc, self.write_dir, ("testdelete",))
         d.touch()
         self.assertTrue(d.lstat())
         d.delete()
@@ -264,12 +273,13 @@ class MiscFileInfo(RPathTest):
     def testFileLength(self):
         """File length = getsize()"""
         self.assertEqual(
-            rpath.RPath(self.lc, self.prefix, ("regular_file", )).getsize(),
-            75650)
+            rpath.RPath(self.lc, self.prefix, ("regular_file",)).getsize(), 75650
+        )
 
 
 class FilenameOps(RPathTest):
     """Check filename operations"""
+
     normdict = {
         b"/": b"/",
         b".": b".",
@@ -297,9 +307,8 @@ class FilenameOps(RPathTest):
 
     def testNormalize(self):
         """rpath.normalize() dictionary test"""
-        for (before, after) in list(self.normdict.items()):
-            self.assertEqual(
-                rpath.RPath(self.lc, before, ()).normalize().path, after)
+        for before, after in list(self.normdict.items()):
+            self.assertEqual(rpath.RPath(self.lc, before, ()).normalize().path, after)
 
     def testDirsplit(self):
         """Test splitting of various directories"""
@@ -308,23 +317,24 @@ class FilenameOps(RPathTest):
             self.assertEqual(result, split)
 
     @unittest.skipUnless(
-        (os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'))
-        and (os.path.exists('/dev/null') or os.path.exists('/dev/zero')),
-        "Test requires either /dev/sda or /dev/nvme0n1, and /dev/null or /dev/zero")
+        (os.path.exists("/dev/sda") or os.path.exists("/dev/nvme0n1"))
+        and (os.path.exists("/dev/null") or os.path.exists("/dev/zero")),
+        "Test requires either /dev/sda or /dev/nvme0n1, and /dev/null or /dev/zero",
+    )
     def testGetnums(self):
         """Test getting file numbers"""
-        if os.path.exists(b'/dev/sda'):
+        if os.path.exists(b"/dev/sda"):
             devnums = rpath.RPath(self.lc, b"/dev/sda", ()).getdevnums()
-            self.assertEqual(devnums, ('b', 8, 0))
+            self.assertEqual(devnums, ("b", 8, 0))
         else:
             devnums = rpath.RPath(self.lc, b"/dev/nvme0n1", ()).getdevnums()
-            self.assertEqual(devnums, ('b', 259, 0))
-        if os.path.exists(b'/dev/null'):
+            self.assertEqual(devnums, ("b", 259, 0))
+        if os.path.exists(b"/dev/null"):
             devnums = rpath.RPath(self.lc, b"/dev/null", ()).getdevnums()
-            self.assertEqual(devnums, ('c', 1, 3))
+            self.assertEqual(devnums, ("c", 1, 3))
         else:
             devnums = rpath.RPath(self.lc, b"/dev/zero", ()).getdevnums()
-            self.assertEqual(devnums, ('c', 1, 5))
+            self.assertEqual(devnums, ("c", 1, 5))
 
 
 class FileIO(RPathTest):
@@ -332,12 +342,12 @@ class FileIO(RPathTest):
 
     def testRead(self):
         """File reading"""
-        with rpath.RPath(self.lc, self.prefix, ("executable", )).open("r") as fp:
+        with rpath.RPath(self.lc, self.prefix, ("executable",)).open("r") as fp:
             self.assertEqual(fp.read(6), "#!/bin")
 
     def testWrite(self):
         """File writing"""
-        rp = rpath.RPath(self.lc, self.mainprefix, ("testfile", ))
+        rp = rpath.RPath(self.lc, self.mainprefix, ("testfile",))
         with rp.open("w") as fp:
             fp.write("hello")
         with rp.open("r") as fp_input:
@@ -362,7 +372,8 @@ class FileIO(RPathTest):
             fp_out.write(s)
         if os.name == "nt":
             self.assertEqual(
-                os_system(b"7z x -o%s %s >NUL" % (abs_output_dir, file_gz)), 0)
+                os_system(b"7z x -o%s %s >NUL" % (abs_output_dir, file_gz)), 0
+            )
             os_system(b"del %s" % file_gz)
         else:
             self.assertEqual(os_system(b"gunzip %s" % file_gz), 0)
@@ -390,9 +401,8 @@ class FileIO(RPathTest):
 
         if os.name == "nt":
             self.assertEqual(
-                os_system(b"7z a -tgzip -sdel %s %s >NUL" % (file_gz,
-                                                             file_nogz)),
-                0)
+                os_system(b"7z a -tgzip -sdel %s %s >NUL" % (file_gz, file_nogz)), 0
+            )
         else:
             self.assertEqual(os_system(b"gzip %s" % file_nogz), 0)
         rp_nogz.setdata()
@@ -408,13 +418,13 @@ class FileCopying(RPathTest):
     """Test file copying and comparison"""
 
     def setUp(self):
-        self.hl1 = rpath.RPath(self.lc, self.prefix, ("two_hardlinked_files1", ))
-        self.hl2 = rpath.RPath(self.lc, self.prefix, ("two_hardlinked_files2", ))
-        self.sl = rpath.RPath(self.lc, self.prefix, ("symbolic_link", ))
+        self.hl1 = rpath.RPath(self.lc, self.prefix, ("two_hardlinked_files1",))
+        self.hl2 = rpath.RPath(self.lc, self.prefix, ("two_hardlinked_files2",))
+        self.sl = rpath.RPath(self.lc, self.prefix, ("symbolic_link",))
         self.dir = rpath.RPath(self.lc, self.prefix, ())
-        self.fifo = rpath.RPath(self.lc, self.prefix, ("fifo", ))
-        self.rf = rpath.RPath(self.lc, self.prefix, ("regular_file", ))
-        self.dest = rpath.RPath(self.lc, self.mainprefix, ("dest", ))
+        self.fifo = rpath.RPath(self.lc, self.prefix, ("fifo",))
+        self.rf = rpath.RPath(self.lc, self.prefix, ("regular_file",))
+        self.dest = rpath.RPath(self.lc, self.mainprefix, ("dest",))
         if self.dest.lstat():
             self.dest.delete()
         self.assertFalse(self.dest.lstat())
@@ -428,8 +438,7 @@ class FileCopying(RPathTest):
     @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testCompMisc(self):
         """Test miscellaneous comparisons"""
-        self.assertTrue(
-            rpath.cmp(self.dir, rpath.RPath(self.lc, self.mainprefix, ())))
+        self.assertTrue(rpath.cmp(self.dir, rpath.RPath(self.lc, self.mainprefix, ())))
         self.dest.symlink("regular_file")
         self.assertTrue(rpath.cmp(self.sl, self.dest))
         self.dest.delete()
@@ -444,12 +453,11 @@ class FileCopying(RPathTest):
             "1": {"type": "directory"},
             "2": {"contents": {"{}": {"range": 500}}},
         }
-        fileset.create_fileset(base_path, struct,
-                               recurse={"atime": 12345, "mtime": 12345})
-        short_dir = rpath.RPath(Globals.local_connection,
-                                os.path.join(base_path, b"1"))
-        long_dir = rpath.RPath(Globals.local_connection,
-                               os.path.join(base_path, b"2"))
+        fileset.create_fileset(
+            base_path, struct, recurse={"atime": 12345, "mtime": 12345}
+        )
+        short_dir = rpath.RPath(Globals.local_connection, os.path.join(base_path, b"1"))
+        long_dir = rpath.RPath(Globals.local_connection, os.path.join(base_path, b"2"))
         # Can guarantee below by adding files to long_dir
         self.assertGreater(long_dir.getsize(), short_dir.getsize())
         self.assertEqual(short_dir, long_dir)
@@ -474,13 +482,13 @@ class FileAttributes(FileCopying):
 
     def setUp(self):
         FileCopying.setUp(self)
-        self.noperms = rpath.RPath(self.lc, self.mainprefix, ("noperms", ))
-        self.nowrite = rpath.RPath(self.lc, self.mainprefix, ("nowrite", ))
-        self.exec1 = rpath.RPath(self.lc, self.prefix, ("executable", ))
-        self.exec2 = rpath.RPath(self.lc, self.prefix, ("executable2", ))
-        self.test = rpath.RPath(self.lc, self.prefix, ("test", ))
-        self.nothing = rpath.RPath(self.lc, self.prefix, ("aoeunthoenuouo", ))
-        self.sym = rpath.RPath(self.lc, self.prefix, ("symbolic_link", ))
+        self.noperms = rpath.RPath(self.lc, self.mainprefix, ("noperms",))
+        self.nowrite = rpath.RPath(self.lc, self.mainprefix, ("nowrite",))
+        self.exec1 = rpath.RPath(self.lc, self.prefix, ("executable",))
+        self.exec2 = rpath.RPath(self.lc, self.prefix, ("executable2",))
+        self.test = rpath.RPath(self.lc, self.prefix, ("test",))
+        self.nothing = rpath.RPath(self.lc, self.prefix, ("aoeunthoenuouo",))
+        self.sym = rpath.RPath(self.lc, self.prefix, ("symbolic_link",))
 
     def testComp(self):
         """Test attribute comparison success"""
@@ -491,27 +499,37 @@ class FileAttributes(FileCopying):
 
     def testCompFail(self):
         """Test attribute comparison failures"""
-        testpairs = [(self.nowrite, self.noperms), (self.exec1, self.exec2),
-                     (self.rf, self.hl1)]
+        testpairs = [
+            (self.nowrite, self.noperms),
+            (self.exec1, self.exec2),
+            (self.rf, self.hl1),
+        ]
         for a, b in testpairs:
             self.assertFalse(a.equal_loose(b))
             self.assertFalse(b.equal_loose(a))
 
     def testCheckRaise(self):
         """Should raise exception when file missing"""
-        self.assertRaises(rpath.RPathException, rpath._check_for_files, self.nothing,
-                          self.hl1)
-        self.assertRaises(rpath.RPathException, rpath._check_for_files, self.hl1,
-                          self.nothing)
+        self.assertRaises(
+            rpath.RPathException, rpath._check_for_files, self.nothing, self.hl1
+        )
+        self.assertRaises(
+            rpath.RPathException, rpath._check_for_files, self.hl1, self.nothing
+        )
 
     def testCopyAttribs(self):
         """Test copying attributes"""
-        t = rpath.RPath(self.lc, self.write_dir, ("testattribs", ))
+        t = rpath.RPath(self.lc, self.write_dir, ("testattribs",))
         if t.lstat():
             t.delete()
         for rp in [
-                self.noperms, self.nowrite, self.rf, self.exec1, self.exec2,
-                self.hl1, self.dir
+            self.noperms,
+            self.nowrite,
+            self.rf,
+            self.exec1,
+            self.exec2,
+            self.hl1,
+            self.dir,
         ]:
             rpath.copy(rp, t)
             rpath.copy_attribs(rp, t)
@@ -520,11 +538,18 @@ class FileAttributes(FileCopying):
 
     def testCopyWithAttribs(self):
         """Test copying with attribs (bug found earlier)"""
-        out = rpath.RPath(self.lc, self.write_dir, ("out", ))
+        out = rpath.RPath(self.lc, self.write_dir, ("out",))
         if out.lstat():
             out.delete()
-        copy_list = [self.noperms, self.nowrite, self.rf,
-                     self.exec1, self.exec2, self.hl1, self.dir]
+        copy_list = [
+            self.noperms,
+            self.nowrite,
+            self.rf,
+            self.exec1,
+            self.exec2,
+            self.hl1,
+            self.dir,
+        ]
         if os.name != "nt":  # symlinks not supported under Windows
             copy_list.append(self.sym)
         for rp in copy_list:
@@ -535,10 +560,10 @@ class FileAttributes(FileCopying):
 
     def testCopyRaise(self):
         """Should raise exception for non-existent files"""
-        self.assertRaises(AssertionError, rpath.copy_attribs, self.hl1,
-                          self.nothing)
-        self.assertRaises(AssertionError, rpath.copy_attribs, self.nothing,
-                          self.nowrite)
+        self.assertRaises(AssertionError, rpath.copy_attribs, self.hl1, self.nothing)
+        self.assertRaises(
+            AssertionError, rpath.copy_attribs, self.nothing, self.nowrite
+        )
 
 
 class CheckPath(unittest.TestCase):
@@ -562,7 +587,7 @@ class Gzip(RPathTest):
         dirrp = rpath.RPath(self.lc, abs_output_dir)
         re_init_rpath_dir(dirrp)
 
-        base_rp = dirrp.append('foo')
+        base_rp = dirrp.append("foo")
         fileobj = rpath.MaybeGzip(base_rp)
         fileobj.close()
         base_rp.setdata()
@@ -570,7 +595,7 @@ class Gzip(RPathTest):
         self.assertEqual(base_rp.getsize(), 0)
         base_rp.delete()
 
-        base_gz = dirrp.append('foo.gz')
+        base_gz = dirrp.append("foo.gz")
         self.assertFalse(base_gz.lstat())
         fileobj = rpath.MaybeGzip(base_rp)
         fileobj.write(b"lala")

@@ -37,38 +37,55 @@ class ListAction(actions.BaseAction):
     List files at a given time, files changed since a certain time, or
     increments, with or without size, in a given backup repository.
     """
+
     name = "list"
     security = "validate"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
-        entity_parsers = cls._get_subparsers(
-            subparser, "entity", "files", "increments")
+        entity_parsers = cls._get_subparsers(subparser, "entity", "files", "increments")
         time_group = entity_parsers["files"].add_mutually_exclusive_group()
         time_group.add_argument(
-            "--changed-since", metavar="TIME",
-            help="list files modified since given time")
+            "--changed-since",
+            metavar="TIME",
+            help="list files modified since given time",
+        )
         time_group.add_argument(
-            "--at", metavar="TIME", default="now",
-            help="list files at given time (default is now/latest)")
+            "--at",
+            metavar="TIME",
+            default="now",
+            help="list files at given time (default is now/latest)",
+        )
         entity_parsers["files"].add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
-            help="location of repository to list files from")
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=1,
+            help="location of repository to list files from",
+        )
         entity_parsers["increments"].add_argument(
-            "--size", action=BooleanOptionalAction, default=False,
-            help="also output size of each increment (might take longer)")
+            "--size",
+            action=BooleanOptionalAction,
+            default=False,
+            help="also output size of each increment (might take longer)",
+        )
         entity_parsers["increments"].add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
-            help="location of repository to list increments from")
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=1,
+            help="location of repository to list increments from",
+        )
         return subparser
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
-                self.connected_locations[0], self.values.force,
-                must_be_writable=False, must_exist=True, can_be_sub_path=True
+                self.connected_locations[0],
+                self.values.force,
+                must_be_writable=False,
+                must_exist=True,
+                can_be_sub_path=True,
             )
         return conn_value
 
@@ -96,7 +113,8 @@ class ListAction(actions.BaseAction):
 
         if self.values.entity == "files":
             self.action_time = self.repo.get_parsed_time(
-                self.values.changed_since or self.values.at)
+                self.values.changed_since or self.values.at
+            )
             if self.action_time is None:
                 return ret_code | Globals.RET_CODE_ERR
 
@@ -127,24 +145,28 @@ class ListAction(actions.BaseAction):
         triples = self.repo.get_increments_sizes()
 
         if self.values.parsable_output:
-            print(yaml.safe_dump(triples,
-                                 explicit_start=True, explicit_end=True))
+            print(yaml.safe_dump(triples, explicit_start=True, explicit_end=True))
         else:
             stat_obj = statistics.StatsObj()  # used for byte summary string
 
-            print("{: ^24} {: ^17} {: ^17}".format("Time", "Size",
-                                                   "Cumulative size"))
+            print("{: ^24} {: ^17} {: ^17}".format("Time", "Size", "Cumulative size"))
             print("{:-^24} {:-^17} {:-^17}".format("", "", ""))
             # print the normal increments then the mirror
             for triple in triples[:-1]:
-                print("{: <24} {: >17} {: >17}".format(
-                    Time.timetopretty(triple["time"]),
-                    stat_obj.get_byte_summary_string(triple["size"]),
-                    stat_obj.get_byte_summary_string(triple["total_size"])))
-            print("{: <24} {: >17} {: >17}  (current mirror)".format(
-                Time.timetopretty(triples[-1]["time"]),
-                stat_obj.get_byte_summary_string(triples[-1]["size"]),
-                stat_obj.get_byte_summary_string(triples[-1]["total_size"])))
+                print(
+                    "{: <24} {: >17} {: >17}".format(
+                        Time.timetopretty(triple["time"]),
+                        stat_obj.get_byte_summary_string(triple["size"]),
+                        stat_obj.get_byte_summary_string(triple["total_size"]),
+                    )
+                )
+            print(
+                "{: <24} {: >17} {: >17}  (current mirror)".format(
+                    Time.timetopretty(triples[-1]["time"]),
+                    stat_obj.get_byte_summary_string(triples[-1]["size"]),
+                    stat_obj.get_byte_summary_string(triples[-1]["total_size"]),
+                )
+            )
         return Globals.RET_CODE_OK
 
     def _list_increments(self):
@@ -153,15 +175,18 @@ class ListAction(actions.BaseAction):
         """
         incs = self.repo.get_increments()
         if self.values.parsable_output:
-            print(yaml.safe_dump(incs,
-                                 explicit_start=True, explicit_end=True))
+            print(yaml.safe_dump(incs, explicit_start=True, explicit_end=True))
         else:
             print("Found {ni} increments:".format(ni=len(incs) - 1))
             for inc in incs[:-1]:
-                print("    {ib}   {ti}".format(
-                    ib=inc["base"], ti=Time.timetopretty(inc["time"])))
-            print("Current mirror: {ti}".format(
-                ti=Time.timetopretty(incs[-1]["time"])))  # time of the mirror
+                print(
+                    "    {ib}   {ti}".format(
+                        ib=inc["base"], ti=Time.timetopretty(inc["time"])
+                    )
+                )
+            print(
+                "Current mirror: {ti}".format(ti=Time.timetopretty(incs[-1]["time"]))
+            )  # time of the mirror
         return Globals.RET_CODE_OK
 
     def _list_files_changed_since(self):

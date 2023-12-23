@@ -48,6 +48,7 @@ def parse_args(parser, args):
         raise
     return parsed_args
 
+
 # === FUNCTIONS ===
 
 
@@ -78,18 +79,25 @@ def get_parser(version_string, parent_parsers, actions_dict):
     """
     parser = argparse.ArgumentParser(
         description="local/remote mirror and incremental backup",
-        parents=parent_parsers, fromfile_prefix_chars='@')
+        parents=parent_parsers,
+        fromfile_prefix_chars="@",
+    )
 
     _add_version_option_to_parser(parser, version_string)
 
     if sys.version_info.major >= 3 and sys.version_info.minor >= 7:
         sub_handler = parser.add_subparsers(
-            title="possible actions", required=True, dest='action',
-            help="call '%(prog)s <action> --help' for more information")
+            title="possible actions",
+            required=True,
+            dest="action",
+            help="call '%(prog)s <action> --help' for more information",
+        )
     else:  # required didn't exist in Python 3.6
         sub_handler = parser.add_subparsers(
-            title="possible actions", dest='action',
-            help="call '%(prog)s <action> --help' for more information")
+            title="possible actions",
+            dest="action",
+            help="call '%(prog)s <action> --help' for more information",
+        )
 
     for action in actions_dict.values():
         action.add_action_subparser(sub_handler)
@@ -107,8 +115,12 @@ def _add_version_option_to_parser(parser, version_string):
     """
 
     parser.add_argument(
-        "-V", "--version", action="version", version=version_string,
-        help="[opt] output the rdiff-backup version and exit")
+        "-V",
+        "--version",
+        action="version",
+        version=version_string,
+        help="[opt] output the rdiff-backup version and exit",
+    )
 
 
 # === MAIN ===
@@ -120,10 +132,14 @@ if __name__ == "__main__":
     Call `python3 arguments.py --help` for usage.
     """
     from rdiffbackup import actions_mgr
+
     disc_actions = actions_mgr.get_actions_dict()
-    values = parse(sys.argv[1:], "british-agent 0.0.7",
-                   actions_mgr.get_generic_parsers(),
-                   disc_actions)
+    values = parse(
+        sys.argv[1:],
+        "british-agent 0.0.7",
+        actions_mgr.get_generic_parsers(),
+        disc_actions,
+    )
     action_object = disc_actions[values.action](values)
     action_object.print_values()
     # in real life, the action_object would then do the action for which

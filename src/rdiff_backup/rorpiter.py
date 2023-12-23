@@ -69,7 +69,8 @@ class IndexedTuple(collections.UserList):
         if not isinstance(other, IndexedTuple):
             raise TypeError(
                 "An IndexedTuple can only be compared with another one, "
-                "not {oth}.".format(oth=other))
+                "not {oth}.".format(oth=other)
+            )
         if self.index < other.index:
             return -1
         elif self.index == other.index:
@@ -132,12 +133,15 @@ class IterTreeReducer:
             self.index = index
             return True
         if index == self.index:
-            log.Log("Repeated index {ri}, bad filesystem?".format(ri=index),
-                    log.WARNING)
+            log.Log(
+                "Repeated index {ri}, bad filesystem?".format(ri=index), log.WARNING
+            )
         elif index < self.index:
             raise ValueError(
                 "Bad index order: {sidx} should be lower than {idx}.".format(
-                    sidx=self.index, idx=index))
+                    sidx=self.index, idx=index
+                )
+            )
         else:  # normal case: index > self.index
             if self._finish_branches(index):
                 return False  # We are no longer in the main tree
@@ -174,7 +178,7 @@ class IterTreeReducer:
         while 1:
             to_be_finished = self.branches[-1]
             base_index = to_be_finished.base_index
-            if base_index != index[:len(base_index)]:
+            if base_index != index[: len(base_index)]:
                 # out of the tree, finish with to_be_finished
                 to_be_finished.end_process_directory()
                 del self.branches[-1]
@@ -206,6 +210,7 @@ class ITRBranch:
 
     Note that gather_from_child is currently only used for test purposes.
     """
+
     base_index = None
 
     def start_process_directory(self, *args):
@@ -270,8 +275,12 @@ class CacheIndexable:
             try:
                 del self.cache_dict[self.cache_indices[0]]
             except KeyError:
-                log.Log("Index {ix} missing from iterator cache".format(
-                    ix=self.cache_indices[0]), self.WARNING)
+                log.Log(
+                    "Index {ix} missing from iterator cache".format(
+                        ix=self.cache_indices[0]
+                    ),
+                    self.WARNING,
+                )
             del self.cache_indices[0]
 
         return next_elem
@@ -286,7 +295,8 @@ class CacheIndexable:
         except KeyError:
             assert index >= self.cache_indices[0], (
                 "Index out of order: {idx} should be bigger-equal than "
-                "{cidx}.".format(idx=index, cidx=self.cache_indices[0]))
+                "{cidx}.".format(idx=index, cidx=self.cache_indices[0])
+            )
             return None
 
 
@@ -414,8 +424,10 @@ def FillInIter(rpiter, rootrp):
                             "Expected path {pa} to be a directory but "
                             "found type {ty} instead. This is probably caused "
                             "by a bug in versions 1.0.0 and earlier.".format(
-                                pa=filler_rp, ty=filler_rp.lstat()),
-                            log.WARNING)
+                                pa=filler_rp, ty=filler_rp.lstat()
+                            ),
+                            log.WARNING,
+                        )
                         filler_rp.make_zero_dir(rootrp)
                     yield filler_rp
         yield rp

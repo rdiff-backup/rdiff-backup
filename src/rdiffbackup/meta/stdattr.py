@@ -62,36 +62,37 @@ from rdiffbackup.utils import quoting
 
 class AttrExtractor(meta.FlatExtractor):
     """Iterate rorps from metadata file"""
+
     record_boundary_regexp = re.compile(b"(?:\\n|^)(File (.*?))\\n")
     line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
 
     # mapping for metadata fields to transform into integer
     _integer_mapping = {
-        'Size': 'size',
-        'NumHardLinks': 'nlink',
-        'Inode': 'inode',
-        'DeviceLoc': 'devloc',
-        'ModTime': 'mtime',
-        'Uid': 'uid',
-        'Gid': 'gid',
-        'Permissions': 'perms',
+        "Size": "size",
+        "NumHardLinks": "nlink",
+        "Inode": "inode",
+        "DeviceLoc": "devloc",
+        "ModTime": "mtime",
+        "Uid": "uid",
+        "Gid": "gid",
+        "Permissions": "perms",
     }
     # mapping for metadata fields to transform into ascii strings
     _decode_mapping = {
-        'Type': {'key': 'type', 'enc': 'ascii'},
-        'SHA1Digest': {'key': 'sha1', 'enc': 'ascii'},
+        "Type": {"key": "type", "enc": "ascii"},
+        "SHA1Digest": {"key": "sha1", "enc": "ascii"},
         # non-ascii users and groups are seldom and not recommended, but possible
-        'Uname': {'key': 'uname', 'enc': 'utf-8'},
-        'Gname': {'key': 'gname', 'enc': 'utf-8'},
+        "Uname": {"key": "uname", "enc": "utf-8"},
+        "Gname": {"key": "gname", "enc": "utf-8"},
     }
 
     @staticmethod
     def _filename_to_index(quoted_filename):
         """Return tuple index given quoted filename"""
-        if quoted_filename == b'.':
+        if quoted_filename == b".":
             return ()
         else:
-            return tuple(quoting.unquote_path(quoted_filename).split(b'/'))
+            return tuple(quoting.unquote_path(quoted_filename).split(b"/"))
 
     @classmethod
     def _record_to_object(cls, record_string):
@@ -104,45 +105,54 @@ class AttrExtractor(meta.FlatExtractor):
         """
         data_dict = {}
         for field, data in cls.line_parsing_regexp.findall(record_string):
-            field = field.decode('ascii')
+            field = field.decode("ascii")
             if field in cls._integer_mapping:
                 data_dict[cls._integer_mapping[field]] = int(data)
             elif field in cls._decode_mapping:
                 if data == b":" or data == b"None":
-                    data_dict[cls._decode_mapping[field]['key']] = None
+                    data_dict[cls._decode_mapping[field]["key"]] = None
                 else:
-                    data_dict[cls._decode_mapping[field]['key']] = data.decode(
-                        cls._decode_mapping[field]['enc'])
+                    data_dict[cls._decode_mapping[field]["key"]] = data.decode(
+                        cls._decode_mapping[field]["enc"]
+                    )
             elif field == "File":
                 index = cls._filename_to_index(data)
             elif field == "ResourceFork":  # pragma: no cover
                 if data == b"None":
-                    data_dict['resourcefork'] = b""
+                    data_dict["resourcefork"] = b""
                 else:
-                    data_dict['resourcefork'] = binascii.unhexlify(data)
+                    data_dict["resourcefork"] = binascii.unhexlify(data)
             elif field == "CarbonFile":  # pragma: no cover
                 if data == b"None":
-                    data_dict['carbonfile'] = None
+                    data_dict["carbonfile"] = None
                 else:
-                    data_dict['carbonfile'] = _string2carbonfile(data)
+                    data_dict["carbonfile"] = _string2carbonfile(data)
             elif field == "SymData":
-                data_dict['linkname'] = quoting.unquote_path(data)
+                data_dict["linkname"] = quoting.unquote_path(data)
             elif field == "DeviceNum":
                 devchar, major_str, minor_str = data.split(b" ")
-                data_dict['devnums'] = (devchar.decode('ascii'), int(major_str),
-                                        int(minor_str))
+                data_dict["devnums"] = (
+                    devchar.decode("ascii"),
+                    int(major_str),
+                    int(minor_str),
+                )
             elif field == "AlternateMirrorName":
-                data_dict['mirrorname'] = data
+                data_dict["mirrorname"] = data
             elif field == "AlternateIncrementName":
-                data_dict['incname'] = data
+                data_dict["incname"] = data
             else:
-                log.Log("Unknown field in line field/data '{uf}/{ud}'".format(
-                    uf=field, ud=data), log.WARNING)
+                log.Log(
+                    "Unknown field in line field/data '{uf}/{ud}'".format(
+                        uf=field, ud=data
+                    ),
+                    log.WARNING,
+                )
         return rpath.RORPath(index, data_dict)
 
 
 class AttrFile(meta.FlatFile):
     """Store/retrieve metadata from mirror_metadata as rorps"""
+
     _name = "stdattr"
     _description = "Standard File Attributes"
     _prefix = b"mirror_metadata"
@@ -158,7 +168,7 @@ class AttrFile(meta.FlatFile):
         type = rorpath.gettype()
         if type is None:
             type = "None"
-        str_list.append(b"  Type %b\n" % type.encode('ascii'))
+        str_list.append(b"  Type %b\n" % type.encode("ascii"))
         if type == "reg":
             str_list.append(b"  Size %i\n" % rorpath.getsize())
 
@@ -168,12 +178,12 @@ class AttrFile(meta.FlatFile):
                     rf = b"None"
                 else:
                     rf = binascii.hexlify(rorpath.get_resource_fork())
-                str_list.append(b"  ResourceFork %b\n" % (rf, ))
+                str_list.append(b"  ResourceFork %b\n" % (rf,))
 
             # If there is Carbon data, save it.
             if rorpath.has_carbonfile():  # pragma: no cover
                 cfile = _carbonfile2string(rorpath.get_carbonfile())
-                str_list.append(b"  CarbonFile %b\n" % (cfile, ))
+                str_list.append(b"  CarbonFile %b\n" % (cfile,))
 
             # If file is hardlinked, add that information
             if Globals.preserve_hardlinks != 0:
@@ -186,22 +196,23 @@ class AttrFile(meta.FlatFile):
             # Save any hashes, if available
             if rorpath.has_sha1():
                 str_list.append(
-                    b'  SHA1Digest %b\n' % rorpath.get_sha1().encode('ascii'))
+                    b"  SHA1Digest %b\n" % rorpath.get_sha1().encode("ascii")
+                )
 
         elif type == "None":
             return b"".join(str_list)
         elif type == "dir" or type == "sock" or type == "fifo":
             pass
         elif type == "sym":
-            str_list.append(
-                b"  SymData %b\n" % quoting.quote_path(rorpath.readlink()))
+            str_list.append(b"  SymData %b\n" % quoting.quote_path(rorpath.readlink()))
         elif type == "dev":
             devchar, major, minor = rorpath.getdevnums()
             str_list.append(
-                b"  DeviceNum %b %i %i\n" % (devchar.encode('ascii'), major, minor))
+                b"  DeviceNum %b %i %i\n" % (devchar.encode("ascii"), major, minor)
+            )
 
         # Store time information
-        if type != 'sym' and type != 'dev':
+        if type != "sym" and type != "dev":
             str_list.append(b"  ModTime %i\n" % rorpath.getmtime())
 
         # Add user, group, and permission information
@@ -215,10 +226,12 @@ class AttrFile(meta.FlatFile):
         # Add long filename information
         if rorpath.has_alt_mirror_name():
             str_list.append(
-                b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(), ))
+                b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(),)
+            )
         elif rorpath.has_alt_inc_name():
             str_list.append(
-                b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(), ))
+                b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(),)
+            )
 
         return b"".join(str_list)
 
@@ -228,35 +241,34 @@ def _carbonfile2string(cfile):  # pragma: no cover
     if not cfile:
         return "None"
     retvalparts = []
-    retvalparts.append('creator:%s' % binascii.hexlify(cfile['creator']))
-    retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
-    retvalparts.append('location:%d,%d' % cfile['location'])
-    retvalparts.append('flags:%d' % cfile['flags'])
+    retvalparts.append("creator:%s" % binascii.hexlify(cfile["creator"]))
+    retvalparts.append("type:%s" % binascii.hexlify(cfile["type"]))
+    retvalparts.append("location:%d,%d" % cfile["location"])
+    retvalparts.append("flags:%d" % cfile["flags"])
     try:
-        retvalparts.append('createDate:%d' % cfile['createDate'])
+        retvalparts.append("createDate:%d" % cfile["createDate"])
     except KeyError:
-        log.Log("Writing pre-1.1.6 style metadata, without creation date",
-                log.DEBUG)
-    return '|'.join(retvalparts)
+        log.Log("Writing pre-1.1.6 style metadata, without creation date", log.DEBUG)
+    return "|".join(retvalparts)
 
 
 def _string2carbonfile(data):  # pragma: no cover
     """Re-constitute CarbonFile data from a string stored by
     _carbonfile2string."""
     retval = {}
-    for component in data.split('|'):
-        key, value = component.split(':')
-        if key == 'creator':
-            retval['creator'] = binascii.unhexlify(value)
-        elif key == 'type':
-            retval['type'] = binascii.unhexlify(value)
-        elif key == 'location':
-            a, b = value.split(',')
-            retval['location'] = (int(a), int(b))
-        elif key == 'flags':
-            retval['flags'] = int(value)
-        elif key == 'createDate':
-            retval['createDate'] = int(value)
+    for component in data.split("|"):
+        key, value = component.split(":")
+        if key == "creator":
+            retval["creator"] = binascii.unhexlify(value)
+        elif key == "type":
+            retval["type"] = binascii.unhexlify(value)
+        elif key == "location":
+            a, b = value.split(",")
+            retval["location"] = (int(a), int(b))
+        elif key == "flags":
+            retval["flags"] = int(value)
+        elif key == "createDate":
+            retval["createDate"] = int(value)
     return retval
 
 

@@ -27,6 +27,7 @@ from rdiff_backup import C, log
 
 class ParsingError(Exception):
     """This is raised when bad or unparsable data is received"""
+
     pass
 
 
@@ -37,7 +38,7 @@ class FlatExtractor:
     # beginning of next record.  The first group should start at the
     # beginning of the record.  The second group should contain the
     # (possibly quoted) filename.
-    record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
+    record_boundary_regexp = re.compile(b"(?:\\n|^)(# file: (.*?))\\n")
 
     # Set in subclass to function that converts text record to object
     _record_to_object = None
@@ -56,10 +57,13 @@ class FlatExtractor:
             except (ParsingError, ValueError) as e:
                 if self.at_end:
                     break  # Ignore whitespace/bad records at end
-                log.Log("Error parsing flat file {ff} of type {ty} due to "
-                        "exception '{ex}', metadata record ignored".format(
-                            ex=e, ty=type(self),
-                            ff=self.fileobj.fileobj.name), log.WARNING)
+                log.Log(
+                    "Error parsing flat file {ff} of type {ty} due to "
+                    "exception '{ex}', metadata record ignored".format(
+                        ex=e, ty=type(self), ff=self.fileobj.fileobj.name
+                    ),
+                    log.WARNING,
+                )
 
     def _iterate_records(self):
         """Yield all text records in order"""
@@ -83,11 +87,13 @@ class FlatExtractor:
             try:
                 obj = self._record_to_object(self.buf[:next_pos])
             except (ParsingError, ValueError) as e:
-                log.Log("Error parsing metadata file at given index {gi} due "
-                        "to exception '{ex}'".format(ex=e, gi=index),
-                        log.WARNING)
+                log.Log(
+                    "Error parsing metadata file at given index {gi} due "
+                    "to exception '{ex}'".format(ex=e, gi=index),
+                    log.WARNING,
+                )
             else:
-                if obj.index[:len(index)] != index:
+                if obj.index[: len(index)] != index:
                     break
                 yield obj
             if self.at_end:
@@ -102,8 +108,9 @@ class FlatExtractor:
         we will not be splitting lines in half.
 
         """
-        assert not self.buf or self.buf.endswith(b"\n"), (
-            "Something is wrong with buffer '{buf}'.".format(buf=self.buf))
+        assert not self.buf or self.buf.endswith(
+            b"\n"
+        ), "Something is wrong with buffer '{buf}'.".format(buf=self.buf)
         while 1:
             self.buf = self.fileobj.read(self.blocksize)
             self.buf += self.fileobj.readline()
@@ -116,17 +123,17 @@ class FlatExtractor:
                     break
                 cur_index = self._filename_to_index(m.group(2))
                 if cur_index >= index:
-                    self.buf = self.buf[m.start(1):]
+                    self.buf = self.buf[m.start(1) :]
                     return
                 else:
-                    self.buf = self.buf[m.end(1):]
+                    self.buf = self.buf[m.end(1) :]
 
     def _filename_to_index(self, quoted_filename):
         """Convert possibly quoted filename to index tuple"""
-        if quoted_filename == b'.':
+        if quoted_filename == b".":
             return ()
         else:
-            return tuple(C.acl_unquote(quoted_filename).split(b'/'))
+            return tuple(C.acl_unquote(quoted_filename).split(b"/"))
 
     def _get_next_pos(self):
         """Return position of next record in buffer, or end pos if none"""
@@ -156,6 +163,7 @@ class FlatFile:
     so that (especially) paths can be stored as bytes, without issue
     with encoding / decoding.
     """
+
     rp, fileobj, mode = None, None, None
     _buffering_on = 1  # Buffering may be useful because gzip writes are slow
     _record_buffer, _max_buffer_size = None, 100
@@ -207,8 +215,7 @@ class FlatFile:
         """
         return cls._is_main
 
-    def __init__(self, rp_base, mode, check_path=1,
-                 compress=None, callback=None):
+    def __init__(self, rp_base, mode, check_path=1, compress=None, callback=None):
         """
         Open rp (or rp+'.gz') for reading ('r') or writing ('w')
 
@@ -219,11 +226,11 @@ class FlatFile:
         self.callback = callback
         self._record_buffer = []
         if check_path:
-            if not (rp_base.isincfile()
-                    and rp_base.getincbase_bname() == self._prefix):
+            if not (rp_base.isincfile() and rp_base.getincbase_bname() == self._prefix):
                 log.Log.FatalError(
-                    "Checking the path '{pa}' went wrong.".format(pa=rp_base))
-        if mode == 'r' or mode == 'rb':
+                    "Checking the path '{pa}' went wrong.".format(pa=rp_base)
+                )
+        if mode == "r" or mode == "rb":
             self.rp = rp_base
             if compress is None:
                 if self.rp.isinccompressed():
@@ -231,24 +238,26 @@ class FlatFile:
                 else:
                     compress = False
             self.fileobj = self.rp.open("rb", compress)
-        elif mode == 'w' or mode == 'wb':
+        elif mode == "w" or mode == "wb":
             if compress and check_path and not rp_base.isinccompressed():
 
                 def callback(rp):
                     self.rp = rp
 
                 from rdiff_backup import rpath  # to avoid a circular dependency
+
                 self.fileobj = rpath.MaybeGzip(rp_base, callback)
             else:
                 self.rp = rp_base
-                assert not self.rp.lstat(), (
-                    "Path '{rp}' can't exist before it's opened.".format(
-                        rp=self.rp))
+                assert (
+                    not self.rp.lstat()
+                ), "Path '{rp}' can't exist before it's opened.".format(rp=self.rp)
                 self.fileobj = self.rp.open("wb", compress=compress)
         else:
             log.Log.FatalError(
                 "File opening mode '{om}' should have been one of "
-                "r, rb, w or wb".format(om=mode))
+                "r, rb, w or wb".format(om=mode)
+            )
 
     def write_object(self, object):
         """Convert one object to record and write to file"""

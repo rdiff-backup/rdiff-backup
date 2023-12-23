@@ -51,6 +51,7 @@ class Manager:
     """
     Read/Combine/Write metadata files by time
     """
+
     def __init__(self, data_dir=None):
         """
         Set listing of rdiff-backup-data dir
@@ -76,9 +77,11 @@ class Manager:
         meta_iters = []
         meta_main_iter = self._get_meta_main_at_time(time, restrict_index)
         if not meta_main_iter:
-            log.Log("Could not find mirror metadata file. "
-                    "Metadata will be read from filesystem instead",
-                    log.WARNING)
+            log.Log(
+                "Could not find mirror metadata file. "
+                "Metadata will be read from filesystem instead",
+                log.WARNING,
+            )
             return None
         # loop through the non-main meta classes
         for meta_class in get_meta_list()[1:]:
@@ -87,8 +90,10 @@ class Manager:
                 if meta_iter:
                     meta_iters.append((meta_class, meta_iter))
                 else:
-                    log.Log("{md} file not found".format(
-                        md=meta_class.get_desc()), log.WARNING)
+                    log.Log(
+                        "{md} file not found".format(md=meta_class.get_desc()),
+                        log.WARNING,
+                    )
                     meta_iters.append((meta_class, iter([])))
 
         # join all iterators into the main iterator
@@ -97,7 +102,7 @@ class Manager:
 
         return meta_main_iter
 
-    def get_writer(self, typestr=b'snapshot', time=None):
+    def get_writer(self, typestr=b"snapshot", time=None):
         """
         Get a writer object that can write any kind of metadata
         """
@@ -124,17 +129,22 @@ class Manager:
             temprp[0] = rp
 
         writer = self._meta_main_class(
-            temprp[0], 'wb',
+            temprp[0],
+            "wb",
             compress=Globals.compression,
-            check_path=0, callback=callback)
+            check_path=0,
+            callback=callback,
+        )
         for rorp in self._get_meta_main_at_time(regress_time, None):
             writer.write_object(rorp)
         writer.close()
 
         finalrp = self.data_dir.append(
-            b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(regress_time))
-        assert not finalrp.lstat(), (
-            "Metadata path '{mrp}' shouldn't exist.".format(mrp=finalrp))
+            b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(regress_time)
+        )
+        assert not finalrp.lstat(), "Metadata path '{mrp}' shouldn't exist.".format(
+            mrp=finalrp
+        )
         rpath.rename(temprp[0], finalrp)
         if Globals.fsync_directories:
             self.data_dir.fsync()
@@ -149,8 +159,7 @@ class Manager:
         """
         Add rp to list of inc rps in the rbdir
         """
-        assert rp.isincfile(), (
-            "Path '{irp}' must be an increment file.".format(irp=rp))
+        assert rp.isincfile(), "Path '{irp}' must be an increment file.".format(irp=rp)
         self.rplist.append(rp)
         time = rp.getinctime()
         if time in self.timerpmap:
@@ -172,7 +181,7 @@ class Manager:
             return None
         for rp in self.timerpmap[time]:
             if rp.getincbase_bname() == meta_class.get_prefix():
-                return meta_class(rp, 'r').get_objects(restrict_index)
+                return meta_class(rp, "r").get_objects(restrict_index)
         return None
 
     def _writer_helper(self, typestr, time, meta_class, force=False):
@@ -187,16 +196,15 @@ class Manager:
         else:
             timestr = Time.timetobytes(time)
         triple = map(os.fsencode, (meta_class.get_prefix(), timestr, typestr))
-        filename = b'.'.join(triple)
+        filename = b".".join(triple)
         rp = self.data_dir.append(filename)
         assert not rp.lstat(), "File '{rp}' shouldn't exist.".format(rp=rp)
-        assert rp.isincfile(), (
-            "Path '{irp}' must be an increment file.".format(irp=rp))
+        assert rp.isincfile(), "Path '{irp}' must be an increment file.".format(irp=rp)
         if meta_class.is_active() or force:
             # Before API 201, metafiles couldn't be compressed
-            return meta_class(rp, 'w',
-                              compress=Globals.compression,
-                              callback=self._add_incrp)
+            return meta_class(
+                rp, "w", compress=Globals.compression, callback=self._add_incrp
+            )
         else:
             return None
 
@@ -217,6 +225,7 @@ class PatchDiffMan(Manager):
     replaces the mirror_metadata entry, unless it has Type None, which
     indicates the record should be deleted from the original.
     """
+
     max_diff_chain = 9  # After this many diffs, make a new snapshot
 
     def sorted_prefix_inclist(self, prefix, min_time=0):
@@ -234,14 +243,17 @@ class PatchDiffMan(Manager):
         # we had cases where the timestamp of the metadata files were
         # duplicates, we need to fail or at least warn about such cases
         unique_set = set()
-        for (time, rp) in sortlist:
+        for time, rp in sortlist:
             if time in unique_set:
                 if Globals.allow_duplicate_timestamps:
-                    log.Log("Metadata file '{mf}' has a duplicate "
-                            "timestamp date, you might not be able to "
-                            "recover files on or earlier than this date. "
-                            "Assuming you're in the process of cleaning up "
-                            "your repository".format(mf=rp), log.WARNING)
+                    log.Log(
+                        "Metadata file '{mf}' has a duplicate "
+                        "timestamp date, you might not be able to "
+                        "recover files on or earlier than this date. "
+                        "Assuming you're in the process of cleaning up "
+                        "your repository".format(mf=rp),
+                        log.WARNING,
+                    )
                 else:
                     log.Log.FatalError(
                         "Metadata file '{mf}' has a duplicate timestamp "
@@ -249,7 +261,8 @@ class PatchDiffMan(Manager):
                         "earlier than this date. "
                         "Check the man page on how to clean up your repository "
                         "using the '--allow-duplicate-timestamps' "
-                        "option".format(mf=rp))
+                        "option".format(mf=rp)
+                    )
             else:
                 unique_set.add(time)
 
@@ -264,10 +277,11 @@ class PatchDiffMan(Manager):
             return
         log.Log("Writing mirror_metadata diff", log.DEBUG)
 
-        diff_writer = self._writer_helper(b'diff', oldrp.getinctime(),
-                                          self._meta_main_class)
-        new_iter = self._meta_main_class(newrp, 'r').get_objects()
-        old_iter = self._meta_main_class(oldrp, 'r').get_objects()
+        diff_writer = self._writer_helper(
+            b"diff", oldrp.getinctime(), self._meta_main_class
+        )
+        new_iter = self._meta_main_class(newrp, "r").get_objects()
+        old_iter = self._meta_main_class(oldrp, "r").get_objects()
         for diff_rorp in self._get_diffiter(new_iter, old_iter):
             diff_writer.write_object(diff_rorp)
         diff_writer.close()  # includes sync
@@ -288,20 +302,22 @@ class PatchDiffMan(Manager):
         """
         Check if we should diff, returns (new, old) rps, or (None, None)
         """
-        inclist = self.sorted_prefix_inclist(b'mirror_metadata')
-        assert len(inclist) >= 1, (
-            "There must be a least one element in '{ilist}'.".format(
-                ilist=inclist))
+        inclist = self.sorted_prefix_inclist(b"mirror_metadata")
+        assert (
+            len(inclist) >= 1
+        ), "There must be a least one element in '{ilist}'.".format(ilist=inclist)
         if len(inclist) == 1:
             return (None, None)
         newrp, oldrp = inclist[:2]
-        assert newrp.getinctype() == oldrp.getinctype() == b'snapshot', (
-            "New '{nrp}' and old '{orp}' paths must be of "
-            "type 'snapshot'.".format(nrp=newrp, orp=oldrp))
+        assert (
+            newrp.getinctype() == oldrp.getinctype() == b"snapshot"
+        ), "New '{nrp}' and old '{orp}' paths must be of " "type 'snapshot'.".format(
+            nrp=newrp, orp=oldrp
+        )
 
         chainlen = 1
         for rp in inclist[2:]:
-            if rp.getinctype() != b'diff':
+            if rp.getinctype() != b"diff":
                 break
             chainlen += 1
         if chainlen >= self.max_diff_chain:
@@ -313,7 +329,7 @@ class PatchDiffMan(Manager):
         Get metadata rorp iter, possibly by patching with diffs
         """
         meta_iters = [
-            self._meta_main_class(rp, 'r').get_objects(restrict_index)
+            self._meta_main_class(rp, "r").get_objects(restrict_index)
             for rp in self._relevant_meta_main_incs(time)
         ]
         if not meta_iters:
@@ -326,20 +342,20 @@ class PatchDiffMan(Manager):
         """
         Return list [snapshotrp, diffrps ...] time sorted
         """
-        inclist = self.sorted_prefix_inclist(b'mirror_metadata', min_time=time)
+        inclist = self.sorted_prefix_inclist(b"mirror_metadata", min_time=time)
         if not inclist:
             return inclist
         assert inclist[-1].getinctime() == time, (
             "The time of the last increment '{it}' must be equal to "
-            "the given time '{gt}'.".format(it=inclist[-1].getinctime(),
-                                            gt=time))
+            "the given time '{gt}'.".format(it=inclist[-1].getinctime(), gt=time)
+        )
         for i in range(len(inclist) - 1, -1, -1):
-            if inclist[i].getinctype() == b'snapshot':
+            if inclist[i].getinctype() == b"snapshot":
                 return inclist[i:]
         else:
             log.Log.FatalError(
-                "Increments list '{il}' contains no snapshots".format(
-                    il=inclist))
+                "Increments list '{il}' contains no snapshots".format(il=inclist)
+            )
 
     def _iterate_patched_attr(self, attr_iter_list):
         """
@@ -370,11 +386,11 @@ def get_meta_dict():
     """
     # we attach the dictionary of plugins to an element of the function to
     # make it permanent
-    if not hasattr(get_meta_dict, 'plugins'):
+    if not hasattr(get_meta_dict, "plugins"):
         get_meta_dict.plugins = plugins.get_discovered_plugins(
-            rdiffbackup.meta, "rdb_meta_")
-        log.Log("Found meta plugins: {mp}".format(mp=get_meta_dict.plugins),
-                log.DEBUG)
+            rdiffbackup.meta, "rdb_meta_"
+        )
+        log.Log("Found meta plugins: {mp}".format(mp=get_meta_dict.plugins), log.DEBUG)
 
     return get_meta_dict.plugins
 
@@ -383,7 +399,7 @@ def get_meta_list():
     """
     return a sorted list of meta plugins, the main meta being the first element
     """
-    if not hasattr(get_meta_list, 'plugins'):
+    if not hasattr(get_meta_list, "plugins"):
         main_meta = None
         meta_classes = []
         for meta_class in get_meta_dict().values():
@@ -394,7 +410,9 @@ def get_meta_list():
                     log.Log.FatalError(
                         "There can only be one main metadata class, but "
                         "both {m1} and {m2} claim to be the main one".format(
-                            m1=main_meta, m2=meta_class))
+                            m1=main_meta, m2=meta_class
+                        )
+                    )
             else:
                 meta_classes.append(meta_class)
         if main_meta is None:
@@ -412,6 +430,6 @@ def get_meta_manager(recreate=False):
     when not.
     """
     # we attach the manager to an element of the function to make it permanent
-    if not hasattr(get_meta_manager, 'manager') or recreate:
+    if not hasattr(get_meta_manager, "manager") or recreate:
         get_meta_manager.manager = PatchDiffMan()
     return get_meta_manager.manager

@@ -15,13 +15,14 @@ class FSAbilitiesTest(unittest.TestCase):
     the expected values below.
 
     """
+
     # Describes standard linux file system without acls/eas
     dir_to_test = abs_test_dir
     eas = acls = None
     chars_to_quote = ""
     extended_filenames = True
     case_sensitive = True
-    ownership = (os.getuid() == 0)
+    ownership = os.getuid() == 0
     hardlinks = fsync_dirs = True
     dir_inc_perms = True
     resource_forks = False
@@ -46,7 +47,7 @@ class FSAbilitiesTest(unittest.TestCase):
     # sudo mount -o loop,uid=$(id -u) build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive
     # touch build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive/some_File
 
-    case_insensitive_path = os.path.join(abs_test_dir, b'fs_insensitive')
+    case_insensitive_path = os.path.join(abs_test_dir, b"fs_insensitive")
 
     def testReadOnly(self):
         """Test basic querying read only"""
@@ -86,9 +87,10 @@ class FSAbilitiesTest(unittest.TestCase):
 
         new_dir.delete()
 
-    @unittest.skipUnless(os.path.isdir(case_insensitive_path),
-                         "Case insensitive directory %s does not exist" %
-                         case_insensitive_path)
+    @unittest.skipUnless(
+        os.path.isdir(case_insensitive_path),
+        "Case insensitive directory %s does not exist" % case_insensitive_path,
+    )
     def test_case_sensitive(self):
         """Test a read-only case-INsensitive directory"""
         rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)

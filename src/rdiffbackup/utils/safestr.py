@@ -24,6 +24,6 @@ Simple function to safely transform bytes and other objects to string
 def to_str(something):
     """Transform bytes into string without risk of conversion error"""
     if isinstance(something, bytes):
-        return str(something, errors='replace')
+        return str(something, errors="replace")
     else:
         return str(something)

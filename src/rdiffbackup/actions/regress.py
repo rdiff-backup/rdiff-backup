@@ -32,25 +32,34 @@ class RegressAction(actions.BaseAction):
     Regress a backup repository, i.e. remove the last (failed) incremental
     backup and reverse to the last known good mirror.
     """
+
     name = "regress"
     security = "backup"
-    parent_parsers = [actions.COMPRESSION_PARSER, actions.TIMESTAMP_PARSER,
-                      actions.USER_GROUP_PARSER]
+    parent_parsers = [
+        actions.COMPRESSION_PARSER,
+        actions.TIMESTAMP_PARSER,
+        actions.USER_GROUP_PARSER,
+    ]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
-            help="location of repository to check and possibly regress")
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=1,
+            help="location of repository to check and possibly regress",
+        )
         return subparser
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
-                self.connected_locations[0], self.values.force,
-                must_be_writable=True, must_exist=True
+                self.connected_locations[0],
+                self.values.force,
+                must_be_writable=True,
+                must_exist=True,
             )
         return conn_value
 
@@ -75,11 +84,13 @@ class RegressAction(actions.BaseAction):
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
-            "preserve_num_ids": self.values.preserve_numerical_ids
+            "preserve_num_ids": self.values.preserve_numerical_ids,
         }
-        ret_code = self.repo.setup(owners_map=owners_map,
-                                   action_name=self.name,
-                                   not_compressed_regexp=self.values.not_compressed_regexp)
+        ret_code = self.repo.setup(
+            owners_map=owners_map,
+            action_name=self.name,
+            not_compressed_regexp=self.values.not_compressed_regexp,
+        )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
@@ -93,8 +104,7 @@ class RegressAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self._operate_regress(
-            noticeable=True, force=self.values.force)
+        ret_code |= self._operate_regress(noticeable=True, force=self.values.force)
 
         return ret_code
 

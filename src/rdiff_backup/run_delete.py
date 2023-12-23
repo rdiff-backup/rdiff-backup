@@ -37,26 +37,34 @@ import sys
 
 
 # List of suffixes for increments
-SUFFIXES = [b".missing", b".snapshot.gz", b".snapshot",
-            b".diff.gz", b".data.gz", b".data", b".dir", b".diff"]
+SUFFIXES = [
+    b".missing",
+    b".snapshot.gz",
+    b".snapshot",
+    b".diff.gz",
+    b".data.gz",
+    b".data",
+    b".dir",
+    b".diff",
+]
 
 
 def _bytes(value):
     if isinstance(value, bytes):
         return value
     else:
-        return value.encode('utf8', errors='surrogateescape')
+        return value.encode("utf8", errors="surrogateescape")
 
 
 def _str(value):
     if isinstance(value, str):
         return value
     else:
-        return value.decode('utf-8', errors='replace')
+        return value.decode("utf-8", errors="replace")
 
 
 # Check if gzip is available.
-_GZIP = shutil.which('gzip')
+_GZIP = shutil.which("gzip")
 
 
 class WrapClose:
@@ -94,8 +102,8 @@ def _open(fn, mode):
     Wrapper to open a file with or without compression using gzip executable or
     pure-python implementation.
     """
-    compress = fn.endswith(b'.gz')
-    buffered = io.BufferedReader if 'r' in mode else io.BufferedWriter
+    compress = fn.endswith(b".gz")
+    buffered = io.BufferedReader if "r" in mode else io.BufferedWriter
     # Open file directly if compression is not required
     if not compress:
         return buffered(open(fn, mode))
@@ -105,21 +113,19 @@ def _open(fn, mode):
         return buffered(gzip.open(fn, mode))
 
     # When available, open file using subprocess gzip for better performance
-    if 'r' in mode:
-        proc = subprocess.Popen([_bytes(_GZIP), b'-cd', fn],
-                                stdout=subprocess.PIPE)
+    if "r" in mode:
+        proc = subprocess.Popen([_bytes(_GZIP), b"-cd", fn], stdout=subprocess.PIPE)
         return WrapClose(proc.stdout, proc)
     else:  # wb
-        proc = subprocess.Popen([_GZIP],
-                                stdin=subprocess.PIPE,
-                                stdout=open(fn, mode))
+        proc = subprocess.Popen([_GZIP], stdin=subprocess.PIPE, stdout=open(fn, mode))
         return WrapClose(proc.stdin, proc)
 
 
 def _print_usage(error_message=None):
     if error_message:
         print(error_message)
-    print("""
+    print(
+        """
 Usage: %s [OPTION]... PATH
     Delete PATH from a rdiff-backup repository including the current
     mirror and all its history.
@@ -131,7 +137,9 @@ Options:
     PATH
             A relative or absolute path to be deleted. This path must be
             inside a rdiff-backup repository.
-""" % (sys.argv[0],))
+"""
+        % (sys.argv[0],)
+    )
     sys.exit(1 if error_message else 0)
 
 
@@ -142,7 +150,9 @@ def _parse_options():
     # Support environment variable
     try:
         optlist, args = getopt.getopt(
-            sys.argv[1:], "hd", ["help", "dry-run"],
+            sys.argv[1:],
+            "hd",
+            ["help", "dry-run"],
         )
     except getopt.GetoptError as e:
         _print_usage("fatal: bad command line: " + str(e))
@@ -157,9 +167,9 @@ def _parse_options():
 
     # Make sure we get a folder or a file to be deleted.
     if len(args) == 0:
-        _print_usage('fatal: missing arguments')
+        _print_usage("fatal: missing arguments")
     elif len(args) > 1:
-        _print_usage('fatal: too many arguments')
+        _print_usage("fatal: too many arguments")
     # NOTE: we can't check for actual existence of path because it might only
     #       exist in past increments
     # elif not os.path.lexists(args[0]):
@@ -172,14 +182,13 @@ def _parse_options():
 
     # we need to make sure we won't try to remove rdiff-backup-data or a file
     # within this directory (os.altsep is for Windows)
-    if (b"rdiff-backup-data" in full_path.split(os.fsencode(os.sep))
-            or (os.altsep
-                and (b"rdiff-backup-data"
-                     in full_path.split(os.fsencode(os.altsep))))):
+    if b"rdiff-backup-data" in full_path.split(os.fsencode(os.sep)) or (
+        os.altsep and (b"rdiff-backup-data" in full_path.split(os.fsencode(os.altsep)))
+    ):
         sys.exit("fatal: path to delete can't be rdiff-backup-data or within")
 
-    while root_dir != b'/':
-        rdiff_backup_data = os.path.join(root_dir, b'rdiff-backup-data')
+    while root_dir != b"/":
+        rdiff_backup_data = os.path.join(root_dir, b"rdiff-backup-data")
         if os.path.isdir(rdiff_backup_data):
             relpath = os.path.relpath(full_path, start=root_dir)
             return root_dir, relpath, dry_run
@@ -197,7 +206,7 @@ def _filename_from_increment(file):
     """
     for suffix in SUFFIXES:
         if file.endswith(suffix):
-            with_suffix = file[:-len(suffix)]
+            with_suffix = file[: -len(suffix)]
             return with_suffix.rsplit(b".", 1)[0]
     return None
 
@@ -206,34 +215,42 @@ def _remove_from_metadata(repopath, file, dry_run):
     """
     This function is used to remove the repo path from the given `file` metadata.
     """
-    if os.path.basename(file).startswith(b'file_statistics'):
-        start_marker = b''
+    if os.path.basename(file).startswith(b"file_statistics"):
+        start_marker = b""
 
         def matches(line):
-            path = line.rsplit(b' ', 4)[0]
-            return path == repopath.metaquote or path.startswith(repopath.metaquote + b'/')
+            path = line.rsplit(b" ", 4)[0]
+            return path == repopath.metaquote or path.startswith(
+                repopath.metaquote + b"/"
+            )
 
-    elif os.path.basename(file).startswith(b'mirror_metadata'):
-        start_marker = b'File '
-
-        def matches(line):
-            return line == b'File ' + repopath.metaquote + b'\n' or line.startswith(b'File ' + repopath.metaquote + b'/')
-
-    elif (os.path.basename(file).startswith(b'extended_attributes')
-          or os.path.basename(file).startswith(b'access_control_lists')
-          or os.path.basename(file).startswith(b'win_access_control_lists')):
-        start_marker = b'# file: '
+    elif os.path.basename(file).startswith(b"mirror_metadata"):
+        start_marker = b"File "
 
         def matches(line):
-            return line == b'# file: ' + repopath.aclquote + b'\n' or line.startswith(b'# file: ' + repopath.aclquote + b'/')
+            return line == b"File " + repopath.metaquote + b"\n" or line.startswith(
+                b"File " + repopath.metaquote + b"/"
+            )
+
+    elif (
+        os.path.basename(file).startswith(b"extended_attributes")
+        or os.path.basename(file).startswith(b"access_control_lists")
+        or os.path.basename(file).startswith(b"win_access_control_lists")
+    ):
+        start_marker = b"# file: "
+
+        def matches(line):
+            return line == b"# file: " + repopath.aclquote + b"\n" or line.startswith(
+                b"# file: " + repopath.aclquote + b"/"
+            )
 
     else:
         return
 
-    print('removing entries `%s` from %s' % (_str(repopath.relpath), _str(file)))
-    input = _open(file, 'rb')
-    tmp_file = os.path.join(os.path.dirname(file), b'.tmp.' + os.path.basename(file))
-    output = _open(tmp_file, 'wb')
+    print("removing entries `%s` from %s" % (_str(repopath.relpath), _str(file)))
+    input = _open(file, "rb")
+    tmp_file = os.path.join(os.path.dirname(file), b".tmp." + os.path.basename(file))
+    output = _open(tmp_file, "wb")
     try:
         line = input.readline()
         while line:
@@ -241,8 +258,10 @@ def _remove_from_metadata(repopath, file, dry_run):
                 line = input.readline()
                 while line and not line.startswith(start_marker):
                     # Special case to handle longfilename
-                    if line.startswith(b'  AlternateIncrementName ') or line.startswith(b'  AlternateMirrorName '):
-                        name = line.strip(b'\n').rsplit(b' ', 1)[1]
+                    if line.startswith(b"  AlternateIncrementName ") or line.startswith(
+                        b"  AlternateMirrorName "
+                    ):
+                        name = line.strip(b"\n").rsplit(b" ", 1)[1]
                         path = os.path.join(repopath.repo.long_filename_data, name)
                         _remove_increments(path, dry_run)
                     line = input.readline()
@@ -274,7 +293,7 @@ def _remove_increments(path, dry_run):
             file = os.path.join(dir, p)
             if not os.path.isdir(file) and fn == _filename_from_increment(p):
                 # Remove the increment entry
-                print('deleting increments `%s`' % (_str(file),))
+                print("deleting increments `%s`" % (_str(file),))
                 if not dry_run:
                     os.remove(file)
 
@@ -328,8 +347,10 @@ def _rmtree(path, dry_run):
 
 def _unquote(name):
     """Remove quote (;000) from the given name."""
-    assert isinstance(name, bytes), (
-        "Input %s to function must be bytes not %s." % (name, type(name)))
+    assert isinstance(name, bytes), "Input %s to function must be bytes not %s." % (
+        name,
+        type(name),
+    )
 
     # This function just gives back the original text if it can decode it
     def unquoted_char(match):
@@ -348,18 +369,18 @@ def _unquote(name):
 def _acl_quote(s):
     """Quote filename for ACL usages."""
     # Table mapping for meta_quote and meta_unquote
-    _safe = b'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<>?@[]^_`{|}~'
+    _safe = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&'()*+,-./:;<>?@[]^_`{|}~"
     _meta_quote_map = {}
     for i in range(1, 256):
-        c = struct.pack('B', i)
+        c = struct.pack("B", i)
         if c in _safe:
             _meta_quote_map[i] = c
         else:
-            _meta_quote_map[i] = '\\{0:03o}'.format(i).encode('ascii')
-    return b''.join(map(_meta_quote_map.__getitem__, s))
+            _meta_quote_map[i] = "\\{0:03o}".format(i).encode("ascii")
+    return b"".join(map(_meta_quote_map.__getitem__, s))
 
 
-class Repo():
+class Repo:
     """
     Represent the rediff-backup repository.
 
@@ -369,8 +390,10 @@ class Repo():
 
     def __init__(self, root):
         self.root = root
-        self.rdiff_backup_data = os.path.join(self.root, b'rdiff-backup-data')
-        self.long_filename_data = os.path.join(self.rdiff_backup_data, b'long_filename_data')
+        self.rdiff_backup_data = os.path.join(self.root, b"rdiff-backup-data")
+        self.long_filename_data = os.path.join(
+            self.rdiff_backup_data, b"long_filename_data"
+        )
 
     def is_lock(self):
         """
@@ -378,11 +401,17 @@ class Repo():
         is already locked by another process.
         """
         # Check if the repository has multiple current_mirror.
-        count = len([x for x in os.listdir(self.rdiff_backup_data) if x.startswith(b'current_mirror.')])
+        count = len(
+            [
+                x
+                for x in os.listdir(self.rdiff_backup_data)
+                if x.startswith(b"current_mirror.")
+            ]
+        )
         return count > 1
 
 
-class RepoPath():
+class RepoPath:
     """
     Object used to provide all the variation of the same path with different escaping.
 
@@ -399,19 +428,21 @@ class RepoPath():
         assert root
         assert isinstance(root, bytes)
         assert os.path.isdir(root)
-        assert os.path.isdir(os.path.join(root, b'rdiff-backup-data'))
+        assert os.path.isdir(os.path.join(root, b"rdiff-backup-data"))
         assert relpath
         assert isinstance(relpath, bytes)
-        assert relpath != b'rdiff-backup-data'
+        assert relpath != b"rdiff-backup-data"
 
         self.repo = Repo(root)
         self.relpath = relpath
-        self.metaquote = _unquote(self.relpath).replace(b'\\', b'\\\\')
+        self.metaquote = _unquote(self.relpath).replace(b"\\", b"\\\\")
         self.aclquote = _acl_quote(self.relpath)
 
         # Return the absolute location of this path on the filesystem
         self.abspath = os.path.join(self.repo.root, self.relpath)
-        self.increments = os.path.join(self.repo.rdiff_backup_data, b'increments', self.relpath)
+        self.increments = os.path.join(
+            self.repo.rdiff_backup_data, b"increments", self.relpath
+        )
 
 
 def main():
@@ -420,7 +451,7 @@ def main():
     root, relpath, dry_run = _parse_options()
     repopath = RepoPath(root, relpath)
     if repopath.repo.is_lock():
-        sys.exit('failed to acquire repository lock. A backup may be running.')
+        sys.exit("failed to acquire repository lock. A backup may be running.")
 
     # Check if the repository is "locked"
     print("start deleting path `%s` from repository %s" % (_str(relpath), _str(root)))
@@ -432,12 +463,12 @@ def main():
     for f in os.listdir(dir):
         _remove_from_metadata(repopath, os.path.join(dir, f), dry_run)
 
-    print('deleting directory `%s` recursively' % (_str(repopath.abspath),))
+    print("deleting directory `%s` recursively" % (_str(repopath.abspath),))
     _rmtree(repopath.abspath, dry_run)
 
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
     _remove_increments(repopath.increments, dry_run)
-    print('done')
+    print("done")
 
 
 # Call main if this script is call directly.

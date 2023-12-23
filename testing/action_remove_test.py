@@ -17,35 +17,43 @@ class ActionRemoveTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(comtst.abs_test_dir, b"action_remove")
         self.from1_struct = {
-            "from1": {"contents": {
-                "fileChanged": {"content": "initial"},
-                "fileOld": {},
-                "fileUnchanged": {"content": "unchanged"},
-            }}
+            "from1": {
+                "contents": {
+                    "fileChanged": {"content": "initial"},
+                    "fileOld": {},
+                    "fileUnchanged": {"content": "unchanged"},
+                }
+            }
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"contents": {
-                "fileChanged": {"content": "modified"},
-                "fileNew": {},
-                "fileUnchanged": {"content": "unchanged"},
-            }}
+            "from2": {
+                "contents": {
+                    "fileChanged": {"content": "modified"},
+                    "fileNew": {},
+                    "fileUnchanged": {"content": "unchanged"},
+                }
+            }
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
         self.from3_struct = {
-            "from3": {"contents": {
-                "fileChanged": {"content": "modified again"},
-                "fileNew": {},
-                "fileUnchanged": {"content": "unchanged"},
-            }}
+            "from3": {
+                "contents": {
+                    "fileChanged": {"content": "modified again"},
+                    "fileNew": {},
+                    "fileUnchanged": {"content": "unchanged"},
+                }
+            }
         }
         self.from3_path = os.path.join(self.base_dir, b"from3")
         self.from4_struct = {
-            "from4": {"contents": {
-                "fileChanged": {"content": "modified again"},
-                "fileEvenNewer": {},
-                "fileUnchanged": {"content": "unchanged"},
-            }}
+            "from4": {
+                "contents": {
+                    "fileChanged": {"content": "modified again"},
+                    "fileEvenNewer": {},
+                    "fileUnchanged": {"content": "unchanged"},
+                }
+            }
         }
         self.from4_path = os.path.join(self.base_dir, b"from4")
         fileset.create_fileset(self.base_dir, self.from1_struct)
@@ -57,40 +65,81 @@ class ActionRemoveTest(unittest.TestCase):
         self.success = False
         # we backup to the same backup repository at different times
         comtst.rdiff_backup_action(
-            True, True, self.from1_path, self.bak_path,
+            True,
+            True,
+            self.from1_path,
+            self.bak_path,
             ("--api-version", "201", "--current-time", "10000"),
-            b"backup", ())
+            b"backup",
+            (),
+        )
         comtst.rdiff_backup_action(
-            True, True, self.from2_path, self.bak_path,
+            True,
+            True,
+            self.from2_path,
+            self.bak_path,
             ("--api-version", "201", "--current-time", "20000"),
-            b"backup", ())
+            b"backup",
+            (),
+        )
         comtst.rdiff_backup_action(
-            True, True, self.from3_path, self.bak_path,
+            True,
+            True,
+            self.from3_path,
+            self.bak_path,
             ("--api-version", "201", "--current-time", "30000"),
-            b"backup", ())
+            b"backup",
+            (),
+        )
         comtst.rdiff_backup_action(
-            True, True, self.from4_path, self.bak_path,
+            True,
+            True,
+            self.from4_path,
+            self.bak_path,
             ("--api-version", "201", "--current-time", "40000"),
-            b"backup", ())
+            b"backup",
+            (),
+        )
 
     def test_action_removeincsolderthan(self):
         """test different ways of removing increments"""
         # removing multiple increments fails without --force
-        self.assertNotEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"remove", ("increments", "--older-than", "1B")),
-            Globals.RET_CODE_OK)
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--force"),  # now forcing!
-            b"remove", ("increments", "--older-than", "1B")),
-            Globals.RET_CODE_OK)
+        self.assertNotEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"remove",
+                ("increments", "--older-than", "1B"),
+            ),
+            Globals.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--force"),  # now forcing!
+                b"remove",
+                ("increments", "--older-than", "1B"),
+            ),
+            Globals.RET_CODE_OK,
+        )
         # then check that only one increment and mirror remain
-        self.assertRegex(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--parsable"),
-            b"list", ("increments", ), return_stdout=True),
+        self.assertRegex(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--parsable"),
+                b"list",
+                ("increments",),
+                return_stdout=True,
+            ),
             b"""---
 - base: increments.1970-01-0[12]T[0-9][0-9][:-][25]0[:-]00.*.dir
   time: 30000
@@ -100,18 +149,33 @@ class ActionRemoveTest(unittest.TestCase):
   type: directory
 ...
 
-""")
+""",
+        )
 
         # check that nothing happens if no increment is old enough issue #616
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--force"),
-            b"remove", ("increments", "--older-than", "30000")),
-            Globals.RET_CODE_WARN)
-        self.assertRegex(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--parsable"),
-            b"list", ("increments", ), return_stdout=True),
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--force"),
+                b"remove",
+                ("increments", "--older-than", "30000"),
+            ),
+            Globals.RET_CODE_WARN,
+        )
+        self.assertRegex(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--parsable"),
+                b"list",
+                ("increments",),
+                return_stdout=True,
+            ),
             b"""---
 - base: increments.1970-01-0[12]T[0-9][0-9][:-][25]0[:-]00.*.dir
   time: 30000
@@ -121,43 +185,80 @@ class ActionRemoveTest(unittest.TestCase):
   type: directory
 ...
 
-""")
+""",
+        )
         # then remove the last increment
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", ),
-            b"remove", ("increments", "--older-than", "30001", "--size")),
-            Globals.RET_CODE_OK)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (
+                    "--api-version",
+                    "201",
+                ),
+                b"remove",
+                ("increments", "--older-than", "30001", "--size"),
+            ),
+            Globals.RET_CODE_OK,
+        )
         # and check that only the mirror is left
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--parsable"),
-            b"list", ("increments", ), return_stdout=True),
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--parsable"),
+                b"list",
+                ("increments",),
+                return_stdout=True,
+            ),
             b"""---
 - base: bak
   time: 40000
   type: directory
 ...
 
-""")
+""",
+        )
         # then try to remove the mirror
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", ),
-            b"remove", ("increments", "--older-than", "now")),
-            Globals.RET_CODE_WARN)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (
+                    "--api-version",
+                    "201",
+                ),
+                b"remove",
+                ("increments", "--older-than", "now"),
+            ),
+            Globals.RET_CODE_WARN,
+        )
         # and check that it is still there
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--parsable"),
-            b"list", ("increments", ), return_stdout=True),
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--parsable"),
+                b"list",
+                ("increments",),
+                return_stdout=True,
+            ),
             b"""---
 - base: bak
   time: 40000
   type: directory
 ...
 
-""")
+""",
+        )
 
         # all tests were successful
         self.success = True

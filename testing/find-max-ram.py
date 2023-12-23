@@ -18,7 +18,7 @@ def get_val(cmdstr):
     Returns None if process not found.
 
     """
-    cmd = ("ps -Ao cmd -o rss | grep '%s' | grep -v grep" % cmdstr)
+    cmd = "ps -Ao cmd -o rss | grep '%s' | grep -v grep" % cmdstr
     # print "Running ", cmd
     fp = os.popen(cmd)
     lines = fp.readlines()
@@ -54,15 +54,16 @@ def main(cmdstr):
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) != 2:
-        print("""Usage: find-max-ram [command string]
+        print(
+            """Usage: find-max-ram [command string]
 
                 It will then run ps twice a second and keep totalling how much RSS
                 (resident set size) the process(es) whose ps command name contain the
                 given string use up.  When there are no more processes found, it will
                 print the number and exit.
-                """)
+                """
+        )
         sys.exit(1)
     else:
         main(sys.argv[1])

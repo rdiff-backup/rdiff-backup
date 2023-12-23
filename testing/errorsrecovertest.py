@@ -9,6 +9,7 @@ from rdiff_backup import rpath, Globals
 
 class BrokenRepoTest(unittest.TestCase):
     """Handling of somehow broken repos"""
+
     def makerp(self, path):
         return rpath.RPath(Globals.local_connection, path)
 
@@ -33,46 +34,75 @@ class BrokenRepoTest(unittest.TestCase):
         source_rp.mkdir()
         for suffix in range(1, 15):
             source_rp.append("file%02d" % suffix).touch()
-            rdiff_backup(1, 1, source_rp.__fspath__(), target_rp.__fspath__(),
-                         current_time=suffix * 10000)
+            rdiff_backup(
+                1,
+                1,
+                source_rp.__fspath__(),
+                target_rp.__fspath__(),
+                current_time=suffix * 10000,
+            )
         # identify the oldest (aka first) mirror metadata snapshot
         # and sort the list because some filesystems don't respect the order
         rb_data_rp = target_rp.append("rdiff-backup-data")
-        files_list = sorted(filter(
-            lambda x: x.startswith(b"mirror_metadata."),
-            rb_data_rp.listdir()))
+        files_list = sorted(
+            filter(lambda x: x.startswith(b"mirror_metadata."), rb_data_rp.listdir())
+        )
         meta_snapshot_rp = rb_data_rp.append(files_list[8])
         # create a diff with the same data as the identified snapshot
-        meta_dupldiff_rp = rb_data_rp.append(files_list[8].replace(
-            b".snapshot.gz", b".diff.gz"))
+        meta_dupldiff_rp = rb_data_rp.append(
+            files_list[8].replace(b".snapshot.gz", b".diff.gz")
+        )
         rpath.copy(meta_snapshot_rp, meta_dupldiff_rp)
 
         # this succeeds
-        rdiff_backup(1, 1, target_rp.__fspath__(), None,
-                     extra_options=b"regress")
+        rdiff_backup(1, 1, target_rp.__fspath__(), None, extra_options=b"regress")
         # now this should fail
         source_rp.append("file15").touch()
-        rdiff_backup(1, 1, source_rp.__fspath__(), target_rp.__fspath__(),
-                     current_time=15 * 10000,
-                     expected_ret_code=Globals.RET_CODE_ERR)
+        rdiff_backup(
+            1,
+            1,
+            source_rp.__fspath__(),
+            target_rp.__fspath__(),
+            current_time=15 * 10000,
+            expected_ret_code=Globals.RET_CODE_ERR,
+        )
         # and this should also fail
-        rdiff_backup(1, 1, target_rp.__fspath__(), None,
-                     expected_ret_code=Globals.RET_CODE_ERR,
-                     extra_options=b"regress")
+        rdiff_backup(
+            1,
+            1,
+            target_rp.__fspath__(),
+            None,
+            expected_ret_code=Globals.RET_CODE_ERR,
+            extra_options=b"regress",
+        )
         # but this should succeed (with a warning)
-        rdiff_backup(1, 1, target_rp.__fspath__(), None,
-                     extra_options=b"regress --allow-duplicate-timestamps",
-                     expected_ret_code=Globals.RET_CODE_WARN)
+        rdiff_backup(
+            1,
+            1,
+            target_rp.__fspath__(),
+            None,
+            extra_options=b"regress --allow-duplicate-timestamps",
+            expected_ret_code=Globals.RET_CODE_WARN,
+        )
         # now we can clean-up, getting rid of the duplicate metadata mirrors
         # NOTE: we could have cleaned-up even without checking/fixing the
         #       directory but this shouldn't be the recommended practice.
-        rdiff_backup(1, 1, target_rp.__fspath__(), None,
-                     extra_options=b"--force remove increments "
-                                   b"--older-than 100000")
+        rdiff_backup(
+            1,
+            1,
+            target_rp.__fspath__(),
+            None,
+            extra_options=b"--force remove increments " b"--older-than 100000",
+        )
         # and this should at last succeed
         source_rp.append("file16").touch()
-        rdiff_backup(1, 1, source_rp.__fspath__(), target_rp.__fspath__(),
-                     current_time=16 * 10000)
+        rdiff_backup(
+            1,
+            1,
+            source_rp.__fspath__(),
+            target_rp.__fspath__(),
+            current_time=16 * 10000,
+        )
 
 
 if __name__ == "__main__":

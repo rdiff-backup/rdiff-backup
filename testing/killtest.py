@@ -4,9 +4,9 @@ import signal
 import sys
 import random
 import time
-from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin, \
-    xcopytree
+from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin, xcopytree
 from rdiff_backup import Globals, rpath, Time
+
 """Test consistency by killing rdiff-backup as it is backing up"""
 
 
@@ -14,27 +14,27 @@ class Local:
     """Hold some local RPaths"""
 
     def get_local_rp(ext):
-        return rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, ext))
+        return rpath.RPath(Globals.local_connection, os.path.join(abs_test_dir, ext))
 
     ktrp = []
     for i in range(4):
-        ktrp.append(get_local_rp(b'killtest%d' % (i + 1)))
+        ktrp.append(get_local_rp(b"killtest%d" % (i + 1)))
 
-    rpout = get_local_rp(b'output')
-    rpout_inc = get_local_rp(b'output_inc')
+    rpout = get_local_rp(b"output")
+    rpout_inc = get_local_rp(b"output_inc")
 
     outrp = []
     for i in range(5):
-        outrp.append(get_local_rp(b'restoretarget%d' % (i + 1)))
+        outrp.append(get_local_rp(b"restoretarget%d" % (i + 1)))
 
     backrp = []
     for i in range(5):
-        backrp.append(get_local_rp(b'backup%d' % (i + 1)))
+        backrp.append(get_local_rp(b"backup%d" % (i + 1)))
 
 
 class TimingError(Exception):
     """Indicates timing error - process killed too soon or too late"""
+
     pass
 
 
@@ -89,7 +89,7 @@ class ProcessFuncs(unittest.TestCase):
         while (exitpid, exitstatus) == (0, 0):  # until process terminates...
             exitpid, exitstatus = os.waitpid(pid, os.WNOHANG)
             time.sleep(0.1)
-        if (exitpid == pid and exitstatus == 0):
+        if exitpid == pid and exitstatus == 0:
             # process already terminated before we killed it (max time too big?)
             print("---------------------- missed killing PID %d" % (pid))
             return -1
@@ -98,10 +98,13 @@ class ProcessFuncs(unittest.TestCase):
             # it should be like that but robust handling changes exit code:
             # assert exitstatus & (1<<8-1) == self.killsignal, (
             self.assertNotEqual(
-                exitstatus, 0,
+                exitstatus,
+                0,
                 "Pid {pid}/{exit} killed by signal {sig}, but exited "
                 "with return code {rc} which should be non-zero.".format(
-                    pid=pid, exit=exitpid, rc=exitstatus, sig=self.killsignal))
+                    pid=pid, exit=exitpid, rc=exitstatus, sig=self.killsignal
+                ),
+            )
 
     def create_killtest_dirs(self):
         """Create testfiles/killtest? directories
@@ -122,12 +125,14 @@ class ProcessFuncs(unittest.TestCase):
             Local.ktrp[i].setdata()
             if Local.ktrp[i].lstat():
                 Local.ktrp[i].delete()
-            copy_thrice(os.path.join(old_test_dir, b"increment%d" % (i + 1)),
-                        Local.ktrp[i].path)
+            copy_thrice(
+                os.path.join(old_test_dir, b"increment%d" % (i + 1)), Local.ktrp[i].path
+            )
 
 
 class KillTest(ProcessFuncs):
     """Test rdiff-backup by killing it, recovering, and then comparing"""
+
     killsignal = signal.SIGTERM
 
     # The following are lower and upper bounds on the amount of time
@@ -139,8 +144,12 @@ class KillTest(ProcessFuncs):
         """Create killtest? and backup? directories if necessary"""
         for rp in Local.ktrp:
             rp.setdata()
-        if (not Local.ktrp[0].lstat() or not Local.ktrp[1].lstat()
-                or not Local.ktrp[2].lstat() or not Local.ktrp[3].lstat()):
+        if (
+            not Local.ktrp[0].lstat()
+            or not Local.ktrp[1].lstat()
+            or not Local.ktrp[2].lstat()
+            or not Local.ktrp[3].lstat()
+        ):
             self.create_killtest_dirs()
         self.setTiming()
 
@@ -151,8 +160,7 @@ class KillTest(ProcessFuncs):
 
         def run_once(current_time, input_rp, index):
             start_time = time.time()
-            self.exec_rb(current_time, 1, "backup",
-                         input_rp.path, Local.rpout.path)
+            self.exec_rb(current_time, 1, "backup", input_rp.path, Local.rpout.path)
             time_list[index].append(time.time() - start_time)
 
         for i in range(iterations):
@@ -182,9 +190,12 @@ class KillTest(ProcessFuncs):
         rbdir = rp.append_path("rdiff-backup-data")
         inclist = rbdir.append("current_mirror").get_incfiles_list()
         self.assertIn(
-            len(inclist), (1, 2),
+            len(inclist),
+            (1, 2),
             "There must be 1 or 2 elements in '{paths_list}'.".format(
-                paths_list=str([x.path for x in inclist])))
+                paths_list=str([x.path for x in inclist])
+            ),
+        )
 
         inc_date_pairs = [(inc.getinctime(), inc) for inc in inclist]
         inc_date_pairs.sort()
@@ -200,8 +211,9 @@ class KillTest(ProcessFuncs):
             marker_time = curtime
             result = -1
 
-        cur_mirror_rp = rbdir.append("current_mirror.%s.data" %
-                                     (Time.timetostring(marker_time), ))
+        cur_mirror_rp = rbdir.append(
+            "current_mirror.%s.data" % (Time.timetostring(marker_time),)
+        )
         self.assertFalse(cur_mirror_rp.lstat())
         cur_mirror_rp.touch()
         return result
@@ -224,19 +236,20 @@ class KillTest(ProcessFuncs):
         def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
             """Backup input_rp, kill, regress, and then compare"""
             time.sleep(1)
-            self.exec_and_kill(min_max_time_pair, curtime, input_rp.path,
-                               Local.rpout.path)
+            self.exec_and_kill(
+                min_max_time_pair, curtime, input_rp.path, Local.rpout.path
+            )
             result = self.mark_incomplete(curtime, Local.rpout)
-            self.assertEqual(self.exec_rb(None, 1, "regress", Local.rpout.path),
-                             Globals.RET_CODE_WARN)
-            self.assertTrue(
-                compare_recursive(old_rp, Local.rpout, compare_hardlinks=0))
+            self.assertEqual(
+                self.exec_rb(None, 1, "regress", Local.rpout.path),
+                Globals.RET_CODE_WARN,
+            )
+            self.assertTrue(compare_recursive(old_rp, Local.rpout, compare_hardlinks=0))
             return result
 
         # Keep backing ktrp[0], and then regressing to ktrp[2].  Then go to ktrp[0]
         for i in range(count):
-            result = cycle_once(self.time_pairs[1], 20000, Local.ktrp[0],
-                                Local.ktrp[2])
+            result = cycle_once(self.time_pairs[1], 20000, Local.ktrp[0], Local.ktrp[2])
             if result == 0:
                 killed_too_late[0] += 1
             elif result == -1:
@@ -245,8 +258,7 @@ class KillTest(ProcessFuncs):
 
         # Now keep regressing from ktrp[1], only staying there at the end
         for i in range(count):
-            result = cycle_once(self.time_pairs[2], 30000, Local.ktrp[1],
-                                Local.ktrp[0])
+            result = cycle_once(self.time_pairs[2], 30000, Local.ktrp[1], Local.ktrp[0])
             if result == 0:
                 killed_too_late[1] += 1
             elif result == -1:
@@ -255,8 +267,7 @@ class KillTest(ProcessFuncs):
 
         # Now keep regressing from ktrp[2], only staying there at the end
         for i in range(count):
-            result = cycle_once(self.time_pairs[3], 40000, Local.ktrp[2],
-                                Local.ktrp[1])
+            result = cycle_once(self.time_pairs[3], 40000, Local.ktrp[2], Local.ktrp[1])
             if result == 0:
                 killed_too_late[2] += 1
             elif result == -1:
@@ -265,8 +276,7 @@ class KillTest(ProcessFuncs):
 
         # Now keep regressing from ktrp[3], only staying there at the end
         for i in range(count):
-            result = cycle_once(self.time_pairs[4], 50000, Local.ktrp[3],
-                                Local.ktrp[2])
+            result = cycle_once(self.time_pairs[4], 50000, Local.ktrp[3], Local.ktrp[2])
             if result == 0:
                 killed_too_late[3] += 1
             elif result == -1:

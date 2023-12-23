@@ -19,8 +19,10 @@ class UtilsPsutilTest(unittest.TestCase):
         i.e. first one removed and new one added.
         """
         # the split is meant to get rid of `.exe` under Windows
-        self.assertIn(simpleps.get_pid_name(os.getpid()).split(".")[0],
-                      ("python", "python3", "coverage"))
+        self.assertIn(
+            simpleps.get_pid_name(os.getpid()).split(".")[0],
+            ("python", "python3", "coverage"),
+        )
 
         # max unicode doesn't make a lot of sense but it works under Linux
         # and Windows, and it should be seldom enough to not break the pipeline
@@ -28,8 +30,10 @@ class UtilsPsutilTest(unittest.TestCase):
 
         # we repeat the same tests with the internal version to improve code
         # coverage (assuming psutil might be installed)
-        self.assertIn(simpleps._get_pid_name_ps(os.getpid()).split(".")[0],
-                      ("python", "python3", "coverage"))
+        self.assertIn(
+            simpleps._get_pid_name_ps(os.getpid()).split(".")[0],
+            ("python", "python3", "coverage"),
+        )
         self.assertIsNone(simpleps._get_pid_name_ps(sys.maxunicode))
 
 

@@ -63,6 +63,7 @@ class SkipFileException(Exception):
     to keep going.
 
     """
+
     pass
 
 
@@ -86,17 +87,17 @@ class RORPath:
         based on global settings."""
         global_ignored_keys = set(())
         if not Globals.preserve_atime:
-            global_ignored_keys.add('atime')
+            global_ignored_keys.add("atime")
         if not Globals.eas_write:
-            global_ignored_keys.add('ea')
+            global_ignored_keys.add("ea")
         if not Globals.acls_write:
-            global_ignored_keys.add('acl')
+            global_ignored_keys.add("acl")
         if not Globals.win_acls_write:
-            global_ignored_keys.add('win_acl')
+            global_ignored_keys.add("win_acl")
         if not Globals.carbonfile_write:
-            global_ignored_keys.add('carbonfile')
+            global_ignored_keys.add("carbonfile")
         if not Globals.resource_forks_write:
-            global_ignored_keys.add('resource_forks')
+            global_ignored_keys.add("resource_forks")
         return global_ignored_keys
 
     @classmethod
@@ -108,14 +109,15 @@ class RORPath:
             a path _relative_ to the current directory on the drive, we need to make it
             absolute ourselves by adding a slash at the end."""
             if re.match(b"^[A-Za-z]:$", filename):  # if filename is a drive
-                return filename + b'/'  # os.path.join won't make a drive absolute for us
+                return (
+                    filename + b"/"
+                )  # os.path.join won't make a drive absolute for us
             else:
                 return filename
 
         if os.path.altsep:  # only Windows has an alternative separator for paths
             filenames = tuple(map(abs_drive, filenames))
-            return os.path.join(*filenames).replace(
-                os.fsencode(os.path.sep), b'/')
+            return os.path.join(*filenames).replace(os.fsencode(os.path.sep), b"/")
         else:
             return os.path.join(*filenames)
 
@@ -123,7 +125,7 @@ class RORPath:
     def getcwdb(self):
         """A getcwdb function that makes sure that also under Windows '/' are used"""
         if os.path.altsep:  # only Windows has an alternative separator for paths
-            return os.getcwdb().replace(os.fsencode(os.path.sep), b'/')
+            return os.getcwdb().replace(os.fsencode(os.path.sep), b"/")
         else:
             return os.getcwdb()
 
@@ -132,7 +134,7 @@ class RORPath:
         if data:
             self.data = data
         else:
-            self.data = {'type': None}  # signify empty file
+            self.data = {"type": None}  # signify empty file
         self.file = None
 
     def __eq__(self, other):
@@ -141,37 +143,38 @@ class RORPath:
             return False
 
         # we build a set of keys to be ignored during loose comparaison
-        ignored_keys = set(('ctime', 'nlink'))
+        ignored_keys = set(("ctime", "nlink"))
         # add the keys to be globally ignored
         ignored_keys.update(self._global_ignored_keys())
         # global and self specific additions
-        if (not self.isreg() or self.getnumlinks() == 1
-                or not Globals.compare_inode
-                or not Globals.preserve_hardlinks):
-            ignored_keys.add('inode')
-            ignored_keys.add('devloc')
+        if (
+            not self.isreg()
+            or self.getnumlinks() == 1
+            or not Globals.compare_inode
+            or not Globals.preserve_hardlinks
+        ):
+            ignored_keys.add("inode")
+            ignored_keys.add("devloc")
         # self specific additions
         if not self.isreg():
-            ignored_keys.add('size')
+            ignored_keys.add("size")
             if self.issym():
                 # Don't compare gid/uid for symlinks
-                ignored_keys.update(
-                    frozenset(('uid', 'gid', 'uname', 'gname')))
+                ignored_keys.update(frozenset(("uid", "gid", "uname", "gname")))
         # self and other specific additions
-        if (self.isspecial() and other.isreg() and other.getsize() == 0):
+        if self.isspecial() and other.isreg() and other.getsize() == 0:
             # Special files may be replaced with empty regular files
-            ignored_keys.add('type')
+            ignored_keys.add("type")
 
         # we remove the ignored keys from the set of dictionary keys
         # before we compare them
-        for key in (frozenset(self.data.keys()) - ignored_keys):
-            if key == 'uname' or key == 'gname':
+        for key in frozenset(self.data.keys()) - ignored_keys:
+            if key == "uname" or key == "gname":
                 # here for legacy reasons - 0.12.x didn't store u/gnames
                 other_name = other.data.get(key, None)
-                if (other_name and other_name != "None"
-                        and other_name != self.data[key]):
+                if other_name and other_name != "None" and other_name != self.data[key]:
                     return False
-            elif (key not in other.data or self.data[key] != other.data[key]):
+            elif key not in other.data or self.data[key] != other.data[key]:
                 return False
         return True
 
@@ -183,8 +186,11 @@ class RORPath:
         Pretty print file statistics
         """
         return "<{cls}/{cid}:\n\tIndex={idx}\n\tData={data}>".format(
-            cls=self.__class__.__name__, cid=id(self),
-            idx=self.get_safeindex(), data=self.data)
+            cls=self.__class__.__name__,
+            cid=id(self),
+            idx=self.get_safeindex(),
+            data=self.data,
+        )
 
     def __str__(self):
         """
@@ -192,7 +198,7 @@ class RORPath:
 
         For instance, if the index is ("a", "b"), return "'a/b'".
         """
-        return self.get_indexpath().decode(errors='replace')
+        return self.get_indexpath().decode(errors="replace")
 
     def __getstate__(self):
         """Return picklable state
@@ -209,13 +215,13 @@ class RORPath:
 
     def zero(self):
         """Set inside of self to type None"""
-        self.data = {'type': None}
+        self.data = {"type": None}
         self.file = None
 
     def make_zero_dir(self, dir_rp):
         """Set self.data the same as dir_rp.data but with safe permissions"""
         self.data = dir_rp.data.copy()
-        self.data['perms'] = 0o700
+        self.data["perms"] = 0o700
 
     def equal_loose(self, other):
         """True iff the two rorpaths are kinda equivalent
@@ -227,24 +233,36 @@ class RORPath:
 
         """
         # we build a set of keys to be ignored during loose comparaison
-        ignored_keys = set(('uid', 'gid', 'uname', 'gname', 'ctime', 'inode',
-                           'mirrorname', 'incname', 'devloc', 'nlink'))
+        ignored_keys = set(
+            (
+                "uid",
+                "gid",
+                "uname",
+                "gname",
+                "ctime",
+                "inode",
+                "mirrorname",
+                "incname",
+                "devloc",
+                "nlink",
+            )
+        )
         # we ignore the hash because one or the other might not have it FIXME?
-        ignored_keys.add('sha1')
+        ignored_keys.add("sha1")
         # add the keys to be globally ignored
         ignored_keys.update(self._global_ignored_keys())
         # self specific additions
         if not self.isreg():
-            ignored_keys.add('size')
+            ignored_keys.add("size")
         # self and other specific additions
-        if (self.isspecial() and other.isreg() and other.getsize() == 0):
+        if self.isspecial() and other.isreg() and other.getsize() == 0:
             # Special files may be replaced with empty regular files
-            ignored_keys.add('type')
+            ignored_keys.add("type")
 
         # we remove the ignored keys from the set of dictionary keys
         # before we compare them
-        for key in (frozenset(self.data.keys()) - ignored_keys):
-            if (key not in other.data or self.data[key] != other.data[key]):
+        for key in frozenset(self.data.keys()) - ignored_keys:
+            if key not in other.data or self.data[key] != other.data[key]:
                 return False
 
         if self.lstat() and not self.issym() and Globals.change_ownership:
@@ -271,115 +289,114 @@ class RORPath:
         file, 'fifo' for a fifo, 'sock' for a socket, and 'sym' for a
         symlink.
         """
-        return self.data['type']
+        return self.data["type"]
 
     gettype = lstat
 
     def isdir(self):
         """True if self is a dir"""
-        return self.data['type'] == 'dir'
+        return self.data["type"] == "dir"
 
     def isreg(self):
         """True if self is a regular file"""
-        return self.data['type'] == 'reg'
+        return self.data["type"] == "reg"
 
     def issym(self):
         """True if path is of a symlink"""
-        return self.data['type'] == 'sym'
+        return self.data["type"] == "sym"
 
     def isfifo(self):
         """True if path is a fifo"""
-        return self.data['type'] == 'fifo'
+        return self.data["type"] == "fifo"
 
     def ischardev(self):
         """True if path is a character device file"""
-        return self.data['type'] == 'dev' and self.data['devnums'][0] == 'c'
+        return self.data["type"] == "dev" and self.data["devnums"][0] == "c"
 
     def isblkdev(self):
         """True if path is a block device file"""
-        return self.data['type'] == 'dev' and self.data['devnums'][0] == 'b'
+        return self.data["type"] == "dev" and self.data["devnums"][0] == "b"
 
     def isdev(self):
         """True if path is a device file"""
-        return self.data['type'] == 'dev'
+        return self.data["type"] == "dev"
 
     def issock(self):
         """True if path is a socket"""
-        return self.data['type'] == 'sock'
+        return self.data["type"] == "sock"
 
     def isspecial(self):
         """True if the file is a sock, symlink, device, or fifo"""
-        type = self.data['type']
-        return (type == 'dev' or type == 'sock' or type == 'fifo'
-                or type == 'sym')
+        type = self.data["type"]
+        return type == "dev" or type == "sock" or type == "fifo" or type == "sym"
 
     def getperms(self):
         """Return permission block of file"""
-        if 'perms' in self.data:
-            return self.data['perms']
+        if "perms" in self.data:
+            return self.data["perms"]
         else:
             return 0
 
     def getuname(self):
         """Return username that owns the file"""
         try:
-            return self.data['uname']
+            return self.data["uname"]
         except KeyError:
             return None
 
     def getgname(self):
         """Return groupname that owns the file"""
         try:
-            return self.data['gname']
+            return self.data["gname"]
         except KeyError:
             return None
 
     def hassize(self):
         """True if rpath has a size parameter"""
-        return 'size' in self.data
+        return "size" in self.data
 
     def getsize(self):
         """Return length of file in bytes"""
-        return self.data['size']
+        return self.data["size"]
 
     def getuidgid(self):
         """Return userid/groupid of file"""
-        return self.data['uid'], self.data['gid']
+        return self.data["uid"], self.data["gid"]
 
     def getatime(self):
         """Return access time in seconds"""
-        return self.data['atime']
+        return self.data["atime"]
 
     def getmtime(self):
         """Return modification time in seconds"""
-        return self.data['mtime']
+        return self.data["mtime"]
 
     def getctime(self):
         """Return change time in seconds"""
-        return self.data['ctime']
+        return self.data["ctime"]
 
     def getinode(self):
         """Return inode number of file"""
-        return self.data['inode']
+        return self.data["inode"]
 
     def getdevloc(self):
         """Device number file resides on"""
-        return self.data['devloc']
+        return self.data["devloc"]
 
     def getnumlinks(self):
         """Number of places inode is linked to"""
-        if 'nlink' in self.data:
-            return self.data['nlink']
+        if "nlink" in self.data:
+            return self.data["nlink"]
         else:
             return 1
 
     def readlink(self):
         """Wrapper around os.readlink()"""
-        return self.data['linkname']
+        return self.data["linkname"]
 
     def getdevnums(self):
         """Return a device's type and major/minor numbers from dictionary"""
-        return self.data['devnums']
+        return self.data["devnums"]
 
     def setfile(self, file):
         """Right now just set self.file to be the already opened file"""
@@ -396,7 +413,7 @@ class RORPath:
 
         For instance, if the index is (b"a", b"b"), return ("a", "b")
         """
-        return tuple(map(lambda f: f.decode(errors='replace'), self.index))
+        return tuple(map(lambda f: f.decode(errors="replace"), self.index))
 
     def get_indexpath(self):
         """Return path of index portion
@@ -405,7 +422,7 @@ class RORPath:
 
         """
         if not self.index:
-            return b'.'
+            return b"."
         return self.path_join(*self.index)
 
     def get_attached_filetype(self):
@@ -415,11 +432,11 @@ class RORPath:
         something, and 'diff' for an rdiff style diff.
 
         """
-        return self.data['filetype']
+        return self.data["filetype"]
 
     def set_attached_filetype(self, type):
         """Set the type of the attached file"""
-        self.data['filetype'] = type
+        self.data["filetype"] = type
 
     def isflaglinked(self):
         """True if rorp is a signature/diff for a hardlink file
@@ -428,15 +445,15 @@ class RORPath:
         because it is hardlinked on the remote side.
 
         """
-        return 'linked' in self.data
+        return "linked" in self.data
 
     def get_link_flag(self):
         """Return previous index that a file is hard linked to"""
-        return self.data['linked']
+        return self.data["linked"]
 
     def flaglinked(self, index):
         """Signal that rorp is a signature/diff for a hardlink file"""
-        self.data['linked'] = index
+        self.data["linked"] = index
 
     def open(self, mode):
         """Return file type object if any was given using self.setfile"""
@@ -457,71 +474,71 @@ class RORPath:
 
     def set_acl(self, acl_meta):
         """Record access control list in dictionary.  Does not write"""
-        self.data['acl'] = acl_meta
+        self.data["acl"] = acl_meta
 
     def get_acl(self):
         """Return access control list object from dictionary"""
         try:
-            return self.data['acl']
+            return self.data["acl"]
         except KeyError:
-            acl_meta = self.data['acl'] = acl_posix.get_blank_meta(self.index)
+            acl_meta = self.data["acl"] = acl_posix.get_blank_meta(self.index)
             return acl_meta
 
     def set_ea(self, ea_meta):
         """Record extended attributes in dictionary.  Does not write"""
-        self.data['ea'] = ea_meta
+        self.data["ea"] = ea_meta
 
     def get_ea(self):
         """Return extended attributes object"""
         try:
-            return self.data['ea']
+            return self.data["ea"]
         except KeyError:
-            ea_meta = self.data['ea'] = ea.get_blank_meta(self.index)
+            ea_meta = self.data["ea"] = ea.get_blank_meta(self.index)
             return ea_meta
 
     def has_carbonfile(self):
         """True if rpath has a carbonfile parameter"""
-        return 'carbonfile' in self.data
+        return "carbonfile" in self.data
 
     def get_carbonfile(self):
         """Returns the carbonfile data"""
-        return self.data['carbonfile']
+        return self.data["carbonfile"]
 
     def set_carbonfile(self, cfile):
         """Record carbonfile data in dictionary.  Does not write."""
-        self.data['carbonfile'] = cfile
+        self.data["carbonfile"] = cfile
 
     def has_resource_fork(self):
         """True if rpath has a resourcefork parameter"""
-        return 'resourcefork' in self.data
+        return "resourcefork" in self.data
 
     def get_resource_fork(self):
         """Return the resource fork in binary data"""
-        return self.data['resourcefork']
+        return self.data["resourcefork"]
 
     def set_resource_fork(self, rfork):
         """Record resource fork in dictionary.  Does not write"""
-        self.data['resourcefork'] = rfork
+        self.data["resourcefork"] = rfork
 
     def set_win_acl(self, acl_meta):
         """Record Windows access control list in dictionary. Does not write"""
-        self.data['win_acl'] = acl_meta
+        self.data["win_acl"] = acl_meta
 
     def get_win_acl(self):
         """Return access control list object from dictionary"""
         try:
-            return self.data['win_acl']
+            return self.data["win_acl"]
         except KeyError:
-            acl_meta = self.data['win_acl'] = acl_win.get_blank_meta(self.index)
+            acl_meta = self.data["win_acl"] = acl_win.get_blank_meta(self.index)
             return acl_meta
 
     def has_alt_mirror_name(self):
         """True if rorp has an alternate mirror name specified"""
-        return 'mirrorname' in self.data
+        return "mirrorname" in self.data
 
     def get_alt_mirror_name(self):
         """Return alternate mirror name (for long filenames)"""
-        return self.data['mirrorname']
+        return self.data["mirrorname"]
 
     def set_alt_mirror_name(self, filename):
         """Set alternate mirror name to filename
@@ -531,15 +548,15 @@ class RORPath:
         directory.
 
         """
-        self.data['mirrorname'] = filename
+        self.data["mirrorname"] = filename
 
     def has_alt_inc_name(self):
         """True if rorp has an alternate increment base specified"""
-        return 'incname' in self.data
+        return "incname" in self.data
 
     def get_alt_inc_name(self):
         """Return alternate increment base (used for long name support)"""
-        return self.data['incname']
+        return self.data["incname"]
 
     def set_alt_inc_name(self, name):
         """Set alternate increment name to name
@@ -549,15 +566,15 @@ class RORPath:
         should be set to the same.
 
         """
-        self.data['incname'] = name
+        self.data["incname"] = name
 
     def has_sha1(self):
         """True iff self has its sha1 digest set"""
-        return 'sha1' in self.data
+        return "sha1" in self.data
 
     def get_sha1(self):
         """Return sha1 digest.  Causes exception unless set_sha1 first"""
-        return self.data['sha1']
+        return self.data["sha1"]
 
     def set_sha1(self, digest):
         """
@@ -565,62 +582,72 @@ class RORPath:
 
         Return True if modified, else False.
         """
-        old_digest = self.data.get('sha1')
-        self.data['sha1'] = digest
+        old_digest = self.data.get("sha1")
+        self.data["sha1"] = digest
         return old_digest != digest
 
-    def _equal_verbose(self,
-                       other,
-                       check_index=1,
-                       compare_inodes=0,
-                       compare_ownership=0,
-                       compare_acls=0,
-                       compare_eas=0,
-                       compare_win_acls=0,
-                       compare_size=1,
-                       compare_type=1,
-                       verbosity=log.WARNING):
+    def _equal_verbose(
+        self,
+        other,
+        check_index=1,
+        compare_inodes=0,
+        compare_ownership=0,
+        compare_acls=0,
+        compare_eas=0,
+        compare_win_acls=0,
+        compare_size=1,
+        compare_type=1,
+        verbosity=log.WARNING,
+    ):
         """Like __eq__, but log more information.  Useful when testing"""
         if check_index and self.index != other.index:
-            log.Log("Index {ix} != other index {oi}".format(
-                ix=self.get_safeindex(), oi=other.get_safeindex()),
-                verbosity)
+            log.Log(
+                "Index {ix} != other index {oi}".format(
+                    ix=self.get_safeindex(), oi=other.get_safeindex()
+                ),
+                verbosity,
+            )
             return None
 
         for key in list(self.data.keys()):  # compare dicts key by key
-            if (key in ('uid', 'gid', 'uname', 'gname')
-                    and (self.issym() or not compare_ownership)):
+            if key in ("uid", "gid", "uname", "gname") and (
+                self.issym() or not compare_ownership
+            ):
                 # Don't compare gid/uid for symlinks, or if told not to
                 pass
-            elif key == 'type' and not compare_type:
+            elif key == "type" and not compare_type:
                 pass
-            elif key == 'atime' and not Globals.preserve_atime:
+            elif key == "atime" and not Globals.preserve_atime:
                 pass
-            elif key == 'ctime':
+            elif key == "ctime":
                 pass
-            elif key == 'devloc' or key == 'nlink':
+            elif key == "devloc" or key == "nlink":
                 pass
-            elif key == 'size' and (not self.isreg() or not compare_size):
+            elif key == "size" and (not self.isreg() or not compare_size):
                 pass
-            elif key == 'inode' and (not self.isreg() or not compare_inodes):
+            elif key == "inode" and (not self.isreg() or not compare_inodes):
                 pass
-            elif key == 'ea' and not compare_eas:
+            elif key == "ea" and not compare_eas:
                 pass
-            elif key == 'acl' and not compare_acls:
+            elif key == "acl" and not compare_acls:
                 pass
-            elif key == 'win_acl' and not compare_win_acls:
+            elif key == "win_acl" and not compare_win_acls:
                 pass
-            elif (key not in other.data or self.data[key] != other.data[key]):
+            elif key not in other.data or self.data[key] != other.data[key]:
                 if key not in other.data:
-                    log.Log("Second is missing key {mk}".format(mk=key),
-                            verbosity)
+                    log.Log("Second is missing key {mk}".format(mk=key), verbosity)
                 else:
                     log.Log(
                         "Values of key {ke} differ between this path {tp} "
                         "and other path {op}: {tv} vs. {ov}".format(
-                            ke=key, tp=self.get_indexpath(),
-                            op=other.get_indexpath(), tv=self.data[key],
-                            ov=other.data[key]), verbosity)
+                            ke=key,
+                            tp=self.get_indexpath(),
+                            op=other.get_indexpath(),
+                            tv=self.data[key],
+                            ov=other.data[key],
+                        ),
+                        verbosity,
+                    )
                 return None
         return 1
 
@@ -634,6 +661,7 @@ class RPath(RORPath):
     identification (i.e. if two files have the the same (==) data
     dictionary, they are the same file).
     """
+
     # class index to make temporary files unique, see _get_next_tempfile_name
     _temp_file_index = -1
 
@@ -662,10 +690,17 @@ class RPath(RORPath):
             self.base = None
 
     def __repr__(self):
-        return ("<{cls}/{cid}:\n\tPath={rp}\n\tIndex={idx}\n"
-                "\tConnection={conn}\n\tData={data}>".format(
-                    cls=self.__class__.__name__, cid=id(self), rp=self,
-                    idx=self.get_safeindex(), conn=self.conn, data=self.data))
+        return (
+            "<{cls}/{cid}:\n\tPath={rp}\n\tIndex={idx}\n"
+            "\tConnection={conn}\n\tData={data}>".format(
+                cls=self.__class__.__name__,
+                cid=id(self),
+                rp=self,
+                idx=self.get_safeindex(),
+                conn=self.conn,
+                data=self.data,
+            )
+        )
 
     def __fspath__(self):
         """
@@ -687,9 +722,9 @@ class RPath(RORPath):
             if isinstance(somepath, str):
                 return somepath
             else:
-                return somepath.decode(errors='replace')
+                return somepath.decode(errors="replace")
         else:
-            return self.path.decode(errors='replace')
+            return self.path.decode(errors="replace")
 
     def __getstate__(self):
         """Return picklable state
@@ -716,52 +751,69 @@ class RPath(RORPath):
     def chmod(self, permissions, loglevel=log.WARNING):
         """Wrapper around os.chmod"""
         try:
-            self.conn.os.chmod(self.path,
-                               permissions & Globals.permission_mask)
+            self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
         except OSError as e:
-            if e.strerror == "Inappropriate file type or format" \
-                    and not self.isdir():
+            if e.strerror == "Inappropriate file type or format" and not self.isdir():
                 # Some systems throw this error if try to set sticky bit
                 # on a non-directory. Remove sticky bit and try again.
                 log.Log(
                     "Unable to set permissions of path {pa} to {pe:o} - "
                     "trying again without sticky bit ({ws:o})".format(
-                        pa=self.path, pe=permissions,
-                        ws=(permissions & 0o6777)), loglevel)
+                        pa=self.path, pe=permissions, ws=(permissions & 0o6777)
+                    ),
+                    loglevel,
+                )
                 self.conn.os.chmod(
-                    self.path, permissions
-                    & 0o6777 & Globals.permission_mask)
+                    self.path, permissions & 0o6777 & Globals.permission_mask
+                )
             else:
                 raise
-        self.data['perms'] = permissions
+        self.data["perms"] = permissions
 
     def settime(self, accesstime, modtime):
         """Change file modification times"""
-        log.Log("Setting time of path {pa} to modified time {md}".format(
-            pa=self, md=modtime), log.DEBUG)
+        log.Log(
+            "Setting time of path {pa} to modified time {md}".format(
+                pa=self, md=modtime
+            ),
+            log.DEBUG,
+        )
         try:
             self.conn.os.utime(self.path, (accesstime, modtime))
         except OverflowError:
-            log.Log("Cannot change times of path {pa} to times {ti} - "
-                    "problem is probably 64->32bit conversion".format(
-                        pa=self, ti=(accesstime, modtime)), log.WARNING)
+            log.Log(
+                "Cannot change times of path {pa} to times {ti} - "
+                "problem is probably 64->32bit conversion".format(
+                    pa=self, ti=(accesstime, modtime)
+                ),
+                log.WARNING,
+            )
         else:
-            self.data['atime'] = accesstime
-            self.data['mtime'] = modtime
+            self.data["atime"] = accesstime
+            self.data["mtime"] = modtime
 
     def setmtime(self, modtime):
         """Set only modtime (access time to present)"""
-        log.Log("Setting time of path {pa} to modified time {mt}".format(
-            pa=self, mt=modtime), log.DEBUG)
+        log.Log(
+            "Setting time of path {pa} to modified time {mt}".format(
+                pa=self, mt=modtime
+            ),
+            log.DEBUG,
+        )
         if modtime < 0:
-            log.Log("Modification time {mt} of path {pa} is"
-                    "before 1970".format(mt=modtime, pa=self), log.WARNING)
+            log.Log(
+                "Modification time {mt} of path {pa} is"
+                "before 1970".format(mt=modtime, pa=self),
+                log.WARNING,
+            )
         try:
             self.conn.os.utime(self.path, (int(time.time()), modtime))
         except OverflowError:
-            log.Log("Cannot change path {pa} to modified time {mt} - "
-                    "problem is probably 64->32bit conversion".format(
-                        pa=self, mt=modtime), log.WARNING)
+            log.Log(
+                "Cannot change path {pa} to modified time {mt} - "
+                "problem is probably 64->32bit conversion".format(pa=self, mt=modtime),
+                log.WARNING,
+            )
         except OSError:
             # It's not possible to set a modification time for
             # directories on Windows.
@@ -770,7 +822,7 @@ class RPath(RORPath):
             if self.conn.platform.system() != "Windows":
                 raise
         else:
-            self.data['mtime'] = modtime
+            self.data["mtime"] = modtime
 
     def chown(self, uid, gid):
         """Set file's uid and gid"""
@@ -778,15 +830,18 @@ class RPath(RORPath):
             try:
                 self.conn.os.lchown(self.path, uid, gid)
             except AttributeError:
-                log.Log("Function lchown missing, cannot change ownership "
-                        "of symlink {sl}".format(sl=self), log.WARNING)
+                log.Log(
+                    "Function lchown missing, cannot change ownership "
+                    "of symlink {sl}".format(sl=self),
+                    log.WARNING,
+                )
         else:
             self.conn.os.chown(self.path, uid, gid)
         # uid/gid equal to -1 is ignored by chown/lchown
         if uid >= 0:
-            self.data['uid'] = uid
+            self.data["uid"] = uid
         if gid >= 0:
-            self.data['gid'] = gid
+            self.data["gid"] = gid
 
     def mkdir(self):
         log.Log("Making directory {di}".format(di=self), log.DEBUG)
@@ -802,7 +857,7 @@ class RPath(RORPath):
         log.Log("Removing directory {di}".format(di=self), log.DEBUG)
         self.conn.os.chmod(self.path, 0o700)
         self.conn.os.rmdir(self.path)
-        self.data = {'type': None}
+        self.data = {"type": None}
 
     def listdir(self):
         """Return list of string paths returned by os.listdir"""
@@ -814,13 +869,18 @@ class RPath(RORPath):
         self.conn.os.symlink(linktext, self.path)
         self.setdata()
         if not self.issym():
-            raise RPathException("Type of '{rp!r}' isn't '{rtype}'.".format(
-                rp=self, rtype='symlink'))
+            raise RPathException(
+                "Type of '{rp!r}' isn't '{rtype}'.".format(rp=self, rtype="symlink")
+            )
 
     def hardlink(self, linkpath):
         """Make self into a hardlink joined to linkpath"""
-        log.Log("Hard linking source path {sp} to target path {tp}".format(
-            sp=self, tp=self.__str__(linkpath)), log.DEBUG)
+        log.Log(
+            "Hard linking source path {sp} to target path {tp}".format(
+                sp=self, tp=self.__str__(linkpath)
+            ),
+            log.DEBUG,
+        )
         self.conn.os.link(linkpath, self.path)
         self.setdata()
 
@@ -829,16 +889,18 @@ class RPath(RORPath):
         self.conn.os.mkfifo(self.path)
         self.setdata()
         if not self.isfifo():
-            raise RPathException("Type of '{rp!r}' isn't '{rtype}'".format(
-                rp=self, rtype='fifo'))
+            raise RPathException(
+                "Type of '{rp!r}' isn't '{rtype}'".format(rp=self, rtype="fifo")
+            )
 
     def mksock(self):
         """Make a socket at self.path"""
         self.conn.rpath.make_socket_local(self)
         self.setdata()
         if not self.issock():
-            raise RPathException("Type of '{rp!r}' isn't '{rtype}'".format(
-                rp=self, rtype='socket'))
+            raise RPathException(
+                "Type of '{rp!r}' isn't '{rtype}'".format(rp=self, rtype="socket")
+            )
 
     def touch(self):
         """Make sure file at self.path exists"""
@@ -846,8 +908,9 @@ class RPath(RORPath):
         self.conn.open(self.path, "wb").close()
         self.setdata()
         if not self.isreg():
-            raise RPathException("Type of '{rp!r}' isn't '{rtype}'".format(
-                rp=self, rtype='regular'))
+            raise RPathException(
+                "Type of '{rp!r}' isn't '{rtype}'".format(rp=self, rtype="regular")
+            )
 
     def hasfullperms(self):
         """Return true if current process has full permissions on the file"""
@@ -882,13 +945,13 @@ class RPath(RORPath):
             uid = self.conn.os.getuid()
         except AttributeError:
             return True  # Windows doesn't have getuid(), so hope for the best
-        return uid == 0 or \
-            ('uid' in self.data and uid == self.data['uid'])
+        return uid == 0 or ("uid" in self.data and uid == self.data["uid"])
 
     def isgroup(self):
         """Return true if process has group of rp"""
-        return ('gid' in self.data
-                and self.data['gid'] in self.conn.Globals.get('process_groups'))
+        return "gid" in self.data and self.data["gid"] in self.conn.Globals.get(
+            "process_groups"
+        )
 
     def delete(self):
         """Delete file at self.path.  Recursively deletes directories."""
@@ -916,8 +979,9 @@ class RPath(RORPath):
 
     def contains_files(self):
         """Returns true if self (or subdir) contains any regular files."""
-        log.Log("Determining if directory {di} contains files".format(di=self),
-                log.DEBUG)
+        log.Log(
+            "Determining if directory {di} contains files".format(di=self), log.DEBUG
+        )
         if not self.isdir():
             return False
         dir_entries = self.listdir()
@@ -939,10 +1003,13 @@ class RPath(RORPath):
 
         """
         newpath = self.path_join(
-            b'', *[x for x in self.path.split(b"/") if x and x != b"."])
+            b"", *[x for x in self.path.split(b"/") if x and x != b"."]
+        )
         if self.path[0:1] == b"/":
             newpath = b"/" + newpath
-            if self.path[1:2] == b"/" and self.path[2:3].isalnum():  # we assume a Windows share
+            if (
+                self.path[1:2] == b"/" and self.path[2:3].isalnum()
+            ):  # we assume a Windows share
                 newpath = b"/" + newpath
         elif not newpath:
             newpath = b"."
@@ -994,10 +1061,12 @@ class RPath(RORPath):
         # get the path as a list of directories/file
         path_list = self._get_path_as_list()
         if self.isincfile():
-            if (b"rdiff-backup-data" not in path_list):
-                log.Log("Path '{pa}' looks like an increment but doesn't "
-                        "have 'rdiff-backup-data' in its path".format(
-                            pa=self), log.ERROR)
+            if b"rdiff-backup-data" not in path_list:
+                log.Log(
+                    "Path '{pa}' looks like an increment but doesn't "
+                    "have 'rdiff-backup-data' in its path".format(pa=self),
+                    log.ERROR,
+                )
                 return (self, (), None)
             else:
                 data_idx = path_list.index(b"rdiff-backup-data")
@@ -1006,36 +1075,43 @@ class RPath(RORPath):
                     # base_index is the path within the increments directory,
                     # replacing the name of the increment with the name of the
                     # file it represents
-                    base_index = path_list[inc_idx + 1:-1]
+                    base_index = path_list[inc_idx + 1 : -1]
                     base_index.append(self.inc_basestr.split(b"/")[-1])
                 elif path_list[-1].startswith(b"increments."):
                     inc_idx = len(path_list) - 1
                     base_index = []
                 else:
                     inc_idx = -1
-                if (inc_idx != data_idx + 1):
-                    log.Log("Path '{pa}' looks like an increment but "
-                            "doesn't have 'rdiff-backup-data/increments' "
-                            "in its path.".format(pa=self), log.ERROR)
+                if inc_idx != data_idx + 1:
+                    log.Log(
+                        "Path '{pa}' looks like an increment but "
+                        "doesn't have 'rdiff-backup-data/increments' "
+                        "in its path.".format(pa=self),
+                        log.ERROR,
+                    )
                     return (self, (), None)
                 # base_dir is the directory above the data directory
                 base_dir = RPath(self.conn, b"/".join(path_list[:data_idx]))
                 return (base_dir, tuple(base_index), "inc")
         else:
             # rpath is either the base directory itself or a sub-dir of it
-            if (self.lstat() and self.isdir()
-                    and b"rdiff-backup-data" in self.listdir()):
+            if self.lstat() and self.isdir() and b"rdiff-backup-data" in self.listdir():
                 # it's a base directory, simple case...
                 return (self, (), "base")
             parent_rp = self
             for element in range(1, len(path_list)):
                 parent_rp = parent_rp.get_parent_rp()
-                if (parent_rp.lstat() and parent_rp.isdir()
-                        and b"rdiff-backup-data" in parent_rp.listdir()):
+                if (
+                    parent_rp.lstat()
+                    and parent_rp.isdir()
+                    and b"rdiff-backup-data" in parent_rp.listdir()
+                ):
                     return (parent_rp, tuple(path_list[-element:]), "subpath")
-            log.Log("Path '{pa}' couldn't be identified as being within "
-                    "an existing backup repository".format(pa=self),
-                    log.ERROR)
+            log.Log(
+                "Path '{pa}' couldn't be identified as being within "
+                "an existing backup repository".format(pa=self),
+                log.ERROR,
+            )
             return (self, (), None)
 
     def get_incfiles_list(self):
@@ -1052,8 +1128,9 @@ class RPath(RORPath):
             inc_info = get_incfile_info(filename)
             if inc_info and inc_info[3] == basename:
                 inc = parent_dir.append(filename)
-                assert inc.isincfile(), (
-                    "Path '{irp!r}' must be an increment file".format(irp=inc))
+                assert (
+                    inc.isincfile()
+                ), "Path '{irp!r}' must be an increment file".format(irp=inc)
                 inc_list.append(inc)
         return inc_list
 
@@ -1068,9 +1145,9 @@ class RPath(RORPath):
     def append_path(self, ext, new_index=()):
         """Like append, but add ext to path instead of to index"""
         # ext can be a string but shouldn't hence we transform it into bytes
-        return self.__class__(self.conn,
-                              self.path_join(self.base, os.fsencode(ext)),
-                              new_index)
+        return self.__class__(
+            self.conn, self.path_join(self.base, os.fsencode(ext)), new_index
+        )
 
     def new_index(self, index):
         """Return similar RPath but with new index"""
@@ -1078,13 +1155,13 @@ class RPath(RORPath):
 
     def new_index_empty(self, index):
         """Return similar RPath with given index, but initialize to empty"""
-        return self.__class__(self.conn, self.base, index, {'type': None})
+        return self.__class__(self.conn, self.base, index, {"type": None})
 
     def get_temp_rpath(self, sibling=False):
         """Return new temp rpath in given or parent directory"""
-        assert self.conn is Globals.local_connection, (
-            "Function must be called locally not over {conn}.".format(
-                conn=self.conn))
+        assert (
+            self.conn is Globals.local_connection
+        ), "Function must be called locally not over {conn}.".format(conn=self.conn)
 
         # recursion if current rpath isn't a directory or if explicitly asked
         if sibling or not self.isdir():
@@ -1094,8 +1171,7 @@ class RPath(RORPath):
         # is (almost) full and when the --tempdir flag is defined,
         # attempt to save temporary files on a different path and
         # hopefully file system.
-        if (tempfile.tempdir
-                and shutil.disk_usage(self.path).free < 0):  # 1048576):
+        if tempfile.tempdir and shutil.disk_usage(self.path).free < 0:  # 1048576):
             # FIXME disabled because os.rename between file systems fails
             tempdir = self.newpath(tempfile.tempdir)
         else:
@@ -1181,8 +1257,12 @@ class RPath(RORPath):
         inc_info = get_incfile_info(basename)
 
         if inc_info:
-            self.inc_compressed, self.inc_timestr, \
-                self.inc_type, self.inc_basestr = inc_info
+            (
+                self.inc_compressed,
+                self.inc_timestr,
+                self.inc_type,
+                self.inc_basestr,
+            ) = inc_info
             return 1
         else:
             return None
@@ -1202,8 +1282,9 @@ class RPath(RORPath):
     def getincbase(self):
         """Return the base filename of an increment file in rp form"""
         if self.index:
-            return self.__class__(self.conn, self.base,
-                                  self.index[:-1] + (self.inc_basestr, ))
+            return self.__class__(
+                self.conn, self.base, self.index[:-1] + (self.inc_basestr,)
+            )
         else:
             return self.__class__(self.conn, self.inc_basestr)
 
@@ -1217,19 +1298,20 @@ class RPath(RORPath):
 
     def makedev(self, type, major, minor):
         """Make a special file with specified type, and major/minor nums"""
-        if type == 'c':
+        if type == "c":
             mode = stat.S_IFCHR | 0o600
-        elif type == 'b':
+        elif type == "b":
             mode = stat.S_IFBLK | 0o600
         else:
             raise RPathException
         try:
-            self.conn.os.mknod(self.path, mode,
-                               self.conn.os.makedev(major, minor))
+            self.conn.os.mknod(self.path, mode, self.conn.os.makedev(major, minor))
         except OSError as exc:
-            log.Log("Unable to mknod device file '{df}' due to "
-                    "exception '{ex}', using touch instead".format(
-                        df=self, ex=exc), log.INFO)
+            log.Log(
+                "Unable to mknod device file '{df}' due to "
+                "exception '{ex}', using touch instead".format(df=self, ex=exc),
+                log.INFO,
+            )
             self.touch()
         self.setdata()
 
@@ -1254,17 +1336,19 @@ class RPath(RORPath):
         the file's file descriptor.
 
         """
-        assert self.conn is Globals.local_connection, (
-            "Function must be called locally not over {conn}.".format(
-                conn=self.conn))
+        assert (
+            self.conn is Globals.local_connection
+        ), "Function must be called locally not over {conn}.".format(conn=self.conn)
         try:
             fd = os.open(self.path, os.O_RDONLY)
             os.fsync(fd)
             os.close(fd)
         except OSError as e:
-            if 'fd' in locals():
+            if "fd" in locals():
                 os.close(fd)
-            if (e.errno not in (errno.EPERM, errno.EACCES, errno.EBADF)) or self.isdir():
+            if (
+                e.errno not in (errno.EPERM, errno.EACCES, errno.EBADF)
+            ) or self.isdir():
                 raise
 
             # Maybe the system doesn't like read-only fsyncing.
@@ -1311,9 +1395,9 @@ class RPath(RORPath):
     def get_acl(self):
         """Return access control list object, setting if necessary"""
         try:
-            acl_meta = self.data['acl']
+            acl_meta = self.data["acl"]
         except KeyError:
-            acl_meta = self.data['acl'] = acl_posix.get_meta(self)
+            acl_meta = self.data["acl"] = acl_posix.get_meta(self)
         return acl_meta
 
     def write_acl(self, acl_meta, map_names=1):
@@ -1323,20 +1407,20 @@ class RPath(RORPath):
 
         """
         acl_meta.write_to_rp(self, map_names)
-        self.data['acl'] = acl_meta
+        self.data["acl"] = acl_meta
 
     def get_ea(self):
         """Return extended attributes object, setting if necessary"""
         try:
-            ea_meta = self.data['ea']
+            ea_meta = self.data["ea"]
         except KeyError:
-            ea_meta = self.data['ea'] = ea.get_meta(self)
+            ea_meta = self.data["ea"] = ea.get_meta(self)
         return ea_meta
 
     def write_ea(self, ea_meta):
         """Change extended attributes of rp"""
         ea_meta.write_to_rp(self)
-        self.data['ea'] = ea_meta
+        self.data["ea"] = ea_meta
 
     def write_carbonfile(self, cfile):
         """Write new carbon data to self."""
@@ -1346,48 +1430,48 @@ class RPath(RORPath):
         from Carbon.File import FSSpec
         from Carbon.File import FSRef
         import Carbon.Files
+
         fsobj = FSSpec(self.path)
         finderinfo = fsobj.FSpGetFInfo()
-        finderinfo.Creator = cfile['creator']
-        finderinfo.Type = cfile['type']
-        finderinfo.Location = cfile['location']
-        finderinfo.Flags = cfile['flags']
+        finderinfo.Creator = cfile["creator"]
+        finderinfo.Type = cfile["type"]
+        finderinfo.Location = cfile["location"]
+        finderinfo.Flags = cfile["flags"]
         fsobj.FSpSetFInfo(finderinfo)
         """Write Creation Date to self (if stored in metadata)."""
         try:
-            cdate = cfile['createDate']
+            cdate = cfile["createDate"]
             fsref = FSRef(fsobj)
             cataloginfo, d1, d2, d3 = fsref.FSGetCatalogInfo(
-                Carbon.Files.kFSCatInfoCreateDate)
+                Carbon.Files.kFSCatInfoCreateDate
+            )
             cataloginfo.createDate = (0, cdate, 0)
-            fsref.FSSetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate,
-                                   cataloginfo)
+            fsref.FSSetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate, cataloginfo)
             self.set_carbonfile(cfile)
         except KeyError:
             self.set_carbonfile(cfile)
 
     def get_resource_fork(self):
         """Return resource fork data, setting if necessary"""
-        assert self.isreg(), (
-            "Path '{rp}' must point to a regular file.".format(rp=self))
+        assert self.isreg(), "Path '{rp}' must point to a regular file.".format(rp=self)
         try:
-            rfork = self.data['resourcefork']
+            rfork = self.data["resourcefork"]
         except KeyError:
             try:
                 rfork_fp = self.conn.open(
-                    os.path.join(self.path, b'..namedfork', b'rsrc'), 'rb')
+                    os.path.join(self.path, b"..namedfork", b"rsrc"), "rb"
+                )
                 rfork = rfork_fp.read()
                 rfork_fp.close()
             except OSError:
-                rfork = b''
-            self.data['resourcefork'] = rfork
+                rfork = b""
+            self.data["resourcefork"] = rfork
         return rfork
 
     def write_resource_fork(self, rfork_data):
         """Write new resource fork to self"""
         log.Log("Writing resource fork to path {pa}".format(pa=self), log.DEBUG)
-        fp = self.conn.open(
-            os.path.join(self.path, b'..namedfork', b'rsrc'), 'wb')
+        fp = self.conn.open(os.path.join(self.path, b"..namedfork", b"rsrc"), "wb")
         fp.write(rfork_data)
         fp.close()
         self.set_resource_fork(rfork_data)
@@ -1395,15 +1479,15 @@ class RPath(RORPath):
     def get_win_acl(self):
         """Return Windows access control list, setting if necessary"""
         try:
-            acl_meta = self.data['win_acl']
+            acl_meta = self.data["win_acl"]
         except KeyError:
-            acl_meta = self.data['win_acl'] = acl_win.get_meta(self)
+            acl_meta = self.data["win_acl"] = acl_win.get_meta(self)
         return acl_meta
 
     def write_win_acl(self, acl_meta):
         """Change access control list of rp"""
         acl_win.write_meta(self, acl_meta)
-        self.data['win_acl'] = acl_meta
+        self.data["win_acl"] = acl_meta
 
     @classmethod
     def _get_next_tempfile_name(cls):
@@ -1423,12 +1507,15 @@ class RPath(RORPath):
         of sync and you need to find out where it happened.
 
         """
-        temptype = self.data['type']
+        temptype = self.data["type"]
         self.setdata()
-        if temptype != self.data['type']:
-            print("\nPath: {rp}\nhas cached an inconsistent type\n"
-                  "Old: {otype} --> New: {ntype}\n".format(
-                      rp=self, otype=temptype, ntype=self.data['type']))
+        if temptype != self.data["type"]:
+            print(
+                "\nPath: {rp}\nhas cached an inconsistent type\n"
+                "Old: {otype} --> New: {ntype}\n".format(
+                    rp=self, otype=temptype, ntype=self.data["type"]
+                )
+            )
 
     def _get_path_as_list(self):
         """
@@ -1449,8 +1536,9 @@ class MaybeGzip:
 
     def __init__(self, base_rp, callback=None):
         """Return file-like object with filename based on base_rp"""
-        assert not base_rp.lstat(), (
-            "Path '{rp}' shouldn't already exist.".format(rp=base_rp))
+        assert not base_rp.lstat(), "Path '{rp}' shouldn't already exist.".format(
+            rp=base_rp
+        )
         self.base_rp = base_rp
         # callback will be called with final write rp as only argument
         self.callback = callback
@@ -1458,7 +1546,7 @@ class MaybeGzip:
         self.closed = 0
 
     def __getattr__(self, name):
-        if name == 'fileno':
+        if name == "fileno":
             return self.fileobj.fileno
         else:
             raise AttributeError(name)
@@ -1492,11 +1580,10 @@ class MaybeGzip:
     def _get_gzipped_rp(self):
         """Return gzipped rp by adding .gz to base_rp"""
         if self.base_rp.index:
-            newind = self.base_rp.index[:-1] + (
-                self.base_rp.index[-1] + b'.gz', )
+            newind = self.base_rp.index[:-1] + (self.base_rp.index[-1] + b".gz",)
             return self.base_rp.new_index(newind)
         else:
-            return self.base_rp.append_path(b'.gz')
+            return self.base_rp.append_path(b".gz")
 
 
 class _RPathFileHook:
@@ -1565,8 +1652,10 @@ def copy(rpin, rpout, compress=0):
     Returns close value of input for regular file, which can be used
     to pass hashes on.
     """
-    log.Log("Regular copying input path {ip} to output path {op}".format(
-        ip=rpin, op=rpout), log.DEBUG)
+    log.Log(
+        "Regular copying input path {ip} to output path {op}".format(ip=rpin, op=rpout),
+        log.DEBUG,
+    )
     if not rpin.lstat():
         if rpout.lstat():
             rpout.delete()
@@ -1605,8 +1694,7 @@ def copy(rpin, rpout, compress=0):
 def copy_reg_file(rpin, rpout, compress=0):
     """Copy regular file rpin to rpout, possibly avoiding connection"""
     try:
-        if (rpout.conn is rpin.conn
-                and rpout.conn is not Globals.local_connection):
+        if rpout.conn is rpin.conn and rpout.conn is not Globals.local_connection:
             v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
             rpout.setdata()
             return v
@@ -1615,13 +1703,14 @@ def copy_reg_file(rpin, rpout, compress=0):
     try:
         return rpout.write_from_fileobj(rpin.open("rb"), compress=compress)
     except OSError as e:
-        if (e.errno == errno.ERANGE):
+        if e.errno == errno.ERANGE:
             log.Log.FatalError(
                 "'OSError - Result too large' while reading file {fi}. "
                 "If you are using a Mac, this is probably "
                 "the result of HFS+ filesystem corruption. "
                 "Please exclude this file from your backup "
-                "before proceeding".format(fi=rpin))
+                "before proceeding".format(fi=rpin)
+            )
         else:
             raise
 
@@ -1663,13 +1752,17 @@ def copy_attribs(rpin, rpout):
     Only changes the chmoddable bits, uid/gid ownership, and
     timestamps, so both must already exist.
     """
-    log.Log("Copying attributes from path {fp!r} to path {tp!r}".format(
-        fp=rpin, tp=rpout), log.DEBUG)
+    log.Log(
+        "Copying attributes from path {fp!r} to path {tp!r}".format(fp=rpin, tp=rpout),
+        log.DEBUG,
+    )
     assert rpin.lstat() == rpout.lstat() or rpin.isspecial(), (
         "Input '{irp!r}' and output '{orp!r}' paths must exist likewise, "
-        "or input be special.".format(irp=rpin, orp=rpout))
-    assert rpout.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rpout.conn))
+        "or input be special.".format(irp=rpin, orp=rpout)
+    )
+    assert (
+        rpout.conn is Globals.local_connection
+    ), "Function works locally not over '{conn}'.".format(conn=rpout.conn)
     if Globals.change_ownership:
         rpout.chown(*map_owners.map_rpath_owner(rpin))
     if Globals.eas_write:
@@ -1678,10 +1771,9 @@ def copy_attribs(rpin, rpout):
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
         return  # symlinks don't have times or perms
-    if (Globals.resource_forks_write and rpin.isreg()
-            and rpin.has_resource_fork()):
+    if Globals.resource_forks_write and rpin.isreg() and rpin.has_resource_fork():
         rpout.write_resource_fork(rpin.get_resource_fork())
-    if (Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile()):
+    if Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile():
         rpout.write_carbonfile(rpin.get_carbonfile())
     rpout.chmod(rpin.getperms())
     if Globals.acls_write:
@@ -1700,8 +1792,12 @@ def copy_attribs_inc(rpin, rpout):
     originals.  Therefore, don't copy all directory acl and
     permissions.
     """
-    log.Log("Copying inc attributes from path {fp!r} to path {tp!r}".format(
-        fp=rpin, tp=rpout), log.DEBUG)
+    log.Log(
+        "Copying inc attributes from path {fp!r} to path {tp!r}".format(
+            fp=rpin, tp=rpout
+        ),
+        log.DEBUG,
+    )
     _check_for_files(rpin, rpout)
     if Globals.change_ownership:
         rpout.chown(*rpin.getuidgid())
@@ -1709,11 +1805,19 @@ def copy_attribs_inc(rpin, rpout):
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
         return  # symlinks don't have times or perms
-    if (Globals.resource_forks_write and rpin.isreg()
-            and rpin.has_resource_fork() and rpout.isreg()):
+    if (
+        Globals.resource_forks_write
+        and rpin.isreg()
+        and rpin.has_resource_fork()
+        and rpout.isreg()
+    ):
         rpout.write_resource_fork(rpin.get_resource_fork())
-    if (Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile()
-            and rpout.isreg()):
+    if (
+        Globals.carbonfile_write
+        and rpin.isreg()
+        and rpin.has_carbonfile()
+        and rpout.isreg()
+    ):
         rpout.write_carbonfile(rpin.get_carbonfile())
     if rpin.isdir() and not rpout.isdir():
         rpout.chmod(rpin.getperms() & 0o777)
@@ -1737,17 +1841,25 @@ def rename(rp_source, rp_dest):
     """Rename rp_source to rp_dest"""
     assert rp_source.conn is rp_dest.conn, (
         "Source '{srp!r}' and destination '{drp!r}' paths must have the "
-        "same connection for renaming.".format(srp=rp_source, drp=rp_dest))
-    log.Log("Renaming from path {fp} to path {tp}".format(
-        fp=rp_source, tp=rp_dest), log.DEBUG)
+        "same connection for renaming.".format(srp=rp_source, drp=rp_dest)
+    )
+    log.Log(
+        "Renaming from path {fp} to path {tp}".format(fp=rp_source, tp=rp_dest),
+        log.DEBUG,
+    )
     if not rp_source.lstat():
         rp_dest.delete()
     else:
-        if (rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode()
-                and rp_source.getinode() != 0):
-            log.Log("Attempt to rename over same inode: from path "
-                    "{fp} to path {tp}".format(
-                        fp=rp_source, tp=rp_dest), log.WARNING)
+        if (
+            rp_dest.lstat()
+            and rp_source.getinode() == rp_dest.getinode()
+            and rp_source.getinode() != 0
+        ):
+            log.Log(
+                "Attempt to rename over same inode: from path "
+                "{fp} to path {tp}".format(fp=rp_source, tp=rp_dest),
+                log.WARNING,
+            )
             # You can't rename one hard linked file over another
             rp_source.delete()
         else:
@@ -1767,13 +1879,15 @@ def rename(rp_source, rp_dest):
                     rp_source.conn.os.unlink(rp_dest.path)
                     rp_source.conn.os.rename(rp_source.path, rp_dest.path)
                 else:
-                    log.Log("Exception '{ex}' while renaming from path {fp} "
-                            "to path {tp}".format(
-                                ex=error, fp=rp_source, tp=rp_dest), log.ERROR)
+                    log.Log(
+                        "Exception '{ex}' while renaming from path {fp} "
+                        "to path {tp}".format(ex=error, fp=rp_source, tp=rp_dest),
+                        log.ERROR,
+                    )
                     raise
 
         rp_dest.data = rp_source.data
-        rp_source.data = {'type': None}
+        rp_source.data = {"type": None}
 
 
 # @API(make_file_dict, 200)
@@ -1794,62 +1908,63 @@ def make_file_dict(filename):
         # log.Log("Missing file '{mf}' couldn't be assessed".format(
         #             mf=filename), log.WARNING)
         # FIXME perhaps we should have a different type/flag for this case?
-        return {'type': None}
+        return {"type": None}
     data = {}
     mode = statblock[stat.ST_MODE]
 
     if stat.S_ISREG(mode):
-        type_ = 'reg'
+        type_ = "reg"
     elif stat.S_ISDIR(mode):
-        type_ = 'dir'
+        type_ = "dir"
     elif stat.S_ISCHR(mode):
-        type_ = 'dev'
+        type_ = "dev"
         s = statblock.st_rdev
-        data['devnums'] = ('c', os.major(s), os.minor(s))
+        data["devnums"] = ("c", os.major(s), os.minor(s))
     elif stat.S_ISBLK(mode):
-        type_ = 'dev'
+        type_ = "dev"
         s = statblock.st_rdev
-        data['devnums'] = ('b', os.major(s), os.minor(s))
+        data["devnums"] = ("b", os.major(s), os.minor(s))
     elif stat.S_ISFIFO(mode):
-        type_ = 'fifo'
+        type_ = "fifo"
     elif stat.S_ISLNK(mode):
-        type_ = 'sym'
-        data['linkname'] = os.readlink(filename)
+        type_ = "sym"
+        data["linkname"] = os.readlink(filename)
     elif stat.S_ISSOCK(mode):
-        type_ = 'sock'
+        type_ = "sock"
     else:
         raise C.UnknownFileError(filename)
-    data['type'] = type_
-    data['size'] = statblock[stat.ST_SIZE]
-    data['perms'] = stat.S_IMODE(mode)
-    data['uid'] = statblock[stat.ST_UID]
-    data['gid'] = statblock[stat.ST_GID]
-    data['inode'] = statblock[stat.ST_INO]
-    data['devloc'] = statblock[stat.ST_DEV]
-    data['nlink'] = statblock[stat.ST_NLINK]
+    data["type"] = type_
+    data["size"] = statblock[stat.ST_SIZE]
+    data["perms"] = stat.S_IMODE(mode)
+    data["uid"] = statblock[stat.ST_UID]
+    data["gid"] = statblock[stat.ST_GID]
+    data["inode"] = statblock[stat.ST_INO]
+    data["devloc"] = statblock[stat.ST_DEV]
+    data["nlink"] = statblock[stat.ST_NLINK]
 
-    if os.name == 'nt':
+    if os.name == "nt":
         try:
             attribs = win32api.GetFileAttributes(os.fsdecode(filename))
         except pywintypes.error as exc:
-            if (exc.args[0] == 32):  # file in use
+            if exc.args[0] == 32:  # file in use
                 # we could also ignore with: return {'type': None}
                 # but this approach seems to be better handled
                 attribs = 0
             else:
                 # we replace the specific Windows exception by a generic
                 # one also understood by a potential Linux client/server
-                raise OSError(None, exc.args[1] + " - " + exc.args[2],
-                              filename, exc.args[0]) from None
+                raise OSError(
+                    None, exc.args[1] + " - " + exc.args[2], filename, exc.args[0]
+                ) from None
         if attribs & win32con.FILE_ATTRIBUTE_REPARSE_POINT:
-            data['type'] = 'sym'
-            data['linkname'] = None
+            data["type"] = "sym"
+            data["linkname"] = None
 
-    if not (type_ == 'sym' or type_ == 'dev'):
+    if not (type_ == "sym" or type_ == "dev"):
         # mtimes on symlinks and dev files don't work consistently
-        data['mtime'] = int(statblock[stat.ST_MTIME])
-        data['atime'] = int(statblock[stat.ST_ATIME])
-        data['ctime'] = int(statblock[stat.ST_CTIME])
+        data["mtime"] = int(statblock[stat.ST_MTIME])
+        data["atime"] = int(statblock[stat.ST_ATIME])
+        data["ctime"] = int(statblock[stat.ST_CTIME])
     return data
 
 
@@ -1860,32 +1975,35 @@ def make_socket_local(rpath):
     This takes an rpath so that it will be checked by Security.
     (Miscellaneous strings will not be.)
     """
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
+    assert (
+        rpath.conn is Globals.local_connection
+    ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
 
 
 # @API(gzip_open_local_read, 200)
 def gzip_open_local_read(rpath):
     """Return open GzipFile.  See security note directly above"""
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
+    assert (
+        rpath.conn is Globals.local_connection
+    ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     return gzip.GzipFile(rpath.path, "rb")
 
 
 # @API(open_local_read, 200)
 def open_local_read(rpath):
     """Return open file (provided for security reasons)"""
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
+    assert (
+        rpath.conn is Globals.local_connection
+    ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     return open(rpath.path, "rb")
 
 
 def get_incfile_info(basename):
     """Returns None or tuple of
     (is_compressed, timestr, type, and basename)"""
-    dotsplit = basename.split(b'.')
-    if dotsplit[-1] == b'gz':
+    dotsplit = basename.split(b".")
+    if dotsplit[-1] == b"gz":
         compressed = 1
         if len(dotsplit) < 4:
             return None
@@ -1897,13 +2015,18 @@ def get_incfile_info(basename):
         timestring, ext = dotsplit[-2:]
     if Time.bytestotime(timestring) is None:
         return None
-    if not (ext == b"snapshot" or ext == b"dir" or ext == b"missing"
-            or ext == b"diff" or ext == b"data"):
+    if not (
+        ext == b"snapshot"
+        or ext == b"dir"
+        or ext == b"missing"
+        or ext == b"diff"
+        or ext == b"data"
+    ):
         return None
     if compressed:
-        basestr = b'.'.join(dotsplit[:-3])
+        basestr = b".".join(dotsplit[:-3])
     else:
-        basestr = b'.'.join(dotsplit[:-2])
+        basestr = b".".join(dotsplit[:-2])
     return (compressed, timestring, ext, basestr)
 
 
@@ -1911,8 +2034,7 @@ def get_incfile_info(basename):
 def delete_dir_no_files(rp):
     """Deletes the directory at rp.path if empty. Raises if the
     directory contains files."""
-    assert rp.isdir(), (
-        "Path '{rp}' must be a directory to be deleted.".format(rp=rp))
+    assert rp.isdir(), "Path '{rp}' must be a directory to be deleted.".format(rp=rp)
     if rp.contains_files():
         raise RPathException("Directory contains files.")
     rp.delete()
@@ -1926,11 +2048,11 @@ def setdata_local(rp):
     This is a global function because it must be called locally, since
     these features may exist or not depending on the connection.
     """
-    assert rp.conn is Globals.local_connection, (
-        "Function must be called locally not over {conn}.".format(
-            conn=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Function must be called locally not over {conn}.".format(conn=rp.conn)
     reset_perms = False
-    if (Globals.process_uid != 0 and not rp.readable() and rp.isowner()):
+    if Globals.process_uid != 0 and not rp.readable() and rp.isowner():
         if rp.lstat() == "sym":
             # a symlink which isn't readable is strange, hence better not backup
             # only case known is 'C:\Users\All Users' mounted over Samba
@@ -1939,25 +2061,27 @@ def setdata_local(rp):
             # not the symlink itself
             rp.data["type"] = None
             log.ErrorLog.write_if_open(
-                "ListError", rp,
-                OSError("[Errno n/a] Ignoring strange unreadable symlink"))
+                "ListError",
+                rp,
+                OSError("[Errno n/a] Ignoring strange unreadable symlink"),
+            )
             return
         else:
             reset_perms = True
             rp.chmod(0o400 | rp.getperms())
 
-    rp.data['uname'] = usrgrp.uid2uname(rp.data['uid'])
-    rp.data['gname'] = usrgrp.gid2gname(rp.data['gid'])
+    rp.data["uname"] = usrgrp.uid2uname(rp.data["uid"])
+    rp.data["gname"] = usrgrp.gid2gname(rp.data["gid"])
     if Globals.eas_conn:
-        rp.data['ea'] = ea.get_meta(rp)
+        rp.data["ea"] = ea.get_meta(rp)
     if Globals.acls_conn:
-        rp.data['acl'] = acl_posix.get_meta(rp)
+        rp.data["acl"] = acl_posix.get_meta(rp)
     if Globals.win_acls_conn:
-        rp.data['win_acl'] = acl_win.get_meta(rp)
+        rp.data["win_acl"] = acl_win.get_meta(rp)
     if Globals.resource_forks_conn and rp.isreg():
         rp.get_resource_fork()
     if Globals.carbonfile_conn and rp.isreg():
-        rp.data['carbonfile'] = _carbonfile_get(rp)
+        rp.data["carbonfile"] = _carbonfile_get(rp)
 
     if reset_perms:
         rp.chmod(rp.getperms() & ~0o400)
@@ -1973,22 +2097,26 @@ def _carbonfile_get(rp):
     from Carbon.File import FSRef
     import Carbon.Files
     import MacOS
+
     try:
         fsobj = FSSpec(rp.path)
         finderinfo = fsobj.FSpGetFInfo()
         cataloginfo, d1, d2, d3 = FSRef(fsobj).FSGetCatalogInfo(
-            Carbon.Files.kFSCatInfoCreateDate)
+            Carbon.Files.kFSCatInfoCreateDate
+        )
         cfile = {
-            'creator': finderinfo.Creator,
-            'type': finderinfo.Type,
-            'location': finderinfo.Location,
-            'flags': finderinfo.Flags,
-            'createDate': cataloginfo.createDate[1]
+            "creator": finderinfo.Creator,
+            "type": finderinfo.Type,
+            "location": finderinfo.Location,
+            "flags": finderinfo.Flags,
+            "createDate": cataloginfo.createDate[1],
         }
         return cfile
     except MacOS.Error:
-        log.Log("Cannot read carbonfile information from path {pa}".format(
-            pa=rp), log.WARNING)
+        log.Log(
+            "Cannot read carbonfile information from path {pa}".format(pa=rp),
+            log.WARNING,
+        )
         return None
 
 
@@ -2011,10 +2139,15 @@ def _cmp_file_attribs(rp1, rp2):
     elif rp1.ischardev() and rp2.ischardev():
         result = 1
     else:
-        result = ((rp1.getctime() == rp2.getctime())
-                  and (rp1.getmtime() == rp2.getmtime()))
-    log.Log("Compare attribs of paths {p1} and {p2} gives result: {re}".format(
-            p1=rp1, p2=rp2, re=result), log.DEBUG)
+        result = (rp1.getctime() == rp2.getctime()) and (
+            rp1.getmtime() == rp2.getmtime()
+        )
+    log.Log(
+        "Compare attribs of paths {p1} and {p2} gives result: {re}".format(
+            p1=rp1, p2=rp2, re=result
+        ),
+        log.DEBUG,
+    )
     return result
 
 

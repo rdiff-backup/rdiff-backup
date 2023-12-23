@@ -52,9 +52,11 @@ def main_run(arglist, security_override=False):
 
     # parse accordingly the arguments
     parsed_args = arguments.parse(
-        arglist, "rdiff-backup {ver}".format(ver=Globals.version),
+        arglist,
+        "rdiff-backup {ver}".format(ver=Globals.version),
         actions_mgr.get_generic_parsers(),
-        discovered_actions)
+        discovered_actions,
+    )
 
     # we need verbosity set properly asap
     if parsed_args.terminal_verbosity is not None:
@@ -68,61 +70,91 @@ def main_run(arglist, security_override=False):
     # parsed arguments
     action = discovered_actions[parsed_args.action](parsed_args)
 
-    log.Log("Runtime information =>{ri}<=".format(
-        ri=Globals.get_runtime_info(parsed=vars(parsed_args))), log.DEBUG)
+    log.Log(
+        "Runtime information =>{ri}<=".format(
+            ri=Globals.get_runtime_info(parsed=vars(parsed_args))
+        ),
+        log.DEBUG,
+    )
 
     # validate that everything looks good before really starting
     ret_val = action.pre_check()
     if ret_val & Globals.RET_CODE_ERR:
-        log.Log("Action {ac} failed on step {st}".format(
-            ac=parsed_args.action, st="pre_check"), log.ERROR)
+        log.Log(
+            "Action {ac} failed on step {st}".format(
+                ac=parsed_args.action, st="pre_check"
+            ),
+            log.ERROR,
+        )
         return ret_val
 
     # now start for real, conn_act and action are the same object
     with action.connect() as conn_act:
-
         if not conn_act.is_connection_ok():
-            log.Log("Action {ac} failed on step {st}".format(
-                ac=parsed_args.action, st="connect"), log.ERROR)
+            log.Log(
+                "Action {ac} failed on step {st}".format(
+                    ac=parsed_args.action, st="connect"
+                ),
+                log.ERROR,
+            )
             return conn_act.conn_status
 
         # For test purposes only, hence we allow ourselves to overwrite a
         # "private" variable
         if security_override:
             from rdiff_backup import Security
+
             Security._security_level = "override"
 
         ret_val |= conn_act.check()
         if ret_val & Globals.RET_CODE_ERR:
-            log.Log("Action {ac} failed on step {st}".format(
-                ac=parsed_args.action, st="check"), log.ERROR)
+            log.Log(
+                "Action {ac} failed on step {st}".format(
+                    ac=parsed_args.action, st="check"
+                ),
+                log.ERROR,
+            )
             return ret_val
 
         ret_val |= conn_act.setup()
         if ret_val & Globals.RET_CODE_ERR:
-            log.Log("Action {ac} failed on step {st}".format(
-                ac=parsed_args.action, st="setup"), log.ERROR)
+            log.Log(
+                "Action {ac} failed on step {st}".format(
+                    ac=parsed_args.action, st="setup"
+                ),
+                log.ERROR,
+            )
             return ret_val
 
         ret_val |= conn_act.run()
         if ret_val & Globals.RET_CODE_ERR:
-            log.Log("Action {ac} failed on step {st}".format(
-                ac=parsed_args.action, st="run"), log.ERROR)
+            log.Log(
+                "Action {ac} failed on step {st}".format(
+                    ac=parsed_args.action, st="run"
+                ),
+                log.ERROR,
+            )
             return ret_val
 
     # Give a final summary of what might have happened to the user
     if ret_val & Globals.RET_CODE_WARN:
-        log.Log("Action {ac} emitted warnings, "
-                "see previous messages for details".format(
-                    ac=parsed_args.action), log.WARNING)
+        log.Log(
+            "Action {ac} emitted warnings, "
+            "see previous messages for details".format(ac=parsed_args.action),
+            log.WARNING,
+        )
     if ret_val & Globals.RET_CODE_FILE_ERR:
-        log.Log("Action {ac} failed on one or more files, "
-                "see previous messages for details".format(
-                    ac=parsed_args.action), log.WARNING)
+        log.Log(
+            "Action {ac} failed on one or more files, "
+            "see previous messages for details".format(ac=parsed_args.action),
+            log.WARNING,
+        )
     if ret_val & Globals.RET_CODE_FILE_WARN:
-        log.Log("Action {ac} emitted a warning on one or more files, "
-                "see previous messages for details".format(
-                    ac=parsed_args.action), log.WARNING)
+        log.Log(
+            "Action {ac} emitted a warning on one or more files, "
+            "see previous messages for details".format(ac=parsed_args.action),
+            log.WARNING,
+        )
 
     return ret_val
 
@@ -133,7 +165,7 @@ def _parse_cmdlineoptions_compat201(arglist):  # noqa: C901
     between old and new way of parsing parameters.
     """
 
-    if arglist.action in ('backup', 'restore'):
+    if arglist.action in ("backup", "restore"):
         Globals.set("acls_active", arglist.acls)
         Globals.set("win_acls_active", arglist.acls)
         Globals.set("carbonfile_active", arglist.carbonfile)
@@ -142,23 +174,22 @@ def _parse_cmdlineoptions_compat201(arglist):  # noqa: C901
         Globals.set("preserve_hardlinks", arglist.hard_links)
         Globals.set("resource_forks_active", arglist.resource_forks)
         Globals.set("never_drop_acls", arglist.never_drop_acls)
-    if arglist.action in ('backup', 'regress', 'restore'):
+    if arglist.action in ("backup", "regress", "restore"):
         Globals.set("compression", arglist.compression)
-    if arglist.action in ('server'):
+    if arglist.action in ("server"):
         Globals.server = True
-    if arglist.action in ('backup'):
+    if arglist.action in ("backup"):
         Globals.set("file_statistics", arglist.file_statistics)
         Globals.set("print_statistics", arglist.print_statistics)
-    if arglist.action in ('regress'):
-        Globals.set("allow_duplicate_timestamps",
-                    arglist.allow_duplicate_timestamps)
+    if arglist.action in ("regress"):
+        Globals.set("allow_duplicate_timestamps", arglist.allow_duplicate_timestamps)
     Globals.set("null_separator", arglist.null_separator)
     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
     Globals.set("do_fsync", arglist.fsync)
     if arglist.current_time is not None:
-        Globals.set_integer('current_time', arglist.current_time)
+        Globals.set_integer("current_time", arglist.current_time)
     if arglist.chars_to_quote is not None:
-        Globals.set('chars_to_quote', os.fsencode(arglist.chars_to_quote))
+        Globals.set("chars_to_quote", os.fsencode(arglist.chars_to_quote))
     if arglist.api_version is not None:  # FIXME catch also env variable?
         Globals.set_api_version(arglist.api_version)
 

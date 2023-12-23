@@ -56,20 +56,22 @@ def get_inc(rp, typestr, inc_time):
     To avoid any quoting, the returned rpath has empty index, and the
     whole filename is in the base (which is not quoted).
     """
+
     def addtostr(s):
-        return b'.'.join(map(os.fsencode,
-                             (s, Time.timetostring(inc_time), typestr)))
+        return b".".join(map(os.fsencode, (s, Time.timetostring(inc_time), typestr)))
 
     if rp.index:
-        incrp = rp.__class__(rp.conn, rp.base,
-                             rp.index[:-1] + (addtostr(rp.index[-1]), ))
+        incrp = rp.__class__(
+            rp.conn, rp.base, rp.index[:-1] + (addtostr(rp.index[-1]),)
+        )
     else:
         dirname, basename = rp.dirsplit()
-        incrp = rp.__class__(rp.conn, dirname, (addtostr(basename), ))
+        incrp = rp.__class__(rp.conn, dirname, (addtostr(basename),))
     if incrp.lstat():
         log.Log.FatalError(
             "New increment path '{ip}' shouldn't exist, something went "
-            "really wrong.".format(ip=incrp))
+            "really wrong.".format(ip=incrp)
+        )
     return incrp
 
 
@@ -85,8 +87,10 @@ def _make_missing_increment(incpref, inc_time):
 
 def _is_compressed(mirror):
     """Return true if mirror's increments should be compressed"""
-    return (Globals.compression and (Globals.no_compression_regexp is None
-            or not Globals.no_compression_regexp.match(mirror.path)))
+    return Globals.compression and (
+        Globals.no_compression_regexp is None
+        or not Globals.no_compression_regexp.match(mirror.path)
+    )
 
 
 def _make_snapshot_increment(mirror, incpref, inc_time):
@@ -99,8 +103,12 @@ def _make_snapshot_increment(mirror, incpref, inc_time):
 
     if mirror.isspecial():  # check for errors when creating special increments
         eh = robust.get_error_handler("SpecialFileError")
-        if robust.check_common_error(eh, rpath.copy_with_attribs,
-                                     (mirror, snapshotrp, compress)) == 0:
+        if (
+            robust.check_common_error(
+                eh, rpath.copy_with_attribs, (mirror, snapshotrp, compress)
+            )
+            == 0
+        ):
             snapshotrp.setdata()
             if snapshotrp.lstat():
                 snapshotrp.delete()

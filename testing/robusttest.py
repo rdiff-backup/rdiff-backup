@@ -34,10 +34,13 @@ class RobustTest(unittest.TestCase):
         src_dir = os.path.join(comtst.old_test_dir, b"rpath2")
         base_dir = comtst.re_init_subdir(comtst.abs_test_dir, b"robust")
         target_dir = os.path.join(base_dir, b"bak")
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, True, src_dir, target_dir,
-            ("--api-version", "201"), b"backup", ()), 0)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True, True, src_dir, target_dir, ("--api-version", "201"), b"backup", ()
+            ),
+            0,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

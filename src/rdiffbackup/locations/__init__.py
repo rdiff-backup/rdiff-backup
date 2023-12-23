@@ -30,7 +30,7 @@ from rdiff_backup import Globals, log
 LOCK = b"lock.yml"
 
 
-class Location():
+class Location:
     """
     Abstract location class representing a user@hostname::/dir location
     """
@@ -42,8 +42,9 @@ class Location():
     def __str__(self):
         return str(self.base_dir)
 
-    def init_owners_mapping(self, users_map=None, groups_map=None,
-                            preserve_num_ids=False):
+    def init_owners_mapping(
+        self, users_map=None, groups_map=None, preserve_num_ids=False
+    ):
         """
         initialize mapping of users and groups (aka owners)
 
@@ -55,8 +56,7 @@ class Location():
             users_map = users_map.read()
         if groups_map is not None:
             groups_map = groups_map.read()
-        self._shadow.init_owners_mapping(users_map, groups_map,
-                                         preserve_num_ids)
+        self._shadow.init_owners_mapping(users_map, groups_map, preserve_num_ids)
 
         return Globals.RET_CODE_OK
 
@@ -71,12 +71,15 @@ class Location():
         check that the location exists and is a directory
         """
         if not self.base_dir.lstat():
-            log.Log("Source path {sp} does not exist".format(
-                sp=self.base_dir), log.ERROR)
+            log.Log(
+                "Source path {sp} does not exist".format(sp=self.base_dir), log.ERROR
+            )
             return False
         elif not self.base_dir.isdir():
-            log.Log("Source path {sp} is not a directory".format(
-                sp=self.base_dir), log.ERROR)
+            log.Log(
+                "Source path {sp} is not a directory".format(sp=self.base_dir),
+                log.ERROR,
+            )
             return False
         return True
 
@@ -85,15 +88,19 @@ class Location():
         check that target is a directory or doesn't exist
         """
         # TODO The writable aspect hasn't yet been implemented
-        if (self.base_dir.lstat() and not self.base_dir.isdir()):
+        if self.base_dir.lstat() and not self.base_dir.isdir():
             if self.force:
-                log.Log("Target path {tp} exists but isn't a directory, "
-                        "and will be force deleted".format(
-                            tp=self.base_dir), log.WARNING)
+                log.Log(
+                    "Target path {tp} exists but isn't a directory, "
+                    "and will be force deleted".format(tp=self.base_dir),
+                    log.WARNING,
+                )
             else:
-                log.Log("Target path {tp} exists and is not a directory, "
-                        "call with '--force' to overwrite".format(
-                            tp=self.base_dir), log.ERROR)
+                log.Log(
+                    "Target path {tp} exists and is not a directory, "
+                    "call with '--force' to overwrite".format(tp=self.base_dir),
+                    log.ERROR,
+                )
                 return False
         return True
 
@@ -103,8 +110,7 @@ class Location():
         """
         try:
             # if the target exists and isn't a directory, force delete it
-            if (self.base_dir.lstat() and not self.base_dir.isdir()
-                    and self.force):
+            if self.base_dir.lstat() and not self.base_dir.isdir() and self.force:
                 self.base_dir.delete()
 
             # if the target doesn't exist, create it
@@ -115,8 +121,12 @@ class Location():
                     self.base_dir.mkdir()
                 self.base_dir.chmod(0o700)  # only read-writable by its owner
         except os.error:
-            log.Log("Unable to delete and/or create directory {di}".format(
-                di=self.base_dir), log.ERROR)
+            log.Log(
+                "Unable to delete and/or create directory {di}".format(
+                    di=self.base_dir
+                ),
+                log.ERROR,
+            )
             return False
 
         return True  # all is good

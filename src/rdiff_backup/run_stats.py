@@ -47,7 +47,15 @@ def parse_args():
         optlist, args = getopt.getopt(
             sys.argv[1:],
             "hV",
-            ["begin-time=", "end-time=", "help", "minimum-ratio=", "null-separator", "quiet", "version"],
+            [
+                "begin-time=",
+                "end-time=",
+                "help",
+                "minimum-ratio=",
+                "null-separator",
+                "quiet",
+                "version",
+            ],
         )
     except getopt.GetoptError:
         usage(1)
@@ -82,7 +90,8 @@ def parse_args():
 
 
 def usage(rc):
-    sys.stderr.write("""
+    sys.stderr.write(
+        """
 Usage: {cmd}
        [--begin-time <time>] [--end-time <time>]
        [--minimum-ratio <float>] [--null-separator]
@@ -90,7 +99,10 @@ Usage: {cmd}
        <backup-dir>
 
 See the rdiff-backup-statistics man page for more information.
-""".format(cmd=sys.argv[0]))
+""".format(
+            cmd=sys.argv[0]
+        )
+    )
     sys.exit(rc)
 
 
@@ -142,15 +154,17 @@ class StatisticsRPaths:
             if time in filestat_dict:
                 result.append((session_dict[time], filestat_dict[time]))
             else:
-                sys.stderr.write("No file_statistics to match '{rp}'".format(
-                    rp=session_dict[time]))
+                sys.stderr.write(
+                    "No file_statistics to match '{rp}'".format(rp=session_dict[time])
+                )
         return result
 
 
 def print_session_statistics(stat_rpaths):
     print("Session statistics:")
-    os_system([b"rdiff-backup", b"calculate"]
-              + [inc.path for inc in stat_rpaths.session_rps])
+    os_system(
+        [b"rdiff-backup", b"calculate"] + [inc.path for inc in stat_rpaths.session_rps]
+    )
 
 
 class FileStatisticsTree:
@@ -173,7 +187,9 @@ class FileStatisticsTree:
             raise RuntimeError(
                 "Only trees of the same name tuple can be merged but "
                 "{name1} and {name2} are different.".format(
-                    name1=myfs.nametuple, name2=otherfs.nametuple))
+                    name1=myfs.nametuple, name2=otherfs.nametuple
+                )
+            )
         total_children = {}
         mine = dict([(child.nametuple, child) for child in myfs.children])
         others = dict([(child.nametuple, child) for child in otherfs.children])
@@ -189,7 +205,7 @@ class FileStatisticsTree:
             otherfs -= child
         myfs.children = []
 
-        for (name, (mychild, otherchild)) in total_children.items():
+        for name, (mychild, otherchild) in total_children.items():
             if mychild:
                 if otherchild:
                     self.merge_tree(mychild, otherchild)
@@ -199,8 +215,7 @@ class FileStatisticsTree:
                 myfs += otherchild
                 myfs.children.append(otherchild)
             else:
-                raise RuntimeError(
-                    "Either of both childs should have been defined.")
+                raise RuntimeError("Either of both childs should have been defined.")
         myfs += otherfs
 
     def get_top_fs(self, fs_func):
@@ -313,8 +328,9 @@ def _yield_fs_objs(filestatsobj):
             continue
         match = r.match(line)
         if not match:
-            sys.stderr.write("Error parsing line: '{li}'\n".format(
-                li=safestr.to_str(line)))
+            sys.stderr.write(
+                "Error parsing line: '{li}'\n".format(li=safestr.to_str(line))
+            )
             continue
 
         filename = match.group(1)
@@ -355,7 +371,9 @@ def _accumulate_fs(fs_iter):
     if root.nametuple != ():
         raise RuntimeError(
             "Name tuple of root should be empty but is {name}.".format(
-                name=root.nametuple))
+                name=root.nametuple
+            )
+        )
     stack = [root]
     try:
         fs = next(fs_iter)
@@ -546,10 +564,11 @@ def set_chars_to_quote():
         Globals.chars_to_quote = ctq_rp.get_bytes()
     if Globals.chars_to_quote:
         regexp, unregexp = map_filenames.get_quoting_regexps(
-            Globals.chars_to_quote, Globals.quoting_char)
+            Globals.chars_to_quote, Globals.quoting_char
+        )
 
-        Globals.set_all('chars_to_quote_regexp', regexp)
-        Globals.set_all('chars_to_quote_unregexp', unregexp)
+        Globals.set_all("chars_to_quote_regexp", regexp)
+        Globals.set_all("chars_to_quote_unregexp", unregexp)
 
         Globals.rbdir = map_filenames.get_quotedrpath(Globals.rbdir)
 
