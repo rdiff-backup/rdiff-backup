@@ -32,8 +32,19 @@ import socket
 import tempfile
 import yaml
 from rdiff_backup import (
-    C, Globals, hash, increment, iterfile, log,
-    Rdiff, robust, rorpiter, rpath, selection, statistics, Time,
+    C,
+    Globals,
+    hash,
+    increment,
+    iterfile,
+    log,
+    Rdiff,
+    robust,
+    rorpiter,
+    rpath,
+    selection,
+    statistics,
+    Time,
 )
 from rdiffbackup import meta_mgr
 from rdiffbackup.locations import fs_abilities
@@ -72,8 +83,11 @@ class RepoShadow:
     }
 
     LOCK_MODE = {
-        True: {"open": "r+", "truncate": "w",
-               "lock": locking.LOCK_EX | locking.LOCK_NB},
+        True: {
+            "open": "r+",
+            "truncate": "w",
+            "lock": locking.LOCK_EX | locking.LOCK_NB,
+        },
         False: {"open": "r", "lock": locking.LOCK_SH | locking.LOCK_NB},
     }
 
@@ -105,8 +119,7 @@ class RepoShadow:
 
     # @API(RepoShadow.apply, 201)
     @classmethod
-    def apply(cls, dest_rpath, source_diffiter,
-              inc_rpath=None, previous_time=None):
+    def apply(cls, dest_rpath, source_diffiter, inc_rpath=None, previous_time=None):
         """
         Patch dest_rpath with rorpiter of diffs and optionally write increments
 
@@ -115,12 +128,11 @@ class RepoShadow:
         """
         if previous_time:
             ITR = rorpiter.IterTreeReducer(
-                _RepoIncrementITRB,
-                [dest_rpath, inc_rpath, cls.CCPP, previous_time])
+                _RepoIncrementITRB, [dest_rpath, inc_rpath, cls.CCPP, previous_time]
+            )
             log_msg = "Processing changed file {cf}"
         else:
-            ITR = rorpiter.IterTreeReducer(
-                _RepoPatchITRB, [dest_rpath, cls.CCPP])
+            ITR = rorpiter.IterTreeReducer(_RepoPatchITRB, [dest_rpath, cls.CCPP])
             log_msg = "Processing file {cf}"
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
             log.Log(log_msg.format(cf=diff), log.INFO)
@@ -163,7 +175,8 @@ class RepoShadow:
         dest_iter = cls._get_dest_select(baserp, previous_time)
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
         cls.CCPP = _CacheCollatedPostProcess(
-            collated, Globals.pipeline_max_length * 4, baserp)
+            collated, Globals.pipeline_max_length * 4, baserp
+        )
         # pipeline len adds some leeway over just*3 (to and from and back)
 
     @classmethod
@@ -178,13 +191,18 @@ class RepoShadow:
             # every so often so it doesn't get congested on destination end.
             if is_remote:
                 num_rorps_seen += 1
-                if (num_rorps_seen > flush_threshold):
+                if num_rorps_seen > flush_threshold:
                     num_rorps_seen = 0
                     yield iterfile.MiscIterFlushRepeat
-            if not (src_rorp and dest_rorp and src_rorp == dest_rorp
-                    and (not Globals.preserve_hardlinks
-                         or map_hardlinks.rorp_eq(src_rorp, dest_rorp))):
-
+            if not (
+                src_rorp
+                and dest_rorp
+                and src_rorp == dest_rorp
+                and (
+                    not Globals.preserve_hardlinks
+                    or map_hardlinks.rorp_eq(src_rorp, dest_rorp)
+                )
+            ):
                 index = src_rorp and src_rorp.index or dest_rorp.index
                 sig = cls._get_one_sig(baserp, index, src_rorp, dest_rorp)
                 if sig:
@@ -194,8 +212,11 @@ class RepoShadow:
     @classmethod
     def _get_one_sig(cls, baserp, index, src_rorp, dest_rorp):
         """Return a signature given source and destination rorps"""
-        if (Globals.preserve_hardlinks and src_rorp
-                and map_hardlinks.is_linked(src_rorp)):
+        if (
+            Globals.preserve_hardlinks
+            and src_rorp
+            and map_hardlinks.is_linked(src_rorp)
+        ):
             dest_sig = rpath.RORPath(index)
             dest_sig.flaglinked(map_hardlinks.get_link_index(src_rorp))
         elif dest_rorp:
@@ -215,11 +236,12 @@ class RepoShadow:
         """Return a signature fp of given index, corresponding to reg file"""
         if not dest_rp.isreg():
             log.ErrorLog.write_if_open(
-                "UpdateError", dest_rp,
-                "File changed from regular file before signature")
+                "UpdateError",
+                dest_rp,
+                "File changed from regular file before signature",
+            )
             return None
-        if (Globals.process_uid != 0 and not dest_rp.readable()
-                and dest_rp.isowner()):
+        if Globals.process_uid != 0 and not dest_rp.readable() and dest_rp.isowner():
             # This branch can happen with root source and non-root
             # destination.  Permissions are changed permanently, which
             # should propagate to the diffs
@@ -227,7 +249,7 @@ class RepoShadow:
         try:
             return Rdiff.get_signature(dest_rp)
         except OSError as e:
-            if (e.errno == errno.EPERM or e.errno == errno.EACCES):
+            if e.errno == errno.EPERM or e.errno == errno.EACCES:
                 try:
                     # Try chmod'ing anyway -- This can work on NFS and AFS
                     # depending on the setup. We keep the if() statement
@@ -238,7 +260,9 @@ class RepoShadow:
                     log.Log.FatalError(
                         "Could not open file {fi} for reading due to "
                         "exception '{ex}'. Check permissions on file.".format(
-                            ex=exc, fi=dest_rp))
+                            ex=exc, fi=dest_rp
+                        )
+                    )
             else:
                 raise
 
@@ -256,8 +280,9 @@ class RepoShadow:
         When doing the initial full backup, the file can be created after
         everything else is in place.
         """
-        mirrorrp = data_dir.append(b'.'.join(
-            (b"current_mirror", os.fsencode(current_time_str), b"data")))
+        mirrorrp = data_dir.append(
+            b".".join((b"current_mirror", os.fsencode(current_time_str), b"data"))
+        )
         log.Log("Writing mirror marker {mm}".format(mm=mirrorrp), log.INFO)
         try:
             pid = os.getpid()
@@ -275,9 +300,11 @@ class RepoShadow:
         Use at end of session
         """
         curmir_incs = data_dir.append(b"current_mirror").get_incfiles_list()
-        assert len(curmir_incs) == 2, (
-            "There must be two current mirrors not '{ilen}'.".format(
-                ilen=len(curmir_incs)))
+        assert (
+            len(curmir_incs) == 2
+        ), "There must be two current mirrors not '{ilen}'.".format(
+            ilen=len(curmir_incs)
+        )
         if curmir_incs[0].getinctime() < curmir_incs[1].getinctime():
             older_inc = curmir_incs[0]
         else:
@@ -303,7 +330,7 @@ class RepoShadow:
             statistics.FileStats.close()
         statistics.write_active_statfileobj(end_time)
 
-# ### COPIED FROM RESTORE ####
+    # ### COPIED FROM RESTORE ####
 
     # @API(RepoShadow.init_loop, 201)
     @classmethod
@@ -340,17 +367,20 @@ class RepoShadow:
         # hence it looks like an external function potentially called remotely
         if cls._mirror_time is None or refresh:
             cur_mirror_incs = cls._data_dir.append(
-                b"current_mirror").get_incfiles_list()
+                b"current_mirror"
+            ).get_incfiles_list()
             if not cur_mirror_incs:
                 if must_exist:
                     log.Log.FatalError("Could not get time of current mirror")
                 else:
                     cls._mirror_time = 0
             elif len(cur_mirror_incs) > 1:
-                log.Log("Two different times for current mirror were found, "
-                        "it seems that the last backup failed, "
-                        "you most probably want to regress the repository",
-                        log.WARNING)
+                log.Log(
+                    "Two different times for current mirror were found, "
+                    "it seems that the last backup failed, "
+                    "you most probably want to regress the repository",
+                    log.WARNING,
+                )
                 if must_exist:
                     cls._mirror_time = cur_mirror_incs[0].getinctime()
                 else:
@@ -389,8 +419,7 @@ class RepoShadow:
         cls._set_restore_time(restore_to_time)
         # it's a bit ugly to set the values to another class, but less than
         # the other way around as it used to be
-        _RestoreFile.initialize(cls._restore_time,
-                                cls.get_mirror_time(must_exist=True))
+        _RestoreFile.initialize(cls._restore_time, cls.get_mirror_time(must_exist=True))
 
     @classmethod
     def _initialize_rf_cache(cls, mirror_base, inc_base):
@@ -416,13 +445,11 @@ class RepoShadow:
             rest_time = cls._restore_time
 
         meta_manager = meta_mgr.get_meta_manager(True)
-        rorp_iter = meta_manager.get_metas_at_time(rest_time,
-                                                   cls.mirror_base.index)
+        rorp_iter = meta_manager.get_metas_at_time(rest_time, cls.mirror_base.index)
         if not rorp_iter:
             if require_metadata:
                 log.Log.FatalError("Mirror metadata not found")
-            log.Log("Mirror metadata not found, reading from directory",
-                    log.WARNING)
+            log.Log("Mirror metadata not found, reading from directory", log.WARNING)
             rorp_iter = cls._get_rorp_iter_from_rf(cls.root_rf)
 
         if cls._select:
@@ -451,10 +478,12 @@ class RepoShadow:
 
         def get_iter():
             for rorp in rorp_iter:
-                assert rorp.index[:len(index)] == index, (
-                    "Path '{ridx}' must be a sub-path of '{idx}'.".format(
-                        ridx=rorp.index, idx=index))
-                rorp.index = rorp.index[len(index):]
+                assert (
+                    rorp.index[: len(index)] == index
+                ), "Path '{ridx}' must be a sub-path of '{idx}'.".format(
+                    ridx=rorp.index, idx=index
+                )
+                rorp.index = rorp.index[len(index) :]
                 yield rorp
 
         return get_iter()
@@ -469,8 +498,9 @@ class RepoShadow:
         attribute listings.  Thus any diffs we generate will be
         snapshots.
         """
-        mir_iter = cls._subtract_indices(cls.mirror_base.index,
-                                         cls._get_mirror_rorp_iter())
+        mir_iter = cls._subtract_indices(
+            cls.mirror_base.index, cls._get_mirror_rorp_iter()
+        )
         collated = rorpiter.Collate2Iters(mir_iter, target_iter)
         return cls._get_diffs_from_collated(collated)
 
@@ -514,9 +544,15 @@ class RepoShadow:
         for mir_rorp, target_rorp in collated:
             if Globals.preserve_hardlinks and mir_rorp:
                 map_hardlinks.add_rorp(mir_rorp, target_rorp)
-            if (not target_rorp or not mir_rorp or not mir_rorp == target_rorp
-                    or (Globals.preserve_hardlinks
-                        and not map_hardlinks.rorp_eq(mir_rorp, target_rorp))):
+            if (
+                not target_rorp
+                or not mir_rorp
+                or not mir_rorp == target_rorp
+                or (
+                    Globals.preserve_hardlinks
+                    and not map_hardlinks.rorp_eq(mir_rorp, target_rorp)
+                )
+            ):
                 diff = cls._get_diff(mir_rorp, target_rorp)
             else:
                 diff = None
@@ -536,15 +572,14 @@ class RepoShadow:
             expanded_index = cls.mirror_base.index + mir_rorp.index
             file_fp = cls.rf_cache.get_fp(expanded_index, mir_rorp)
             mir_rorp.setfile(hash.FileWrapper(file_fp))
-        mir_rorp.set_attached_filetype('snapshot')
+        mir_rorp.set_attached_filetype("snapshot")
         return mir_rorp
 
-# ### COPIED FROM RESTORE (LIST) ####
+    # ### COPIED FROM RESTORE (LIST) ####
 
     # @API(RepoShadow.list_files_changed_since, 201)
     @classmethod
-    def list_files_changed_since(cls, mirror_rp, inc_rp, data_dir,
-                                 restore_to_time):
+    def list_files_changed_since(cls, mirror_rp, inc_rp, data_dir, restore_to_time):
         """
         List the changed files under mirror_rp since rest time
 
@@ -557,8 +592,7 @@ class RepoShadow:
         cls.init_loop(data_dir, mirror_rp, inc_rp, restore_to_time)
 
         old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
-        cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(must_exist=True),
-                                             True)
+        cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(must_exist=True), True)
         collated = rorpiter.Collate2Iters(old_iter, cur_iter)
         for old_rorp, cur_rorp in collated:
             if not old_rorp:
@@ -569,8 +603,8 @@ class RepoShadow:
                 continue
             else:
                 change = "changed"
-            path_desc = (old_rorp and str(old_rorp) or str(cur_rorp))
-            yield rpath.RORPath(("%-7s %s" % (change, path_desc), ))
+            path_desc = old_rorp and str(old_rorp) or str(cur_rorp)
+            yield rpath.RORPath(("%-7s %s" % (change, path_desc),))
         cls.finish_loop()
 
     # @API(RepoShadow.list_files_at_time, 201)
@@ -589,7 +623,7 @@ class RepoShadow:
             yield rorp
         cls.finish_loop()
 
-# ### COPIED FROM MANAGE ####
+    # ### COPIED FROM MANAGE ####
 
     # @API(RepoShadow.remove_increments_older_than, 201)
     @classmethod
@@ -597,9 +631,11 @@ class RepoShadow:
         """
         Remove increments older than the given time
         """
-        assert baserp.conn is Globals.local_connection, (
-            "Function should be called only locally "
-            "and not over '{co}'.".format(co=baserp.conn))
+        assert (
+            baserp.conn is Globals.local_connection
+        ), "Function should be called only locally " "and not over '{co}'.".format(
+            co=baserp.conn
+        )
 
         def yield_files(rp):
             if rp.isdir():
@@ -609,17 +645,19 @@ class RepoShadow:
             yield rp
 
         for rp in yield_files(baserp):
-            if ((rp.isincfile() and rp.getinctime() < reftime)
-                    or (rp.isdir() and not rp.listdir())):
+            if (rp.isincfile() and rp.getinctime() < reftime) or (
+                rp.isdir() and not rp.listdir()
+            ):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
 
-# ### COPIED FROM COMPARE ####
+    # ### COPIED FROM COMPARE ####
 
     # @API(RepoShadow.init_and_get_loop, 201)
     @classmethod
-    def init_and_get_loop(cls, data_dir, mirror_rp, inc_rp, compare_time,
-                          src_iter=None):
+    def init_and_get_loop(
+        cls, data_dir, mirror_rp, inc_rp, compare_time, src_iter=None
+    ):
         """
         Return rorp iter at given compare time
 
@@ -628,17 +666,20 @@ class RepoShadow:
         cls.finish_loop must be called to finish the loop once initialized
         """
         cls.init_loop(data_dir, mirror_rp, inc_rp, compare_time)
-        repo_iter = cls._subtract_indices(cls.mirror_base.index,
-                                          cls._get_mirror_rorp_iter())
+        repo_iter = cls._subtract_indices(
+            cls.mirror_base.index, cls._get_mirror_rorp_iter()
+        )
         if src_iter is None:
             return repo_iter
         else:
-            return cls._attach_files(data_dir, mirror_rp, inc_rp, compare_time,
-                                     src_iter, repo_iter)
+            return cls._attach_files(
+                data_dir, mirror_rp, inc_rp, compare_time, src_iter, repo_iter
+            )
 
     @classmethod
-    def _attach_files(cls, data_dir, mirror_rp, inc_rp, compare_time,
-                      src_iter, repo_iter):
+    def _attach_files(
+        cls, data_dir, mirror_rp, inc_rp, compare_time, src_iter, repo_iter
+    ):
         """
         Attach data to all the files that need checking
 
@@ -653,11 +694,14 @@ class RepoShadow:
                 if not src_rorp.isreg() and src_rorp == mir_rorp:
                     cls._log_success(src_rorp, mir_rorp)
                     continue  # They must be equal, nothing else to check
-                if (src_rorp.isreg() and mir_rorp.isreg()
-                        and src_rorp.getsize() == mir_rorp.getsize()):
+                if (
+                    src_rorp.isreg()
+                    and mir_rorp.isreg()
+                    and src_rorp.getsize() == mir_rorp.getsize()
+                ):
                     fp = cls.rf_cache.get_fp(base_index + index, mir_rorp)
                     mir_rorp.setfile(fp)
-                    mir_rorp.set_attached_filetype('snapshot')
+                    mir_rorp.set_attached_filetype("snapshot")
 
             if mir_rorp:
                 yield mir_rorp
@@ -670,11 +714,12 @@ class RepoShadow:
         """
         Compute SHA1 sums of repository files and check against metadata
         """
-        assert mirror_rp.conn is Globals.local_connection, (
-            "Only verify mirror locally, not remotely over '{conn}'.".format(
-                conn=mirror_rp.conn))
-        repo_iter = cls.init_and_get_loop(data_dir, mirror_rp, inc_rp,
-                                          verify_time)
+        assert (
+            mirror_rp.conn is Globals.local_connection
+        ), "Only verify mirror locally, not remotely over '{conn}'.".format(
+            conn=mirror_rp.conn
+        )
+        repo_iter = cls.init_and_get_loop(data_dir, mirror_rp, inc_rp, verify_time)
         base_index = cls.mirror_base.index
 
         bad_files = 0
@@ -685,37 +730,51 @@ class RepoShadow:
                 continue
             verify_sha1 = map_hardlinks.get_hash(repo_rorp)
             if not verify_sha1:
-                log.Log("Cannot find SHA1 digest for file {fi}, perhaps "
-                        "because this feature was added in v1.1.1".format(
-                            fi=repo_rorp), log.WARNING)
+                log.Log(
+                    "Cannot find SHA1 digest for file {fi}, perhaps "
+                    "because this feature was added in v1.1.1".format(fi=repo_rorp),
+                    log.WARNING,
+                )
                 no_hash += 1
                 ret_code |= Globals.RET_CODE_FILE_WARN
                 continue
             fp = cls.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
             computed_hash = hash.compute_sha1_fp(fp)
             if computed_hash == verify_sha1:
-                log.Log("Verified SHA1 digest of file {fi}".format(
-                    fi=repo_rorp), log.INFO)
+                log.Log(
+                    "Verified SHA1 digest of file {fi}".format(fi=repo_rorp), log.INFO
+                )
             else:
                 bad_files += 1
-                log.Log("Computed SHA1 digest of file {fi} '{cd}' "
-                        "doesn't match recorded digest of '{rd}'. "
-                        "Your backup repository may be corrupted!".format(
-                            fi=repo_rorp, cd=computed_hash, rd=verify_sha1),
-                        log.ERROR)
+                log.Log(
+                    "Computed SHA1 digest of file {fi} '{cd}' "
+                    "doesn't match recorded digest of '{rd}'. "
+                    "Your backup repository may be corrupted!".format(
+                        fi=repo_rorp, cd=computed_hash, rd=verify_sha1
+                    ),
+                    log.ERROR,
+                )
                 ret_code |= Globals.RET_CODE_FILE_ERR
         cls.finish_loop()
         if bad_files:
             log.Log(
                 "Verification found {cf} potentially corrupted files".format(
-                    cf=bad_files), log.ERROR)
+                    cf=bad_files
+                ),
+                log.ERROR,
+            )
             if no_hash:
-                log.Log("Verification also found {fi} files without "
-                        "hash".format(fi=no_hash), log.NOTE)
+                log.Log(
+                    "Verification also found {fi} files without "
+                    "hash".format(fi=no_hash),
+                    log.NOTE,
+                )
         elif no_hash:
-            log.Log("Verification found {fi} files without hash, all others "
-                    "could be verified successfully".format(fi=no_hash),
-                    log.NOTE)
+            log.Log(
+                "Verification found {fi} files without hash, all others "
+                "could be verified successfully".format(fi=no_hash),
+                log.NOTE,
+            )
         else:
             log.Log("All files verified successfully", log.NOTE)
         return ret_code
@@ -745,8 +804,12 @@ class RepoShadow:
         True if it needs regressing, False otherwise.
         """
         # detect an initial repository which doesn't need a regression
-        if not (base_dir.isdir() and data_dir.isdir()
-                and incs_dir.isdir() and incs_dir.listdir()):
+        if not (
+            base_dir.isdir()
+            and data_dir.isdir()
+            and incs_dir.isdir()
+            and incs_dir.listdir()
+        ):
             return None
         curmirroot = data_dir.append(b"current_mirror")
         curmir_incs = curmirroot.get_incfiles_list()
@@ -765,7 +828,10 @@ into a new directory failed.  If this is the case it is safe to delete
 the rdiff-backup-data directory because there is no important
 information in it.
 
-""".format(dd=data_dir))
+""".format(
+                    dd=data_dir
+                )
+            )
         elif len(curmir_incs) == 1:
             return False
         else:
@@ -775,10 +841,11 @@ information in it.
                 except OSError as exc:
                     log.Log.FatalError(
                         "Could not check if rdiff-backup is currently"
-                        "running due to exception '{ex}'".format(ex=exc))
-            assert len(curmir_incs) == 2, (
-                "Found more than 2 current_mirror incs in '{ci}'.".format(
-                    ci=data_dir))
+                        "running due to exception '{ex}'".format(ex=exc)
+                    )
+            assert (
+                len(curmir_incs) == 2
+            ), "Found more than 2 current_mirror incs in '{ci}'.".format(ci=data_dir)
             return True
 
     @classmethod
@@ -797,14 +864,14 @@ information in it.
         def pid_running(pid):
             """Return True if we know if process with pid is currently running,
             False if it isn't running, and None if we don't know for sure."""
-            if os.name == 'nt':
+            if os.name == "nt":
                 import win32api
                 import win32con
                 import pywintypes
+
                 process = None
                 try:
-                    process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS,
-                                                   0, pid)
+                    process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0, pid)
                 except pywintypes.error as error:
                     if error.winerror == 87:
                         # parameter incorrect, PID does not exist
@@ -813,8 +880,11 @@ information in it.
                         # access denied, means nevertheless PID still exists
                         return True
                     else:
-                        log.Log("Unable to check if process ID {pi} "
-                                "is still running".format(pi=pid), log.WARNING)
+                        log.Log(
+                            "Unable to check if process ID {pi} "
+                            "is still running".format(pi=pid),
+                            log.WARNING,
+                        )
                         return None  # we don't know if the process is running
                 else:
                     if process:
@@ -828,16 +898,21 @@ information in it.
                 except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
                     return False
                 except OSError:  # any other OS error
-                    log.Log("Unable to check if process ID {pi} "
-                            "is still running".format(pi=pid), log.WARNING)
+                    log.Log(
+                        "Unable to check if process ID {pi} "
+                        "is still running".format(pi=pid),
+                        log.WARNING,
+                    )
                     return None  # we don't know if the process is still running
                 else:  # the process still exists
                     return True
 
         for curmir_rp in curmir_incs:
-            assert curmir_rp.conn is Globals.local_connection, (
-                "Function must be called locally not over '{conn}'.".format(
-                    conn=curmir_rp.conn))
+            assert (
+                curmir_rp.conn is Globals.local_connection
+            ), "Function must be called locally not over '{conn}'.".format(
+                conn=curmir_rp.conn
+            )
             pid = extract_pid(curmir_rp)
             # FIXME differentiate between don't know and know and handle
             # err.errno == errno.EPERM: EPERM clearly means there's a process
@@ -848,7 +923,10 @@ information in it.
     id {pi} is still running.  If two different rdiff-backup processes write
     the same repository simultaneously, data corruption will probably
     result.  To proceed with regress anyway, rerun rdiff-backup with the
-    --force option""".format(pi=pid))
+    --force option""".format(
+                        pi=pid
+                    )
+                )
 
     # @API(RepoShadow.regress, 201)
     @classmethod
@@ -860,12 +938,15 @@ information in it.
         through two separate backup sets.  This function should be run
         locally to the rdiff-backup-data directory.
         """
-        assert base_rp.index == () and incs_rp.index == (), (
-            "Mirror and increment paths must have an empty index")
-        assert base_rp.isdir() and incs_rp.isdir(), (
-            "Mirror and increments paths must be directories")
-        assert base_rp.conn is incs_rp.conn is Globals.local_connection, (
-            "Regress must happen locally.")
+        assert (
+            base_rp.index == () and incs_rp.index == ()
+        ), "Mirror and increment paths must have an empty index"
+        assert (
+            base_rp.isdir() and incs_rp.isdir()
+        ), "Mirror and increments paths must be directories"
+        assert (
+            base_rp.conn is incs_rp.conn is Globals.local_connection
+        ), "Regress must happen locally."
         meta_manager, former_current_mirror_rp = cls._set_regress_time()
         cls._set_restore_times()
         _RegressFile.initialize(cls._restore_time, cls._mirror_time)
@@ -889,15 +970,19 @@ information in it.
         corresponds to a backup session that failed.
         """
         meta_manager = meta_mgr.get_meta_manager(True)
-        curmir_incs = meta_manager.sorted_prefix_inclist(b'current_mirror')
-        assert len(curmir_incs) == 2, (
-            "Found {ilen} current_mirror flags, expected 2".format(
-                ilen=len(curmir_incs)))
+        curmir_incs = meta_manager.sorted_prefix_inclist(b"current_mirror")
+        assert (
+            len(curmir_incs) == 2
+        ), "Found {ilen} current_mirror flags, expected 2".format(ilen=len(curmir_incs))
         mirror_rp_to_delete = curmir_incs[0]
         cls._regress_time = curmir_incs[1].getinctime()
         cls._unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
-        log.Log("Regressing to date/time {dt}".format(
-            dt=Time.timetopretty(cls._regress_time)), log.NOTE)
+        log.Log(
+            "Regressing to date/time {dt}".format(
+                dt=Time.timetopretty(cls._regress_time)
+            ),
+            log.NOTE,
+        )
         return meta_manager, mirror_rp_to_delete
 
     @classmethod
@@ -927,21 +1012,23 @@ information in it.
         meta_diffs = []
         meta_snaps = []
         for old_rp in meta_manager.timerpmap[cls._regress_time]:
-            if old_rp.getincbase_bname() == b'mirror_metadata':
-                if old_rp.getinctype() == b'snapshot':
+            if old_rp.getincbase_bname() == b"mirror_metadata":
+                if old_rp.getinctype() == b"snapshot":
                     meta_snaps.append(old_rp)
-                elif old_rp.getinctype() == b'diff':
+                elif old_rp.getinctype() == b"diff":
                     meta_diffs.append(old_rp)
                 else:
                     raise ValueError(
                         "Increment type for metadata mirror must be one of "
                         "'snapshot' or 'diff', not {mtype}.".format(
-                            mtype=old_rp.getinctype()))
+                            mtype=old_rp.getinctype()
+                        )
+                    )
         if meta_diffs and not meta_snaps:
             meta_manager.recreate_attr(cls._regress_time)
 
         for new_rp in meta_manager.timerpmap[cls._unsuccessful_backup_time]:
-            if new_rp.getincbase_bname() != b'current_mirror':
+            if new_rp.getincbase_bname() != b"current_mirror":
                 log.Log("Deleting old diff {od}".format(od=new_rp), log.INFO)
                 new_rp.delete()
 
@@ -960,12 +1047,15 @@ information in it.
         raw_rfs = cls._iterate_raw_rfs(mirror_rp, inc_rp)
         collated = rorpiter.Collate2Iters(raw_rfs, cls._yield_metadata())
         for raw_rf, metadata_rorp in collated:
-            raw_rf = map_longnames.update_rf(raw_rf, metadata_rorp, mirror_rp,
-                                             _RegressFile)
+            raw_rf = map_longnames.update_rf(
+                raw_rf, metadata_rorp, mirror_rp, _RegressFile
+            )
             if not raw_rf:
-                log.Log("Warning, metadata file has entry for path {pa}, "
-                        "but there are no associated files.".format(
-                            pa=metadata_rorp), log.WARNING)
+                log.Log(
+                    "Warning, metadata file has entry for path {pa}, "
+                    "but there are no associated files.".format(pa=metadata_rorp),
+                    log.WARNING,
+                )
                 continue
             raw_rf.set_metadata_rorp(metadata_rorp)
             # Return filename stored in metadata to handle long filename.
@@ -981,8 +1071,7 @@ information in it.
         change them back later because regress will do that for us.
 
         """
-        root_rf = _RegressFile(mirror_rp, inc_rp,
-                               inc_rp.get_incfiles_list())
+        root_rf = _RegressFile(mirror_rp, inc_rp, inc_rp.get_incfiles_list())
 
         def helper(rf):
             mirror_rp = rf.mirror_rp
@@ -1010,9 +1099,11 @@ information in it.
             return metadata_iter
         log.Log.FatalError(
             "No metadata for time {pt} ({rt}) found, cannot regress".format(
-                pt=Time.timetopretty(cls._regress_time), rt=cls._regress_time))
+                pt=Time.timetopretty(cls._regress_time), rt=cls._regress_time
+            )
+        )
 
-# ### COPIED FROM FS_ABILITIES ####
+    # ### COPIED FROM FS_ABILITIES ####
 
     # @API(RepoShadow.get_fs_abilities_readonly, 201)
     @classmethod
@@ -1076,7 +1167,7 @@ information in it.
         map_owners.init_users_mapping(users_map, preserve_num_ids)
         map_owners.init_groups_mapping(groups_map, preserve_num_ids)
 
-# ### LOCKING ####
+    # ### LOCKING ####
 
     # @API(RepoShadow.is_locked, 201)
     @classmethod
@@ -1113,10 +1204,10 @@ information in it.
             return False
         pid = os.getpid()
         identifier = {
-            'timestamp': Globals.current_time_string,
-            'pid': pid,
-            'cmd': simpleps.get_pid_name(pid),
-            'hostname': socket.gethostname(),
+            "timestamp": Globals.current_time_string,
+            "pid": pid,
+            "cmd": simpleps.get_pid_name(pid),
+            "hostname": socket.gethostname(),
         }
         id_yaml = yaml.safe_dump(identifier)
         lockfile.setdata()
@@ -1276,7 +1367,8 @@ class _CacheCollatedPostProcess:
         """Retrieve source_rorp with given index from cache"""
         assert index >= self.cache_indices[0], (
             "CCPP index out of order: {idx!r} shouldn't be less than "
-            "{cached!r}.".format(idx=index, cached=self.cache_indices[0]))
+            "{cached!r}.".format(idx=index, cached=self.cache_indices[0])
+        )
         try:
             return self.cache_dict[index][0]
         except KeyError:
@@ -1334,8 +1426,12 @@ class _CacheCollatedPostProcess:
                 map_hardlinks.add_rorp(source_rorp, dest_rorp)
             else:
                 map_hardlinks.add_old_rorp(dest_rorp)
-        if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
-                and dest_rorp.getperms() % 0o1000 < 0o700):
+        if (
+            dest_rorp
+            and dest_rorp.isdir()
+            and Globals.process_uid != 0
+            and dest_rorp.getperms() % 0o1000 < 0o700
+        ):
             self._unreadable_dir_init(source_rorp, dest_rorp)
 
     def _unreadable_dir_init(self, source_rorp, dest_rorp):
@@ -1355,15 +1451,22 @@ class _CacheCollatedPostProcess:
         first_index = self.cache_indices[0]
         del self.cache_indices[0]
         try:
-            (old_source_rorp, old_dest_rorp, changed_flag, success_flag,
-             inc) = self.cache_dict[first_index]
+            (
+                old_source_rorp,
+                old_dest_rorp,
+                changed_flag,
+                success_flag,
+                inc,
+            ) = self.cache_dict[first_index]
         except KeyError:  # probably caused by error in file system (dup)
-            log.Log("Index {ix} missing from CCPP cache".format(
-                ix=first_index), log.WARNING)
+            log.Log(
+                "Index {ix} missing from CCPP cache".format(ix=first_index), log.WARNING
+            )
             return
         del self.cache_dict[first_index]
-        self._post_process(old_source_rorp, old_dest_rorp, changed_flag,
-                           success_flag, inc)
+        self._post_process(
+            old_source_rorp, old_dest_rorp, changed_flag, success_flag, inc
+        )
         if self.dir_perms_list:
             self._reset_dir_perms(first_index)
         self._update_parent_list(first_index, old_source_rorp, old_dest_rorp)
@@ -1378,27 +1481,30 @@ class _CacheCollatedPostProcess:
         parent directory's information after we have processed many
         subfiles.
         """
-        if not (src_rorp and src_rorp.isdir()
-                or dest_rorp and dest_rorp.isdir()):
+        if not (src_rorp and src_rorp.isdir() or dest_rorp and dest_rorp.isdir()):
             return  # neither is directory
-        assert self.parent_list or index == (), (
-            "Index '{idx}' must be empty if no parent in list".format(
-                idx=index))
+        assert (
+            self.parent_list or index == ()
+        ), "Index '{idx}' must be empty if no parent in list".format(idx=index)
         if self.parent_list:
             last_parent_index = self.parent_list[-1][0]
             lp_index, li = len(last_parent_index), len(index)
             assert li <= lp_index + 1, (
                 "The length of the current index '{idx}' can't be more than "
                 "one greater than the last parent's '{pidx}'.".format(
-                    idx=index, pidx=last_parent_index))
+                    idx=index, pidx=last_parent_index
+                )
+            )
             # li == lp_index + 1, means we've descended into previous parent
             # if li <= lp_index, we're in a new directory but it must have
             # a common path up to (li - 1) with the last parent
             if li <= lp_index:
-                assert last_parent_index[:li - 1] == index[:-1], (
+                assert last_parent_index[: li - 1] == index[:-1], (
                     "Current index '{idx}' and last parent index '{pidx}' "
                     "must have a common path up to {lvl} levels.".format(
-                        idx=index, pidx=last_parent_index, lvl=(li - 1)))
+                        idx=index, pidx=last_parent_index, lvl=(li - 1)
+                    )
+                )
                 self.parent_list = self.parent_list[:li]
         self.parent_list.append((index, (src_rorp, dest_rorp)))
 
@@ -1438,8 +1544,7 @@ class _CacheCollatedPostProcess:
         """Reset the permissions of directories when we have left them"""
         dir_rp, perms = self.dir_perms_list[-1]
         dir_index = dir_rp.index
-        if (current_index > dir_index
-                and current_index[:len(dir_index)] != dir_index):
+        if current_index > dir_index and current_index[: len(dir_index)] != dir_index:
             dir_rp.chmod(perms)  # out of directory, reset perms now
 
     def _get_parent_rorps(self, index):
@@ -1472,9 +1577,12 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         assert basis_root_rp.conn is Globals.local_connection, (
             "Basis root path connection {conn} isn't "
             "local connection {lconn}.".format(
-                conn=basis_root_rp.conn, lconn=Globals.local_connection))
-        self.statfileobj = (statistics.get_active_statfileobj()
-                            or statistics.StatFileObj())
+                conn=basis_root_rp.conn, lconn=Globals.local_connection
+            )
+        )
+        self.statfileobj = (
+            statistics.get_active_statfileobj() or statistics.StatFileObj()
+        )
         self.dir_replacement, self.dir_update = None, None
         self.CCPP = CCPP
         self.error_handler = robust.get_error_handler("UpdateError")
@@ -1487,9 +1595,11 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
     def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp (case where neither is directory)"""
         mirror_rp, discard = map_longnames.get_mirror_inc_rps(
-            self.CCPP.get_rorps(index), self.basis_root_rp)
-        assert not mirror_rp.isdir(), (
-            "Mirror path '{rp}' points to a directory.".format(rp=mirror_rp))
+            self.CCPP.get_rorps(index), self.basis_root_rp
+        )
+        assert (
+            not mirror_rp.isdir()
+        ), "Mirror path '{rp}' points to a directory.".format(rp=mirror_rp)
         tf = mirror_rp.get_temp_rpath(sibling=True)
         result = self._patch_to_temp(mirror_rp, diff_rorp, tf)
         if result == self.UNCHANGED:
@@ -1497,8 +1607,12 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             self.CCPP.flag_success(index)
         elif result:
             if tf.lstat():
-                if robust.check_common_error(self.error_handler, rpath.rename,
-                                             (tf, mirror_rp)) is None:
+                if (
+                    robust.check_common_error(
+                        self.error_handler, rpath.rename, (tf, mirror_rp)
+                    )
+                    is None
+                ):
                     self.CCPP.flag_success(index)
             elif mirror_rp and mirror_rp.lstat():
                 mirror_rp.delete()
@@ -1511,7 +1625,8 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
     def start_process_directory(self, index, diff_rorp):
         """Start processing directory - record information for later"""
         self.base_rp, discard = map_longnames.get_mirror_inc_rps(
-            self.CCPP.get_rorps(index), self.basis_root_rp)
+            self.CCPP.get_rorps(index), self.basis_root_rp
+        )
         if diff_rorp.isdir():
             self._prepare_dir(diff_rorp, self.base_rp)
         elif self._set_dir_replacement(diff_rorp, self.base_rp):
@@ -1523,13 +1638,12 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
     def end_process_directory(self):
         """Finish processing directory"""
         if self.dir_update:
-            assert self.base_rp.isdir(), (
-                "Base directory '{rp}' isn't a directory.".format(
-                    rp=self.base_rp))
+            assert (
+                self.base_rp.isdir()
+            ), "Base directory '{rp}' isn't a directory.".format(rp=self.base_rp)
             rpath.copy_attribs(self.dir_update, self.base_rp)
 
-            if (Globals.process_uid != 0
-                    and self.dir_update.getperms() % 0o1000 < 0o700):
+            if Globals.process_uid != 0 and self.dir_update.getperms() % 0o1000 < 0o700:
                 # Directory was unreadable at start -- keep it readable
                 # until the end of the backup process.
                 self.base_rp.chmod(0o700 | self.dir_update.getperms())
@@ -1549,7 +1663,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             result = self._patch_hardlink_to_temp(basis_rp, diff_rorp, new)
             if result == self.FAILED or result == self.UNCHANGED:
                 return result
-        elif diff_rorp.get_attached_filetype() == 'snapshot':
+        elif diff_rorp.get_attached_filetype() == "snapshot":
             result = self._patch_snapshot_to_temp(diff_rorp, new)
             if result == self.FAILED or result == self.SPECIAL:
                 return result
@@ -1572,7 +1686,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
                     # `_matches_cached_rorp(diff_rorp, new)` will fail because
                     # the new rorp's metadata would be missing the extended
                     # attribute data.
-                    new.data['ea'] = diff_rorp.get_ea()
+                    new.data["ea"] = diff_rorp.get_ea()
             else:
                 rpath.copy_attribs(diff_rorp, new)
         return self._matches_cached_rorp(diff_rorp, new)
@@ -1583,8 +1697,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         self.CCPP.update_hardlink_hash(diff_rorp)
         # if the temp file and the original file have the same inode,
         # they're the same and nothing changed to the content
-        if (basis_rp.getnumlinks() > 1
-                and basis_rp.getinode() == new.getinode()):
+        if basis_rp.getnumlinks() > 1 and basis_rp.getinode() == new.getinode():
             return self.UNCHANGED
         else:
             return self.DONE
@@ -1603,8 +1716,9 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             rpath.copy_attribs(diff_rorp, new)
             return self.SPECIAL
 
-        report = robust.check_common_error(self.error_handler, rpath.copy,
-                                           (diff_rorp, new))
+        report = robust.check_common_error(
+            self.error_handler, rpath.copy, (diff_rorp, new)
+        )
         if isinstance(report, hash.Report):
             self.CCPP.update_hash(diff_rorp.index, report.sha1_digest)
             return self.DONE  # FIXME hash always different, no need to check?
@@ -1616,12 +1730,14 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
 
     def _patch_diff_to_temp(self, basis_rp, diff_rorp, new):
         """Apply diff_rorp to basis_rp, write output in new"""
-        assert diff_rorp.get_attached_filetype() == 'diff', (
-            "Type attached to '{rp}' isn't '{exp}' but '{att}'.".format(
-                rp=diff_rorp, exp="diff",
-                att=diff_rorp.get_attached_filetype()))
+        assert (
+            diff_rorp.get_attached_filetype() == "diff"
+        ), "Type attached to '{rp}' isn't '{exp}' but '{att}'.".format(
+            rp=diff_rorp, exp="diff", att=diff_rorp.get_attached_filetype()
+        )
         report = robust.check_common_error(
-            self.error_handler, Rdiff.patch_local, (basis_rp, diff_rorp, new))
+            self.error_handler, Rdiff.patch_local, (basis_rp, diff_rorp, new)
+        )
         if isinstance(report, hash.Report):
             if self.CCPP.update_hash(diff_rorp.index, report.sha1_digest):
                 return self.DONE
@@ -1648,8 +1764,11 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         if cached_rorp and cached_rorp.equal_loose(new_rp):
             return self.DONE
         log.ErrorLog.write_if_open(
-            "UpdateError", diff_rorp, "Updated mirror "
-            "temp file '{tf}' does not match source".format(tf=new_rp))
+            "UpdateError",
+            diff_rorp,
+            "Updated mirror "
+            "temp file '{tf}' does not match source".format(tf=new_rp),
+        )
         return self.FAILED
 
     def _write_special(self, diff_rorp, new):
@@ -1668,18 +1787,19 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
         This is used when base_rp is a dir, and diff_rorp is not.
         Returns True for success or False for failure
         """
-        assert diff_rorp.get_attached_filetype() == 'snapshot', (
-            "Type attached to '{rp}' isn't '{exp}' but '{att}'.".format(
-                rp=diff_rorp, exp="snapshot",
-                att=diff_rorp.get_attached_filetype()))
+        assert (
+            diff_rorp.get_attached_filetype() == "snapshot"
+        ), "Type attached to '{rp}' isn't '{exp}' but '{att}'.".format(
+            rp=diff_rorp, exp="snapshot", att=diff_rorp.get_attached_filetype()
+        )
         self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
         if not self._patch_to_temp(None, diff_rorp, self.dir_replacement):
             if self.dir_replacement.lstat():
                 self.dir_replacement.delete()
             # Was an error, so now restore original directory
             rpath.copy_with_attribs(
-                self.CCPP.get_mirror_rorp(diff_rorp.index),
-                self.dir_replacement)
+                self.CCPP.get_mirror_rorp(diff_rorp.index), self.dir_replacement
+            )
             return False
         else:
             return True
@@ -1713,7 +1833,8 @@ class _RepoIncrementITRB(_RepoPatchITRB):
     def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp and write increment (neither is dir)"""
         mirror_rp, inc_prefix = map_longnames.get_mirror_inc_rps(
-            self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
+            self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp
+        )
         tf = mirror_rp.get_temp_rpath(sibling=True)
         result = self._patch_to_temp(mirror_rp, diff_rorp, tf)
         if result == self.UNCHANGED:
@@ -1722,16 +1843,21 @@ class _RepoIncrementITRB(_RepoPatchITRB):
             self.CCPP.flag_success(index)
         elif result:
             inc = robust.check_common_error(
-                self.error_handler, increment.Increment,
-                (tf, mirror_rp, inc_prefix, self.previous_time))
+                self.error_handler,
+                increment.Increment,
+                (tf, mirror_rp, inc_prefix, self.previous_time),
+            )
             if inc is not None and not isinstance(inc, int):
                 self.CCPP.set_inc(index, inc)
                 if inc.isreg():
                     inc.fsync_with_dir()  # Write inc before rp changed
                 if tf.lstat():
-                    if robust.check_common_error(self.error_handler,
-                                                 rpath.rename,
-                                                 (tf, mirror_rp)) is None:
+                    if (
+                        robust.check_common_error(
+                            self.error_handler, rpath.rename, (tf, mirror_rp)
+                        )
+                        is None
+                    ):
                         self.CCPP.flag_success(index)
                 elif mirror_rp.lstat():
                     mirror_rp.delete()
@@ -1744,21 +1870,26 @@ class _RepoIncrementITRB(_RepoPatchITRB):
     def start_process_directory(self, index, diff_rorp):
         """Start processing directory"""
         self.base_rp, inc_prefix = map_longnames.get_mirror_inc_rps(
-            self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
+            self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp
+        )
         self.base_rp.setdata()
-        assert diff_rorp.isdir() or self.base_rp.isdir(), (
-            "Either diff '{ipath!r}' or base '{bpath!r}' "
-            "must be a directory".format(ipath=diff_rorp, bpath=self.base_rp))
+        assert (
+            diff_rorp.isdir() or self.base_rp.isdir()
+        ), "Either diff '{ipath!r}' or base '{bpath!r}' " "must be a directory".format(
+            ipath=diff_rorp, bpath=self.base_rp
+        )
         if diff_rorp.isdir():
-            inc = increment.Increment(diff_rorp, self.base_rp,
-                                      inc_prefix, self.previous_time)
+            inc = increment.Increment(
+                diff_rorp, self.base_rp, inc_prefix, self.previous_time
+            )
             if inc and inc.isreg():
                 inc.fsync_with_dir()  # must write inc before rp changed
             self.base_rp.setdata()  # in case written by increment above
             self._prepare_dir(diff_rorp, self.base_rp)
         elif self._set_dir_replacement(diff_rorp, self.base_rp):
-            inc = increment.Increment(self.dir_replacement, self.base_rp,
-                                      inc_prefix, self.previous_time)
+            inc = increment.Increment(
+                self.dir_replacement, self.base_rp, inc_prefix, self.previous_time
+            )
             if inc:
                 self.CCPP.set_inc(index, inc)
                 self.CCPP.flag_success(index)
@@ -1788,13 +1919,20 @@ class _CachedRF:
 
     def get_fp(self, index, mir_rorp):
         """Return the file object (for reading) of given index"""
-        rf = map_longnames.update_rf(self._get_rf(index, mir_rorp), mir_rorp,
-                                     self.root_rf.mirror_rp, _RestoreFile)
+        rf = map_longnames.update_rf(
+            self._get_rf(index, mir_rorp),
+            mir_rorp,
+            self.root_rf.mirror_rp,
+            _RestoreFile,
+        )
         if not rf:
             log.Log(
                 "Unable to retrieve data for file {fi}! The cause is "
                 "probably data loss from the backup repository".format(
-                    fi=(index and "/".join(index) or '.')), log.WARNING)
+                    fi=(index and "/".join(index) or ".")
+                ),
+                log.WARNING,
+            )
             return io.BytesIO()
         return rf.get_restore_fp()
 
@@ -1818,8 +1956,7 @@ class _CachedRF:
                 # Try to add earlier indices.  But if first is
                 # already from same directory, or we can't find any
                 # from that directory, then we know it can't be added.
-                if (index[:-1] == rf.index[:-1]
-                        or not self._add_rfs(index, mir_rorp)):
+                if index[:-1] == rf.index[:-1] or not self._add_rfs(index, mir_rorp):
                     return None
             else:
                 del self.rf_list[0]
@@ -1840,7 +1977,9 @@ class _CachedRF:
             self.perm_changer(parent_index)
         temp_rf = _RestoreFile(
             self.root_rf.mirror_rp.new_index(parent_index),
-            self.root_rf.inc_rp.new_index(parent_index), [])
+            self.root_rf.inc_rp.new_index(parent_index),
+            [],
+        )
         new_rfs = list(temp_rf.yield_sub_rfs())
         if not new_rfs:
             return 0
@@ -1849,7 +1988,7 @@ class _CachedRF:
 
     def _debug_list_rfs_in_cache(self, index):
         """Used for debugging, return indices of cache rfs for printing"""
-        s1 = "-------- Cached RF for %s -------" % (index, )
+        s1 = "-------- Cached RF for %s -------" % (index,)
         s2 = " ".join([str(rf.index) for rf in self.rf_list])
         s3 = "--------------------------"
         return "\n".join((s1, s2, s3))
@@ -1872,8 +2011,12 @@ class _RestoreFile:
 
     def __str__(self):
         return "Index: %s, Mirror: %s, Increment: %s\nIncList: %s\nIncRel: %s" % (
-            self.index, self.mirror_rp, self.inc_rp,
-            list(map(str, self.inc_list)), list(map(str, self.relevant_incs)))
+            self.index,
+            self.mirror_rp,
+            self.inc_rp,
+            list(map(str, self.inc_list)),
+            list(map(str, self.relevant_incs)),
+        )
 
     @classmethod
     def initialize(cls, restore_time, mirror_time):
@@ -1890,22 +2033,21 @@ class _RestoreFile:
         relevant_incs is sorted newest first.  If mirror_rp matters,
         it will be (first) in relevant_incs.
         """
-        self.mirror_rp.inc_type = b'snapshot'
+        self.mirror_rp.inc_type = b"snapshot"
         self.mirror_rp.inc_compressed = 0
-        if (not self.inc_list or self._restore_time >= self._mirror_time):
+        if not self.inc_list or self._restore_time >= self._mirror_time:
             self.relevant_incs = [self.mirror_rp]
             return
 
         newer_incs = self.get_newer_incs()
         i = 0
-        while (i < len(newer_incs)):
+        while i < len(newer_incs):
             # Only diff type increments require later versions
             if newer_incs[i].getinctype() != b"diff":
                 break
             i = i + 1
-        self.relevant_incs = newer_incs[:i + 1]
-        if (not self.relevant_incs
-                or self.relevant_incs[-1].getinctype() == b"diff"):
+        self.relevant_incs = newer_incs[: i + 1]
+        if not self.relevant_incs or self.relevant_incs[-1].getinctype() == b"diff":
             self.relevant_incs.append(self.mirror_rp)
         self.relevant_incs.reverse()  # return in reversed order
 
@@ -1935,13 +2077,13 @@ class _RestoreFile:
 
         """
         last_inc = self.relevant_incs[-1]
-        if last_inc.getinctype() == b'missing':
+        if last_inc.getinctype() == b"missing":
             return rpath.RORPath(self.index)
 
         rorp = last_inc.getRORPath()
         rorp.index = self.index
-        if last_inc.getinctype() == b'dir':
-            rorp.data['type'] = 'dir'
+        if last_inc.getinctype() == b"dir":
+            rorp.data["type"] = "dir"
         return rorp
 
     def get_restore_fp(self):
@@ -1950,11 +2092,10 @@ class _RestoreFile:
         def get_fp():
             current_fp = self._get_first_fp()
             for inc_diff in self.relevant_incs[1:]:
-                log.Log("Applying patch file {pf}".format(pf=inc_diff),
-                        log.DEBUG)
-                assert inc_diff.getinctype() == b'diff', (
-                    "Path '{irp!r}' must be of type 'diff'.".format(
-                        irp=inc_diff))
+                log.Log("Applying patch file {pf}".format(pf=inc_diff), log.DEBUG)
+                assert (
+                    inc_diff.getinctype() == b"diff"
+                ), "Path '{irp!r}' must be of type 'diff'.".format(irp=inc_diff)
                 delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
                 try:
                     new_fp = tempfile.TemporaryFile()
@@ -1962,27 +2103,37 @@ class _RestoreFile:
                     new_fp.seek(0)
                 except OSError:
                     tmpdir = tempfile.gettempdir()
-                    log.Log("Error while writing to temporary directory "
-                            "{td}".format(td=tmpdir), log.ERROR)
+                    log.Log(
+                        "Error while writing to temporary directory "
+                        "{td}".format(td=tmpdir),
+                        log.ERROR,
+                    )
                     raise
                 current_fp = new_fp
             return current_fp
 
         def error_handler(exc):
-            log.Log("Failed reading file {fi}, substituting empty file.".format(
-                fi=self.mirror_rp), log.WARNING)
-            return io.BytesIO(b'')
+            log.Log(
+                "Failed reading file {fi}, substituting empty file.".format(
+                    fi=self.mirror_rp
+                ),
+                log.WARNING,
+            )
+            return io.BytesIO(b"")
 
         if not self.relevant_incs[-1].isreg():
-            log.Log("""Could not restore file {rf}!
+            log.Log(
+                """Could not restore file {rf}!
 
 A regular file was indicated by the metadata, but could not be
 constructed from existing increments because last increment had type {it}.
 Instead of the actual file's data, an empty length file will be created.
 This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""".format(
-                rf=self.mirror_rp,
-                it=self.relevant_incs[-1].lstat()), log.WARNING)
+                    rf=self.mirror_rp, it=self.relevant_incs[-1].lstat()
+                ),
+                log.WARNING,
+            )
             return io.BytesIO()
         return robust.check_common_error(error_handler, get_fp)
 
@@ -2028,7 +2179,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""".format(
             def add_to_dict(filename):
                 """Add filename to the inc tuple dictionary"""
                 rp = inc_rpath.append(filename)
-                if rp.isincfile() and rp.getinctype() != b'data':
+                if rp.isincfile() and rp.getinctype() != b"data":
                     basename = rp.getincbase_bname()
                     inc_filename_list = inc_dict.setdefault(basename, [])
                     inc_filename_list.append(filename)
@@ -2044,25 +2195,27 @@ rdiff-backup destination directory, or a bug in rdiff-backup""".format(
             inc_list = []
             for filename in filenames:
                 rp = inc_rpath.append(filename)
-                assert rp.isincfile(), (
-                    "Path '{mrp}' must be an increment file.".format(mrp=rp))
+                assert rp.isincfile(), "Path '{mrp}' must be an increment file.".format(
+                    mrp=rp
+                )
                 inc_list.append(rp)
             return inc_list
 
         items = get_inc_pairs()
         items.sort()  # Sorting on basis of basename now
-        for (basename, inc_filenames) in items:
+        for basename, inc_filenames in items:
             sub_inc_rpath = inc_rpath.append(basename)
             yield rorpiter.IndexedTuple(
                 sub_inc_rpath.index,
-                (sub_inc_rpath, inc_filenames2incrps(inc_filenames)))
+                (sub_inc_rpath, inc_filenames2incrps(inc_filenames)),
+            )
 
     def _get_first_fp(self):
         """Return first file object from relevant inc list"""
         first_inc = self.relevant_incs[0]
-        assert first_inc.getinctype() == b'snapshot', (
-            "Path '{srp}' must be of type 'snapshot'.".format(
-                srp=first_inc))
+        assert (
+            first_inc.getinctype() == b"snapshot"
+        ), "Path '{srp}' must be of type 'snapshot'.".format(srp=first_inc)
         if not first_inc.isinccompressed():
             return first_inc.open("rb")
 
@@ -2075,28 +2228,34 @@ rdiff-backup destination directory, or a bug in rdiff-backup""".format(
             current_fp.seek(0)
         except OSError:
             tmpdir = tempfile.gettempdir()
-            log.Log("Error while writing to temporary directory "
-                    "{td}".format(td=tmpdir), log.ERROR)
+            log.Log(
+                "Error while writing to temporary directory " "{td}".format(td=tmpdir),
+                log.ERROR,
+            )
             raise
         return current_fp
 
     def _yield_mirrorrps(self, mirrorrp):
         """Yield mirrorrps underneath given mirrorrp"""
-        assert mirrorrp.isdir(), (
-            "Mirror path '{mrp}' must be a directory.".format(mrp=mirrorrp))
+        assert mirrorrp.isdir(), "Mirror path '{mrp}' must be a directory.".format(
+            mrp=mirrorrp
+        )
         for filename in robust.listrp(mirrorrp):
             rp = mirrorrp.append(filename)
-            if rp.index != (b'rdiff-backup-data', ):
+            if rp.index != (b"rdiff-backup-data",):
                 yield rp
 
     def _debug_relevant_incs_string(self):
         """Return printable string of relevant incs, used for debugging"""
-        inc_header = ["---- Relevant incs for %s" % ("/".join(self.index), )]
-        inc_header.extend([
-            "{itp} {ils} {irp}".format(
-                itp=inc.getinctype(), ils=inc.lstat(), irp=inc)
-            for inc in self.relevant_incs
-        ])
+        inc_header = ["---- Relevant incs for %s" % ("/".join(self.index),)]
+        inc_header.extend(
+            [
+                "{itp} {ils} {irp}".format(
+                    itp=inc.getinctype(), ils=inc.lstat(), irp=inc
+                )
+                for inc in self.relevant_incs
+            ]
+        )
         inc_header.append("--------------------------------")
         return "\n".join(inc_header)
 
@@ -2138,7 +2297,7 @@ class _PermissionChanger:
         """Restore permissions for indices we are done with"""
         while self.open_index_list:
             old_index, old_rp, old_perms = self.open_index_list[0]
-            if index[:len(old_index)] > old_index:
+            if index[: len(old_index)] > old_index:
                 old_rp.chmod(old_perms)
             else:
                 break
@@ -2147,8 +2306,9 @@ class _PermissionChanger:
     def _add_chmod_new(self, old_index, index):
         """Change permissions of directories between old_index and index"""
         for rp in self._get_new_rp_list(old_index, index):
-            if ((rp.isreg() and not rp.readable())
-                    or (rp.isdir() and not (rp.executable() and rp.readable()))):
+            if (rp.isreg() and not rp.readable()) or (
+                rp.isdir() and not (rp.executable() and rp.readable())
+            ):
                 old_perms = rp.getperms()
                 self.open_index_list.insert(0, (rp.index, rp, old_perms))
                 if rp.isreg():
@@ -2204,8 +2364,9 @@ class _RegressFile(_RestoreFile):
 
     def isdir(self):
         """Return true if regress needs before/after processing"""
-        return ((self.metadata_rorp and self.metadata_rorp.isdir())
-                or (self.mirror_rp and self.mirror_rp.isdir()))
+        return (self.metadata_rorp and self.metadata_rorp.isdir()) or (
+            self.mirror_rp and self.mirror_rp.isdir()
+        )
 
 
 class _RepoRegressITRB(rorpiter.ITRBranch):
@@ -2237,21 +2398,20 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
     def fast_process_file(self, index, rf):
         """Process when nothing is a directory"""
         if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-            log.Log("Regressing file {fi}".format(fi=rf.metadata_rorp),
-                    log.INFO)
+            log.Log("Regressing file {fi}".format(fi=rf.metadata_rorp), log.INFO)
             if rf.metadata_rorp.isreg():
                 self._restore_orig_regfile(rf)
             else:
                 if rf.mirror_rp.lstat():
                     rf.mirror_rp.delete()
                 if rf.metadata_rorp.isspecial():
-                    robust.check_common_error(None, rpath.copy_with_attribs,
-                                              (rf.metadata_rorp, rf.mirror_rp))
+                    robust.check_common_error(
+                        None, rpath.copy_with_attribs, (rf.metadata_rorp, rf.mirror_rp)
+                    )
                 else:
                     rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         if rf.regress_inc:
-            log.Log("Deleting increment {ic}".format(ic=rf.regress_inc),
-                    log.INFO)
+            log.Log("Deleting increment {ic}".format(ic=rf.regress_inc), log.INFO)
             rf.regress_inc.delete()
 
     def start_process_directory(self, index, rf):
@@ -2275,17 +2435,18 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
             if mir_rp.isdir():
                 mir_rp.setdata()
                 if not meta_rorp.equal_loose(mir_rp):
-                    log.Log("Regressing attributes of path {pa}".format(
-                        pa=mir_rp), log.INFO)
+                    log.Log(
+                        "Regressing attributes of path {pa}".format(pa=mir_rp), log.INFO
+                    )
                     rpath.copy_attribs(meta_rorp, mir_rp)
             else:
                 mir_rp.delete()
-                log.Log("Regressing file {fi}".format(fi=mir_rp),
-                        log.INFO)
+                log.Log("Regressing file {fi}".format(fi=mir_rp), log.INFO)
                 rpath.copy_with_attribs(meta_rorp, mir_rp)
         else:  # replacing a dir with some other kind of file
-            assert mir_rp.isdir(), (
-                "Mirror '{mrp!r}' can only be a directory.".format(mrp=mir_rp))
+            assert mir_rp.isdir(), "Mirror '{mrp!r}' can only be a directory.".format(
+                mrp=mir_rp
+            )
             log.Log("Replacing directory {di}".format(di=mir_rp), log.INFO)
             if meta_rorp.isreg():
                 self._restore_orig_regfile(rf)
@@ -2293,8 +2454,7 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
                 mir_rp.delete()
                 rpath.copy_with_attribs(meta_rorp, mir_rp)
         if rf.regress_inc:
-            log.Log("Deleting increment {ic}".format(ic=rf.regress_inc),
-                    log.INFO)
+            log.Log("Deleting increment {ic}".format(ic=rf.regress_inc), log.INFO)
             rf.regress_inc.delete()
 
     def _restore_orig_regfile(self, rf):
@@ -2305,12 +2465,16 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
         because we don't want to delete the increment before the
         mirror is fully written.
         """
-        assert rf.metadata_rorp.isreg(), (
-            "Metadata path '{mp}' can only be regular file.".format(
-                mp=rf.metadata_rorp))
+        assert (
+            rf.metadata_rorp.isreg()
+        ), "Metadata path '{mp}' can only be regular file.".format(mp=rf.metadata_rorp)
         if rf.mirror_rp.isreg():
             # Before restoring file from history, check if the versions are already identical.
-            if rf.mirror_rp.getsize() == rf.metadata_rorp.getsize() and rf.metadata_rorp.has_sha1() and rf.metadata_rorp.get_sha1() == hash.compute_sha1(rf.mirror_rp):
+            if (
+                rf.mirror_rp.getsize() == rf.metadata_rorp.getsize()
+                and rf.metadata_rorp.has_sha1()
+                and rf.metadata_rorp.get_sha1() == hash.compute_sha1(rf.mirror_rp)
+            ):
                 rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
             else:
                 tf = rf.mirror_rp.get_temp_rpath(sibling=True)
@@ -2324,5 +2488,4 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
             rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
             rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
         if Globals.fsync_directories:
-            rf.mirror_rp.get_parent_rp().fsync(
-            )  # force move before inc delete
+            rf.mirror_rp.get_parent_rp().fsync()  # force move before inc delete

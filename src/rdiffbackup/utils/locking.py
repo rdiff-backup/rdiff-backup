@@ -27,10 +27,11 @@ Portable locking utilities, defining lock and unlock functions
 import os
 
 # needs win32all to work on Windows
-if os.name == 'nt':
+if os.name == "nt":
     import pywintypes
     import win32con
     import win32file
+
     LOCK_EX = win32con.LOCKFILE_EXCLUSIVE_LOCK
     LOCK_SH = 0  # the default
     LOCK_NB = win32con.LOCKFILE_FAIL_IMMEDIATELY
@@ -39,19 +40,18 @@ if os.name == 'nt':
     def lock(file, flags):
         hfile = win32file._get_osfhandle(file.fileno())
         try:
-            win32file.LockFileEx(hfile, flags, 0, 0xffff0000, __overlapped)
+            win32file.LockFileEx(hfile, flags, 0, 0xFFFF0000, __overlapped)
         except pywintypes.error as exc:
             if exc.winerror == 33 and exc.funcname == "LockFileEx":
-                raise BlockingIOError(-1, exc.strerror,
-                                      file.name, exc.winerror)
+                raise BlockingIOError(-1, exc.strerror, file.name, exc.winerror)
             else:
                 raise
 
     def unlock(file):
         hfile = win32file._get_osfhandle(file.fileno())
-        win32file.UnlockFileEx(hfile, 0, 0xffff0000, __overlapped)
+        win32file.UnlockFileEx(hfile, 0, 0xFFFF0000, __overlapped)
 
-elif os.name == 'posix':
+elif os.name == "posix":
     from fcntl import LOCK_EX, LOCK_SH, LOCK_NB  # noqa: F401 implicitly used
     import fcntl
 
@@ -60,6 +60,6 @@ elif os.name == 'posix':
 
     def unlock(file):
         fcntl.flock(file, fcntl.LOCK_UN)
+
 else:  # pragma: no cover  # we will never test on other platforms
-    raise RuntimeError(
-        "Portable locking only defined for nt and posix platforms")
+    raise RuntimeError("Portable locking only defined for nt and posix platforms")

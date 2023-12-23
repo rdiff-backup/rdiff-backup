@@ -10,8 +10,7 @@ Globals.change_source_perms = 1
 
 
 def getrp(ending):
-    return rpath.RPath(
-        lc, os.path.join(old_test_dir, b"various_file_types", ending))
+    return rpath.RPath(lc, os.path.join(old_test_dir, b"various_file_types", ending))
 
 
 base_dir = getrp(b".")
@@ -40,7 +39,7 @@ class inctest(unittest.TestCase):
     """Test the incrementRP function"""
 
     def setUp(self):
-        Globals.set('isbackup_writer', 1)
+        Globals.set("isbackup_writer", 1)
         MakeOutputDir()
 
     def check_time(self, rp):
@@ -61,17 +60,16 @@ class inctest(unittest.TestCase):
 
         diffrp = increment.Increment(rf, exec1, target, prevtime)
         self.assertTrue(diffrp.isreg())
-        self.assertTrue(
-            diffrp._equal_verbose(exec1, check_index=0, compare_size=0))
+        self.assertTrue(diffrp._equal_verbose(exec1, check_index=0, compare_size=0))
         self.check_time(diffrp)
-        self.assertEqual(diffrp.getinctype(), b'diff')
+        self.assertEqual(diffrp.getinctype(), b"diff")
         diffrp.delete()
 
     def testmissing(self):
         """Test creation of missing files"""
         missing_rp = increment.Increment(rf, nothing, target, prevtime)
         self.check_time(missing_rp)
-        self.assertEqual(missing_rp.getinctype(), b'missing')
+        self.assertEqual(missing_rp.getinctype(), b"missing")
         missing_rp.delete()
 
     @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
@@ -115,9 +113,9 @@ class inctest(unittest.TestCase):
         self.check_time(rp)
         self.assertTrue(rp.lstat())
         self.assertTrue(target.isdir())
-        self.assertTrue(base_dir._equal_verbose(rp, check_index=0,
-                                                compare_size=0,
-                                                compare_type=0))
+        self.assertTrue(
+            base_dir._equal_verbose(rp, check_index=0, compare_size=0, compare_type=0)
+        )
         self.assertTrue(rp.isreg())
         rp.delete()
         target.delete()
@@ -152,8 +150,7 @@ class inctest(unittest.TestCase):
 
         rp = increment.Increment(rf, out_gz, target, prevtime)
         self.check_time(rp)
-        self.assertTrue(
-            rp._equal_verbose(out_gz, check_index=0, compare_size=0))
+        self.assertTrue(rp._equal_verbose(out_gz, check_index=0, compare_size=0))
         Rdiff.patch_local(rf, rp, out2)
         self.assertTrue(rpath.cmp(out_gz, out2))
         rp.delete()
@@ -161,5 +158,5 @@ class inctest(unittest.TestCase):
         out_gz.delete()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

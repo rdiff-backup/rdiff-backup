@@ -24,9 +24,9 @@ Comparaison can be done using metadata, file content or hashes.
 """
 
 import yaml
-from rdiff_backup import (Globals, log, selection)
+from rdiff_backup import Globals, log, selection
 from rdiffbackup import actions
-from rdiffbackup.locations import (directory, repository)
+from rdiffbackup.locations import directory, repository
 
 
 class CompareAction(actions.BaseAction):
@@ -34,6 +34,7 @@ class CompareAction(actions.BaseAction):
     Compare the content of a source directory with a backup repository
     at a given time, using multiple methods.
     """
+
     name = "compare"
     security = "validate"
     parent_parsers = [actions.SELECTION_PARSER]
@@ -42,25 +43,36 @@ class CompareAction(actions.BaseAction):
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "--method", choices=["meta", "full", "hash"], default="meta",
-            help="use metadata, complete file or hash to compare directories")
+            "--method",
+            choices=["meta", "full", "hash"],
+            default="meta",
+            help="use metadata, complete file or hash to compare directories",
+        )
         subparser.add_argument(
-            "--at", metavar="TIME", default="now",
-            help="compare with the backup at the given time, default is 'now'")
+            "--at",
+            metavar="TIME",
+            default="now",
+            help="compare with the backup at the given time, default is 'now'",
+        )
         subparser.add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=2,
             help="locations of SOURCE_DIR and backup REPOSITORY to compare"
-                 " (same order as for a backup)")
+            " (same order as for a backup)",
+        )
         return subparser
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
-            self.dir = directory.ReadDir(self.connected_locations[0],
-                                         self.values.force)
+            self.dir = directory.ReadDir(self.connected_locations[0], self.values.force)
             self.repo = repository.Repo(
-                self.connected_locations[1], self.values.force,
-                must_be_writable=False, must_exist=True, can_be_sub_path=True
+                self.connected_locations[1],
+                self.values.force,
+                must_be_writable=False,
+                must_exist=True,
+                can_be_sub_path=True,
             )
         return conn_value
 
@@ -92,7 +104,8 @@ class CompareAction(actions.BaseAction):
             return ret_code
 
         (select_opts, select_data) = selection.get_prepared_selections(
-            self.values.selections)
+            self.values.selections
+        )
         self.dir.set_select(select_opts, select_data)
 
         self.action_time = self.repo.get_parsed_time(self.values.at)
@@ -109,11 +122,10 @@ class CompareAction(actions.BaseAction):
         compare_funcs = {
             "meta": self._compare_meta,
             "hash": self._compare_hash,
-            "full": self._compare_full
+            "full": self._compare_full,
         }
         reports_iter = compare_funcs[self.values.method](self.action_time)
-        ret_code |= self._print_reports(reports_iter,
-                                        self.values.parsable_output)
+        ret_code |= self._print_reports(reports_iter, self.values.parsable_output)
         self.repo.finish_loop()
 
         return ret_code
@@ -164,20 +176,26 @@ class CompareAction(actions.BaseAction):
             indexpath = report.index and b"/".join(report.index) or b"."
             indexpath = indexpath.decode(errors="replace")
             if parsable:
-                reason_verify_list.append({"reason": report.reason,
-                                           "path": indexpath})
+                reason_verify_list.append({"reason": report.reason, "path": indexpath})
             else:
                 print("{rr}: {ip}".format(rr=report.reason, ip=indexpath))
 
         if parsable:
-            print(yaml.safe_dump(reason_verify_list,
-                                 explicit_start=True, explicit_end=True))
+            print(
+                yaml.safe_dump(
+                    reason_verify_list, explicit_start=True, explicit_end=True
+                )
+            )
         if not changed_files_found:
             log.Log("No changes found. Directory matches backup data", log.NOTE)
             return Globals.RET_CODE_OK
         else:
-            log.Log("Directory has {fd} file differences to backup".format(
-                fd=changed_files_found), log.WARNING)
+            log.Log(
+                "Directory has {fd} file differences to backup".format(
+                    fd=changed_files_found
+                ),
+                log.WARNING,
+            )
             return Globals.RET_CODE_FILE_WARN
 
 

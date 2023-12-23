@@ -16,19 +16,23 @@ class ActionListTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(comtst.abs_test_dir, b"action_list")
         self.from1_struct = {
-            "from1": {"contents": {
-                "fileChanged": {"content": "initial"},
-                "fileOld": {},
-                "fileUnchanged": {"content": "unchanged"},
-            }}
+            "from1": {
+                "contents": {
+                    "fileChanged": {"content": "initial"},
+                    "fileOld": {},
+                    "fileUnchanged": {"content": "unchanged"},
+                }
+            }
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"contents": {
-                "fileChanged": {"content": "modified"},
-                "fileNew": {},
-                "fileUnchanged": {"content": "unchanged"},
-            }}
+            "from2": {
+                "contents": {
+                    "fileChanged": {"content": "modified"},
+                    "fileNew": {},
+                    "fileUnchanged": {"content": "unchanged"},
+                }
+            }
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
         fileset.create_fileset(self.base_dir, self.from1_struct)
@@ -38,53 +42,95 @@ class ActionListTest(unittest.TestCase):
         self.success = False
         # we backup twice to the same backup repository at different times
         comtst.rdiff_backup_action(
-            True, True, self.from1_path, self.bak_path,
+            True,
+            True,
+            self.from1_path,
+            self.bak_path,
             ("--api-version", "201", "--current-time", "111111"),
-            b"backup", ())
+            b"backup",
+            (),
+        )
         comtst.rdiff_backup_action(
-            True, True, self.from2_path, self.bak_path,
+            True,
+            True,
+            self.from2_path,
+            self.bak_path,
             ("--api-version", "201", "--current-time", "222222"),
-            b"backup", ())
+            b"backup",
+            (),
+        )
 
     def test_action_listfilesattime(self):
         """test the list files at time action"""
         # we list the files at different times
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files",), return_stdout=True),
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files",),
+                return_stdout=True,
+            ),
             b""".
 fileChanged
 fileNew
 fileUnchanged
-""")
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files", "--at", "111111"), return_stdout=True),
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files", "--at", "111111"),
+                return_stdout=True,
+            ),
             b""".
 fileChanged
 fileOld
 fileUnchanged
-""")
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files", "--at", "15000"), return_stdout=True),
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files", "--at", "15000"),
+                return_stdout=True,
+            ),
             b""".
 fileChanged
 fileOld
 fileUnchanged
-""")
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files", "--at", "1B"), return_stdout=True),
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files", "--at", "1B"),
+                return_stdout=True,
+            ),
             b""".
 fileChanged
 fileOld
 fileUnchanged
-""")
+""",
+        )
 
         # all tests were successful
         self.success = True
@@ -92,35 +138,67 @@ fileUnchanged
     def test_action_listfileschangedsince(self):
         """test the list files at time action"""
         # we list the files at different times
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files", "--changed-since", "now"), return_stdout=True),
-            b"""""")
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files", "--changed-since", "111111"), return_stdout=True),
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files", "--changed-since", "now"),
+                return_stdout=True,
+            ),
+            b"""""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files", "--changed-since", "111111"),
+                return_stdout=True,
+            ),
             b"""changed fileChanged
 new     fileNew
 deleted fileOld
-""")
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files", "--changed-since", "15000"), return_stdout=True),
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files", "--changed-since", "15000"),
+                return_stdout=True,
+            ),
             b"""changed fileChanged
 new     fileNew
 deleted fileOld
-""")
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, None, self.bak_path, None,
-            ("--api-version", "201"),
-            b"list", ("files", "--changed-since", "1B"), return_stdout=True),
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"list",
+                ("files", "--changed-since", "1B"),
+                return_stdout=True,
+            ),
             b"""changed fileChanged
 new     fileNew
 deleted fileOld
-""")
+""",
+        )
 
         # all tests were successful
         self.success = True
@@ -128,10 +206,17 @@ deleted fileOld
     def test_action_listincrements(self):
         """test the list increments action, without and with size"""
         # we need to use a regex for different timezones
-        self.assertRegex(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--parsable"),
-            b"list", ("increments", ), return_stdout=True),
+        self.assertRegex(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--parsable"),
+                b"list",
+                ("increments",),
+                return_stdout=True,
+            ),
             b"""---
 - base: increments.1970-01-0[12]T[0-9][0-9][:-][25]1[:-]51.*.dir
   time: 111111
@@ -141,13 +226,21 @@ deleted fileOld
   type: directory
 ...
 
-""")
+""",
+        )
         # we need to use a regex for different filesystem types
         # especially directories can have any kind of size
-        self.assertRegex(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--parsable"),
-            b"list", ("increments", "--size"), return_stdout=True),
+        self.assertRegex(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--parsable"),
+                b"list",
+                ("increments", "--size"),
+                return_stdout=True,
+            ),
             b"""---
 - size: [0-9]+
   time: 111111
@@ -157,7 +250,8 @@ deleted fileOld
   total_size: [0-9]+
 ...
 
-""")
+""",
+        )
 
         # all tests were successful
         self.success = True

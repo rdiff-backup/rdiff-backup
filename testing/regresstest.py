@@ -6,8 +6,15 @@ Not to be confused with the regression tests.
 
 import unittest
 import os
-from commontest import abs_output_dir, abs_test_dir, old_test_dir, Myrm, \
-    compare_recursive, rdiff_backup, os_system
+from commontest import (
+    abs_output_dir,
+    abs_test_dir,
+    old_test_dir,
+    Myrm,
+    compare_recursive,
+    rdiff_backup,
+    os_system,
+)
 import commontest as comtst
 from rdiff_backup import Globals, rpath, Time
 
@@ -18,8 +25,11 @@ class RegressTest(unittest.TestCase):
     incrp = []
     for i in range(4):
         incrp.append(
-            rpath.RPath(Globals.local_connection,
-                        os.path.join(old_test_dir, b"increment%d" % (i + 1))))
+            rpath.RPath(
+                Globals.local_connection,
+                os.path.join(old_test_dir, b"increment%d" % (i + 1)),
+            )
+        )
 
     def runtest(self, regress_function):
         """Test regressing a full directory to older state
@@ -36,58 +46,45 @@ class RegressTest(unittest.TestCase):
         if self.output_rp.lstat():
             Myrm(self.output_rp.path)
 
-        rdiff_backup(1,
-                     1,
-                     self.incrp[0].path,
-                     self.output_rp.path,
-                     current_time=10000)
+        rdiff_backup(1, 1, self.incrp[0].path, self.output_rp.path, current_time=10000)
         self.assertTrue(compare_recursive(self.incrp[0], self.output_rp))
 
-        rdiff_backup(1,
-                     1,
-                     self.incrp[1].path,
-                     self.output_rp.path,
-                     current_time=20000)
+        rdiff_backup(1, 1, self.incrp[1].path, self.output_rp.path, current_time=20000)
         self.assertTrue(compare_recursive(self.incrp[1], self.output_rp))
 
-        rdiff_backup(1,
-                     1,
-                     self.incrp[2].path,
-                     self.output_rp.path,
-                     current_time=30000)
+        rdiff_backup(1, 1, self.incrp[2].path, self.output_rp.path, current_time=30000)
         self.assertTrue(compare_recursive(self.incrp[2], self.output_rp))
 
-        rdiff_backup(1,
-                     1,
-                     self.incrp[3].path,
-                     self.output_rp.path,
-                     current_time=40000)
+        rdiff_backup(1, 1, self.incrp[3].path, self.output_rp.path, current_time=40000)
         self.assertTrue(compare_recursive(self.incrp[3], self.output_rp))
 
         Globals.rbdir = self.output_rbdir_rp
 
         regress_function(30000)
-        self.assertTrue(compare_recursive(self.incrp[2], self.output_rp,
-                                          compare_hardlinks=0))
+        self.assertTrue(
+            compare_recursive(self.incrp[2], self.output_rp, compare_hardlinks=0)
+        )
         regress_function(20000)
-        self.assertTrue(compare_recursive(self.incrp[1], self.output_rp,
-                                          compare_hardlinks=0))
+        self.assertTrue(
+            compare_recursive(self.incrp[1], self.output_rp, compare_hardlinks=0)
+        )
         regress_function(10000)
-        self.assertTrue(compare_recursive(self.incrp[0], self.output_rp,
-                                          compare_hardlinks=0))
+        self.assertTrue(
+            compare_recursive(self.incrp[0], self.output_rp, compare_hardlinks=0)
+        )
 
     def regress_to_time_local(self, time):
         """Regress self.output_rp to time by running regress locally"""
         self.output_rp.setdata()
         self.output_rbdir_rp.setdata()
         self.add_current_mirror(time)
-        comtst.rdiff_backup_action(True, True, self.output_rp, None, (),
-                                   b"regress", ())
+        comtst.rdiff_backup_action(True, True, self.output_rp, None, (), b"regress", ())
 
     def add_current_mirror(self, time):
         """Add current_mirror marker at given time"""
         cur_mirror_rp = self.output_rbdir_rp.append(
-            "current_mirror.%s.data" % (Time.timetostring(time), ))
+            "current_mirror.%s.data" % (Time.timetostring(time),)
+        )
         cur_mirror_rp.touch()
 
     def regress_to_time_remote(self, time):
@@ -96,12 +93,14 @@ class RegressTest(unittest.TestCase):
         self.output_rbdir_rp.setdata()
         self.add_current_mirror(time)
 
-        rdiff_backup(False,
-                     False,
-                     self.output_rp.path,
-                     None,
-                     extra_options=b"regress",
-                     expected_ret_code=Globals.RET_CODE_WARN)
+        rdiff_backup(
+            False,
+            False,
+            self.output_rp.path,
+            None,
+            extra_options=b"regress",
+            expected_ret_code=Globals.RET_CODE_WARN,
+        )
 
     def test_local(self):
         """Run regress test locally"""
@@ -118,13 +117,9 @@ class RegressTest(unittest.TestCase):
             Myrm(self.output_rp.path)
         unreadable_rp = self.make_unreadable()
 
-        rdiff_backup(1,
-                     1,
-                     unreadable_rp.path,
-                     self.output_rp.path,
-                     current_time=1)
-        rbdir = self.output_rp.append('rdiff-backup-data')
-        marker = rbdir.append('current_mirror.2000-12-31T21:33:20-07:00.data')
+        rdiff_backup(1, 1, unreadable_rp.path, self.output_rp.path, current_time=1)
+        rbdir = self.output_rp.append("rdiff-backup-data")
+        marker = rbdir.append("current_mirror.2000-12-31T21:33:20-07:00.data")
         marker.touch()
         self.change_unreadable()
 
@@ -140,23 +135,24 @@ class RegressTest(unittest.TestCase):
         unreadable.
 
         """
-        rp = rpath.RPath(Globals.local_connection,
-                         os.path.join(abs_test_dir, b"regress"))
+        rp = rpath.RPath(
+            Globals.local_connection, os.path.join(abs_test_dir, b"regress")
+        )
         if rp.lstat():
             Myrm(rp.path)
         rp.setdata()
         rp.mkdir()
-        rp1 = rp.append('unreadable_dir')
+        rp1 = rp.append("unreadable_dir")
         rp1.mkdir()
-        rp1_1 = rp1.append('to_be_unreadable')
-        rp1_1.write_string('aensuthaoeustnahoeu')
+        rp1_1 = rp1.append("to_be_unreadable")
+        rp1_1.write_string("aensuthaoeustnahoeu")
         return rp
 
     def change_unreadable(self):
         """Change attributes in directory, so regress will request fp"""
-        subdir = self.output_rp.append('unreadable_dir')
+        subdir = self.output_rp.append("unreadable_dir")
         self.assertTrue(subdir.lstat())
-        rp1_1 = subdir.append('to_be_unreadable')
+        rp1_1 = subdir.append("to_be_unreadable")
         rp1_1.chmod(0)
         subdir.chmod(0)
 

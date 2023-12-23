@@ -37,22 +37,24 @@ except ImportError:  # pragma: no cover
 
         Only introduced in Python 3.9, hence required for earlier versions.
         """
-        def __init__(self,
-                     option_strings,
-                     dest,
-                     default=None,
-                     type=None,
-                     choices=None,
-                     required=False,
-                     help=None,
-                     metavar=None):
 
+        def __init__(
+            self,
+            option_strings,
+            dest,
+            default=None,
+            type=None,
+            choices=None,
+            required=False,
+            help=None,
+            metavar=None,
+        ):
             _option_strings = []
             for option_string in option_strings:
                 _option_strings.append(option_string)
 
-                if option_string.startswith('--'):
-                    option_string = '--no-' + option_string[2:]
+                if option_string.startswith("--"):
+                    option_string = "--no-" + option_string[2:]
                     _option_strings.append(option_string)
 
             if help is not None and default is not None:
@@ -67,14 +69,15 @@ except ImportError:  # pragma: no cover
                 choices=choices,
                 required=required,
                 help=help,
-                metavar=metavar)
+                metavar=metavar,
+            )
 
         def __call__(self, parser, namespace, values, option_string=None):
             if option_string in self.option_strings:
-                setattr(namespace, self.dest, not option_string.startswith('--no-'))
+                setattr(namespace, self.dest, not option_string.startswith("--no-"))
 
         def format_usage(self):
-            return ' | '.join(self.option_strings)
+            return " | ".join(self.option_strings)
 
 
 class SelectAction(argparse.Action):
@@ -101,8 +104,16 @@ class SelectAction(argparse.Action):
     #: name of the default namespace key holding the sorted list of options
     default_dest = "selections"
 
-    def __init__(self, option_strings, dest,
-                 type=str, nargs=None, help=None, default=None, **kwargs):
+    def __init__(
+        self,
+        option_strings,
+        dest,
+        type=str,
+        nargs=None,
+        help=None,
+        default=None,
+        **kwargs,
+    ):
         """
         Initialize the placeholder-argument object
 
@@ -121,10 +132,12 @@ class SelectAction(argparse.Action):
             if default is None:
                 default = True
         # replace placeholder with both include and exclude options
-        include_opts = list(map(
-            lambda x: x.replace(self.placeholder, "include"), option_strings))
-        exclude_opts = list(map(
-            lambda x: x.replace(self.placeholder, "exclude"), option_strings))
+        include_opts = list(
+            map(lambda x: x.replace(self.placeholder, "include"), option_strings)
+        )
+        exclude_opts = list(
+            map(lambda x: x.replace(self.placeholder, "exclude"), option_strings)
+        )
         if exclude_opts != include_opts:
             # SELECT was found hence we need to duplicate the options
             # and update accordingly the help text
@@ -137,9 +150,15 @@ class SelectAction(argparse.Action):
                     help += " (default is include)"
                 else:
                     help += " (default is exclude)"
-        super().__init__(option_strings, dest,
-                         type=type, nargs=nargs, help=help, default=default,
-                         **kwargs)
+        super().__init__(
+            option_strings,
+            dest,
+            type=type,
+            nargs=nargs,
+            help=help,
+            default=default,
+            **kwargs,
+        )
 
     def __call__(self, parser, namespace, values, option_string=None):
         """
@@ -156,5 +175,6 @@ class SelectAction(argparse.Action):
         # append the option string and values to the selections list
         if values == [] and self.default is not None:
             values = self.default
-        setattr(namespace, self.dest,
-                old_list + [(option_string.replace("--", ""), values)])
+        setattr(
+            namespace, self.dest, old_list + [(option_string.replace("--", ""), values)]
+        )

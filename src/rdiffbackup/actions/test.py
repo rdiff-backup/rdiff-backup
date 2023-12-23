@@ -32,6 +32,7 @@ class TestAction(actions.BaseAction):
     """
     Test that servers are properly reachable and usable for back-ups.
     """
+
     name = "test"
     security = "validate"
 
@@ -39,8 +40,11 @@ class TestAction(actions.BaseAction):
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "locations", metavar="[USER@]SERVER::PATH", nargs="+",
-            help="location of remote repositories to check for connection")
+            "locations",
+            metavar="[USER@]SERVER::PATH",
+            nargs="+",
+            help="location of remote repositories to check for connection",
+        )
         return subparser
 
     def pre_check(self):
@@ -52,8 +56,11 @@ class TestAction(actions.BaseAction):
                 log.Log(err, log.ERROR)
                 ret_code |= Globals.RET_CODE_ERR
             elif not file_host:
-                log.Log("Only remote locations can be tested but location "
-                        "'{lo}' isn't remote".format(lo=location), log.ERROR)
+                log.Log(
+                    "Only remote locations can be tested but location "
+                    "'{lo}' isn't remote".format(lo=location),
+                    log.ERROR,
+                )
                 ret_code |= Globals.RET_CODE_ERR
 
         return ret_code

@@ -25,18 +25,27 @@ def get_signature(rp, blocksize=None):
     """Take signature of rpin file and return in file object"""
     if not blocksize:
         blocksize = _find_blocksize(rp.getsize())
-    log.Log("Getting signature of file {fi} with blocksize {bs}".format(
-        fi=rp, bs=blocksize), log.DEBUG)
+    log.Log(
+        "Getting signature of file {fi} with blocksize {bs}".format(
+            fi=rp, bs=blocksize
+        ),
+        log.DEBUG,
+    )
     return librsync.SigFile(rp.open("rb"), blocksize)
 
 
 def get_delta_sigrp_hash(rp_signature, rp_new):
     """Like above but also calculate hash of new as close() value"""
-    log.Log("Getting delta (with hash) of file {fi} with signature {si}".format(
-        fi=rp_new, si=rp_signature), log.DEBUG)
+    log.Log(
+        "Getting delta (with hash) of file {fi} with signature {si}".format(
+            fi=rp_new, si=rp_signature
+        ),
+        log.DEBUG,
+    )
     try:
         return librsync.DeltaFile(
-            rp_signature.open("rb"), hash.FileWrapper(rp_new.open("rb")))
+            rp_signature.open("rb"), hash.FileWrapper(rp_new.open("rb"))
+        )
     except OSError:
         rp_signature.close_if_necessary()
         raise
@@ -44,8 +53,12 @@ def get_delta_sigrp_hash(rp_signature, rp_new):
 
 def write_delta(basis, new, delta, compress=None):
     """Write rdiff delta which brings basis to new"""
-    log.Log("Writing delta {de} from basis {ba} to new {ne}".format(
-        ba=basis, ne=new, de=delta), log.DEBUG)
+    log.Log(
+        "Writing delta {de} from basis {ba} to new {ne}".format(
+            ba=basis, ne=new, de=delta
+        ),
+        log.DEBUG,
+    )
     deltafile = librsync.DeltaFile(get_signature(basis), new.open("rb"))
     delta.write_from_fileobj(deltafile, compress)
 
@@ -68,9 +81,11 @@ def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
     The return value is the close value of the delta, so it can be
     used to produce hashes.
     """
-    assert rp_basis.conn is Globals.local_connection, (
-        "This function must run locally and not over '{conn}'.".format(
-            conn=rp_basis.conn))
+    assert (
+        rp_basis.conn is Globals.local_connection
+    ), "This function must run locally and not over '{conn}'.".format(
+        conn=rp_basis.conn
+    )
     if delta_compressed:
         deltafile = rp_delta.open("rb", 1)
     else:

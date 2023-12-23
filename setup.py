@@ -44,10 +44,14 @@ if os.name == "posix" or os.name == "nt":
                     print(f"removing {rsyncdll_dst}")
                     if "--dry-run" not in sys.argv:
                         os.remove(rsyncdll_dst)
-            elif ("--version" not in sys.argv and "-V" not in sys.argv
-                  and "--help" not in sys.argv):
-                if (not os.path.exists(rsyncdll_dst)
-                        or not filecmp.cmp(rsyncdll_src, rsyncdll_dst)):
+            elif (
+                "--version" not in sys.argv
+                and "-V" not in sys.argv
+                and "--help" not in sys.argv
+            ):
+                if not os.path.exists(rsyncdll_dst) or not filecmp.cmp(
+                    rsyncdll_src, rsyncdll_dst
+                ):
                     print(f"copying {rsyncdll_src} -> {rsyncdll_dst}")
                     if "--dry-run" not in sys.argv:
                         shutil.copyfile(rsyncdll_src, rsyncdll_dst)
@@ -61,10 +65,10 @@ if os.name == "nt":
 
 
 class pre_build_exec(Command):
-    description = 'build template files executing a shell command'
+    description = "build template files executing a shell command"
     user_options = [
         # The format is (long option, short option, description).
-        ('commands=', None, 'list of command strings'),
+        ("commands=", None, "list of command strings"),
     ]
 
     def initialize_options(self):
@@ -79,8 +83,8 @@ class pre_build_exec(Command):
         if self.commands:
             assert all(map(lambda x: len(x) == 3, self.commands)), (
                 "Each element of the list '{}' must be a tuple of "
-                "command, source and target".format(
-                    self.commands))
+                "command, source and target".format(self.commands)
+            )
 
     def _make_exec(self, cmd, infile, outfile, repl_dict={}):
         self.mkpath(os.path.dirname(outfile))
@@ -90,19 +94,21 @@ class pre_build_exec(Command):
     def run(self):
         if DEBUG:
             self.debug_print(self.distribution.dump_option_dicts())
-        build_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+        build_time = int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
         replacement_dict = {
             "ver": self.distribution.get_version(),
-            "date": time.strftime("%B %Y", time.gmtime(build_time))
+            "date": time.strftime("%B %Y", time.gmtime(build_time)),
         }
         for command in self.commands:
             cmd = command[0]
             inpath = os.path.join(*command[1])
             outpath = os.path.join(*command[2])
             self.make_file(
-                (inpath), outpath,
-                self._make_exec, (cmd, inpath, outpath, replacement_dict),
-                exec_msg="executing {}".format(command)
+                (inpath),
+                outpath,
+                self._make_exec,
+                (cmd, inpath, outpath, replacement_dict),
+                exec_msg="executing {}".format(command),
             )
 
 
@@ -110,10 +116,14 @@ class pre_build_exec(Command):
 
 
 class pre_build_templates(Command):
-    description = 'build template files replacing {{ }} placeholders'
+    description = "build template files replacing {{ }} placeholders"
     user_options = [
         # The format is (long option, short option, description).
-        ('template-files=', None, 'list of tuples of source template and destination files'),
+        (
+            "template-files=",
+            None,
+            "list of tuples of source template and destination files",
+        ),
         # TODO we could add the replacement dict as well but not for now
     ]
 
@@ -129,7 +139,8 @@ class pre_build_templates(Command):
         if self.template_files:
             assert all(map(lambda x: len(x) == 2, self.template_files)), (
                 "Each element of the list '{}' must be a tuple of source "
-                "template and target files".format(self.template_files))
+                "template and target files".format(self.template_files)
+            )
 
     def _make_template(self, infile, outfile, repl_dict={}):
         """A helper function replacing {{ place_holders }} defined in repl_dict,
@@ -137,7 +148,7 @@ class pre_build_templates(Command):
         self.mkpath(os.path.dirname(outfile))
         with open(infile, "r") as infp, open(outfile, "w") as outfp:
             for line in infp:
-                if ("{{" in line):
+                if "{{" in line:
                     for key, value in repl_dict.items():
                         line = line.replace("{{ %s }}" % key, value)
                 outfp.write(line)
@@ -145,17 +156,18 @@ class pre_build_templates(Command):
     def run(self):
         if DEBUG:
             self.debug_print(self.distribution.dump_option_dicts())
-        build_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+        build_time = int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
         replacement_dict = {
             "version": self.distribution.get_version(),
-            "month_year": time.strftime("%B %Y", time.gmtime(build_time))
+            "month_year": time.strftime("%B %Y", time.gmtime(build_time)),
         }
         for template in self.template_files:
             self.make_file(
-                (template[0]), template[1],
-                self._make_template, (template[0], template[1],
-                                      replacement_dict),
-                exec_msg='templating %s -> %s' % (template[0], template[1])
+                (template[0]),
+                template[1],
+                self._make_template,
+                (template[0], template[1], replacement_dict),
+                exec_msg="templating %s -> %s" % (template[0], template[1]),
             )
 
 
@@ -163,8 +175,8 @@ class build_py(setuptools.command.build_py.build_py):
     """Inject our build sub-command in the build_py step"""
 
     def run(self):
-        self.run_command('pre_build_exec')
-        self.run_command('pre_build_templates')
+        self.run_command("pre_build_exec")
+        self.run_command("pre_build_templates")
         setuptools.command.build_py.build_py.run(self)
 
 
@@ -172,12 +184,13 @@ class sdist(setuptools.command.sdist.sdist):
     """Inject our build sub-command in the sdist step"""
 
     def run(self):
-        self.run_command('pre_build_exec')
-        self.run_command('pre_build_templates')
+        self.run_command("pre_build_exec")
+        self.run_command("pre_build_templates")
         setuptools.command.sdist.sdist.run(self)
 
 
 # --- extend the clean command to remove templated and exec files ---
+
 
 class clean(distutils.command.clean.clean):
     """Extend the clean class to also delete templated and exec files"""
@@ -190,10 +203,10 @@ class clean(distutils.command.clean.clean):
     def finalize_options(self):
         """Post-process options."""
         # take over the option from our pre_build_templates command
-        self.set_undefined_options('pre_build_templates',
-                                   ('template_files', 'template_files'))
-        self.set_undefined_options('pre_build_exec',
-                                   ('commands', 'commands'))
+        self.set_undefined_options(
+            "pre_build_templates", ("template_files", "template_files")
+        )
+        self.set_undefined_options("pre_build_exec", ("commands", "commands"))
         super().finalize_options()
 
     def run(self):
@@ -229,25 +242,34 @@ setup(
     # options is a hash of hash with command -> option -> value
     # the value happens here to be a list of file couples/tuples
     options={
-        "pre_build_exec": {"commands": [
-            ("asciidoctor -b manpage -a revdate=\"{date}\" "
-             "-a revnumber=\"{ver}\" -o {outfile} {infile}",
-             ("docs", "rdiff-backup.1.adoc"), ("dist", "rdiff-backup.1")),
-            ("asciidoctor -b manpage -a revdate=\"{date}\" "
-             "-a revnumber=\"{ver}\" -o {outfile} {infile}",
-             ("docs", "rdiff-backup-statistics.1.adoc"),
-             ("dist", "rdiff-backup-statistics.1")),
-            ("asciidoctor -b manpage -a revdate=\"{date}\" "
-             "-a revnumber=\"{ver}\" -o {outfile} {infile}",
-             ("docs", "rdiff-backup-delete.1.adoc"),
-             ("dist", "rdiff-backup-delete.1")),
-        ]},
+        "pre_build_exec": {
+            "commands": [
+                (
+                    'asciidoctor -b manpage -a revdate="{date}" '
+                    '-a revnumber="{ver}" -o {outfile} {infile}',
+                    ("docs", "rdiff-backup.1.adoc"),
+                    ("dist", "rdiff-backup.1"),
+                ),
+                (
+                    'asciidoctor -b manpage -a revdate="{date}" '
+                    '-a revnumber="{ver}" -o {outfile} {infile}',
+                    ("docs", "rdiff-backup-statistics.1.adoc"),
+                    ("dist", "rdiff-backup-statistics.1"),
+                ),
+                (
+                    'asciidoctor -b manpage -a revdate="{date}" '
+                    '-a revnumber="{ver}" -o {outfile} {infile}',
+                    ("docs", "rdiff-backup-delete.1.adoc"),
+                    ("dist", "rdiff-backup-delete.1"),
+                ),
+            ]
+        },
     },
     cmdclass={
-        'pre_build_exec': pre_build_exec,
-        'pre_build_templates': pre_build_templates,
-        'build_py': build_py,
-        'sdist': sdist,
-        'clean': clean,
+        "pre_build_exec": pre_build_exec,
+        "pre_build_templates": pre_build_templates,
+        "build_py": build_py,
+        "sdist": sdist,
+        "clean": clean,
     },
 )

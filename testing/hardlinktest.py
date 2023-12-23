@@ -3,9 +3,17 @@ import time
 import unittest
 
 from commontest import (
-    abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir,
-    compare_recursive, BackupRestoreSeries, InternalBackup, InternalRestore,
-    MakeOutputDir, reset_hardlink_dicts, xcopytree
+    abs_test_dir,
+    abs_output_dir,
+    old_test_dir,
+    re_init_rpath_dir,
+    compare_recursive,
+    BackupRestoreSeries,
+    InternalBackup,
+    InternalRestore,
+    MakeOutputDir,
+    reset_hardlink_dicts,
+    xcopytree,
 )
 import commontest as comtst
 import fileset
@@ -17,6 +25,7 @@ from rdiffbackup.locations.map import hardlinks as map_hardlinks
 
 class HardlinkTest(unittest.TestCase):
     """Test cases for Hard links"""
+
     outputrp = rpath.RPath(Globals.local_connection, abs_output_dir)
     re_init_rpath_dir(outputrp)
 
@@ -35,11 +44,12 @@ class HardlinkTest(unittest.TestCase):
     def testEquality(self):
         """Test rorp_eq function in conjunction with compare_recursive"""
         self.assertTrue(compare_recursive(self.hlinks_rp1, self.hlinks_rp1copy))
-        self.assertTrue(compare_recursive(self.hlinks_rp1,
-                                          self.hlinks_rp2,
-                                          compare_hardlinks=None))
-        self.assertFalse(compare_recursive(
-            self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=1))
+        self.assertTrue(
+            compare_recursive(self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=None)
+        )
+        self.assertFalse(
+            compare_recursive(self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=1)
+        )
 
     def testBuildingDict(self):
         """See if the partial inode dictionary is correct"""
@@ -67,8 +77,10 @@ class HardlinkTest(unittest.TestCase):
     def testSeries(self):
         """Test hardlink system by backing up and restoring a few dirs"""
         dirlist = [
-            self.hlinks_dir1, self.hlinks_dir2, self.hlinks_dir3,
-            os.path.join(old_test_dir, b'various_file_types')
+            self.hlinks_dir1,
+            self.hlinks_dir2,
+            self.hlinks_dir3,
+            os.path.join(old_test_dir, b"various_file_types"),
         ]
         BackupRestoreSeries(None, None, dirlist, compare_hardlinks=1)
         BackupRestoreSeries(1, 1, dirlist, compare_hardlinks=1)
@@ -118,22 +130,34 @@ class HardlinkTest(unittest.TestCase):
         # Now try backing up twice, making sure hard links are preserved
         InternalBackup(1, 1, hlout1.path, output.path)
         out_subdir = output.append("subdir")
-        self.assertEqual(out_subdir.append("hardlink1").getinode(),
-                         out_subdir.append("hardlink2").getinode())
-        self.assertEqual(out_subdir.append("hardlink3").getinode(),
-                         out_subdir.append("hardlink4").getinode())
-        self.assertNotEqual(out_subdir.append("hardlink1").getinode(),
-                            out_subdir.append("hardlink3").getinode())
+        self.assertEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink2").getinode(),
+        )
+        self.assertEqual(
+            out_subdir.append("hardlink3").getinode(),
+            out_subdir.append("hardlink4").getinode(),
+        )
+        self.assertNotEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink3").getinode(),
+        )
 
         time.sleep(1)
         InternalBackup(1, 1, hlout2.path, output.path)
         out_subdir.setdata()
-        self.assertEqual(out_subdir.append("hardlink1").getinode(),
-                         out_subdir.append("hardlink4").getinode())
-        self.assertEqual(out_subdir.append("hardlink2").getinode(),
-                         out_subdir.append("hardlink3").getinode())
-        self.assertNotEqual(out_subdir.append("hardlink1").getinode(),
-                            out_subdir.append("hardlink2").getinode())
+        self.assertEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink4").getinode(),
+        )
+        self.assertEqual(
+            out_subdir.append("hardlink2").getinode(),
+            out_subdir.append("hardlink3").getinode(),
+        )
+        self.assertNotEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink2").getinode(),
+        )
 
         # Now try restoring, still checking hard links.
         sub_dir = os.path.join(abs_output_dir, b"subdir")
@@ -208,14 +232,16 @@ class HardlinkTest(unittest.TestCase):
 
         InternalBackup(1, 1, hlsrc.path, output.path, 10000)
         out_subdir = output.append("subdir")
-        self.assertEqual(out_subdir.append("hardlink1").getinode(),
-                         out_subdir.append("hardlink3").getinode())
+        self.assertEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink3").getinode(),
+        )
 
         # validate that hashes and link counts are correctly saved in metadata
         meta_prefix = rpath.RPath(
             Globals.local_connection,
-            os.path.join(abs_output_dir, b"rdiff-backup-data",
-                         b"mirror_metadata"))
+            os.path.join(abs_output_dir, b"rdiff-backup-data", b"mirror_metadata"),
+        )
         incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
@@ -231,15 +257,19 @@ class HardlinkTest(unittest.TestCase):
         hl_file2.hardlink(hl_file1.path)
 
         InternalBackup(1, 1, hlsrc.path, output.path, 20000)
-        self.assertEqual(out_subdir.append("hardlink1").getinode(),
-                         out_subdir.append("hardlink2").getinode())
-        self.assertEqual(out_subdir.append("hardlink1").getinode(),
-                         out_subdir.append("hardlink3").getinode())
+        self.assertEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink2").getinode(),
+        )
+        self.assertEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink3").getinode(),
+        )
 
         # validate that hashes and link counts are correctly saved in metadata
         incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 2)
-        if incs[0].getinctype() == b'snapshot':
+        if incs[0].getinctype() == b"snapshot":
             metadata_rp = incs[0]
         else:
             metadata_rp = incs[1]
@@ -307,14 +337,16 @@ class HardlinkTest(unittest.TestCase):
 
         InternalBackup(1, 1, hlsrc.path, output.path, 10000)
         out_subdir = output.append("subdir")
-        self.assertEqual(out_subdir.append("hardlink1").getinode(),
-                         out_subdir.append("hardlink2").getinode())
+        self.assertEqual(
+            out_subdir.append("hardlink1").getinode(),
+            out_subdir.append("hardlink2").getinode(),
+        )
 
         # validate that hashes and link counts are correctly saved in metadata
         meta_prefix = rpath.RPath(
             Globals.local_connection,
-            os.path.join(abs_output_dir, b"rdiff-backup-data",
-                         b"mirror_metadata"))
+            os.path.join(abs_output_dir, b"rdiff-backup-data", b"mirror_metadata"),
+        )
         incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
@@ -330,13 +362,15 @@ class HardlinkTest(unittest.TestCase):
         rpath.rename(hl_file1, hl_file3)
 
         InternalBackup(1, 1, hlsrc.path, output.path, 20000)
-        self.assertEqual(out_subdir.append("hardlink2").getinode(),
-                         out_subdir.append("hardlink3").getinode())
+        self.assertEqual(
+            out_subdir.append("hardlink2").getinode(),
+            out_subdir.append("hardlink3").getinode(),
+        )
 
         # validate that hashes and link counts are correctly saved in metadata
         incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 2)
-        if incs[0].getinctype() == b'snapshot':
+        if incs[0].getinctype() == b"snapshot":
             metadata_rp = incs[0]
         else:
             metadata_rp = incs[1]
@@ -377,22 +411,25 @@ class BackupUnchangedHardlinksTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir,
-                                     b"hardlink_unchanged")
+        self.base_dir = os.path.join(comtst.abs_test_dir, b"hardlink_unchanged")
         self.from1_struct = {
-            "from1": {"contents": {
-                "fileA": {"content": "initial", "inode": "fileA"},
-                "linkA": {"inode": "fileA"},
-                "fileB": {},  # just as canary
-            }}
+            "from1": {
+                "contents": {
+                    "fileA": {"content": "initial", "inode": "fileA"},
+                    "linkA": {"inode": "fileA"},
+                    "fileB": {},  # just as canary
+                }
+            }
         }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"contents": {
-                "fileA": {"content": "initial", "inode": "fileA"},
-                "linkA": {"inode": "fileA"},
-                "fileB": {},  # just as canary
-            }}
+            "from2": {
+                "contents": {
+                    "fileA": {"content": "initial", "inode": "fileA"},
+                    "linkA": {"inode": "fileA"},
+                    "fileB": {},  # just as canary
+                }
+            }
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
         fileset.create_fileset(self.base_dir, self.from1_struct)
@@ -407,16 +444,31 @@ class BackupUnchangedHardlinksTest(unittest.TestCase):
 
     def test_backup_unchanged_hardlinks(self):
         # we backup twice to the same backup repository at different times
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, False, self.from1_path, self.bak_path,
-            ("--api-version", "201", "--current-time", "10000"),
-            b"backup", ()), 0)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                ("--api-version", "201", "--current-time", "10000"),
+                b"backup",
+                (),
+            ),
+            0,
+        )
         self.assertNotIn(
             b"Attempt to rename over same inode:",
             comtst.rdiff_backup_action(
-                False, True, self.from2_path, self.bak_path,
+                False,
+                True,
+                self.from2_path,
+                self.bak_path,
                 ("--api-version", "201", "--current-time", "20000"),
-                b"backup", (), return_stderr=True))
+                b"backup",
+                (),
+                return_stderr=True,
+            ),
+        )
 
     def tearDown(self):
         # we clean-up only if the test was successful

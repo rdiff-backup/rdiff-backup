@@ -30,12 +30,11 @@ from rdiffbackup.locations import fs_abilities
 from rdiff_backup import Globals, log
 
 
-class Dir():
+class Dir:
     pass
 
 
 class ReadDir(Dir, locations.ReadLocation):
-
     def setup(self):
         ret_code = super().setup()
         if ret_code & Globals.RET_CODE_ERR:
@@ -44,6 +43,7 @@ class ReadDir(Dir, locations.ReadLocation):
         if self.base_dir.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
+
             self._shadow = _dir_shadow.ReadDirShadow
         else:
             self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
@@ -51,8 +51,11 @@ class ReadDir(Dir, locations.ReadLocation):
         if not self.fs_abilities:
             return ret_code | Globals.RET_CODE_ERR
         else:
-            log.Log("--- Read directory file system capabilities ---\n"
-                    + str(self.fs_abilities), log.INFO)
+            log.Log(
+                "--- Read directory file system capabilities ---\n"
+                + str(self.fs_abilities),
+                log.INFO,
+            )
 
         return ret_code
 
@@ -75,13 +78,12 @@ class ReadDir(Dir, locations.ReadLocation):
         #   File "rdiff_backup\rpath.py", line 771, in symlink
         #   TypeError: symlink: src should be string, bytes or os.PathLike, not NoneType
         # I suspect that not all users can read symlinks with os.readlink
-        if (is_windows
-                and ("--exclude-symbolic-links", None) not in select_opts):
-            log.Log("Symbolic links excluded on Windows",
-                    log.NOTE)
+        if is_windows and ("--exclude-symbolic-links", None) not in select_opts:
+            log.Log("Symbolic links excluded on Windows", log.NOTE)
             select_opts.insert(0, ("--exclude-symbolic-links", None))
-        self._shadow.set_select(self.base_dir, select_opts,
-                                *list(map(io.BytesIO, select_data)))
+        self._shadow.set_select(
+            self.base_dir, select_opts, *list(map(io.BytesIO, select_data))
+        )
 
     def get_fs_abilities(self):
         """
@@ -121,7 +123,6 @@ class ReadDir(Dir, locations.ReadLocation):
 
 
 class WriteDir(Dir, locations.WriteLocation):
-
     def setup(self, src_repo, owners_map=None):
         ret_code = super().setup()
         if ret_code & Globals.RET_CODE_ERR:
@@ -130,6 +131,7 @@ class WriteDir(Dir, locations.WriteLocation):
         if self.base_dir.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
+
             self._shadow = _dir_shadow.WriteDirShadow
         else:
             self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
@@ -137,8 +139,11 @@ class WriteDir(Dir, locations.WriteLocation):
         if not self.fs_abilities:
             return ret_code | Globals.RET_CODE_ERR
         else:
-            log.Log("--- Write directory file system capabilities ---\n"
-                    + str(self.fs_abilities), log.INFO)
+            log.Log(
+                "--- Write directory file system capabilities ---\n"
+                + str(self.fs_abilities),
+                log.INFO,
+            )
         ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
 
         if ret_code & Globals.RET_CODE_ERR:
@@ -155,18 +160,20 @@ class WriteDir(Dir, locations.WriteLocation):
         ret_code = super().check()
 
         # if the target is a non-empty existing directory
-        if (self.base_dir.lstat()
-                and self.base_dir.isdir()
-                and self.base_dir.listdir()):
+        if self.base_dir.lstat() and self.base_dir.isdir() and self.base_dir.listdir():
             if self.force:
-                log.Log("Target path {tp} exists and isn't empty, content "
-                        "might be force overwritten by restore".format(
-                            tp=self.base_dir), log.WARNING)
+                log.Log(
+                    "Target path {tp} exists and isn't empty, content "
+                    "might be force overwritten by restore".format(tp=self.base_dir),
+                    log.WARNING,
+                )
                 ret_code |= Globals.RET_CODE_WARN
             else:
-                log.Log("Target path {tp} exists and isn't empty, "
-                        "call with '--force' to overwrite".format(
-                            tp=self.base_dir), log.ERROR)
+                log.Log(
+                    "Target path {tp} exists and isn't empty, "
+                    "call with '--force' to overwrite".format(tp=self.base_dir),
+                    log.ERROR,
+                )
                 ret_code |= Globals.RET_CODE_ERR
 
         return ret_code
@@ -185,8 +192,9 @@ class WriteDir(Dir, locations.WriteLocation):
 
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
-            self._shadow.set_select(self.base_dir, select_opts,
-                                    *list(map(io.BytesIO, select_data)))
+            self._shadow.set_select(
+                self.base_dir, select_opts, *list(map(io.BytesIO, select_data))
+            )
 
     def get_fs_abilities(self):
         """

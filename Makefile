@@ -13,7 +13,7 @@ all: clean container test build
 test: test-static test-runtime
 
 test-static:
-	${RUN_COMMAND} tox -c tox.ini -e flake8
+	${RUN_COMMAND} tox -c tox.ini -e check-static
 
 test-runtime: test-runtime-base test-runtime-root test-runtime-slow
 

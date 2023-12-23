@@ -88,7 +88,7 @@ class QuotedRPath(rpath.RPath):
         """
         if not self.index:  # consider the last component as quoted
             dirname, basename = self.dirsplit()
-            temp_rp = rpath.RPath(self.conn, dirname, (basename, ))
+            temp_rp = rpath.RPath(self.conn, dirname, (basename,))
             result = temp_rp.isincfile()
             if result:
                 self.inc_basestr = unquote(temp_rp.inc_basestr)
@@ -129,19 +129,25 @@ def quote(path):
     # Escape a trailing space or period (invalid in names on FAT32 under DOS,
     # Windows and modern Linux)
     if Globals.escape_trailing_spaces:
-        if len(quoted_path) and (quoted_path[-1] == ord(' ')
-                                 or quoted_path[-1] == ord('.')):
-            quoted_path = quoted_path[:-1] + \
-                b"%b%03d" % (Globals.quoting_char, quoted_path[-1])
+        if len(quoted_path) and (
+            quoted_path[-1] == ord(" ") or quoted_path[-1] == ord(".")
+        ):
+            quoted_path = quoted_path[:-1] + b"%b%03d" % (
+                Globals.quoting_char,
+                quoted_path[-1],
+            )
 
         if not Globals.escape_dos_devices:
             return quoted_path
 
     # Escape first char of any special DOS device files even if filename has an
     # extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-9.
-    if not re.search(br"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|"
-                     br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", quoted_path,
-                     re.I):
+    if not re.search(
+        rb"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|"
+        rb"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$",
+        quoted_path,
+        re.I,
+    ):
         return quoted_path
     return b"%b%03d" % (Globals.quoting_char, quoted_path[0]) + quoted_path[1:]
 
@@ -158,10 +164,11 @@ def get_quotedrpath(rp, separate_basename=0):
     Return quoted version of rpath rp
     """
     if separate_basename:
-        assert not rp.index, (
-            "Trying to start quoting '{rp}' in the middle.".format(rp=rp))
+        assert not rp.index, "Trying to start quoting '{rp}' in the middle.".format(
+            rp=rp
+        )
         dirname, basename = rp.dirsplit()
-        return QuotedRPath(rp.conn, dirname, (unquote(basename), ), rp.data)
+        return QuotedRPath(rp.conn, dirname, (unquote(basename),), rp.data)
     else:
         return QuotedRPath(rp.conn, rp.base, rp.index, rp.data)
 
@@ -176,13 +183,14 @@ def get_quoting_regexps(chars_to_quote, quoting_char):
         return (None, None)
 
     try:
-        ctq_regexp = re.compile(
-            b"[%b]|%b" % (chars_to_quote, quoting_char), re.S)
+        ctq_regexp = re.compile(b"[%b]|%b" % (chars_to_quote, quoting_char), re.S)
         ctq_unregexp = re.compile(b"%b[0-9]{3}" % quoting_char, re.S)
     except re.error as exc:
         log.Log.FatalError(
             "Regex error '{er}' when processing char quote list {ql}".format(
-                er=exc, ql=chars_to_quote))
+                er=exc, ql=chars_to_quote
+            )
+        )
     return (ctq_regexp, ctq_unregexp)
 
 
@@ -198,10 +206,12 @@ def _unquote_single(match):
     Unquote a single quoted character
     """
     if not len(match.group()) == 4:
-        raise QuotingException("Quoted group wrong size: '{qg}'".format(
-            qg=safestr.to_str(match.group())))
+        raise QuotingException(
+            "Quoted group wrong size: '{qg}'".format(qg=safestr.to_str(match.group()))
+        )
     try:
         return os.fsencode(chr(int(match.group()[1:])))
     except ValueError:
-        raise QuotingException("Quoted out of range: '{qg}'".format(
-            qg=safestr.to_str(match.group())))
+        raise QuotingException(
+            "Quoted out of range: '{qg}'".format(qg=safestr.to_str(match.group()))
+        )

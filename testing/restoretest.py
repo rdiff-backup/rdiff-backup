@@ -1,15 +1,20 @@
 import unittest
 import os
 from commontest import (
-    abs_output_dir, old_test_dir, Myrm, InternalRestore, compare_recursive
+    abs_output_dir,
+    old_test_dir,
+    Myrm,
+    InternalRestore,
+    compare_recursive,
 )
 from rdiff_backup import Globals, log, rpath, Time
 from rdiffbackup.locations import _repo_shadow
 
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
-restore_base_rp = rpath.RPath(Globals.local_connection,
-                              os.path.join(old_test_dir, b"restoretest"))
+restore_base_rp = rpath.RPath(
+    Globals.local_connection, os.path.join(old_test_dir, b"restoretest")
+)
 restore_base_filenames = restore_base_rp.listdir()
 mirror_time = 1041109438  # just some late time
 
@@ -32,12 +37,14 @@ class RestoreFileComparer:
         if t in self.time_rp_dict:
             raise KeyError(
                 "Time {time} is already registered in {tdict}".format(
-                    time=t, tdict=self.time_rp_dict))
+                    time=t, tdict=self.time_rp_dict
+                )
+            )
         self.time_rp_dict[t] = rp
 
     def _compare_at_time(self, t):
         """Restore file, make sure it is the same at time t"""
-        log.Log("Checking result at time %s" % (t, ), 7)
+        log.Log("Checking result at time %s" % (t,), 7)
         tf = tempdir.get_temp_rpath()
         _repo_shadow.RepoShadow._mirror_time = mirror_time
         _repo_shadow.RepoShadow._restore_time = t
@@ -49,15 +56,19 @@ class RestoreFileComparer:
             out_rorpath.setfile(self.rf.get_restore_fp())
         rpath.copy_with_attribs(out_rorpath, tf)
         if not tf._equal_verbose(correct_result, check_index=0):
-            return ("Restored file {rest!s} isn't same "
-                    "as original file {orig!s}.".format(
-                        rest=tf, orig=correct_result))
+            return (
+                "Restored file {rest!s} isn't same "
+                "as original file {orig!s}.".format(rest=tf, orig=correct_result)
+            )
         if tf.isreg():
             with tf.open("rb") as tf_fd, correct_result.open("rb") as corr_fd:
                 if not rpath._cmp_file_obj(tf_fd, corr_fd):
-                    return ("Content of restored file {rest!s} isn't same "
-                            "as original file {orig!s}.".format(
-                                rest=tf, orig=correct_result))
+                    return (
+                        "Content of restored file {rest!s} isn't same "
+                        "as original file {orig!s}.".format(
+                            rest=tf, orig=correct_result
+                        )
+                    )
         if tf.lstat():
             tf.delete()
         return ()  # no error found
@@ -76,8 +87,7 @@ class RestoreTest(unittest.TestCase):
 
     def get_rfcs(self):
         """Return available RestoreFileComparer objects"""
-        base_rf = _repo_shadow._RestoreFile(restore_base_rp,
-                                            restore_base_rp, [])
+        base_rf = _repo_shadow._RestoreFile(restore_base_rp, restore_base_rp, [])
         rfs = base_rf.yield_sub_rfs()
         rfcs = []
         for rf in rfs:
@@ -88,8 +98,7 @@ class RestoreTest(unittest.TestCase):
             rfc = RestoreFileComparer(rf)
             for inc in rf.inc_list:
                 test_time = inc.getinctime()
-                rfc.add_rpath(self.get_correct(rf.mirror_rp, test_time),
-                              test_time)
+                rfc.add_rpath(self.get_correct(rf.mirror_rp, test_time), test_time)
             rfc.add_rpath(rf.mirror_rp, mirror_time)
             rfcs.append(rfc)
         return rfcs
@@ -106,8 +115,9 @@ class RestoreTest(unittest.TestCase):
             if t == test_time and basename == base:
                 return restore_base_rp.append(filename)
         # Correct rp must be empty
-        return restore_base_rp.append(b"%b.%b" %
-                                      (basename, Time.timetobytes(test_time)))
+        return restore_base_rp.append(
+            b"%b.%b" % (basename, Time.timetobytes(test_time))
+        )
 
     def testBothLocal(self):
         """Test directory restore everything local"""
@@ -135,38 +145,38 @@ class RestoreTest(unittest.TestCase):
         Myrm(abs_output_dir)
         restore3_dir = os.path.join(old_test_dir, b"restoretest3")
         target_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
-        inc1_rp = rpath.RPath(Globals.local_connection,
-                              os.path.join(old_test_dir, b"increment1"))
-        inc2_rp = rpath.RPath(Globals.local_connection,
-                              os.path.join(old_test_dir, b"increment2"))
-        inc3_rp = rpath.RPath(Globals.local_connection,
-                              os.path.join(old_test_dir, b"increment3"))
-        inc4_rp = rpath.RPath(Globals.local_connection,
-                              os.path.join(old_test_dir, b"increment4"))
+        inc1_rp = rpath.RPath(
+            Globals.local_connection, os.path.join(old_test_dir, b"increment1")
+        )
+        inc2_rp = rpath.RPath(
+            Globals.local_connection, os.path.join(old_test_dir, b"increment2")
+        )
+        inc3_rp = rpath.RPath(
+            Globals.local_connection, os.path.join(old_test_dir, b"increment3")
+        )
+        inc4_rp = rpath.RPath(
+            Globals.local_connection, os.path.join(old_test_dir, b"increment4")
+        )
 
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
-                        45000)
-        self.assertTrue(
-            compare_recursive(inc4_rp, target_rp))
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
-                        35000)
-        self.assertTrue(
-            compare_recursive(inc3_rp, target_rp, compare_hardlinks=0))
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
-                        25000)
-        self.assertTrue(
-            compare_recursive(inc2_rp, target_rp, compare_hardlinks=0))
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
-                        5000)
-        self.assertTrue(
-            compare_recursive(inc1_rp, target_rp, compare_hardlinks=0))
+        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 45000)
+        self.assertTrue(compare_recursive(inc4_rp, target_rp))
+        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 35000)
+        self.assertTrue(compare_recursive(inc3_rp, target_rp, compare_hardlinks=0))
+        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 25000)
+        self.assertTrue(compare_recursive(inc2_rp, target_rp, compare_hardlinks=0))
+        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 5000)
+        self.assertTrue(compare_recursive(inc1_rp, target_rp, compare_hardlinks=0))
 
     def testRestoreNoincs(self):
         """Test restoring a directory with no increments, just mirror"""
         Myrm(abs_output_dir)
         InternalRestore(
-            1, 1, os.path.join(old_test_dir, b'restoretest5', b'regular_file'),
-            abs_output_dir, 10000)
+            1,
+            1,
+            os.path.join(old_test_dir, b"restoretest5", b"regular_file"),
+            abs_output_dir,
+            10000,
+        )
         self.assertTrue(os.lstat(abs_output_dir))
 
 

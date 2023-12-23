@@ -3,5 +3,6 @@
 
 tox
 flake8
+black
 coverage
 rpdb

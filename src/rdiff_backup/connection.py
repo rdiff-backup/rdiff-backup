@@ -21,6 +21,7 @@
 import pickle
 import sys
 import traceback
+
 # we need those imports because they are used through the connection
 import gzip  # noqa: F401
 import os  # noqa: F401
@@ -79,9 +80,11 @@ class LocalConnection(Connection):
 
     def __init__(self):
         """This prevents two instances of LocalConnection"""
-        assert not Globals.local_connection, (
-            "Local connection has already been initialized with {conn}.".format(
-                conn=Globals.local_connection))
+        assert (
+            not Globals.local_connection
+        ), "Local connection has already been initialized with {conn}.".format(
+            conn=Globals.local_connection
+        )
         self.conn_number = 0  # changed by SetConnections for server
 
     def __getattr__(self, name):
@@ -116,8 +119,10 @@ class ConnectionRequest:
         self.num_args = num_args
 
     def __str__(self):
-        return "ConnectionRequest: %s with %d arguments" % \
-            (self.function_string, self.num_args)
+        return "ConnectionRequest: %s with %d arguments" % (
+            self.function_string,
+            self.num_args,
+        )
 
 
 class LowLevelPipeConnection(Connection):
@@ -170,8 +175,7 @@ class LowLevelPipeConnection(Connection):
             self._putrpath(obj, req_num)
         elif isinstance(obj, rpath.RORPath):
             self._putrorpath(obj, req_num)
-        elif ((hasattr(obj, "read") or hasattr(obj, "write"))
-              and hasattr(obj, "close")):
+        elif (hasattr(obj, "read") or hasattr(obj, "write")) and hasattr(obj, "close"):
             self._putfile(obj, req_num)
         elif hasattr(obj, "__next__") and hasattr(obj, "__iter__"):
             self._putiter(obj, req_num)
@@ -193,8 +197,8 @@ class LowLevelPipeConnection(Connection):
     def _putiter(self, iterator, req_num):
         """Put an iterator through the pipe"""
         self._write(
-            "i", self._i2b(VirtualFile.new(iterfile.MiscIterToFile(iterator))),
-            req_num)
+            "i", self._i2b(VirtualFile.new(iterfile.MiscIterToFile(iterator))), req_num
+        )
 
     def _putrpath(self, rpath, req_num):
         """Put an rpath into the pipe
@@ -203,17 +207,13 @@ class LowLevelPipeConnection(Connection):
         and the other information is put in a tuple.
 
         """
-        rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index,
-                      rpath.data)
-        self._write("R", pickle.dumps(rpath_repr,
-                                      Globals.PICKLE_PROTOCOL), req_num)
+        rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index, rpath.data)
+        self._write("R", pickle.dumps(rpath_repr, Globals.PICKLE_PROTOCOL), req_num)
 
     def _putqrpath(self, qrpath, req_num):
         """Put a quoted rpath into the pipe (similar to _putrpath above)"""
-        qrpath_repr = (qrpath.conn.conn_number, qrpath.base, qrpath.index,
-                       qrpath.data)
-        self._write("Q", pickle.dumps(qrpath_repr,
-                                      Globals.PICKLE_PROTOCOL), req_num)
+        qrpath_repr = (qrpath.conn.conn_number, qrpath.base, qrpath.index, qrpath.data)
+        self._write("Q", pickle.dumps(qrpath_repr, Globals.PICKLE_PROTOCOL), req_num)
 
     def _putrorpath(self, rorpath, req_num):
         """Put an rorpath into the pipe
@@ -223,8 +223,7 @@ class LowLevelPipeConnection(Connection):
 
         """
         rorpath_repr = (rorpath.index, rorpath.data)
-        self._write("r", pickle.dumps(rorpath_repr,
-                                      Globals.PICKLE_PROTOCOL), req_num)
+        self._write("r", pickle.dumps(rorpath_repr, Globals.PICKLE_PROTOCOL), req_num)
 
     def _putconn(self, pipeconn, req_num):
         """Put a connection into the pipe
@@ -241,13 +240,15 @@ class LowLevelPipeConnection(Connection):
 
     def _write(self, headerchar, data, req_num):
         """Write header and then data to the pipe"""
-        assert len(headerchar) == 1, (
-            "Header type {hdr} can only have one letter/byte".format(
-                hdr=headerchar))
+        assert (
+            len(headerchar) == 1
+        ), "Header type {hdr} can only have one letter/byte".format(hdr=headerchar)
         if isinstance(headerchar, str):  # it can only be an ASCII character
-            headerchar = headerchar.encode('ascii')
+            headerchar = headerchar.encode("ascii")
         try:
-            self.outpipe.write(headerchar + self._i2b(req_num, 1) + self._i2b(len(data), 7))
+            self.outpipe.write(
+                headerchar + self._i2b(req_num, 1) + self._i2b(len(data), 7)
+            )
             self.outpipe.write(data)
             self.outpipe.flush()
         except (OSError, AttributeError):
@@ -262,13 +263,13 @@ class LowLevelPipeConnection(Connection):
 
     def _b2i(self, b):
         """Convert bytes to int using big endian byteorder"""
-        return int.from_bytes(b, byteorder='big')
+        return int.from_bytes(b, byteorder="big")
 
     def _i2b(self, i, size=0):
         """Convert int to string using big endian byteorder"""
-        if (size == 0):
+        if size == 0:
             size = (i.bit_length() + 7) // 8
-        return i.to_bytes(size, byteorder='big')
+        return i.to_bytes(size, byteorder="big")
 
     def _get(self):
         """
@@ -278,8 +279,8 @@ class LowLevelPipeConnection(Connection):
         if not len(header_string) == 9:
             raise ConnectionReadError(
                 "Truncated header <{hdr}> "
-                "(problem probably originated remotely)".format(
-                    hdr=header_string))
+                "(problem probably originated remotely)".format(hdr=header_string)
+            )
         format_string = header_string[0:1]
         req_num = self._b2i(header_string[1:2])
         length = self._b2i(header_string[2:])
@@ -292,8 +293,8 @@ class LowLevelPipeConnection(Connection):
         except MemoryError:
             raise ConnectionReadError(
                 "Impossibly high data amount evaluated in header <{hdr}> "
-                "(problem probably originated remotely)".format(
-                    hdr=header_string))
+                "(problem probably originated remotely)".format(hdr=header_string)
+            )
 
         if format_string == b"o":
             result = pickle.loads(data)
@@ -302,8 +303,7 @@ class LowLevelPipeConnection(Connection):
         elif format_string == b"f":
             result = VirtualFile(self, self._b2i(data))
         elif format_string == b"i":
-            result = iterfile.FileToMiscIter(
-                VirtualFile(self, self._b2i(data)))
+            result = iterfile.FileToMiscIter(VirtualFile(self, self._b2i(data)))
         elif format_string == b"r":
             result = self._getrorpath(data)
         elif format_string == b"R":
@@ -316,7 +316,9 @@ class LowLevelPipeConnection(Connection):
             raise ConnectionReadError(
                 "Format character '{form}' invalid in <{hdr}> "
                 "(problem probably originated remotely)".format(
-                    hdr=header_string, form=format_string))
+                    hdr=header_string, form=format_string
+                )
+            )
 
         log.Log.conn("received", result, req_num)
         return (req_num, result)
@@ -329,14 +331,14 @@ class LowLevelPipeConnection(Connection):
     def _getrpath(self, raw_rpath_buf):
         """Return RPath object indicated by raw_rpath_buf"""
         conn_number, base, index, data = pickle.loads(raw_rpath_buf)
-        return rpath.RPath(Globals.connection_dict[conn_number], base, index,
-                           data)
+        return rpath.RPath(Globals.connection_dict[conn_number], base, index, data)
 
     def _getqrpath(self, raw_qrpath_buf):
         """Return QuotedRPath object from raw buffer"""
         conn_number, base, index, data = pickle.loads(raw_qrpath_buf)
         return map_filenames.QuotedRPath(
-            Globals.connection_dict[conn_number], base, index, data)
+            Globals.connection_dict[conn_number], base, index, data
+        )
 
     def _close(self):
         """Close the pipes associated with the connection"""
@@ -376,8 +378,8 @@ class PipeConnection(LowLevelPipeConnection):
     def __repr__(self):
         if self.process:
             return "PipeConnection {cn}, called '{ca}' with rc={rc}".format(
-                cn=self.conn_number, ca=self.process.args,
-                rc=self.process.returncode)
+                cn=self.conn_number, ca=self.process.args, rc=self.process.returncode
+            )
         else:
             return str(self)
 
@@ -437,13 +439,17 @@ class PipeConnection(LowLevelPipeConnection):
                 # if some longer delay occurred, just kill it, try hard so
                 # we avoid the ResourceWarning if it's still running when
                 # the subprocess destructors hit; yes ugly sleeps, but rare
-                log.Log("Terminating pipeline process '{pp}'".format(
-                    pp=self.process.args), log.WARNING)
+                log.Log(
+                    "Terminating pipeline process '{pp}'".format(pp=self.process.args),
+                    log.WARNING,
+                )
                 self.process.terminate()
                 time.sleep(1)
-                if (self.process.poll() is None):
-                    log.Log("Killing pipeline process '{pp}'".format(
-                        pp=self.process.args), log.WARNING)
+                if self.process.poll() is None:
+                    log.Log(
+                        "Killing pipeline process '{pp}'".format(pp=self.process.args),
+                        log.WARNING,
+                    )
                     self.process.kill()
                     time.sleep(1)
 
@@ -468,7 +474,8 @@ class PipeConnection(LowLevelPipeConnection):
             else:
                 assert isinstance(object, ConnectionRequest), (
                     "Object '{obj}' isn't a connection request but "
-                    "a '{otype}'.".format(obj=object, otype=type(object)))
+                    "a '{otype}'.".format(obj=object, otype=type(object))
+                )
                 self._answer_request(object, req_num)
 
     def _answer_request(self, request, req_num):
@@ -479,7 +486,8 @@ class PipeConnection(LowLevelPipeConnection):
             arg_req_num, arg = self._get()
             assert arg_req_num == req_num, (
                 "Object {rnum} and argument {anum} numbers should be "
-                "the same.".object(rnum=req_num, anum=arg_req_num))
+                "the same.".object(rnum=req_num, anum=arg_req_num)
+            )
             argument_list.append(arg)
         try:
             Security.vet_request(request, argument_list)
@@ -494,11 +502,15 @@ class PipeConnection(LowLevelPipeConnection):
         if robust.is_routine_fatal(sys.exc_info()[1]):
             raise  # Fatal error--No logging necessary, but connection down
         if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
-            log.Log("Sending back exception '{ex}' of type {ty} with "
-                    "traceback {tb}".format(
-                        ex=sys.exc_info()[1], ty=sys.exc_info()[0],
-                        tb="".join(traceback.format_tb(sys.exc_info()[2]))),
-                    log.INFO)
+            log.Log(
+                "Sending back exception '{ex}' of type {ty} with "
+                "traceback {tb}".format(
+                    ex=sys.exc_info()[1],
+                    ty=sys.exc_info()[0],
+                    tb="".join(traceback.format_tb(sys.exc_info()[2])),
+                ),
+                log.INFO,
+            )
         return sys.exc_info()[1]
 
     def _get_new_req_num(self):
@@ -533,16 +545,15 @@ class RedirectedConnection(Connection):
 
     def reval(self, function_string, *args):
         """Evaluation function_string on args on remote connection"""
-        return self.routing_conn.reval("RedirectedRun", self.conn_number,
-                                       function_string, *args)
+        return self.routing_conn.reval(
+            "RedirectedRun", self.conn_number, function_string, *args
+        )
 
     def __str__(self):
-        return "RedirectedConnection %d,%d" % (self.conn_number,
-                                               self.routing_number)
+        return "RedirectedConnection %d,%d" % (self.conn_number, self.routing_number)
 
     def __getattr__(self, name):
-        return EmulateCallableRedirected(self.conn_number, self.routing_conn,
-                                         name)
+        return EmulateCallableRedirected(self.conn_number, self.routing_conn, name)
 
 
 class EmulateCallable:
@@ -553,11 +564,10 @@ class EmulateCallable:
         self.call_name = name
 
     def __call__(self, *args):
-        return self.connection.reval(*(self.call_name, ) + args)
+        return self.connection.reval(*(self.call_name,) + args)
 
     def __getattr__(self, attr_name):
-        return EmulateCallable(self.connection,
-                               "%s.%s" % (self.call_name, attr_name))
+        return EmulateCallable(self.connection, "%s.%s" % (self.call_name, attr_name))
 
 
 class EmulateCallableRedirected:
@@ -569,11 +579,13 @@ class EmulateCallableRedirected:
 
     def __call__(self, *args):
         return self.routing_conn.reval(
-            *("RedirectedRun", self.conn_number, self.call_name) + args)
+            *("RedirectedRun", self.conn_number, self.call_name) + args
+        )
 
     def __getattr__(self, attr_name):
-        return EmulateCallableRedirected(self.conn_number, self.routing_conn,
-                                         "%s.%s" % (self.call_name, attr_name))
+        return EmulateCallableRedirected(
+            self.conn_number, self.routing_conn, "%s.%s" % (self.call_name, attr_name)
+        )
 
 
 class VirtualFile:
@@ -584,6 +596,7 @@ class VirtualFile:
     with a unique file number.
 
     """
+
     # The following are used by the server
     _vfiles = {}
     _counter = -1
@@ -641,18 +654,31 @@ def RedirectedRun(conn_number, func, *args):
 
     """
     conn = Globals.connection_dict[conn_number]
-    assert conn is not Globals.local_connection, (
-        "A redirected run shouldn't be required locally for {fnc}.".format(
-            fnc=func.__name__))
+    assert (
+        conn is not Globals.local_connection
+    ), "A redirected run shouldn't be required locally for {fnc}.".format(
+        fnc=func.__name__
+    )
     return conn.reval(func, *args)
 
 
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
 from rdiff_backup import (  # noqa: E402,F401
-    Globals, increment, iterfile, librsync, log,
-    Rdiff, robust, rorpiter, rpath,
-    SetConnections, selection, statistics, Security, Time
+    Globals,
+    increment,
+    iterfile,
+    librsync,
+    log,
+    Rdiff,
+    robust,
+    rorpiter,
+    rpath,
+    SetConnections,
+    selection,
+    statistics,
+    Security,
+    Time,
 )
 from rdiffbackup.locations import _dir_shadow, _repo_shadow  # noqa: E402,F401
 from rdiffbackup.locations.map import filenames as map_filenames  # noqa: E402,F401

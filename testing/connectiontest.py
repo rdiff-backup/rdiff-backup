@@ -4,18 +4,22 @@ import subprocess
 import tempfile
 import unittest
 from commontest import old_test_dir, abs_test_dir
-from rdiff_backup.connection import LowLevelPipeConnection, PipeConnection, \
-    VirtualFile, SetConnections
+from rdiff_backup.connection import (
+    LowLevelPipeConnection,
+    PipeConnection,
+    VirtualFile,
+    SetConnections,
+)
 from rdiff_backup import Globals, rpath, Security
 from rdiffbackup.locations.map import filenames as map_filenames
 
-SourceDir = 'rdiff_backup'
-regfilename = os.path.join(old_test_dir, b"various_file_types",
-                           b"regular_file")
+SourceDir = "rdiff_backup"
+regfilename = os.path.join(old_test_dir, b"various_file_types", b"regular_file")
 
 
 class LocalConnectionTest(unittest.TestCase):
     """Test the dummy connection"""
+
     lc = Globals.local_connection
 
     def testGetAttrs(self):
@@ -53,6 +57,7 @@ class LocalConnectionTest(unittest.TestCase):
 
 class LowLevelPipeConnectionTest(unittest.TestCase):
     """Test LLPC class"""
+
     objs = ["Hello", ("Tuple", "of", "strings"), [1, 2, 3, 4], 53.34235]
     excts = [TypeError("te"), NameError("ne"), os.error("oe")]
     filename = tempfile.mktemp()
@@ -101,13 +106,14 @@ class PipeConnectionTest(unittest.TestCase):
 
     def setUp(self):
         """Must start a server for this"""
-        pipe_cmd = "%s testing/server.py %s" \
-            % (sys.executable, SourceDir)
-        self.p = subprocess.Popen(pipe_cmd,
-                                  shell=True,
-                                  stdin=subprocess.PIPE,
-                                  stdout=subprocess.PIPE,
-                                  close_fds=True)
+        pipe_cmd = "%s testing/server.py %s" % (sys.executable, SourceDir)
+        self.p = subprocess.Popen(
+            pipe_cmd,
+            shell=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            close_fds=True,
+        )
         (stdin, stdout) = (self.p.stdin, self.p.stdout)
         self.conn = PipeConnection(stdout, stdin, process=self.p)
         Security._security_level = "override"
@@ -121,8 +127,7 @@ class PipeConnectionTest(unittest.TestCase):
     def testModules(self):
         """Test module emulation"""
         self.assertIsInstance(self.conn.tempfile.mktemp(), str)
-        self.assertEqual(self.conn.os.path.join(b"a", b"b"),
-                         os.path.join(b"a", b"b"))
+        self.assertEqual(self.conn.os.path.join(b"a", b"b"), os.path.join(b"a", b"b"))
         rp1 = rpath.RPath(self.conn, regfilename)
         self.assertTrue(rp1.isreg())
 
@@ -145,8 +150,9 @@ class PipeConnectionTest(unittest.TestCase):
         os.unlink(temp_file)
 
         with open(regfilename, "rb") as localfh:
-            self.assertTrue(rpath._cmp_file_obj(self.conn.open(
-                regfilename, "rb"), localfh))
+            self.assertTrue(
+                rpath._cmp_file_obj(self.conn.open(regfilename, "rb"), localfh)
+            )
 
     def testString(self):
         """Test transmitting strings"""
@@ -156,8 +162,9 @@ class PipeConnectionTest(unittest.TestCase):
     def testIterators(self):
         """Test transmission of iterators"""
         i = iter([5, 10, 15] * 100)
-        self.assertTrue(self.conn.hasattr(i, "__next__")
-                        and self.conn.hasattr(i, "__iter__"))
+        self.assertTrue(
+            self.conn.hasattr(i, "__next__") and self.conn.hasattr(i, "__iter__")
+        )
         ret_val = self.conn.reval("lambda i: next(i)*next(i)", i)
         self.assertEqual(ret_val, 50)
 
@@ -165,8 +172,9 @@ class PipeConnectionTest(unittest.TestCase):
         """Test transmission of rpaths"""
         rp = rpath.RPath(self.conn, regfilename)
         self.assertEqual(self.conn.reval("lambda rp: rp.data", rp), rp.data)
-        self.assertTrue(self.conn.reval(
-            "lambda rp: rp.conn is Globals.local_connection", rp))
+        self.assertTrue(
+            self.conn.reval("lambda rp: rp.conn is Globals.local_connection", rp)
+        )
 
     def testQuotedRPaths(self):
         """Test transmission of quoted rpaths"""
@@ -178,8 +186,7 @@ class PipeConnectionTest(unittest.TestCase):
 
     def testExceptions(self):
         """Test exceptional results"""
-        self.assertRaises(os.error, self.conn.os.lstat,
-                          "asoeut haosetnuhaoseu tn")
+        self.assertRaises(os.error, self.conn.os.lstat, "asoeut haosetnuhaoseu tn")
         self.assertRaises(SyntaxError, self.conn.reval, "aoetnsu aoehtnsu")
         self.assertEqual(self.conn.pow(2, 3), 8)
 
@@ -194,9 +201,11 @@ class RedirectedConnectionTest(unittest.TestCase):
     def setUp(self):
         """Must start two servers for this"""
         self.conna = SetConnections._init_connection(
-            "%s testing/server.py %s" % (sys.executable, SourceDir))
+            "%s testing/server.py %s" % (sys.executable, SourceDir)
+        )
         self.connb = SetConnections._init_connection(
-            "%s testing/server.py %s" % (sys.executable, SourceDir))
+            "%s testing/server.py %s" % (sys.executable, SourceDir)
+        )
 
     def testBasic(self):
         """Test basic operations with redirection"""
@@ -210,17 +219,15 @@ class RedirectedConnectionTest(unittest.TestCase):
         self.assertIs(self.conna.Globals.get("tmp_connb"), self.connb)
         self.assertIs(self.connb.Globals.get("tmp_conna"), self.conna)
 
-        val = self.conna.reval("Globals.get('tmp_connb').Globals.get",
-                               "tmp_val")
+        val = self.conna.reval("Globals.get('tmp_connb').Globals.get", "tmp_val")
         self.assertEqual(val, 2)
-        val = self.connb.reval("Globals.get('tmp_conna').Globals.get",
-                               "tmp_val")
+        val = self.connb.reval("Globals.get('tmp_conna').Globals.get", "tmp_val")
         self.assertEqual(val, 1)
 
-        self.assertEqual(
-            self.conna.reval("Globals.get('tmp_connb').pow", 2, 3), 8)
-        self.conna.reval("Globals.tmp_connb.reval",
-                         "Globals.tmp_conna.Globals.set", "tmp_marker", 5)
+        self.assertEqual(self.conna.reval("Globals.get('tmp_connb').pow", 2, 3), 8)
+        self.conna.reval(
+            "Globals.tmp_connb.reval", "Globals.tmp_conna.Globals.set", "tmp_marker", 5
+        )
         self.assertEqual(self.conna.Globals.get("tmp_marker"), 5)
 
     def testRpaths(self):
@@ -243,11 +250,13 @@ class LengthyConnectionTest(unittest.TestCase):
         """Make the server process take longer"""
         pipe_cmd = "%s testing/server.py %s" % (sys.executable, SourceDir)
         pipe_cmd += "; sleep 10"
-        self.p = subprocess.Popen(pipe_cmd,
-                                  shell=True,
-                                  stdin=subprocess.PIPE,
-                                  stdout=subprocess.PIPE,
-                                  close_fds=True)
+        self.p = subprocess.Popen(
+            pipe_cmd,
+            shell=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            close_fds=True,
+        )
         (stdin, stdout) = (self.p.stdin, self.p.stdout)
         self.conn = PipeConnection(stdout, stdin, process=self.p)
         Security._security_level = "override"

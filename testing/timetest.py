@@ -5,7 +5,6 @@ from rdiff_backup import Globals, Time
 
 
 class TimeTest(unittest.TestCase):
-
     def cmp_times(self, time1, time2):
         """Compare time1 and time2 and return -1, 0, or 1"""
         if type(time1) is str:
@@ -31,11 +30,13 @@ class TimeTest(unittest.TestCase):
         self.assertIsInstance(curr_time_str, str)
         self.assertTrue(
             self.cmp_times(int(curr_time), curr_time_str) == 0
-            or self.cmp_times(int(curr_time) + 1, curr_time_str) == 0)
+            or self.cmp_times(int(curr_time) + 1, curr_time_str) == 0
+        )
         time.sleep(1.05)
         self.assertEqual(self.cmp_times(time.time(), curr_time), 1)
-        self.assertEqual(self.cmp_times(Time.timetostring(time.time()),
-                                        curr_time_str), 1)
+        self.assertEqual(
+            self.cmp_times(Time.timetostring(time.time()), curr_time_str), 1
+        )
 
     def testConversion_separator(self):
         """Same as testConversion, but change time Separator"""
@@ -48,31 +49,34 @@ class TimeTest(unittest.TestCase):
         self.assertEqual(self.cmp_times(1, 2), -1)
         self.assertEqual(self.cmp_times(2, 2), 0)
         self.assertEqual(self.cmp_times(5, 1), 1)
-        self.assertEqual(self.cmp_times("2001-09-01T21:49:04Z",
-                                        "2001-08-01T21:49:04Z"), 1)
-        self.assertEqual(self.cmp_times("2001-09-01T04:49:04+03:23",
-                                        "2001-09-01T21:49:04Z"), -1)
-        self.assertEqual(self.cmp_times("2001-09-01T12:00:00Z",
-                                        "2001-09-01T04:00:00-08:00"), 0)
-        self.assertEqual(self.cmp_times("2001-09-01T12:00:00-08:00",
-                                        "2001-09-01T12:00:00-07:00"), 1)
+        self.assertEqual(
+            self.cmp_times("2001-09-01T21:49:04Z", "2001-08-01T21:49:04Z"), 1
+        )
+        self.assertEqual(
+            self.cmp_times("2001-09-01T04:49:04+03:23", "2001-09-01T21:49:04Z"), -1
+        )
+        self.assertEqual(
+            self.cmp_times("2001-09-01T12:00:00Z", "2001-09-01T04:00:00-08:00"), 0
+        )
+        self.assertEqual(
+            self.cmp_times("2001-09-01T12:00:00-08:00", "2001-09-01T12:00:00-07:00"), 1
+        )
 
     def testBytestotime(self):
         """Test converting byte string to time"""
         timesec = int(time.time())
         self.assertEqual(
-            timesec,
-            int(Time.bytestotime(Time.timetostring(timesec).encode('ascii'))))
+            timesec, int(Time.bytestotime(Time.timetostring(timesec).encode("ascii")))
+        )
 
         # assure that non-ascii byte strings return None and that they don't
         # throw an exception (issue #295)
-        self.assertIsNone(Time.bytestotime(b'\xff'))
+        self.assertIsNone(Time.bytestotime(b"\xff"))
 
     def testStringtotime(self):
         """Test converting string to time"""
         timesec = int(time.time())
-        self.assertEqual(timesec,
-                         int(Time.stringtotime(Time.timetostring(timesec))))
+        self.assertEqual(timesec, int(Time.stringtotime(Time.timetostring(timesec))))
         # stringtotime returns None if the time string is invalid
         self.assertIsNone(Time.stringtotime("2001-18-83T03:03:03Z"))
         self.assertIsNone(Time.stringtotime("2001-01-23L03:03:03L"))
@@ -99,7 +103,8 @@ class TimeTest(unittest.TestCase):
         self.assertEqual(i2s("2Y3s"), 2 * 365 * 86400 + 3)
         self.assertEqual(
             i2s("1M2W4D2h5m20s"),
-            (30 * 86400 + 2 * 7 * 86400 + 4 * 86400 + 2 * 3600 + 5 * 60 + 20))
+            (30 * 86400 + 2 * 7 * 86400 + 4 * 86400 + 2 * 3600 + 5 * 60 + 20),
+        )
 
     def testPrettyIntervals(self):
         """Test printable interval conversion"""
@@ -108,8 +113,7 @@ class TimeTest(unittest.TestCase):
         self.assertEqual(Time.inttopretty(0), "0 seconds")
         self.assertEqual(Time.inttopretty(353), "5 minutes 53 seconds")
         self.assertEqual(Time.inttopretty(3661), "1 hour 1 minute 1 second")
-        self.assertEqual(Time.inttopretty(353.234234),
-                         "5 minutes 53.23 seconds")
+        self.assertEqual(Time.inttopretty(353.234234), "5 minutes 53.23 seconds")
 
     def testPrettyTimes(self):
         """Convert seconds to pretty and back"""
@@ -122,19 +126,20 @@ class TimeTest(unittest.TestCase):
     def testGenericString(self):
         """Test genstrtotime, conversion of arbitrary string to time"""
         g2t = Time.genstrtotime
-        self.assertEqual(g2t('now', 1000), 1000)
-        self.assertEqual(g2t('2h3s', 10000), 10000 - 2 * 3600 - 3)
+        self.assertEqual(g2t("now", 1000), 1000)
+        self.assertEqual(g2t("2h3s", 10000), 10000 - 2 * 3600 - 3)
         self.assertEqual(
-            g2t('2001-09-01T21:49:04Z'),
-            Time.stringtotime('2001-09-01T21:49:04Z'))
+            g2t("2001-09-01T21:49:04Z"), Time.stringtotime("2001-09-01T21:49:04Z")
+        )
         self.assertEqual(
-            g2t('2002-04-26T04:22:01'),
-            Time.stringtotime('2002-04-26T04:22:01' + Time._get_tzd()))
-        t = Time.stringtotime('2001-05-12T00:00:00' + Time._get_tzd())
-        self.assertEqual(g2t('2001-05-12'), t)
-        self.assertEqual(g2t('2001/05/12'), t)
-        self.assertEqual(g2t('5/12/2001'), t)
-        self.assertEqual(g2t('123456'), 123456)
+            g2t("2002-04-26T04:22:01"),
+            Time.stringtotime("2002-04-26T04:22:01" + Time._get_tzd()),
+        )
+        t = Time.stringtotime("2001-05-12T00:00:00" + Time._get_tzd())
+        self.assertEqual(g2t("2001-05-12"), t)
+        self.assertEqual(g2t("2001/05/12"), t)
+        self.assertEqual(g2t("5/12/2001"), t)
+        self.assertEqual(g2t("123456"), 123456)
 
     def testGenericStringErrors(self):
         """Test genstrtotime on some bad strings"""
@@ -156,5 +161,5 @@ class TimeTest(unittest.TestCase):
         self.assertEqual(f(invf(f(s2))), f(s2))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -58,22 +58,24 @@ except ImportError:
 
 
 class ACL:
-    flags = (GROUP_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION
-             | DACL_SECURITY_INFORMATION)
+    flags = (
+        GROUP_SECURITY_INFORMATION
+        | OWNER_SECURITY_INFORMATION
+        | DACL_SECURITY_INFORMATION
+    )
 
     def __init__(self, index=()):
         self.__acl = b""
         self.index = index
 
     def __bytes__(self):
-        return b'# file: %b\n%b\n' % \
-            (C.acl_quote(self.get_indexpath()), self.__acl)
+        return b"# file: %b\n%b\n" % (C.acl_quote(self.get_indexpath()), self.__acl)
 
     def __str__(self):
         return os.fsdecode(self.__bytes__())
 
     def get_indexpath(self):
-        return self.index and b'/'.join(self.index) or b'.'
+        return self.index and b"/".join(self.index) or b"."
 
     def load_from_rp(self, rp, skip_inherit_only=True):
         self.index = rp.index
@@ -84,11 +86,13 @@ class ACL:
             return
 
         try:
-            sd = GetNamedSecurityInfo(os.fsdecode(rp.path),
-                                      SE_FILE_OBJECT, ACL.flags)
+            sd = GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
-            log.Log("Unable to read ACL from path {pa} due to "
-                    "exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
+            log.Log(
+                "Unable to read ACL from path {pa} due to "
+                "exception '{ex}'".format(pa=rp, ex=exc),
+                log.INFO,
+            )
             return
 
         if skip_inherit_only:
@@ -118,16 +122,22 @@ class ACL:
 
         if not sd.GetSecurityDescriptorDacl():
             sd.SetSecurityDescriptorDacl(0, None, 0)
-        if (ACL.flags & SACL_SECURITY_INFORMATION) and not sd.GetSecurityDescriptorSacl():
+        if (
+            ACL.flags & SACL_SECURITY_INFORMATION
+        ) and not sd.GetSecurityDescriptorSacl():
             sd.SetSecurityDescriptorSacl(0, None, 0)
 
         try:
             self.__acl = ConvertSecurityDescriptorToStringSecurityDescriptor(
-                sd, SDDL_REVISION_1, ACL.flags)
+                sd, SDDL_REVISION_1, ACL.flags
+            )
         except (OSError, pywintypes.error) as exc:
-            log.Log("Unable to convert ACL of path {pa} to string "
-                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
-            self.__acl = ''
+            log.Log(
+                "Unable to convert ACL of path {pa} to string "
+                "due to exception '{ex}'".format(pa=rp, ex=exc),
+                log.INFO,
+            )
+            self.__acl = ""
         self.__acl = os.fsencode(self.__acl)
 
     def write_to_rp(self, rp):
@@ -136,11 +146,14 @@ class ACL:
 
         try:
             sd = ConvertStringSecurityDescriptorToSecurityDescriptor(
-                os.fsdecode(self.__acl), SDDL_REVISION_1)
+                os.fsdecode(self.__acl), SDDL_REVISION_1
+            )
         except (OSError, pywintypes.error) as exc:
-            log.Log("Unable to convert ACL string '{st!r}' to security "
-                    "descriptor due to exception '{ex}'".format(
-                        st=self.__acl, ex=exc), log.INFO)
+            log.Log(
+                "Unable to convert ACL string '{st!r}' to security "
+                "descriptor due to exception '{ex}'".format(st=self.__acl, ex=exc),
+                log.INFO,
+            )
 
         # Enable next block of code for dirs after we have a mechanism in
         # backup.py (and similar) to do a first pass to see if a directory
@@ -165,45 +178,52 @@ class ACL:
         # DACL so the inheritance magic can happen during step 4.
 
         (flags, revision) = sd.GetSecurityDescriptorControl()
-        if (not rp.isdir() and flags & SE_DACL_PROTECTED):
+        if not rp.isdir() and flags & SE_DACL_PROTECTED:
             self._clear_rp(rp)
 
         try:
             SetNamedSecurityInfo(
                 os.fsdecode(rp.path),
-                SE_FILE_OBJECT, ACL.flags,
+                SE_FILE_OBJECT,
+                ACL.flags,
                 sd.GetSecurityDescriptorOwner(),
                 sd.GetSecurityDescriptorGroup(),
                 sd.GetSecurityDescriptorDacl(),
                 (ACL.flags & SACL_SECURITY_INFORMATION)
-                and sd.GetSecurityDescriptorSacl() or None
+                and sd.GetSecurityDescriptorSacl()
+                or None,
             )
         except (OSError, pywintypes.error) as exc:
-            log.Log("Unable to set ACL on path '{pa}' "
-                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
+            log.Log(
+                "Unable to set ACL on path '{pa}' "
+                "due to exception '{ex}'".format(pa=rp, ex=exc),
+                log.INFO,
+            )
 
     def from_string(self, acl_str):
         lines = acl_str.splitlines()
         if len(lines) != 2 or not lines[0][:8] == b"# file: ":
             raise meta.ParsingError(
-                "Bad record beginning: '{br}'".format(
-                    br=safestr.to_str(lines[0][:8])))
+                "Bad record beginning: '{br}'".format(br=safestr.to_str(lines[0][:8]))
+            )
         filename = lines[0][8:]
-        if filename == b'.':
+        if filename == b".":
             self.index = ()
         else:
-            self.index = tuple(C.acl_unquote(filename).split(b'/'))
+            self.index = tuple(C.acl_unquote(filename).split(b"/"))
         self.__acl = lines[1]
 
     def _clear_rp(self, rp):
         # not sure how to interpret this
         # I'll just clear all acl-s from rp.path
         try:
-            sd = GetNamedSecurityInfo(os.fsdecode(rp.path),
-                                      SE_FILE_OBJECT, ACL.flags)
+            sd = GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
-            log.Log("Unable to read ACL from path {pa} for clearing them "
-                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
+            log.Log(
+                "Unable to read ACL from path {pa} for clearing them "
+                "due to exception '{ex}'".format(pa=rp, ex=exc),
+                log.INFO,
+            )
             return
 
         acl = sd.GetSecurityDescriptorDacl()
@@ -234,11 +254,15 @@ class ACL:
                 sd.GetSecurityDescriptorGroup(),
                 sd.GetSecurityDescriptorDacl(),
                 (ACL.flags & SACL_SECURITY_INFORMATION)
-                and sd.GetSecurityDescriptorSacl() or None
+                and sd.GetSecurityDescriptorSacl()
+                or None,
             )
         except (OSError, pywintypes.error) as exc:
-            log.Log("Unable to set ACL on path {pa} after clearing them "
-                    "due to exception '{ex}".format(pa=rp, ex=exc), log.INFO)
+            log.Log(
+                "Unable to set ACL on path {pa} after clearing them "
+                "due to exception '{ex}".format(pa=rp, ex=exc),
+                log.INFO,
+            )
 
 
 class WACLExtractor(meta.FlatExtractor):
@@ -253,6 +277,7 @@ class WACLExtractor(meta.FlatExtractor):
 
 class WinAccessControlListFile(meta.FlatFile):
     """Store/retrieve ACLs from Windows ACLs file"""
+
     _name = "win_acl"
     _description = "Windows ACLs"
     _prefix = b"win_access_control_lists"
@@ -287,27 +312,41 @@ def init_acls():
     # And inorder to backup/restore, the SE_BACKUP_NAME and
     # SE_RESTORE_NAME privileges are needed.
     import win32api
+
     try:
-        hnd = OpenProcessToken(win32api.GetCurrentProcess(),
-                               TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY)
+        hnd = OpenProcessToken(
+            win32api.GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY
+        )
     except win32api.error as exc:
-        log.Log("Unable to open Windows process token due to "
-                "exception '{ex}'".format(ex=exc), log.INFO)
+        log.Log(
+            "Unable to open Windows process token due to "
+            "exception '{ex}'".format(ex=exc),
+            log.INFO,
+        )
         return
     try:
         try:
+
             def lpv(priv):
                 return LookupPrivilegeValue(None, priv)
 
             # enable the SE_*_NAME privileges
             SecurityName = lpv(SE_SECURITY_NAME)
             AdjustTokenPrivileges(
-                hnd, False, [(SecurityName, SE_PRIVILEGE_ENABLED),
-                             (lpv(SE_BACKUP_NAME), SE_PRIVILEGE_ENABLED),
-                             (lpv(SE_RESTORE_NAME), SE_PRIVILEGE_ENABLED)])
+                hnd,
+                False,
+                [
+                    (SecurityName, SE_PRIVILEGE_ENABLED),
+                    (lpv(SE_BACKUP_NAME), SE_PRIVILEGE_ENABLED),
+                    (lpv(SE_RESTORE_NAME), SE_PRIVILEGE_ENABLED),
+                ],
+            )
         except win32api.error as exc:
-            log.Log("unable to enable SE_*_NAME privileges due to "
-                    "exception '{ex}'".format(ex=exc), log.INFO)
+            log.Log(
+                "unable to enable SE_*_NAME privileges due to "
+                "exception '{ex}'".format(ex=exc),
+                log.INFO,
+            )
             return
         for name, enabled in GetTokenInformation(hnd, TokenPrivileges):
             if name == SecurityName and enabled:
@@ -319,8 +358,9 @@ def init_acls():
 
 
 def get_meta(rp):
-    assert rp.conn is Globals.local_connection, (
-        "Function works locally not over '{co}'.".format(co=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Function works locally not over '{co}'.".format(co=rp.conn)
     acl = get_meta_object()
     acl.load_from_rp(rp)
     return bytes(acl)
@@ -332,8 +372,9 @@ def get_blank_meta(index):
 
 
 def write_meta(rp, acl_str):
-    assert rp.conn is Globals.local_connection, (
-        "Function works locally not over '{co}'.".format(co=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Function works locally not over '{co}'.".format(co=rp.conn)
     acl = get_meta_object()
     acl.from_string(acl_str)
     acl.write_to_rp(rp)

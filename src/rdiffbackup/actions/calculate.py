@@ -30,6 +30,7 @@ class CalculateAction(actions.BaseAction):
     """
     Calculate values (average by default) across multiple statistics files.
     """
+
     name = "calculate"
     security = "validate"
 
@@ -37,11 +38,17 @@ class CalculateAction(actions.BaseAction):
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "--method", choices=["average"], default="average",
-            help="what to calculate from the different session statistics")
+            "--method",
+            choices=["average"],
+            default="average",
+            help="what to calculate from the different session statistics",
+        )
         subparser.add_argument(
-            "locations", metavar="STATISTIC_FILE", nargs="+",
-            help="locations of the session statistic files to calculate from")
+            "locations",
+            metavar="STATISTIC_FILE",
+            nargs="+",
+            help="locations of the session statistic files to calculate from",
+        )
         return subparser
 
     def run(self):
@@ -59,8 +66,11 @@ class CalculateAction(actions.BaseAction):
         ]
         if self.values.method == "average":  # there is no other right now
             calc_stats = statistics.StatsObj().set_to_average(statobjs)
-        print(calc_stats.get_stats_logstring(
-            "Average of %d stat files" % len(self.connected_locations)))
+        print(
+            calc_stats.get_stats_logstring(
+                "Average of %d stat files" % len(self.connected_locations)
+            )
+        )
 
         return ret_code
 

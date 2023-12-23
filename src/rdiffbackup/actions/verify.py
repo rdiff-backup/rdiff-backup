@@ -34,6 +34,7 @@ class VerifyAction(actions.BaseAction):
     Verify that files in a backup repository correspond to their stored hash,
     or that servers are properly reachable.
     """
+
     name = "verify"
     security = "validate"
 
@@ -41,19 +42,28 @@ class VerifyAction(actions.BaseAction):
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "--at", metavar="TIME", default="now",
-            help="as of which time to check the files' hashes (default is now/latest)")
+            "--at",
+            metavar="TIME",
+            default="now",
+            help="as of which time to check the files' hashes (default is now/latest)",
+        )
         subparser.add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
-            help="location of repository where to check files' hashes")
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=1,
+            help="location of repository where to check files' hashes",
+        )
         return subparser
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
-                self.connected_locations[0], self.values.force,
-                must_be_writable=False, must_exist=True, can_be_sub_path=True
+                self.connected_locations[0],
+                self.values.force,
+                must_be_writable=False,
+                must_exist=True,
+                can_be_sub_path=True,
             )
         return conn_value
 

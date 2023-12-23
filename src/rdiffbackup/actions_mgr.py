@@ -37,9 +37,10 @@ def get_actions_dict():
     Returns a dictionary with the name of each Action-class as key, and
     the class returned by get_plugin_class() as value.
     """
-    if not hasattr(get_actions_dict, 'plugins'):
+    if not hasattr(get_actions_dict, "plugins"):
         get_actions_dict.plugins = plugins.get_discovered_plugins(
-            rdiffbackup.actions, "rdb_action_")
+            rdiffbackup.actions, "rdb_action_"
+        )
     return get_actions_dict.plugins
 
 

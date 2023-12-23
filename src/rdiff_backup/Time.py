@@ -31,23 +31,24 @@ _interval_conv_dict = {
     "D": 86400,
     "W": 7 * 86400,
     "M": 30 * 86400,
-    "Y": 365 * 86400
+    "Y": 365 * 86400,
 }
 _integer_regexp = re.compile("^[0-9]+$")
 _session_regexp = re.compile("^[0-9]+B$")
 _interval_regexp = re.compile("^([0-9]+)([smhDWMY])")
 _genstr_date_regexp1 = re.compile(
-    "^(?P<year>[0-9]{4})[-/]"
-    "(?P<month>[0-9]{1,2})[-/](?P<day>[0-9]{1,2})$")
-_genstr_date_regexp2 = re.compile("^(?P<month>[0-9]{1,2})[-/]"
-                                  "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$")
+    "^(?P<year>[0-9]{4})[-/]" "(?P<month>[0-9]{1,2})[-/](?P<day>[0-9]{1,2})$"
+)
+_genstr_date_regexp2 = re.compile(
+    "^(?P<month>[0-9]{1,2})[-/]" "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$"
+)
 
 # constants defining the format string for time dates (without timezone)
 TIMEDATE_FORMAT_STRING = "%Y-%m-%dT%H:%M:%S"
 TIMEDATE_FORMAT_COMPAT = TIMEDATE_FORMAT_STRING.replace(":", "-")
 TIMEDATE_FORMAT_LENGTH = 19  # 19 chars with 4 digits year
 # separators in a string looking like the above
-TIMEDATE_FORMAT_REGEXP = re.compile('[T:-]')
+TIMEDATE_FORMAT_REGEXP = re.compile("[T:-]")
 
 
 class TimeException(Exception):
@@ -86,7 +87,7 @@ def timetostring(timeinseconds):
 
 
 def timetobytes(timeinseconds):
-    return timetostring(timeinseconds).encode('ascii')
+    return timetostring(timeinseconds).encode("ascii")
 
 
 def stringtotime(timestring):
@@ -98,15 +99,17 @@ def stringtotime(timestring):
     """
     try:
         year, month, day, hour, minute, second = list(
-            map(int, TIMEDATE_FORMAT_REGEXP.split(
-                timestring[:TIMEDATE_FORMAT_LENGTH])))
+            map(int, TIMEDATE_FORMAT_REGEXP.split(timestring[:TIMEDATE_FORMAT_LENGTH]))
+        )
         timetuple = (year, month, day, hour, minute, second, -1, -1, 0)
-        if not (1900 < year < 2100
-                and 1 <= month <= 12
-                and 1 <= day <= 31
-                and 0 <= hour <= 23
-                and 0 <= minute <= 59
-                and 0 <= second <= 61):  # leap seconds
+        if not (
+            1900 < year < 2100
+            and 1 <= month <= 12
+            and 1 <= day <= 31
+            and 0 <= hour <= 23
+            and 0 <= minute <= 59
+            and 0 <= second <= 61
+        ):  # leap seconds
             # "Time string {tstr} couldn't be parsed correctly to "
             # "year/month/day/hour/minute/second/... {ttup}.".format(
             #    tstr=timestring, ttup=timetuple), 2)
@@ -114,15 +117,14 @@ def stringtotime(timestring):
 
         utc_in_secs = calendar.timegm(timetuple)
 
-        return int(utc_in_secs) + _tzd_to_seconds(
-            timestring[TIMEDATE_FORMAT_LENGTH:])
+        return int(utc_in_secs) + _tzd_to_seconds(timestring[TIMEDATE_FORMAT_LENGTH:])
     except (TypeError, ValueError):
         return None
 
 
 def bytestotime(timebytes):
     try:
-        return stringtotime(timebytes.decode('ascii'))
+        return stringtotime(timebytes.decode("ascii"))
     except UnicodeDecodeError:
         return None
 
@@ -184,14 +186,17 @@ def genstrtotime(timestr, ref_time=None, rp=None, session_times=None):
         return ref_time
 
     def error():
-        raise TimeException("""Bad time string "%s"
+        raise TimeException(
+            """Bad time string "%s"
 
 The acceptable time strings are intervals (like "3D64s"), w3-datetime
 strings, like "2002-04-26T04:22:01-07:00" (strings like
 "2002-04-26T04:22:01" are also acceptable - rdiff-backup will use the
 current time zone), or ordinary dates like 2/4/1997 or 2001-04-23
 (various combinations are acceptable, but the month always precedes
-the day).""" % timestr)
+the day)."""
+            % timestr
+        )
 
     # Test for straight integer
     if _integer_regexp.search(timestr):
@@ -217,13 +222,15 @@ the day).""" % timestr)
         pass
 
     # Now check for dates like 2001/3/23
-    match = _genstr_date_regexp1.search(timestr) or \
-        _genstr_date_regexp2.search(timestr)
+    match = _genstr_date_regexp1.search(timestr) or _genstr_date_regexp2.search(timestr)
     if not match:
         error()
-    timestr = "%s-%02d-%02dT00:00:00%s" % (match.group('year'),
-                                           int(match.group('month')),
-                                           int(match.group('day')), _get_tzd())
+    timestr = "%s-%02d-%02dT00:00:00%s" % (
+        match.group("year"),
+        int(match.group("month")),
+        int(match.group("day")),
+        _get_tzd(),
+    )
     t = stringtotime(timestr)
     if t is not None:
         return t
@@ -237,12 +244,15 @@ def _intervalstr_to_seconds(interval_string):
     """
 
     def error():
-        raise TimeException("""Bad interval string "%s"
+        raise TimeException(
+            """Bad interval string "%s"
 
 Intervals are specified like 2Y (2 years) or 2h30m (2.5 hours).  The
 allowed special characters are s, m, h, D, W, M, and Y.  See the man
 page for more information.
-""" % interval_string)
+"""
+            % interval_string
+        )
 
     if len(interval_string) < 2:
         error()
@@ -256,7 +266,7 @@ page for more information.
         if ext not in _interval_conv_dict or num < 0:
             error()
         total += num * _interval_conv_dict[ext]
-        interval_string = interval_string[match.end(0):]
+        interval_string = interval_string[match.end(0) :]
     return total
 
 
@@ -273,9 +283,9 @@ def _get_tzd(timeinseconds=None):
         timeinseconds = time.time()
     tzd = time.strftime("%z", time.localtime(timeinseconds))
     if Globals.use_compatible_timestamps:
-        time_separator = '-'
+        time_separator = "-"
     else:
-        time_separator = ':'
+        time_separator = ":"
     if tzd == "+0000":
         return "Z"
     else:
@@ -289,12 +299,14 @@ def _tzd_to_seconds(tzd):
     """
     if tzd == "Z":
         return 0
-    if not (len(tzd) == 6
-            and (tzd[0] == "-" or tzd[0] == "+")
-            and (tzd[3] == ":" or tzd[3] == "-")):
+    if not (
+        len(tzd) == 6
+        and (tzd[0] == "-" or tzd[0] == "+")
+        and (tzd[3] == ":" or tzd[3] == "-")
+    ):
         raise ValueError(
-            "Only timezones like +08:00 are accepted and not '{tzd}'.".format(
-                tzd=tzd))
+            "Only timezones like +08:00 are accepted and not '{tzd}'.".format(tzd=tzd)
+        )
     return -60 * (60 * int(tzd[:3]) + int(tzd[4:]))
 
 

@@ -38,11 +38,13 @@ class librsyncError(Exception):
     but this scheme was easier.
 
     """
+
     pass
 
 
 class LikeFile:
     """File-like object used by SigFile, DeltaFile, and PatchFile"""
+
     mode = "rb"
 
     # This will be replaced in subclasses by an object with
@@ -55,7 +57,7 @@ class LikeFile:
         self.infile = infile
         self.closed = self.infile_closed = None
         self.inbuf = b""
-        self.outbuf = array.array('b')
+        self.outbuf = array.array("b")
         self.eof = self.infile_eof = None
 
     def read(self, length=-1):
@@ -166,7 +168,7 @@ class PatchedFile(LikeFile):
 
         """
         LikeFile.__init__(self, delta_file)
-        if hasattr(basis_file, 'file'):
+        if hasattr(basis_file, "file"):
             self.basis_file = basis_file.file
         else:
             self.basis_file = basis_file

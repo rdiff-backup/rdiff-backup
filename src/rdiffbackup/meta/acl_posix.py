@@ -27,6 +27,7 @@ called access_control_lists.<time>.snapshot.
 import errno
 import re
 import os
+
 try:
     import posix1e
 except ImportError:
@@ -51,6 +52,7 @@ class AccessControlLists:
     user/group name information, store everything in self.entry_list
     and self.default_entry_list.
     """
+
     # permissions regular expression
     _perm_re = re.compile(r"[r-][w-][x-]")
 
@@ -68,10 +70,12 @@ class AccessControlLists:
             return ""
         slist = list(map(self._entrytuple_to_text, self.entry_list))
         if self.default_entry_list:
-            slist.extend([
-                "default:" + self._entrytuple_to_text(e)
-                for e in self.default_entry_list
-            ])
+            slist.extend(
+                [
+                    "default:" + self._entrytuple_to_text(e)
+                    for e in self.default_entry_list
+                ]
+            )
         return "\n".join(slist)
 
     def __eq__(self, acl):
@@ -81,20 +85,20 @@ class AccessControlLists:
         object.
 
         """
-        assert isinstance(acl, AccessControlLists), (
-            "ACLs can only be compared with ACLs not {otype}.".format(
-                otype=type(acl)))
+        assert isinstance(
+            acl, AccessControlLists
+        ), "ACLs can only be compared with ACLs not {otype}.".format(otype=type(acl))
         if self.is_basic():
             return acl.is_basic()
-        return (self._cmp_entry_list(self.entry_list, acl.entry_list)
-                and self._cmp_entry_list(self.default_entry_list,
-                                         acl.default_entry_list))
+        return self._cmp_entry_list(
+            self.entry_list, acl.entry_list
+        ) and self._cmp_entry_list(self.default_entry_list, acl.default_entry_list)
 
     def __ne__(self, acl):
         return not self.__eq__(acl)
 
     def get_indexpath(self):
-        return self.index and b'/'.join(self.index) or b'.'
+        return self.index and b"/".join(self.index) or b"."
 
     def is_basic(self):
         """True if acl can be reduced to standard unix permissions
@@ -106,9 +110,9 @@ class AccessControlLists:
         """
         if not self.entry_list and not self.default_entry_list:
             return True
-        assert len(self.entry_list) >= 3, (
-            "Too few ACL entries '{ent}', must be 3 or more.".format(
-                ent=self.entry_list))
+        assert (
+            len(self.entry_list) >= 3
+        ), "Too few ACL entries '{ent}', must be 3 or more.".format(ent=self.entry_list)
         return len(self.entry_list) == 3 and not self.default_entry_list
 
     def read_from_rp(self, rp):
@@ -117,22 +121,23 @@ class AccessControlLists:
 
     def write_to_rp(self, rp, map_names=1):
         """Write current access control list to RPath rp"""
-        assert rp.conn is Globals.local_connection, (
-            "Function works locally not over '{co}'.".format(co=rp.conn))
+        assert (
+            rp.conn is Globals.local_connection
+        ), "Function works locally not over '{co}'.".format(co=rp.conn)
         set_rp_acl(rp, self.entry_list, self.default_entry_list, map_names)
 
     def _set_from_text(self, text):
         """Set self.entry_list and self.default_entry_list from text"""
         self.entry_list, self.default_entry_list = [], []
-        for line in text.split('\n'):
-            comment_pos = line.find('#')
+        for line in text.split("\n"):
+            comment_pos = line.find("#")
             if comment_pos >= 0:
                 line = line[:comment_pos]
             line = line.strip()
             if not line:
                 continue
 
-            if line.startswith('default:'):
+            if line.startswith("default:"):
                 entrytuple = self._text_to_entrytuple(line[8:])
                 self.default_entry_list.append(entrytuple)
             else:
@@ -143,26 +148,29 @@ class AccessControlLists:
         raise ValueError exception if input is wrong."""
         tagchar, name_pair, perms = entrytuple
         if tagchar == "U":
-            text = 'user::'
+            text = "user::"
         elif tagchar == "u":
             uid, uname = name_pair
-            text = 'user:%s:' % (uname or uid)
+            text = "user:%s:" % (uname or uid)
         elif tagchar == "G":
-            text = 'group::'
+            text = "group::"
         elif tagchar == "g":
             gid, gname = name_pair
-            text = 'group:%s:' % (gname or gid)
+            text = "group:%s:" % (gname or gid)
         elif tagchar == "M":
-            text = 'mask::'
+            text = "mask::"
         elif tagchar == "O":
-            text = 'other::'
+            text = "other::"
         else:
             raise ValueError(
-                "The tag {tag} must be a character from [UuGgMO].".format(
-                    tag=tagchar))
+                "The tag {tag} must be a character from [UuGgMO].".format(tag=tagchar)
+            )
 
-        permstring = '%s%s%s' % (perms & 4 and 'r' or '-', perms & 2 and 'w'
-                                 or '-', perms & 1 and 'x' or '-')
+        permstring = "%s%s%s" % (
+            perms & 4 and "r" or "-",
+            perms & 2 and "w" or "-",
+            perms & 1 and "x" or "-",
+        )
         return text + permstring
 
     def _text_to_entrytuple(self, text):
@@ -171,7 +179,7 @@ class AccessControlLists:
         See the _acl_to_list function for entrytuple documentation.
 
         """
-        typetext, qualifier, permtext = text.split(':')
+        typetext, qualifier, permtext = text.split(":")
         if qualifier:
             try:
                 uid = int(qualifier)
@@ -180,36 +188,40 @@ class AccessControlLists:
             else:
                 namepair = (uid, None)
 
-            if typetext == 'user':
+            if typetext == "user":
                 typechar = "u"
-            elif typetext == 'group':
+            elif typetext == "group":
                 typechar = "g"
             else:
-                raise ValueError("Type {atype} of ACL must be one of user or "
-                                 "group if qualifier {qual} is present.".format(
-                                     atype=typetext, qual=qualifier))
+                raise ValueError(
+                    "Type {atype} of ACL must be one of user or "
+                    "group if qualifier {qual} is present.".format(
+                        atype=typetext, qual=qualifier
+                    )
+                )
         else:
             namepair = None
-            if typetext == 'user':
+            if typetext == "user":
                 typechar = "U"
-            elif typetext == 'group':
+            elif typetext == "group":
                 typechar = "G"
-            elif typetext == 'mask':
+            elif typetext == "mask":
                 typechar = "M"
-            elif typetext == 'other':
+            elif typetext == "other":
                 typechar = "O"
             else:
-                raise ValueError("Type {atype} of ACL must be one of user, group, "
-                                 "mask or other if qualifier is absent.".format(
-                                     atype=typetext))
+                raise ValueError(
+                    "Type {atype} of ACL must be one of user, group, "
+                    "mask or other if qualifier is absent.".format(atype=typetext)
+                )
 
         if not self._perm_re.fullmatch(permtext):
             raise ValueError(
                 "Permission {perm} in ACLs must be a three "
-                "characters string made of 'rwx' or dashes.".format(
-                    perm=permtext))
+                "characters string made of 'rwx' or dashes.".format(perm=permtext)
+            )
         read, write, execute = permtext
-        perms = ((read == 'r') << 2 | (write == 'w') << 1 | (execute == 'x'))
+        perms = (read == "r") << 2 | (write == "w") << 1 | (execute == "x")
         return (typechar, namepair, perms)
 
     def _cmp_entry_list(self, l1, l2):
@@ -245,8 +257,7 @@ class AccessControlLists:
         if not self.cmp_entry_list(self.entry_list, acl.entry_list):
             print("ACL entries for {rp} compare differently".format(rp=self))
             return 0
-        if not self.cmp_entry_list(self.default_entry_list,
-                                   acl.default_entry_list):
+        if not self.cmp_entry_list(self.default_entry_list, acl.default_entry_list):
             print("Default ACL entries for {rp} do not compare".format(rp=self))
             return 0
         return 1
@@ -260,24 +271,25 @@ class ACLExtractor(meta.FlatExtractor):
     @staticmethod
     def _record_to_object(record):
         """Convert text record to an AccessControlLists object"""
-        newline_pos = record.find(b'\n')
+        newline_pos = record.find(b"\n")
         first_line = record[:newline_pos]
-        if not first_line.startswith(b'# file: '):
+        if not first_line.startswith(b"# file: "):
             raise meta.ParsingError("Bad record beginning: %r" % first_line)
         filename = first_line[8:]
-        if filename == b'.':
+        if filename == b".":
             index = ()
         else:
             unquoted_filename = C.acl_unquote(filename)
-            index = tuple(unquoted_filename.split(b'/'))
+            index = tuple(unquoted_filename.split(b"/"))
         return get_meta_object(index, os.fsdecode(record[newline_pos:]))
 
 
 class AccessControlListFile(meta.FlatFile):
     """Store/retrieve ACLs from extended attributes file"""
+
     _name = "acl"
     _description = "POSIX ACLs"
-    _prefix = b'access_control_lists'
+    _prefix = b"access_control_lists"
     _extractor = ACLExtractor
     _is_main = False
 
@@ -288,15 +300,16 @@ class AccessControlListFile(meta.FlatFile):
     @staticmethod
     def _object_to_record(acl):
         """Convert an AccessControlLists object into a text record"""
-        return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()),
-                                      os.fsencode(str(acl)))
+        return b"# file: %b\n%b\n" % (
+            C.acl_quote(acl.get_indexpath()),
+            os.fsencode(str(acl)),
+        )
 
     @staticmethod
     def join_iter(rorp_iter, acl_iter):
         """Update a rorp iter by adding the information from acl_iter"""
         for rorp, acl in rorpiter.CollateIterators(rorp_iter, acl_iter):
-            assert rorp, ("Missing rorp for ACL index '{aidx}'.".format(
-                aidx=acl.index))
+            assert rorp, "Missing rorp for ACL index '{aidx}'.".format(aidx=acl.index)
             if not acl:
                 acl = get_meta_object(rorp.index)
             rorp.set_acl(acl)
@@ -319,9 +332,11 @@ class AccessControlListFile(meta.FlatFile):
 # @API(set_rp_acl, 200, 200)  # unused
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
-    assert rp.conn is Globals.local_connection, (
-        "Set ACLs of path should only be done locally not over {conn}.".format(
-            conn=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Set ACLs of path should only be done locally not over {conn}.".format(
+        conn=rp.conn
+    )
     if entry_list:
         acl = _list_to_acl(entry_list, map_names)
     else:
@@ -332,7 +347,10 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     except OSError as exc:
         log.Log(
             "Unable to set ACL on path {pa} due to exception '{ex}'".format(
-                pa=rp, ex=exc), log.INFO)
+                pa=rp, ex=exc
+            ),
+            log.INFO,
+        )
         return
 
     if rp.isdir():
@@ -346,15 +364,20 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
 # @API(get_acl_lists_from_rp, 200, 200)  # unused
 def get_acl_lists_from_rp(rp):
     """Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
-    assert rp.conn is Globals.local_connection, (
-        "Get ACLs of path should only be done locally not over {conn}.".format(
-            conn=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Get ACLs of path should only be done locally not over {conn}.".format(
+        conn=rp.conn
+    )
     try:
         acl = posix1e.ACL(file=rp.path)
     except (FileNotFoundError, UnicodeEncodeError) as exc:
         log.Log(
             "Unable to read ACL from path {pa} due to exception '{ex}'".format(
-                pa=rp, ex=exc), log.NOTE)
+                pa=rp, ex=exc
+            ),
+            log.NOTE,
+        )
         acl = None
     except OSError as exc:
         if exc.errno == errno.EOPNOTSUPP:
@@ -365,8 +388,11 @@ def get_acl_lists_from_rp(rp):
         try:
             def_acl = posix1e.ACL(filedef=os.fsdecode(rp.path))
         except (FileNotFoundError, UnicodeEncodeError) as exc:
-            log.Log("Unable to read default ACL from path {pa} due to "
-                    "exception '{ex}'".format(pa=rp, ex=exc), log.NOTE)
+            log.Log(
+                "Unable to read default ACL from path {pa} due to "
+                "exception '{ex}'".format(pa=rp, ex=exc),
+                log.NOTE,
+            )
             def_acl = None
         except OSError as exc:
             if exc.errno == errno.EOPNOTSUPP:
@@ -426,8 +452,9 @@ def _acl_to_list(acl):
         else:
             owner_pair = None
 
-        perms = (entry.permset.read << 2 | entry.permset.write << 1
-                 | entry.permset.execute)
+        perms = (
+            entry.permset.read << 2 | entry.permset.write << 1 | entry.permset.execute
+        )
         return (tagchar, owner_pair, perms)
 
     return list(map(entry_to_tuple, acl))
@@ -461,19 +488,26 @@ def _list_to_acl(entry_list, map_names=1):
         else:
             raise ValueError(
                 "Unknown ACL character {achar} (must be one of [UuGgMO]).".format(
-                    achar=typechar))
+                    achar=typechar
+                )
+            )
 
     def warn_drop(name):
         """Warn about acl with name getting dropped"""
         global dropped_acl_names
         if Globals.never_drop_acls:
-            log.Log.FatalError("--never-drop-acls specified but cannot map "
-                               "ACL name {an}".format(an=name))
+            log.Log.FatalError(
+                "--never-drop-acls specified but cannot map "
+                "ACL name {an}".format(an=name)
+            )
         if name in dropped_acl_names:
             return
-        log.Log("ACL name {an} not found on system, dropping entry. "
-                "Further ACL entries dropped with this name will not "
-                "trigger further warnings".format(an=name), log.WARNING)
+        log.Log(
+            "ACL name {an} not found on system, dropping entry. "
+            "Further ACL entries dropped with this name will not "
+            "trigger further warnings".format(an=name),
+            log.WARNING,
+        )
         dropped_acl_names[name] = name
 
     acl = posix1e.ACL()
@@ -487,8 +521,8 @@ def _list_to_acl(entry_list, map_names=1):
                     id = map_owners.map_acl_group(*owner_pair)
                 else:
                     raise ValueError(
-                        "Type '{tc}' must be one of 'u' or 'g'.".format(
-                            tc=typechar))
+                        "Type '{tc}' must be one of 'u' or 'g'.".format(tc=typechar)
+                    )
                 if id is None:
                     warn_drop(owner_pair[1])
                     continue
@@ -496,7 +530,9 @@ def _list_to_acl(entry_list, map_names=1):
                 assert owner_pair[0] is not None, (
                     "First owner can't be None with type={tc}, "
                     "owner pair={own}, perms={perms}".format(
-                        tc=typechar, own=owner_pair, perms=perms))
+                        tc=typechar, own=owner_pair, perms=perms
+                    )
+                )
                 id = owner_pair[0]
 
         entry = posix1e.Entry(acl)
@@ -513,8 +549,9 @@ def get_meta(rp):
     """
     Get acls of given rpath rp.
     """
-    assert rp.conn is Globals.local_connection, (
-        "Function works locally not over '{co}'.".format(co=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Function works locally not over '{co}'.".format(co=rp.conn)
     acl = get_meta_object(rp.index)
     if not rp.issym():
         acl.read_from_rp(rp)

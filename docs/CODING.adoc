@@ -9,7 +9,8 @@ link:.[Home,role="button round"] // *{page-name}*
 
 toc::[]
 
-We follow the latest  https://www.python.org/dev/peps/pep-0008/[PEP 8 coding standard] as enforced by flake8 within our CI pipeline, but certain aspects of coding can't be enforced through automated checks, hence to be followed by humans and reviewers.
+We follow the latest  https://www.python.org/dev/peps/pep-0008/[PEP 8 coding standard] as enforced by flake8 and black within our CI pipeline.
+Certain aspects of coding though can't be enforced through automated checks, hence to be followed by humans and reviewers.
 This document lists such coding conventions.
 
 == QUOTING

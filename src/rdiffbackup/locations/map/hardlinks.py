@@ -64,8 +64,7 @@ def add_rorp(rorp, dest_rorp=None):
                 old_hash = _inode_old_index.pop(dest_key)
                 dest_rorp.set_sha1(old_hash)
         digest = rorp.has_sha1() and rorp.get_sha1() or None
-        _inode_index[rp_inode_key] = (rorp.index, rorp.getnumlinks(), dest_key,
-                                      digest)
+        _inode_index[rp_inode_key] = (rorp.index, rorp.getnumlinks(), dest_key, digest)
     return rp_inode_key
 
 
@@ -108,8 +107,11 @@ def rorp_eq(src_rorp, dest_rorp):
     if dest is linked more than source, or if it is represented by a
     different inode.
     """
-    if (not src_rorp.isreg() or not dest_rorp.isreg()
-            or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1):
+    if (
+        not src_rorp.isreg()
+        or not dest_rorp.isreg()
+        or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1
+    ):
         return True  # Hard links don't apply
 
     # The sha1 of linked files is only stored in the metadata of the first
@@ -117,7 +119,7 @@ def rorp_eq(src_rorp, dest_rorp):
     # is deleted, then the sha1 will also be deleted on the dest side, so we
     # test for this & report not equal so that another sha1 will be stored
     # with the next linked file on the dest side
-    if (not is_linked(src_rorp) and not dest_rorp.has_sha1()):
+    if not is_linked(src_rorp) and not dest_rorp.has_sha1():
         return False
     if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
         return False
@@ -193,8 +195,10 @@ def link_rp(diff_rorp, dest_rpath, dest_root=None):
         if exc.errno == errno.ENOENT:
             dest_rpath.touch()  # This will cause an UpdateError later
         else:
-            raise Exception("OS error '%s' linking %s to %s" %
-                            (exc, dest_rpath.path, dest_link_rpath.path))
+            raise Exception(
+                "OS error '%s' linking %s to %s"
+                % (exc, dest_rpath.path, dest_link_rpath.path)
+            )
 
 
 # === Internal functions  ===

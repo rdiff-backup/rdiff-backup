@@ -55,9 +55,11 @@ class ExtendedAttributes:
 
     def __eq__(self, ea):
         """Equal if all attributes are equal"""
-        assert isinstance(ea, ExtendedAttributes), (
-            "You can only compare with extended attributes not with {otype}.".format(
-                otype=type(ea)))
+        assert isinstance(
+            ea, ExtendedAttributes
+        ), "You can only compare with extended attributes not with {otype}.".format(
+            otype=type(ea)
+        )
         return ea.attr_dict == self.attr_dict
 
     def __ne__(self, ea):
@@ -67,7 +69,7 @@ class ExtendedAttributes:
         return "{} == {}".format(self.index, self.attr_dict)
 
     def get_indexpath(self):
-        return self.index and b'/'.join(self.index) or b'.'
+        return self.index and b"/".join(self.index) or b"."
 
     def read_from_rp(self, rp):
         """Set the extended attributes from an rpath"""
@@ -77,16 +79,18 @@ class ExtendedAttributes:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
             if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
-                log.Log("Listing extended attributes of path {pa} produced "
-                        "exception '{ex}', ignored".format(pa=rp, ex=exc),
-                        log.INFO)
+                log.Log(
+                    "Listing extended attributes of path {pa} produced "
+                    "exception '{ex}', ignored".format(pa=rp, ex=exc),
+                    log.INFO,
+                )
                 return
             raise
         for attr in attr_list:
-            if attr.startswith(b'system.'):
+            if attr.startswith(b"system."):
                 # Do not preserve system extended attributes
                 continue
-            if not rp.isdir() and attr == b'com.apple.ResourceFork':
+            if not rp.isdir() and attr == b"com.apple.ResourceFork":
                 # Resource Fork handled elsewhere, except for directories
                 continue
             try:
@@ -105,21 +109,31 @@ class ExtendedAttributes:
 
     def write_to_rp(self, rp):
         """Write extended attributes to rpath rp"""
-        assert rp.conn is Globals.local_connection, (
-            "Function works locally not over '{co}'.".format(co=rp.conn))
+        assert (
+            rp.conn is Globals.local_connection
+        ), "Function works locally not over '{co}'.".format(co=rp.conn)
 
         self._clear_rp(rp)
-        for (name, value) in self.attr_dict.items():
+        for name, value in self.attr_dict.items():
             try:
                 xattr.set(rp.path, name, value, 0, rp.issym())
             except OSError as exc:
                 # Mac and Linux attributes have different namespaces, so
                 # fail gracefully if can't call xattr.set
-                if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
-                                 errno.ENOENT, errno.EINVAL):
-                    log.Log("Unable to write xattr {xa} to path {pa} "
-                            "due to exception '{ex}', ignoring".format(
-                                xa=name, pa=rp, ex=exc), log.INFO)
+                if exc.errno in (
+                    errno.EOPNOTSUPP,
+                    errno.EPERM,
+                    errno.EACCES,
+                    errno.ENOENT,
+                    errno.EINVAL,
+                ):
+                    log.Log(
+                        "Unable to write xattr {xa} to path {pa} "
+                        "due to exception '{ex}', ignoring".format(
+                            xa=name, pa=rp, ex=exc
+                        ),
+                        log.INFO,
+                    )
                     continue
                 else:
                     raise
@@ -149,9 +163,11 @@ class ExtendedAttributes:
                 except PermissionError:  # errno.EACCES
                     # SELinux attributes cannot be removed, and we don't want
                     # to bail out or be too noisy at low log levels.
-                    log.Log("Not allowed to remove extended attribute "
-                            "{ea} from path {pa}".format(ea=name, pa=rp),
-                            log.DEBUG)
+                    log.Log(
+                        "Not allowed to remove extended attribute "
+                        "{ea} from path {pa}".format(ea=name, pa=rp),
+                        log.DEBUG,
+                    )
                     continue
                 except OSError as exc:
                     # EINVAL is thrown on trying to remove system.nfs4_acl
@@ -162,59 +178,66 @@ class ExtendedAttributes:
                     else:  # can be anything, just fail
                         log.Log(
                             "Can't remove extended attribute '{ea}' from "
-                            "path '{pa}'".format(ea=name, pa=rp), log.ERROR)
+                            "path '{pa}'".format(ea=name, pa=rp),
+                            log.ERROR,
+                        )
                         raise
         except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
             return  # if not supported, consider empty
         except FileNotFoundError as exc:
-            log.Log("Unable to clear extended attributes on path {pa} due to "
-                    "exception '{ex}', ignoring".format(pa=rp, ex=exc),
-                    log.NOTE)
+            log.Log(
+                "Unable to clear extended attributes on path {pa} due to "
+                "exception '{ex}', ignoring".format(pa=rp, ex=exc),
+                log.NOTE,
+            )
             return
 
 
 class EAExtractor(meta.FlatExtractor):
     """Iterate ExtendedAttributes objects from the EA information file"""
-    record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
+
+    record_boundary_regexp = re.compile(b"(?:\\n|^)(# file: (.*?))\\n")
 
     @staticmethod
     def _record_to_object(record):
         """Convert text record to ExtendedAttributes object"""
-        lines = record.split(b'\n')
+        lines = record.split(b"\n")
         first = lines.pop(0)
-        if not first[:8] == b'# file: ':
+        if not first[:8] == b"# file: ":
             raise meta.ParsingError("Bad record beginning: %r" % first[:8])
         filename = first[8:]
-        if filename == b'.':
+        if filename == b".":
             index = ()
         else:
             unquoted_filename = C.acl_unquote(filename)
-            index = tuple(unquoted_filename.split(b'/'))
+            index = tuple(unquoted_filename.split(b"/"))
         ea = get_meta_object(index)
 
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-            if line[0] == b'#':
+            if line[0] == b"#":
                 raise meta.ParsingError(
                     "Only the first line of a record can start with a hash: {line}.".format(
-                        line=line))
-            eq_pos = line.find(b'=')
+                        line=line
+                    )
+                )
+            eq_pos = line.find(b"=")
             if eq_pos == -1:
                 ea.set(line)
             else:
                 name = line[:eq_pos]
-                if line[eq_pos + 1:eq_pos + 3] != b'0s':
-                    raise meta.ParsingError(
-                        "Currently only base64 encoding supported")
-                encoded_val = line[eq_pos + 3:]
+                if line[eq_pos + 1 : eq_pos + 3] != b"0s":
+                    raise meta.ParsingError("Currently only base64 encoding supported")
+                encoded_val = line[eq_pos + 3 :]
                 ea.set(name, base64.b64decode(encoded_val))
         return ea
 
 
 class ExtendedAttributesFile(meta.FlatFile):
     """Store/retrieve EAs from extended_attributes file"""
+
     _name = "ea"
     _description = "Extended Attributes"
     _prefix = b"extended_attributes"
@@ -228,22 +251,23 @@ class ExtendedAttributesFile(meta.FlatFile):
     @staticmethod
     def _object_to_record(ea):
         """Convert ExtendedAttributes object to text record"""
-        str_list = [b'# file: %s' % C.acl_quote(ea.get_indexpath())]
+        str_list = [b"# file: %s" % C.acl_quote(ea.get_indexpath())]
 
-        for (name, val) in ea.attr_dict.items():
+        for name, val in ea.attr_dict.items():
             if not val:
                 str_list.append(name)
             else:
                 encoded_val = base64.b64encode(val)
-                str_list.append(b'%s=0s%s' % (C.acl_quote(name), encoded_val))
-        return b'\n'.join(str_list) + b'\n'
+                str_list.append(b"%s=0s%s" % (C.acl_quote(name), encoded_val))
+        return b"\n".join(str_list) + b"\n"
 
     @staticmethod
     def join_iter(rorp_iter, ea_iter):
         """Update a rorp iter by adding the information from ea_iter"""
         for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
-            assert rorp, ("Missing rorp for EA index '{eaidx}'.".format(
-                eaidx=map(safestr.to_str, ea.index)))
+            assert rorp, "Missing rorp for EA index '{eaidx}'.".format(
+                eaidx=map(safestr.to_str, ea.index)
+            )
             if not ea:
                 ea = get_meta_object(rorp.index)
             rorp.set_ea(ea)
@@ -267,8 +291,9 @@ def get_meta(rp):
     """
     Get extended attributes of given rpath
     """
-    assert rp.conn is Globals.local_connection, (
-        "Function works locally not over '{co}'.".format(co=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Function works locally not over '{co}'.".format(co=rp.conn)
     ea = get_meta_object(rp.index)
     if not rp.issock() and not rp.isfifo():
         ea.read_from_rp(rp)

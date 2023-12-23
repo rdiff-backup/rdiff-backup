@@ -16,19 +16,24 @@ class ActionReadOnlyTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir,
-                                     b"readonly_actions")
+        self.base_dir = os.path.join(comtst.abs_test_dir, b"readonly_actions")
         self.from1_struct = {
-            "from1": {"contents": {
-                "dirA": {"contents": {"fileA": {"content": "initial"}}},
-                "fileB": {"content": "something"}
-            }}}
+            "from1": {
+                "contents": {
+                    "dirA": {"contents": {"fileA": {"content": "initial"}}},
+                    "fileB": {"content": "something"},
+                }
+            }
+        }
         self.from1_path = os.path.join(self.base_dir, b"from1")
         self.from2_struct = {
-            "from2": {"contents": {
-                "dirA": {"contents": {"fileA": {"content": "afterwards"}}},
-                "fileB": {"content": "now else"}
-            }}}
+            "from2": {
+                "contents": {
+                    "dirA": {"contents": {"fileA": {"content": "afterwards"}}},
+                    "fileB": {"content": "now else"},
+                }
+            }
+        }
         rec = {"fmode": 0o400, "dmode": 0o500}
         self.from2_path = os.path.join(self.base_dir, b"from2")
         fileset.create_fileset(self.base_dir, self.from1_struct, recurse=rec)
@@ -37,14 +42,30 @@ class ActionReadOnlyTest(unittest.TestCase):
         self.bak_path = os.path.join(self.base_dir, b"bak")
 
         # we backup twice to the same backup repository at different times
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, False, self.from1_path, self.bak_path,
-            ("--api-version", "201", "--current-time", "10000"),
-            b"backup", ()), 0)
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, True, self.from2_path, self.bak_path,
-            ("--api-version", "201", "--current-time", "20000"),
-            b"backup", ()), 0)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                ("--api-version", "201", "--current-time", "10000"),
+                b"backup",
+                (),
+            ),
+            0,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                True,
+                self.from2_path,
+                self.bak_path,
+                ("--api-version", "201", "--current-time", "20000"),
+                b"backup",
+                (),
+            ),
+            0,
+        )
 
         self.success = False
 
@@ -52,10 +73,18 @@ class ActionReadOnlyTest(unittest.TestCase):
         """test the "regress" action on a read-only repository"""
 
         # we regress forcefully
-        self.assertEqual(comtst.rdiff_backup_action(
-            False, None, self.bak_path, None,
-            ("--api-version", "201", "--force"),
-            b"regress", ()), 0)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--force"),
+                b"regress",
+                (),
+            ),
+            0,
+        )
 
         # all tests were successful
         self.success = True
@@ -64,10 +93,18 @@ class ActionReadOnlyTest(unittest.TestCase):
         """test the "remove" action on a read-only repository"""
 
         # we remove forcefully
-        self.assertEqual(comtst.rdiff_backup_action(
-            True, None, self.bak_path, None,
-            ("--api-version", "201", "--force"),
-            b"remove", ("increments", "--older-than", "0B")), 0)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                None,
+                self.bak_path,
+                None,
+                ("--api-version", "201", "--force"),
+                b"remove",
+                ("increments", "--older-than", "0B"),
+            ),
+            0,
+        )
 
         # all tests were successful
         self.success = True

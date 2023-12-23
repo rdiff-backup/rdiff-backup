@@ -25,13 +25,14 @@ import os
 import sys
 
 from rdiffbackup import actions
-from rdiff_backup import (connection, Globals, log, Security)
+from rdiff_backup import connection, Globals, log, Security
 
 
 class ServerAction(actions.BaseAction):
     """
     Start rdiff-backup in server mode (only meant for internal use).
     """
+
     name = "server"
     security = "server"
     parent_parsers = [actions.RESTRICT_PARSER]
@@ -40,21 +41,26 @@ class ServerAction(actions.BaseAction):
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "--debug", action="store_true",
-            help="Allow for remote python debugging (rpdb) using netcat")
+            "--debug",
+            action="store_true",
+            help="Allow for remote python debugging (rpdb) using netcat",
+        )
         return subparser
 
     def __init__(self, values):
         super().__init__(values)
-        if 'debug' in self.values and self.values.debug:
+        if "debug" in self.values and self.values.debug:
             self._set_breakpoint()
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
-            Security.initialize(self.get_security_class(), [],
-                                security_level=self.values.restrict_mode,
-                                restrict_path=self.values.restrict_path)
+            Security.initialize(
+                self.get_security_class(),
+                [],
+                security_level=self.values.restrict_mode,
+                restrict_path=self.values.restrict_path,
+            )
         return conn_value
 
     def run(self):
@@ -62,8 +68,9 @@ class ServerAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= connection.PipeConnection(sys.stdin.buffer,
-                                              sys.stdout.buffer).Server()
+        ret_code |= connection.PipeConnection(
+            sys.stdin.buffer, sys.stdout.buffer
+        ).Server()
         return ret_code
 
     def _set_breakpoint(self):  # pragma: no cover
@@ -76,6 +83,7 @@ class ServerAction(actions.BaseAction):
         """
         try:
             import rpdb
+
             debug_values = os.getenv("RDIFF_BACKUP_DEBUG", "").split(":")
             if debug_values != [""]:
                 if debug_values[0]:
@@ -91,8 +99,7 @@ class ServerAction(actions.BaseAction):
                 # connect to the default 127.0.0.1:4444
                 rpdb.set_trace()
         except ImportError:
-            log.Log("Remote debugging impossible, please install rpdb",
-                    log.Log.WARNING)
+            log.Log("Remote debugging impossible, please install rpdb", log.Log.WARNING)
 
 
 def get_plugin_class():

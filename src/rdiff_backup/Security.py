@@ -25,6 +25,7 @@ from rdiff_backup import Globals, log, rpath
 
 class Violation(Exception):
     """Exception that indicates an improper request has been received"""
+
     pass
 
 
@@ -82,8 +83,9 @@ _globals_requests = {
 }
 
 
-def initialize(security_class, cmdpairs,
-               security_level="read-write", restrict_path=None):
+def initialize(
+    security_class, cmdpairs, security_level="read-write", restrict_path=None
+):
     """
     Initialize allowable request list and kind of restricted "chroot".
 
@@ -92,11 +94,11 @@ def initialize(security_class, cmdpairs,
     global _allowed_requests, _security_level
 
     security_level, restrict_path = _set_security_level(
-        security_class, security_level, restrict_path, cmdpairs)
+        security_class, security_level, restrict_path, cmdpairs
+    )
     _security_level = security_level
     if restrict_path:
-        reset_restrict_path(rpath.RPath(Globals.local_connection,
-                                        restrict_path))
+        reset_restrict_path(rpath.RPath(Globals.local_connection, restrict_path))
     _allowed_requests = _set_allowed_requests(security_class, security_level)
 
 
@@ -108,8 +110,9 @@ def reset_restrict_path(rp):
     Also set the global variable _restrict_path_list as list of path components.
     It is assumed that the new path is a proper path, else function will fail.
     """
-    assert rp.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rp.conn))
+    assert (
+        rp.conn is Globals.local_connection
+    ), "Function works locally not over '{conn}'.".format(conn=rp.conn)
     global _restrict_path, _restrict_path_list
     _restrict_path = rp.normalize().path
     _restrict_path_list = _restrict_path.split(b"/")
@@ -133,8 +136,7 @@ def vet_request(request, arglist):
     _raise_violation("invalid request", request, arglist)
 
 
-def _set_security_level(security_class, security_level, restrict_path,
-                        cmdpairs):
+def _set_security_level(security_class, security_level, restrict_path, cmdpairs):
     """
     If running client, set security level and restrict_path
 
@@ -187,8 +189,10 @@ def _set_security_level(security_class, security_level, restrict_path,
             if ref_type is None:
                 # the error will be catched later more cleanly, so that the
                 # connections can be properly closed
-                log.Log("Invalid restore directory '{rd}'".format(
-                    rd=getpath(cp1)), log.ERROR)
+                log.Log(
+                    "Invalid restore directory '{rd}'".format(rd=getpath(cp1)),
+                    log.ERROR,
+                )
             rdir = base_dir.path
         else:  # cp2 is local but not cp1
             sec_level = "read-write"
@@ -197,8 +201,9 @@ def _set_security_level(security_class, security_level, restrict_path,
         sec_level = "minimal"
         rdir = tempfile.gettempdirb()
     else:
-        raise RuntimeError("Unknown action security class '{sec}'.".format(
-            sec=security_class))
+        raise RuntimeError(
+            "Unknown action security class '{sec}'.".format(sec=security_class)
+        )
 
     return (sec_level, rdir)
 
@@ -227,103 +232,116 @@ def _set_allowed_requests(sec_class, sec_level):
         "_repo_shadow.RepoShadow.setup_paths",
         "_repo_shadow.RepoShadow.unlock",
     }
-    if (sec_level == "read-only" or sec_level == "update-only"
-            or sec_level == "read-write"):
-        requests.update([
-            "rpath.gzip_open_local_read",
-            "rpath.make_file_dict",
-            "rpath.open_local_read",
-            "rpath.setdata_local",
-            # System
-            "os.getuid",
-            "os.listdir",
-            # API >= 201
-            "platform.system",
-            "_repo_shadow.RepoShadow.get_config",
-            "_repo_shadow.RepoShadow.get_mirror_time",
-            "_repo_shadow.RepoShadow.needs_regress",
-        ])
+    if (
+        sec_level == "read-only"
+        or sec_level == "update-only"
+        or sec_level == "read-write"
+    ):
+        requests.update(
+            [
+                "rpath.gzip_open_local_read",
+                "rpath.make_file_dict",
+                "rpath.open_local_read",
+                "rpath.setdata_local",
+                # System
+                "os.getuid",
+                "os.listdir",
+                # API >= 201
+                "platform.system",
+                "_repo_shadow.RepoShadow.get_config",
+                "_repo_shadow.RepoShadow.get_mirror_time",
+                "_repo_shadow.RepoShadow.needs_regress",
+            ]
+        )
     if sec_level == "read-only" or sec_level == "read-write":
-        requests.update([
-            # API >= 201
-            "_dir_shadow.ReadDirShadow.compare_full",
-            "_dir_shadow.ReadDirShadow.compare_hash",
-            "_dir_shadow.ReadDirShadow.compare_meta",
-            "_dir_shadow.ReadDirShadow.get_diffs",
-            "_dir_shadow.ReadDirShadow.get_fs_abilities",
-            "_dir_shadow.ReadDirShadow.get_select",
-            "_dir_shadow.ReadDirShadow.set_select",
-            "_repo_shadow.RepoShadow.get_fs_abilities_readonly",
-            "_repo_shadow.RepoShadow.init_loop",
-            "_repo_shadow.RepoShadow.get_increment_times",
-            "_repo_shadow.RepoShadow.set_select",
-            "_repo_shadow.RepoShadow.finish_loop",
-            "_repo_shadow.RepoShadow.get_diffs",
-            "_repo_shadow.RepoShadow.list_files_changed_since",
-            "_repo_shadow.RepoShadow.list_files_at_time",
-            "_repo_shadow.RepoShadow.init_and_get_loop",
-            "_repo_shadow.RepoShadow.verify",
-        ])
+        requests.update(
+            [
+                # API >= 201
+                "_dir_shadow.ReadDirShadow.compare_full",
+                "_dir_shadow.ReadDirShadow.compare_hash",
+                "_dir_shadow.ReadDirShadow.compare_meta",
+                "_dir_shadow.ReadDirShadow.get_diffs",
+                "_dir_shadow.ReadDirShadow.get_fs_abilities",
+                "_dir_shadow.ReadDirShadow.get_select",
+                "_dir_shadow.ReadDirShadow.set_select",
+                "_repo_shadow.RepoShadow.get_fs_abilities_readonly",
+                "_repo_shadow.RepoShadow.init_loop",
+                "_repo_shadow.RepoShadow.get_increment_times",
+                "_repo_shadow.RepoShadow.set_select",
+                "_repo_shadow.RepoShadow.finish_loop",
+                "_repo_shadow.RepoShadow.get_diffs",
+                "_repo_shadow.RepoShadow.list_files_changed_since",
+                "_repo_shadow.RepoShadow.list_files_at_time",
+                "_repo_shadow.RepoShadow.init_and_get_loop",
+                "_repo_shadow.RepoShadow.verify",
+            ]
+        )
     if sec_level == "update-only" or sec_level == "read-write":
-        requests.update([
-            "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
-            "log.ErrorLog.close",
-            "log.ErrorLog.isopen",
-            "log.ErrorLog.open",
-            "log.ErrorLog.write_if_open",
-            "log.Log.close_logfile_local",
-            "log.Log.open_logfile_local",
-            "statistics.record_error",
-            # API >= 201
-            "_repo_shadow.RepoShadow.close_statistics",
-            "_repo_shadow.RepoShadow.get_fs_abilities_readwrite",
-            "_repo_shadow.RepoShadow.get_sigs",
-            "_repo_shadow.RepoShadow.apply",
-            "_repo_shadow.RepoShadow.remove_current_mirror",
-            "_repo_shadow.RepoShadow.set_config",
-            "_repo_shadow.RepoShadow.touch_current_mirror",
-        ])
+        requests.update(
+            [
+                "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
+                "log.ErrorLog.close",
+                "log.ErrorLog.isopen",
+                "log.ErrorLog.open",
+                "log.ErrorLog.write_if_open",
+                "log.Log.close_logfile_local",
+                "log.Log.open_logfile_local",
+                "statistics.record_error",
+                # API >= 201
+                "_repo_shadow.RepoShadow.close_statistics",
+                "_repo_shadow.RepoShadow.get_fs_abilities_readwrite",
+                "_repo_shadow.RepoShadow.get_sigs",
+                "_repo_shadow.RepoShadow.apply",
+                "_repo_shadow.RepoShadow.remove_current_mirror",
+                "_repo_shadow.RepoShadow.set_config",
+                "_repo_shadow.RepoShadow.touch_current_mirror",
+            ]
+        )
     if sec_level == "read-write":
-        requests.update([
-            "rpath.delete_dir_no_files",
-            "rpath.copy_reg_file",  # FIXME really needed?
-            "rpath.make_socket_local",  # FIXME really needed?
-            "rpath.RPath.fsync_local",  # FIXME really needed?
-            # System
-            "os.chmod",
-            "os.chown",
-            "os.lchown",
-            "os.link",
-            "os.makedev",
-            "os.makedirs",
-            "os.mkdir",
-            "os.mkfifo",
-            "os.mknod",
-            "os.remove",
-            "os.rename",
-            "os.rmdir",
-            "os.symlink",
-            "os.unlink",
-            "os.utime",
-            "shutil.rmtree",
-            # API >= 201
-            "_repo_shadow.RepoShadow.regress",
-            "_repo_shadow.RepoShadow.remove_increments_older_than",
-            "_dir_shadow.WriteDirShadow.get_fs_abilities",
-            "_dir_shadow.WriteDirShadow.get_sigs_select",
-            "_dir_shadow.WriteDirShadow.apply",
-            "_dir_shadow.WriteDirShadow.set_select",
-        ])
+        requests.update(
+            [
+                "rpath.delete_dir_no_files",
+                "rpath.copy_reg_file",  # FIXME really needed?
+                "rpath.make_socket_local",  # FIXME really needed?
+                "rpath.RPath.fsync_local",  # FIXME really needed?
+                # System
+                "os.chmod",
+                "os.chown",
+                "os.lchown",
+                "os.link",
+                "os.makedev",
+                "os.makedirs",
+                "os.mkdir",
+                "os.mkfifo",
+                "os.mknod",
+                "os.remove",
+                "os.rename",
+                "os.rmdir",
+                "os.symlink",
+                "os.unlink",
+                "os.utime",
+                "shutil.rmtree",
+                # API >= 201
+                "_repo_shadow.RepoShadow.regress",
+                "_repo_shadow.RepoShadow.remove_increments_older_than",
+                "_dir_shadow.WriteDirShadow.get_fs_abilities",
+                "_dir_shadow.WriteDirShadow.get_sigs_select",
+                "_dir_shadow.WriteDirShadow.apply",
+                "_dir_shadow.WriteDirShadow.set_select",
+            ]
+        )
     if sec_class == "server":
-        requests.update([
-            "log.Log.setverbosity",
-            "log.Log.setterm_verbosity",
-            "SetConnections.init_connection_remote",
-            # API >= 201
-            "_repo_shadow.RepoShadow.init_owners_mapping",
-            "_dir_shadow.WriteDirShadow.init_owners_mapping",
-            "Globals.set_api_version",
-        ])
+        requests.update(
+            [
+                "log.Log.setverbosity",
+                "log.Log.setterm_verbosity",
+                "SetConnections.init_connection_remote",
+                # API >= 201
+                "_repo_shadow.RepoShadow.init_owners_mapping",
+                "_dir_shadow.WriteDirShadow.init_owners_mapping",
+                "Globals.set_api_version",
+            ]
+        )
     return requests
 
 
@@ -331,15 +349,14 @@ def _vet_filename(request, arglist):
     """Check to see if file operation is within the restrict_path"""
     i = _file_requests[request.function_string]
     if len(arglist) <= i:
-        _raise_violation("argument list shorter than %d" % i + 1, request,
-                         arglist)
+        _raise_violation("argument list shorter than %d" % i + 1, request, arglist)
     filename = arglist[i]
     if not isinstance(filename, (bytes, str, os.PathLike)):
-        _raise_violation("argument %d doesn't look like a filename" % i,
-                         request, arglist)
+        _raise_violation(
+            "argument %d doesn't look like a filename" % i, request, arglist
+        )
 
-    _vet_rpath(
-        rpath.RPath(Globals.local_connection, filename), request, arglist)
+    _vet_rpath(rpath.RPath(Globals.local_connection, filename), request, arglist)
 
 
 def _vet_rpath(rp, request, arglist):
@@ -349,20 +366,25 @@ def _vet_rpath(rp, request, arglist):
         components = norm_path.split(b"/")
         # we can't properly assess paths with parent directory, so we reject
         if b".." in components:
-            _raise_violation("normalized path '{np}' can't contain "
-                             "parent directory '..'".format(np=norm_path),
-                             request, arglist)
+            _raise_violation(
+                "normalized path '{np}' can't contain "
+                "parent directory '..'".format(np=norm_path),
+                request,
+                arglist,
+            )
         # the restrict path being root is a special case, we could check it
         # earlier but we would miss the previous checks
         if _restrict_path == b"/":
             return
         # the normalized path must begin with the restricted path
         # using lists, we avoid /bla/foobar being deemed within /bla/foo
-        if components[:len(_restrict_path_list)] != _restrict_path_list:
-            _raise_violation("normalized path '{np}' not within restricted "
-                             "path '{rp}'".format(np=norm_path,
-                                                  rp=_restrict_path),
-                             request, arglist)
+        if components[: len(_restrict_path_list)] != _restrict_path_list:
+            _raise_violation(
+                "normalized path '{np}' not within restricted "
+                "path '{rp}'".format(np=norm_path, rp=_restrict_path),
+                request,
+                arglist,
+            )
 
 
 def _raise_violation(reason, request, arglist):
@@ -371,6 +393,10 @@ def _raise_violation(reason, request, arglist):
         "\nWARNING: Security Violation due to {sv} for function: {func}"
         "\nwith arguments: {args}"
         "\nCompared to {path} restricted {level}.\n".format(
-            sv=reason, func=request.function_string,
+            sv=reason,
+            func=request.function_string,
             args=list(map(str, arglist)),
-            path=_restrict_path, level=_security_level))
+            path=_restrict_path,
+            level=_security_level,
+        )
+    )

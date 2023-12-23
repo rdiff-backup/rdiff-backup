@@ -44,8 +44,7 @@ def quote_path(path_string):
         elif char == b"\\":
             return b"\\\\"
         else:
-            raise re.error(
-                "Bad char '{bc}' shouldn't need quoting".format(bc=char))
+            raise re.error("Bad char '{bc}' shouldn't need quoting".format(bc=char))
 
     return _CHARS_TO_QUOTE.sub(replacement_func, path_string)
 
@@ -63,7 +62,6 @@ def unquote_path(quoted_string):
         elif two_chars == b"\\\\":
             return b"\\"
         else:
-            raise re.error(
-                "Unknown quoted sequence {qs} found".format(qs=two_chars))
+            raise re.error("Unknown quoted sequence {qs} found".format(qs=two_chars))
 
     return _CHARS_TO_UNQUOTE.sub(replacement_func, quoted_string)

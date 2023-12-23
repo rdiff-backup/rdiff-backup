@@ -38,13 +38,13 @@ class UserGroupTest(unittest.TestCase):
         """Test the default user mapping"""
         Globals.isdest = 1
         rootid = 0
-        binid = pwd.getpwnam('bin')[2]
-        mailid = pwd.getpwnam('mail')[2]
+        binid = pwd.getpwnam("bin")[2]
+        mailid = pwd.getpwnam("mail")[2]
         map_owners.init_users_mapping()
         self.assertEqual(map_owners._user_map(0), rootid)
-        self.assertEqual(map_owners._user_map(0, 'bin'), binid)
-        self.assertEqual(map_owners._user_map(0, 'mail'), mailid)
-        self.assertIsNone(map_owners._user_map.map_acl(0, 'aoeuth3t2ug89'))
+        self.assertEqual(map_owners._user_map(0, "bin"), binid)
+        self.assertEqual(map_owners._user_map(0, "mail"), mailid)
+        self.assertIsNone(map_owners._user_map.map_acl(0, "aoeuth3t2ug89"))
 
     def test_user_mapping(self):
         """Test the user mapping file through the _DefinedMap class"""
@@ -61,23 +61,23 @@ mail:0
         mapping_string += "éłephänt:" + curr_user_name
         Globals.isdest = 1
         rootid = 0
-        binid = pwd.getpwnam('bin')[2]
-        mailid = pwd.getpwnam('mail')[2]
-        daemonid = pwd.getpwnam('daemon')[2]
+        binid = pwd.getpwnam("bin")[2]
+        mailid = pwd.getpwnam("mail")[2]
+        daemonid = pwd.getpwnam("daemon")[2]
         map_owners.init_users_mapping(mapping_string)
 
-        self.assertEqual(map_owners._user_map(rootid, 'root'), binid)
-        self.assertEqual(map_owners._user_map(binid, 'bin'), rootid)
-        self.assertEqual(map_owners._user_map(-1, 'éłephänt'), curr_user_uid)
+        self.assertEqual(map_owners._user_map(rootid, "root"), binid)
+        self.assertEqual(map_owners._user_map(binid, "bin"), rootid)
+        self.assertEqual(map_owners._user_map(-1, "éłephänt"), curr_user_uid)
         self.assertEqual(map_owners._user_map(0), mailid)
-        self.assertEqual(map_owners._user_map(mailid, 'mail'), 0)
+        self.assertEqual(map_owners._user_map(mailid, "mail"), 0)
         self.assertEqual(map_owners._user_map(500), 501)
 
         self.assertEqual(map_owners._user_map(501), 501)
-        self.assertEqual(map_owners._user_map(123, 'daemon'), daemonid)
+        self.assertEqual(map_owners._user_map(123, "daemon"), daemonid)
 
-        self.assertIsNone(map_owners._user_map.map_acl(29378, 'aoeuth3t2ug89'))
-        self.assertIs(map_owners._user_map.map_acl(0, 'aoeuth3t2ug89'), mailid)
+        self.assertIsNone(map_owners._user_map.map_acl(29378, "aoeuth3t2ug89"))
+        self.assertIs(map_owners._user_map.map_acl(0, "aoeuth3t2ug89"), mailid)
 
         if 0:
             code.InteractiveConsole(globals()).interact()

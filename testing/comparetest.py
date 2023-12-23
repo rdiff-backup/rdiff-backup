@@ -1,9 +1,16 @@
 import unittest
 import os
-from commontest import rdiff_backup, abs_output_dir, abs_test_dir, \
-    old_inc2_dir, old_inc3_dir, re_init_subdir
+from commontest import (
+    rdiff_backup,
+    abs_output_dir,
+    abs_test_dir,
+    old_inc2_dir,
+    old_inc3_dir,
+    re_init_subdir,
+)
 import commontest as comtst
 from rdiff_backup import Globals, rpath
+
 """Test the compare.py module and overall compare functionality"""
 
 # FIXME the remote comparison tests have to be skipped under Windows
@@ -24,21 +31,57 @@ class CompareTest(unittest.TestCase):
             options = ()  # just to also test the old API
         compare_options = ("--method", compare_method)
 
-        self.assertEqual(comtst.rdiff_backup_action(
-            local, local, old_inc3_dir, self.outdir, options,
-            b"compare", compare_options), Globals.RET_CODE_OK)
-        self.assertNotEqual(comtst.rdiff_backup_action(
-            local, local, old_inc2_dir, self.outdir, options,
-            b"compare", compare_options), Globals.RET_CODE_OK)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                old_inc3_dir,
+                self.outdir,
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
+        self.assertNotEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                old_inc2_dir,
+                self.outdir,
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
 
         compare_options += ("--at", "10000")
 
-        self.assertEqual(comtst.rdiff_backup_action(
-            local, local, old_inc2_dir, self.outdir, options,
-            b"compare", compare_options), Globals.RET_CODE_OK)
-        self.assertNotEqual(comtst.rdiff_backup_action(
-            local, local, old_inc3_dir, self.outdir, options,
-            b"compare", compare_options), Globals.RET_CODE_OK)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                old_inc2_dir,
+                self.outdir,
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
+        self.assertNotEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                old_inc3_dir,
+                self.outdir,
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
 
     def testBasicLocal(self):
         """Test basic --compare and --compare-at-time modes"""
@@ -72,29 +115,57 @@ class CompareTest(unittest.TestCase):
             options = ()  # just to also test the old API
         compare_options = ("--method", compare_method)
 
-        self.assertEqual(comtst.rdiff_backup_action(
-            local, local,
-            os.path.join(old_inc3_dir, b'various_file_types'),
-            os.path.join(abs_output_dir, b'various_file_types'),
-            options, b"compare", compare_options), Globals.RET_CODE_OK)
-        self.assertNotEqual(comtst.rdiff_backup_action(
-            local, local,
-            os.path.join(old_inc2_dir, b'increment1'),
-            os.path.join(abs_output_dir, b'increment1'),
-            options, b"compare", compare_options), Globals.RET_CODE_OK)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                os.path.join(old_inc3_dir, b"various_file_types"),
+                os.path.join(abs_output_dir, b"various_file_types"),
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
+        self.assertNotEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                os.path.join(old_inc2_dir, b"increment1"),
+                os.path.join(abs_output_dir, b"increment1"),
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
 
         compare_options += ("--at", "10000")
 
-        self.assertEqual(comtst.rdiff_backup_action(
-            local, local,
-            os.path.join(old_inc2_dir, b'newdir'),
-            os.path.join(abs_output_dir, b'newdir'),
-            options, b"compare", compare_options), Globals.RET_CODE_OK)
-        self.assertNotEqual(comtst.rdiff_backup_action(
-            local, local,
-            os.path.join(old_inc3_dir, b'newdir'),
-            os.path.join(abs_output_dir, b'newdir'),
-            options, b"compare", compare_options), Globals.RET_CODE_OK)
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                os.path.join(old_inc2_dir, b"newdir"),
+                os.path.join(abs_output_dir, b"newdir"),
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
+        self.assertNotEqual(
+            comtst.rdiff_backup_action(
+                local,
+                local,
+                os.path.join(old_inc3_dir, b"newdir"),
+                os.path.join(abs_output_dir, b"newdir"),
+                options,
+                b"compare",
+                compare_options,
+            ),
+            Globals.RET_CODE_OK,
+        )
 
     def testSelLocal(self):
         """Test basic local compare of single subdirectory"""
@@ -132,57 +203,61 @@ class CompareTest(unittest.TestCase):
 
             fp = rp.open("wb")
             fp.seek(int(rp.getsize() / 2))
-            if char == b'a':
-                fp.write(b'b')
+            if char == b"a":
+                fp.write(b"b")
             else:
-                fp.write(b'a')
+                fp.write(b"a")
             fp.close()
 
         def modify_diff():
             """Write to the stph_icons.h diff"""
-            incs_dir = os.path.join(abs_output_dir, b'rdiff-backup-data',
-                                    b'increments')
+            incs_dir = os.path.join(abs_output_dir, b"rdiff-backup-data", b"increments")
             templist = [
-                filename for filename in os.listdir(incs_dir)
-                if filename.startswith(b'stph_icons.h')
+                filename
+                for filename in os.listdir(incs_dir)
+                if filename.startswith(b"stph_icons.h")
             ]
             self.assertEqual(
-                len(templist), 1,
+                len(templist),
+                1,
                 "There should be only one diff file in '{diffs}'. "
-                "Something is wrong with the test setup.".format(
-                    diffs=templist))
-            diff_rp = rpath.RPath(Globals.local_connection,
-                                  os.path.join(incs_dir, templist[0]))
+                "Something is wrong with the test setup.".format(diffs=templist),
+            )
+            diff_rp = rpath.RPath(
+                Globals.local_connection, os.path.join(incs_dir, templist[0])
+            )
             change_file(diff_rp)
 
-        rdiff_backup(local,
-                     local,
-                     abs_output_dir,
-                     None,
-                     extra_options=b"verify")
-        rdiff_backup(local,
-                     local,
-                     abs_output_dir,
-                     None,
-                     extra_options=b"verify --at 10000")
+        rdiff_backup(local, local, abs_output_dir, None, extra_options=b"verify")
+        rdiff_backup(
+            local, local, abs_output_dir, None, extra_options=b"verify --at 10000"
+        )
         modify_diff()
         self.assertTrue(
-            rdiff_backup(local,
-                         local,
-                         abs_output_dir,
-                         None,
-                         extra_options=b"verify --at 10000",
-                         expected_ret_code=None))
+            rdiff_backup(
+                local,
+                local,
+                abs_output_dir,
+                None,
+                extra_options=b"verify --at 10000",
+                expected_ret_code=None,
+            )
+        )
         change_file(
-            rpath.RPath(Globals.local_connection,
-                        os.path.join(abs_output_dir, b'stph_icons.h')))
+            rpath.RPath(
+                Globals.local_connection, os.path.join(abs_output_dir, b"stph_icons.h")
+            )
+        )
         self.assertTrue(
-            rdiff_backup(local,
-                         local,
-                         abs_output_dir,
-                         None,
-                         extra_options=b"verify",
-                         expected_ret_code=None))
+            rdiff_backup(
+                local,
+                local,
+                abs_output_dir,
+                None,
+                extra_options=b"verify",
+                expected_ret_code=None,
+            )
+        )
 
     def testVerifyLocal(self):
         """Test --verify of directory, local"""

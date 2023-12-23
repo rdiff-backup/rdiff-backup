@@ -35,21 +35,18 @@ def get_discovered_plugins(namespace, prefix):
     # we discover first potential 3rd party plugins, based on name
     discovered_modules = {
         name: importlib.import_module(name)
-        for finder, name, ispkg
-        in pkgutil.iter_modules()
+        for finder, name, ispkg in pkgutil.iter_modules()
         if name.startswith(prefix)
     }
     # and we complete/overwrite with modules delivered in the namespace
-    discovered_modules.update({
-        name: importlib.import_module(name)
-        for name in _iter_namespace(namespace)
-    })
+    discovered_modules.update(
+        {name: importlib.import_module(name) for name in _iter_namespace(namespace)}
+    )
 
     # then we create the dictionary of {name: Class}
     discovered_plugins = {
         plugin.get_plugin_class().get_name(): plugin.get_plugin_class()
-        for plugin
-        in discovered_modules.values()
+        for plugin in discovered_modules.values()
     }
 
     return discovered_plugins
@@ -73,7 +70,7 @@ def _iter_namespace(nsp):
     # See https://github.com/pyinstaller/pyinstaller/issues/1905
     toc = set()  # table of content
     for importer in pkgutil.iter_importers(nsp.__name__.partition(".")[0]):
-        if hasattr(importer, 'toc'):
+        if hasattr(importer, "toc"):
             toc |= importer.toc
     for name in toc:
         if name.startswith(prefix):

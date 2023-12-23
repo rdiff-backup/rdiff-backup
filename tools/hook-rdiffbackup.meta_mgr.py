@@ -1,2 +1,3 @@
 from PyInstaller.utils.hooks import collect_submodules
-hiddenimports = collect_submodules('rdiffbackup.meta')
+
+hiddenimports = collect_submodules("rdiffbackup.meta")

@@ -51,9 +51,13 @@ def _get_pid_name_ps(pid):
         cmd = ("tasklist", "/nh", "/fi", "pid eq {pp}".format(pp=pid))
     else:
         cmd = ("ps", "-p", str(pid), "-o", "comm=,pid=")
-    output = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False
-    ).stdout.decode().split()
+    output = (
+        subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False
+        )
+        .stdout.decode()
+        .split()
+    )
     if output and output[1] == str(pid):
         return output[0]  # image/process name
     else:
@@ -64,6 +68,7 @@ def _get_pid_name_ps(pid):
 # of get_pid_name
 try:
     import psutil
+
     get_pid_name = _get_pid_name_psutil
 except ModuleNotFoundError:
     get_pid_name = _get_pid_name_ps

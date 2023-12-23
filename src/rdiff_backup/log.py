@@ -27,7 +27,7 @@ import textwrap
 import traceback
 from rdiff_backup import Globals
 
-LOGFILE_ENCODING = 'utf-8'
+LOGFILE_ENCODING = "utf-8"
 
 # we need to define constants
 ERROR = 1
@@ -57,7 +57,8 @@ class Logger:
         self.log_file_open = None
         self.log_file_local = None
         self.verbosity = self.term_verbosity = int(
-            os.getenv('RDIFF_BACKUP_VERBOSITY', '3'))
+            os.getenv("RDIFF_BACKUP_VERBOSITY", "3")
+        )
         # termverbset is true if the term_verbosity has been explicitly set
         self.termverbset = None
 
@@ -72,8 +73,8 @@ class Logger:
 
         if not isinstance(message, (bytes, str)):
             raise TypeError(
-                "You can only log bytes or str, and not {lt}".format(
-                    lt=type(message)))
+                "You can only log bytes or str, and not {lt}".format(lt=type(message))
+            )
 
         if verbosity <= self.verbosity:
             self.log_to_file(message, verbosity)
@@ -104,10 +105,14 @@ class Logger:
         if self.verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
             termfp.write(
                 textwrap.fill(
-                    tmpstr, subsequent_indent=" " * 9,
+                    tmpstr,
+                    subsequent_indent=" " * 9,
                     break_long_words=False,
                     break_on_hyphens=False,
-                    width=shutil.get_terminal_size().columns - 1) + "\n")
+                    width=shutil.get_terminal_size().columns - 1,
+                )
+                + "\n"
+            )
         else:
             termfp.write(tmpstr)
 
@@ -127,13 +132,17 @@ class Logger:
         else:
             result_repr = str(result)
         # shorten the result to a max size of 720 chars with ellipsis if needed
-        #result_repr = result_repr[:720] + (result_repr[720:] and '[...]')  # noqa: E265
+        # result_repr = result_repr[:720] + (result_repr[720:] and '[...]')  # noqa: E265
         if Globals.server:
             conn_str = "Server"
         else:
             conn_str = "Client"
-        self.log_to_term("{cs} {di} ({rn}): {rr}".format(
-            cs=conn_str, di=direction, rn=req_num, rr=result_repr), DEBUG)
+        self.log_to_term(
+            "{cs} {di} ({rn}): {rr}".format(
+                cs=conn_str, di=direction, rn=req_num, rr=result_repr
+            ),
+            DEBUG,
+        )
 
     def FatalError(self, message, return_code=1):
         """Log a fatal error and exit"""
@@ -147,10 +156,12 @@ class Logger:
         If it is 1, then only log to disk if log file is local
         If it is 2, don't log to disk at all.
         """
-        assert only_terminal in (0, 1, 2), (
-            "Variable only_terminal '{ot}' must be one of [012]".format(
-                ot=only_terminal))
-        if (only_terminal == 0 or (only_terminal == 1 and self.log_file_open)):
+        assert only_terminal in (
+            0,
+            1,
+            2,
+        ), "Variable only_terminal '{ot}' must be one of [012]".format(ot=only_terminal)
+        if only_terminal == 0 or (only_terminal == 1 and self.log_file_open):
             logging_func = self.__call__
         else:
             logging_func = self.log_to_term
@@ -170,8 +181,10 @@ class Logger:
         try:
             self.verbosity = int(verbosity_string)
         except ValueError:
-            Log.FatalError("Verbosity must be a number, received '{vs}' "
-                           "instead".format(vs=verbosity_string))
+            Log.FatalError(
+                "Verbosity must be a number, received '{vs}' "
+                "instead".format(vs=verbosity_string)
+            )
         if not self.termverbset:
             self.term_verbosity = self.verbosity
 
@@ -181,8 +194,10 @@ class Logger:
         try:
             self.term_verbosity = int(termverb_string)
         except ValueError:
-            Log.FatalError("Terminal verbosity must be a number, received "
-                           "'{tv}' instead".format(tv=termverb_string))
+            Log.FatalError(
+                "Terminal verbosity must be a number, received "
+                "'{tv}' instead".format(tv=termverb_string)
+            )
         self.termverbset = 1
 
     def open_logfile(self, log_rp):
@@ -206,14 +221,16 @@ class Logger:
     # @API(Log.open_logfile_local, 200)
     def open_logfile_local(self, log_rp):
         """Open logfile locally - should only be run on one connection"""
-        assert log_rp.conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}".format(
-                conn=log_rp.conn))
+        assert (
+            log_rp.conn is Globals.local_connection
+        ), "Action only foreseen locally and not over {conn}".format(conn=log_rp.conn)
         try:
             self.logfp = log_rp.open("ab")
         except OSError as exc:
-            raise LoggerError("Unable to open logfile {lf} due to "
-                              "exception '{ex}'".format(lf=log_rp, ex=exc))
+            raise LoggerError(
+                "Unable to open logfile {lf} due to "
+                "exception '{ex}'".format(lf=log_rp, ex=exc)
+            )
         self.log_file_local = 1
 
     def close_logfile(self):
@@ -231,17 +248,22 @@ class Logger:
     # @API(Log.close_logfile_local, 200)
     def close_logfile_local(self):
         """Run by logging connection - close logfile"""
-        assert self.log_file_conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {lc}".format(
-                lc=self.log_file_conn))
+        assert (
+            self.log_file_conn is Globals.local_connection
+        ), "Action only foreseen locally and not over {lc}".format(
+            lc=self.log_file_conn
+        )
         self.logfp.close()
         self.log_file_local = None
 
     def _exception_to_string(self):
         """Return string version of current exception"""
         type, value, tb = sys.exc_info()
-        s = ("Exception '%s' raised of class '%s':\n%s" %
-             (value, type, "".join(traceback.format_tb(tb))))
+        s = "Exception '%s' raised of class '%s':\n%s" % (
+            value,
+            type,
+            "".join(traceback.format_tb(tb)),
+        )
         return s
 
     def _format(self, message, verbosity, msg_verbosity):
@@ -252,18 +274,25 @@ class Logger:
                 return "{msg}\n".format(msg=message)
             else:
                 return "{pre:<9}{msg}\n".format(
-                    pre=_LOG_PREFIX[msg_verbosity], msg=message)
+                    pre=_LOG_PREFIX[msg_verbosity], msg=message
+                )
         else:
-            timestamp = datetime.datetime.now(
-                datetime.timezone.utc).astimezone().strftime(
-                    "%F %H:%M:%S.%f %z")
+            timestamp = (
+                datetime.datetime.now(datetime.timezone.utc)
+                .astimezone()
+                .strftime("%F %H:%M:%S.%f %z")
+            )
             if Globals.server:
                 role = "SERVER"
             else:
                 role = "CLIENT"
             return "{time}  <{role}-{pid}>  {pre} {msg}\n".format(
-                time=timestamp, role=role, pid=os.getpid(),
-                pre=_LOG_PREFIX[msg_verbosity], msg=message)
+                time=timestamp,
+                role=role,
+                pid=os.getpid(),
+                pre=_LOG_PREFIX[msg_verbosity],
+                msg=message,
+            )
 
 
 Log = Logger()
@@ -279,6 +308,7 @@ class ErrorLog:
     SpecialFileError, which happen when a special file cannot be
     created.  See the error policy file for more info.
     """
+
     _log_fileobj = None
 
     @classmethod
@@ -286,14 +316,14 @@ class ErrorLog:
     def open(cls, time_string, compress=1):
         """Open the error log, prepare for writing"""
         if not Globals.isbackup_writer:
-            return Globals.backup_writer.log.ErrorLog.open(
-                time_string, compress)
+            return Globals.backup_writer.log.ErrorLog.open(time_string, compress)
         assert not cls._log_fileobj, "Log already open, can't be reopened"
 
         # Globals.rbdir compat201
         base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
         if compress:  # FIXME extract MaybeGzip from rpath and make it utils?
             from rdiff_backup import rpath
+
             cls._log_fileobj = rpath.MaybeGzip(base_rp)
         else:
             cls._log_fileobj = base_rp.open("wb", compress=0)
@@ -312,8 +342,7 @@ class ErrorLog:
     def write_if_open(cls, error_type, rp, exc):
         """Call cls._write(...) if error log open, only log otherwise"""
         if not Globals.isbackup_writer and Globals.backup_writer:
-            return Globals.backup_writer.log.ErrorLog.write_if_open(
-                error_type, rp, exc)
+            return Globals.backup_writer.log.ErrorLog.write_if_open(error_type, rp, exc)
         if cls.isopen():
             cls._write(error_type, rp, exc)
         else:
@@ -332,9 +361,11 @@ class ErrorLog:
     @classmethod
     def _get_log_string(cls, error_type, rp, exc):
         """Return log string to put in error log"""
-        assert (error_type == "ListError" or error_type == "UpdateError"
-                or error_type == "SpecialFileError"), (
-            "Unknown error type {et}".format(et=error_type))
+        assert (
+            error_type == "ListError"
+            or error_type == "UpdateError"
+            or error_type == "SpecialFileError"
+        ), "Unknown error type {et}".format(et=error_type)
         return "{et}: '{rp}' {ex}".format(et=error_type, rp=rp, ex=exc)
 
     @classmethod
@@ -355,6 +386,7 @@ def _to_bytes(logline, encoding=LOGFILE_ENCODING):
     Convert string into bytes for logging into file.
     """
     assert logline, "There must be a text to encode"
-    assert isinstance(logline, str), (
-        "Text to encode must be str and not {lt}".format(lt=type(logline)))
-    return logline.encode(encoding, 'backslashreplace')
+    assert isinstance(logline, str), "Text to encode must be str and not {lt}".format(
+        lt=type(logline)
+    )
+    return logline.encode(encoding, "backslashreplace")

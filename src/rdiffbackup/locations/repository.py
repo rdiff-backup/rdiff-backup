@@ -29,18 +29,26 @@ from rdiffbackup import locations
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import filenames as map_filenames
 
-from rdiff_backup import (Globals, log, selection, Security, Time)
+from rdiff_backup import Globals, log, selection, Security, Time
 
 
 class Repo(locations.Location):
     """
     Represent a Backup Repository as created by rdiff-backup
     """
+
     # is there an open logfile to close?
     logging_to_file = False
 
-    def __init__(self, base_dir, force, must_be_writable, must_exist,
-                 create_full_path=False, can_be_sub_path=False):
+    def __init__(
+        self,
+        base_dir,
+        force,
+        must_be_writable,
+        must_exist,
+        create_full_path=False,
+        can_be_sub_path=False,
+    ):
         """
         Initialize the repository class
 
@@ -79,14 +87,11 @@ class Repo(locations.Location):
                 return Globals.RET_CODE_ERR
             else:
                 self.ref_path = self.base_dir.new_index(self.ref_index)
-                self.ref_inc = self.data_dir.append_path(b'increments',
-                                                         self.ref_index)
+                self.ref_inc = self.data_dir.append_path(b"increments", self.ref_index)
         else:
             self.ref_path = self.base_dir
-            self.ref_inc = self.data_dir.append_path(b'increments',
-                                                     self.ref_index)
-            log.Log("Using repository '{re}'".format(re=self.base_dir),
-                    log.INFO)
+            self.ref_inc = self.data_dir.append_path(b"increments", self.ref_index)
+            log.Log("Using repository '{re}'".format(re=self.base_dir), log.INFO)
         ret_code = Globals.RET_CODE_OK
 
         if self.must_exist and not self._is_existing():
@@ -97,22 +102,27 @@ class Repo(locations.Location):
 
         return ret_code
 
-    def setup(self, src_dir=None, owners_map=None, action_name=None,
-              not_compressed_regexp=None):
+    def setup(
+        self,
+        src_dir=None,
+        owners_map=None,
+        action_name=None,
+        not_compressed_regexp=None,
+    ):
         if self.must_be_writable and not self._create():
             return Globals.RET_CODE_ERR
 
-        if (self.can_be_sub_path
-                and self.base_dir.conn is Globals.local_connection):
+        if self.can_be_sub_path and self.base_dir.conn is Globals.local_connection:
             Security.reset_restrict_path(self.base_dir)
 
-        Globals.set_all('rbdir', self.data_dir)  # compat201
+        Globals.set_all("rbdir", self.data_dir)  # compat201
 
         ret_code = Globals.RET_CODE_OK
 
         if self.base_dir.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _repo_shadow
+
             self._shadow = _repo_shadow.RepoShadow
         else:
             self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
@@ -120,29 +130,38 @@ class Repo(locations.Location):
         lock_result = self.lock()
         if lock_result is False:
             if self.force:
-                log.Log("Repository is locked by file {lf}, another "
-                        "action is probably on-going. Enforcing anyway "
-                        "at your own risk".format(lf=self.lockfile),
-                        log.WARNING)
+                log.Log(
+                    "Repository is locked by file {lf}, another "
+                    "action is probably on-going. Enforcing anyway "
+                    "at your own risk".format(lf=self.lockfile),
+                    log.WARNING,
+                )
             else:
-                log.Log("Repository is locked by file {lf}, another "
-                        "is probably on-going, or something went "
-                        "wrong. Either wait, remove the lock "
-                        "or use the --force option".format(
-                            lf=self.lockfile), log.ERROR)
+                log.Log(
+                    "Repository is locked by file {lf}, another "
+                    "is probably on-going, or something went "
+                    "wrong. Either wait, remove the lock "
+                    "or use the --force option".format(lf=self.lockfile),
+                    log.ERROR,
+                )
                 return Globals.RET_CODE_ERR
         elif lock_result is None:
-            log.Log("Repository couldn't be locked by file {lf}, probably "
-                    "because the repository was never written with "
-                    "API >= 201, ignoring".format(lf=self.lockfile),
-                    log.NOTE)
+            log.Log(
+                "Repository couldn't be locked by file {lf}, probably "
+                "because the repository was never written with "
+                "API >= 201, ignoring".format(lf=self.lockfile),
+                log.NOTE,
+            )
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
             return Globals.RET_CODE_ERR
         else:
-            log.Log("--- Repository file system capabilities ---\n"
-                    + str(self.fs_abilities), log.INFO)
+            log.Log(
+                "--- Repository file system capabilities ---\n"
+                + str(self.fs_abilities),
+                log.INFO,
+            )
 
         if src_dir is None:
             self.remote_transfer = None  # just in case
@@ -155,8 +174,7 @@ class Repo(locations.Location):
             Globals.set_all("backup_writer", self.base_dir.conn)
             self.base_dir.conn.Globals.set_local("isbackup_writer", True)
             # this is the new way, more dedicated but not sufficient yet
-            self.remote_transfer = (src_dir.base_dir.conn
-                                    is not self.base_dir.conn)
+            self.remote_transfer = src_dir.base_dir.conn is not self.base_dir.conn
             ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
@@ -216,7 +234,7 @@ class Repo(locations.Location):
             self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
             self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
 
-        Globals.set_all('rbdir', self.data_dir)  # compat201
+        Globals.set_all("rbdir", self.data_dir)  # compat201
 
         return True
 
@@ -224,8 +242,7 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.setup_paths
         """
-        return self._shadow.setup_paths(
-            self.base_dir, self.data_dir, self.incs_dir)
+        return self._shadow.setup_paths(self.base_dir, self.data_dir, self.incs_dir)
 
     @classmethod  # so that we can easily use in tests
     def setup_not_compressed_regexp(cls, not_compressed_regexp=None):
@@ -236,11 +253,14 @@ class Repo(locations.Location):
         try:
             not_compressed_regexp = re.compile(not_compressed_regexp)
         except re.error:
-            log.Log("No compression regular expression '{ex}' doesn't "
-                    "compile".format(ex=not_compressed_regexp), log.ERROR)
+            log.Log(
+                "No compression regular expression '{ex}' doesn't "
+                "compile".format(ex=not_compressed_regexp),
+                log.ERROR,
+            )
             return Globals.RET_CODE_ERR
 
-        Globals.set_all('no_compression_regexp', not_compressed_regexp)
+        Globals.set_all("no_compression_regexp", not_compressed_regexp)
 
         return Globals.RET_CODE_OK
 
@@ -272,7 +292,7 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.unlock
         """
-        if hasattr(self, '_shadow'):
+        if hasattr(self, "_shadow"):
             return self._shadow.unlock(self.lockfile, self.must_be_writable)
 
     def needs_regress(self):
@@ -280,7 +300,8 @@ class Repo(locations.Location):
         Shadow function for RepoShadow.needs_regress
         """
         return self._shadow.needs_regress(
-            self.base_dir, self.data_dir, self.incs_dir, self.force)
+            self.base_dir, self.data_dir, self.incs_dir, self.force
+        )
 
     def force_regress(self):
         """
@@ -294,14 +315,16 @@ class Repo(locations.Location):
             log.Log(
                 "Repository with only a mirror can't be forced to regress, "
                 "just remove it and start from scratch",
-                log.WARNING)
+                log.WARNING,
+            )
             return False
         mirror_time = self.get_mirror_time()
         if inc_times[-1] != mirror_time:
             log.Log(
                 "Repository's increment times are inconsistent, "
                 "it's too dangerous to force a regress",
-                log.WARNING)
+                log.WARNING,
+            )
             return False
         self.touch_current_mirror(Time.timetostring(inc_times[-2]))
         return True
@@ -320,7 +343,9 @@ class Repo(locations.Location):
             log.Log(
                 "Security violation while attempting to regress destination, "
                 "perhaps due to --restrict-read-only or "
-                "--restrict-update-only", log.ERROR)
+                "--restrict-update-only",
+                log.ERROR,
+            )
             return Globals.RET_CODE_ERR
 
     def set_select(self, select_opts, select_data, target_rp):
@@ -339,28 +364,30 @@ class Repo(locations.Location):
         # compat201 we're retransforming bytes into a file pointer
         if select_opts:
             self._shadow.set_select(
-                target_rp, select_opts, *list(map(io.BytesIO, select_data)))
+                target_rp, select_opts, *list(map(io.BytesIO, select_data))
+            )
 
     def get_sigs(self, source_iter, use_increment):
         """
         Shadow function for RepoShadow.get_sigs
         """
-        return self._shadow.get_sigs(self.base_dir, source_iter,
-                                     use_increment, self.remote_transfer)
+        return self._shadow.get_sigs(
+            self.base_dir, source_iter, use_increment, self.remote_transfer
+        )
 
     def apply(self, source_diffiter, previous_time):
         """
         Shadow function for RepoShadow.apply
         """
         return self._shadow.apply(
-            self.base_dir, source_diffiter, self.incs_dir, previous_time)
+            self.base_dir, source_diffiter, self.incs_dir, previous_time
+        )
 
     def touch_current_mirror(self, current_time_str):
         """
         Shadow function for RepoShadow.touch_current_mirror
         """
-        return self._shadow.touch_current_mirror(self.data_dir,
-                                                 current_time_str)
+        return self._shadow.touch_current_mirror(self.data_dir, current_time_str)
 
     def remove_current_mirror(self):
         """
@@ -378,8 +405,9 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.init_loop
         """
-        return self._shadow.init_loop(self.data_dir, self.ref_path,
-                                      self.ref_inc, restore_time)
+        return self._shadow.init_loop(
+            self.data_dir, self.ref_path, self.ref_inc, restore_time
+        )
 
     def finish_loop(self):
         """
@@ -404,14 +432,16 @@ class Repo(locations.Location):
         Shadow function for RepoShadow.list_files_changed_since
         """
         return self._shadow.list_files_changed_since(
-            self.base_dir, self.incs_dir, self.data_dir, reftime)
+            self.base_dir, self.incs_dir, self.data_dir, reftime
+        )
 
     def list_files_at_time(self, reftime):
         """
         Shadow function for RepoShadow.list_files_at_time
         """
         return self._shadow.list_files_at_time(
-            self.base_dir, self.incs_dir, self.data_dir, reftime)
+            self.base_dir, self.incs_dir, self.data_dir, reftime
+        )
 
     def get_parsed_time(self, timestr):
         """
@@ -426,8 +456,11 @@ class Repo(locations.Location):
             sessions = self.get_increment_times(self.ref_inc)
             return Time.genstrtotime(timestr, session_times=sessions)
         except Time.TimeException as exc:
-            log.Log("Time string '{ts}' couldn't be parsed "
-                    "due to '{ex}'".format(ts=timestr, ex=exc), log.ERROR)
+            log.Log(
+                "Time string '{ts}' couldn't be parsed "
+                "due to '{ex}'".format(ts=timestr, ex=exc),
+                log.ERROR,
+            )
             return None
 
     def get_increments(self):
@@ -439,17 +472,24 @@ class Repo(locations.Location):
         is last in the list
         """
         incs_list = self.ref_inc.get_incfiles_list()
-        incs = [{"time": inc.getinctime(),
-                 "type": self._get_inc_type(inc),
-                 "base": inc.dirsplit()[1].decode(errors="replace")}
-                for inc in incs_list]
+        incs = [
+            {
+                "time": inc.getinctime(),
+                "type": self._get_inc_type(inc),
+                "base": inc.dirsplit()[1].decode(errors="replace"),
+            }
+            for inc in incs_list
+        ]
 
         # append the mirror itself
         mirror_time = self.get_mirror_time(must_exist=True)
-        incs.append({
-            "time": mirror_time,
-            "type": self._get_file_type(self.ref_path),
-            "base": self.ref_path.dirsplit()[1].decode(errors="replace")})
+        incs.append(
+            {
+                "time": mirror_time,
+                "type": self._get_file_type(self.ref_path),
+                "base": self.ref_path.dirsplit()[1].decode(errors="replace"),
+            }
+        )
 
         return sorted(incs, key=lambda x: x["time"])
 
@@ -499,10 +539,11 @@ class Repo(locations.Location):
             """Return list of triples (time, size, cumulative size)"""
             triples = []
 
-            cur_mir_base = self.data_dir.append(b'current_mirror')
+            cur_mir_base = self.data_dir.append(b"current_mirror")
             mirror_time = (cur_mir_base.get_incfiles_list())[0].getinctime()
-            triples.append({"time": mirror_time, "size": mirror_total,
-                            "total_size": mirror_total})
+            triples.append(
+                {"time": mirror_time, "size": mirror_total, "total_size": mirror_total}
+            )
 
             inc_times = list(time_dict.keys())
             inc_times.sort()
@@ -511,8 +552,9 @@ class Repo(locations.Location):
             for inc_time in inc_times:
                 size = time_dict[inc_time]
                 cumulative_size += size
-                triples.append({"time": inc_time, "size": size,
-                                "total_size": cumulative_size})
+                triples.append(
+                    {"time": inc_time, "size": size, "total_size": cumulative_size}
+                )
             return triples
 
         mirror_total = get_total(get_mirror_select())
@@ -532,14 +574,16 @@ class Repo(locations.Location):
         Shadow function for RepoShadow.init_and_get_loop
         """
         return self._shadow.init_and_get_loop(
-            self.data_dir, self.ref_path, self.ref_inc, compare_time, src_iter)
+            self.data_dir, self.ref_path, self.ref_inc, compare_time, src_iter
+        )
 
     def verify(self, verify_time):
         """
         Shadow function for RepoShadow.verify
         """
-        return self._shadow.verify(self.data_dir, self.ref_path,
-                                   self.ref_inc, verify_time)
+        return self._shadow.verify(
+            self.data_dir, self.ref_path, self.ref_inc, verify_time
+        )
 
     def get_chars_to_quote(self):
         """
@@ -551,8 +595,7 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.set_config for chars_to_quote
         """
-        return self._shadow.set_config(self.data_dir, "chars_to_quote",
-                                       chars_to_quote)
+        return self._shadow.set_config(self.data_dir, "chars_to_quote", chars_to_quote)
 
     def get_special_escapes(self):
         """
@@ -564,8 +607,9 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.set_config for special_escapes
         """
-        return self._shadow.set_config(self.data_dir, "special_escapes",
-                                       special_escapes)
+        return self._shadow.set_config(
+            self.data_dir, "special_escapes", special_escapes
+        )
 
     def _is_existing(self):
         # check first that the directory itself exists
@@ -573,13 +617,18 @@ class Repo(locations.Location):
             return False
 
         if not self.data_dir.isdir():
-            log.Log("Source directory '{sd}' doesn't have a sub-directory "
-                    "'rdiff-backup-data'".format(sd=self.base_dir), log.ERROR)
+            log.Log(
+                "Source directory '{sd}' doesn't have a sub-directory "
+                "'rdiff-backup-data'".format(sd=self.base_dir),
+                log.ERROR,
+            )
             return False
         elif not self.incs_dir.isdir():
-            log.Log("Data directory '{dd}' doesn't have an 'increments' "
-                    "sub-directory".format(dd=self.data_dir),
-                    log.WARNING)  # used to be normal  # compat200repo
+            log.Log(
+                "Data directory '{dd}' doesn't have an 'increments' "
+                "sub-directory".format(dd=self.data_dir),
+                log.WARNING,
+            )  # used to be normal  # compat200repo
             # return False # compat200repo
         return True
 
@@ -590,18 +639,26 @@ class Repo(locations.Location):
             return False
         # if the target is a non-empty existing directory
         # without rdiff-backup-data sub-directory
-        if (self.base_dir.lstat()
-                and self.base_dir.isdir()
-                and self.base_dir.listdir()
-                and not self.data_dir.lstat()):
+        if (
+            self.base_dir.lstat()
+            and self.base_dir.isdir()
+            and self.base_dir.listdir()
+            and not self.data_dir.lstat()
+        ):
             if self.force:
-                log.Log("Target path '{tp}' does not look like a rdiff-backup "
-                        "repository but will be force overwritten".format(
-                            tp=self.base_dir), log.WARNING)
+                log.Log(
+                    "Target path '{tp}' does not look like a rdiff-backup "
+                    "repository but will be force overwritten".format(tp=self.base_dir),
+                    log.WARNING,
+                )
             else:
-                log.Log("Target path '{tp}' does not look like a rdiff-backup "
-                        "repository, call with '--force' to overwrite".format(
-                            tp=self.base_dir), log.ERROR)
+                log.Log(
+                    "Target path '{tp}' does not look like a rdiff-backup "
+                    "repository, call with '--force' to overwrite".format(
+                        tp=self.base_dir
+                    ),
+                    log.ERROR,
+                )
                 return False
         return True
 
@@ -616,20 +673,27 @@ class Repo(locations.Location):
             self.lockfile.setdata()
             if self.lockfile.lstat():
                 if self.force:
-                    log.Log("An initial backup in a strange state with "
-                            "lockfile {lf}. Enforcing continuation, "
-                            "hopefully you know what you're doing".format(
-                                lf=self.lockfile), log.WARNING)
+                    log.Log(
+                        "An initial backup in a strange state with "
+                        "lockfile {lf}. Enforcing continuation, "
+                        "hopefully you know what you're doing".format(lf=self.lockfile),
+                        log.WARNING,
+                    )
                 else:
-                    log.Log("An initial backup in a strange state with "
-                            "lockfile {lf}. Either it's just an initial backup "
-                            "running, wait a bit and try again later, or "
-                            "something is really wrong. --force will remove "
-                            "the complete repo, at your own risk".format(
-                                lf=self.lockfile), log.ERROR)
+                    log.Log(
+                        "An initial backup in a strange state with "
+                        "lockfile {lf}. Either it's just an initial backup "
+                        "running, wait a bit and try again later, or "
+                        "something is really wrong. --force will remove "
+                        "the complete repo, at your own risk".format(lf=self.lockfile),
+                        log.ERROR,
+                    )
                     return False
-            log.Log("Found interrupted initial backup in data directory {dd}. "
-                    "Removing...".format(dd=self.data_dir), log.NOTE)
+            log.Log(
+                "Found interrupted initial backup in data directory {dd}. "
+                "Removing...".format(dd=self.data_dir),
+                log.NOTE,
+            )
             self._clean_failed_initial_backup()
 
         # define a few essential subdirectories
@@ -637,19 +701,27 @@ class Repo(locations.Location):
             try:
                 self.data_dir.mkdir()
             except OSError as exc:
-                log.Log("Could not create 'rdiff-backup-data' sub-directory "
-                        "in base directory '{bd}' due to exception '{ex}'. "
-                        "Please fix the access rights and retry.".format(
-                            bd=self.base_dir, ex=exc), log.ERROR)
+                log.Log(
+                    "Could not create 'rdiff-backup-data' sub-directory "
+                    "in base directory '{bd}' due to exception '{ex}'. "
+                    "Please fix the access rights and retry.".format(
+                        bd=self.base_dir, ex=exc
+                    ),
+                    log.ERROR,
+                )
                 return False
         if not self.incs_dir.lstat():
             try:
                 self.incs_dir.mkdir()
             except OSError as exc:
-                log.Log("Could not create 'increments' sub-directory "
-                        "in data directory '{dd}' due to exception '{ex}'. "
-                        "Please fix the access rights and retry.".format(
-                            dd=self.data_dir, ex=exc), log.ERROR)
+                log.Log(
+                    "Could not create 'increments' sub-directory "
+                    "in data directory '{dd}' due to exception '{ex}'. "
+                    "Please fix the access rights and retry.".format(
+                        dd=self.data_dir, ex=exc
+                    ),
+                    log.ERROR,
+                )
                 return False
 
         return True
@@ -661,17 +733,18 @@ class Repo(locations.Location):
         """
         if self.data_dir.lstat():
             rbdir_files = self.data_dir.listdir()
-            mirror_markers = [
-                x for x in rbdir_files if x.startswith(b"current_mirror")
-            ]
+            mirror_markers = [x for x in rbdir_files if x.startswith(b"current_mirror")]
             error_logs = [x for x in rbdir_files if x.startswith(b"error_log")]
             metadata_mirrors = [
                 x for x in rbdir_files if x.startswith(b"mirror_metadata")
             ]
             # If we have no current_mirror marker, and one or less error logs
             # and metadata files, we most likely have a failed backup.
-            return not mirror_markers and len(error_logs) <= 1 and \
-                len(metadata_mirrors) <= 1
+            return (
+                not mirror_markers
+                and len(error_logs) <= 1
+                and len(metadata_mirrors) <= 1
+            )
         return False
 
     def _clean_failed_initial_backup(self):
@@ -691,12 +764,20 @@ class Repo(locations.Location):
             log.Log.open_logfile(logfile)
         except (log.LoggerError, Security.Violation) as exc:
             if must_be_writable:
-                log.Log("Unable to open logfile '{lf}' due to '{ex}'".format(
-                    lf=logfile, ex=exc), log.ERROR)
+                log.Log(
+                    "Unable to open logfile '{lf}' due to '{ex}'".format(
+                        lf=logfile, ex=exc
+                    ),
+                    log.ERROR,
+                )
                 return Globals.RET_CODE_ERR
             else:
-                log.Log("Unable to open logfile '{lf}' due to '{ex}'".format(
-                    lf=logfile, ex=exc), log.WARNING)
+                log.Log(
+                    "Unable to open logfile '{lf}' due to '{ex}'".format(
+                        lf=logfile, ex=exc
+                    ),
+                    log.WARNING,
+                )
                 return Globals.RET_CODE_WARN
         else:
             self.logging_to_file = True
@@ -705,8 +786,7 @@ class Repo(locations.Location):
     @classmethod
     def _get_inc_type(cls, inc):
         """Return file type increment represents"""
-        assert inc.isincfile(), (
-            "File '{inc!s}' must be an increment.".format(inc=inc))
+        assert inc.isincfile(), "File '{inc!s}' must be an increment.".format(inc=inc)
         inc_type = inc.getinctype()
         if inc_type == b"dir":
             return "directory"
@@ -717,8 +797,9 @@ class Repo(locations.Location):
         elif inc_type == b"snapshot":
             return cls._get_file_type(inc)
         else:
-            log.Log.FatalError("Unknown type '{ut}' of increment '{ic}'".format(
-                ut=inc_type, ic=inc))
+            log.Log.FatalError(
+                "Unknown type '{ut}' of increment '{ic}'".format(ut=inc_type, ic=inc)
+            )
 
     @classmethod
     def _get_file_type(cls, rp):

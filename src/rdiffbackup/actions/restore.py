@@ -22,9 +22,9 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import (Globals, log, selection)
+from rdiff_backup import Globals, log, selection
 from rdiffbackup import actions
-from rdiffbackup.locations import (directory, repository)
+from rdiffbackup.locations import directory, repository
 
 
 class RestoreAction(actions.BaseAction):
@@ -32,11 +32,14 @@ class RestoreAction(actions.BaseAction):
     Restore a backup at a given time (default is latest) from a repository
     to a target directory.
     """
+
     name = "restore"
     security = "restore"
     parent_parsers = [
-        actions.CREATION_PARSER, actions.COMPRESSION_PARSER,
-        actions.SELECTION_PARSER, actions.FILESYSTEM_PARSER,
+        actions.CREATION_PARSER,
+        actions.COMPRESSION_PARSER,
+        actions.SELECTION_PARSER,
+        actions.FILESYSTEM_PARSER,
         actions.USER_GROUP_PARSER,
     ]
 
@@ -45,26 +48,36 @@ class RestoreAction(actions.BaseAction):
         subparser = super().add_action_subparser(sub_handler)
         restore_group = subparser.add_mutually_exclusive_group()
         restore_group.add_argument(
-            "--at", metavar="TIME",
-            help="restore files as of a specific time")
+            "--at", metavar="TIME", help="restore files as of a specific time"
+        )
         restore_group.add_argument(
-            "--increment", action="store_true",
-            help="restore from a specific increment as first parameter")
+            "--increment",
+            action="store_true",
+            help="restore from a specific increment as first parameter",
+        )
         subparser.add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
-            help="locations of backup REPOSITORY/INCREMENT and to which TARGET_DIR to restore")
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=2,
+            help="locations of backup REPOSITORY/INCREMENT and to which TARGET_DIR to restore",
+        )
         return subparser
 
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
-                self.connected_locations[0], self.values.force,
-                must_be_writable=False, must_exist=True, can_be_sub_path=True
+                self.connected_locations[0],
+                self.values.force,
+                must_be_writable=False,
+                must_exist=True,
+                can_be_sub_path=True,
             )
-            self.dir = directory.WriteDir(self.connected_locations[1],
-                                          self.values.force,
-                                          self.values.create_full_path)
+            self.dir = directory.WriteDir(
+                self.connected_locations[1],
+                self.values.force,
+                self.values.create_full_path,
+            )
         return conn_value
 
     def check(self):
@@ -77,15 +90,21 @@ class RestoreAction(actions.BaseAction):
         # fit together
         if self.repo.ref_type == "inc":
             if self.values.at:
-                log.Log("You can't give an increment file and a time to "
-                        "restore at the same time.", log.ERROR)
+                log.Log(
+                    "You can't give an increment file and a time to "
+                    "restore at the same time.",
+                    log.ERROR,
+                )
                 ret_code |= Globals.RET_CODE_ERR
             elif not self.values.increment:
                 self.values.increment = True
         elif self.repo.ref_type in ("base", "subpath"):
             if self.values.increment:
-                log.Log("You can't use the --increment option and _not_ "
-                        "give an increment file", log.ERROR)
+                log.Log(
+                    "You can't use the --increment option and _not_ "
+                    "give an increment file",
+                    log.ERROR,
+                )
                 ret_code |= Globals.RET_CODE_ERR
             elif not self.values.at:
                 self.values.at = "now"
@@ -94,20 +113,32 @@ class RestoreAction(actions.BaseAction):
         # time, rdiff-backup might remove files in the target directory
         # see issue #463
         if self.values.selections and self.repo.ref_index:
-            possible_file_selections = set((
-                'include', 'exclude',
-                'exclude-filelist', 'include-filelist',
-                'exclude-filelist-stdin', 'include-filelist-stdin',
-                'exclude-globbing-filelist', 'include-globbing-filelist',
-                'exclude-globbing-filelist-stdin',
-                'include-globbing-filelist-stdin',
-                'exclude-regexp', 'include-regexp'))
-            file_selections = [x[0] for x in self.values.selections
-                               if x[0] in possible_file_selections]
+            possible_file_selections = set(
+                (
+                    "include",
+                    "exclude",
+                    "exclude-filelist",
+                    "include-filelist",
+                    "exclude-filelist-stdin",
+                    "include-filelist-stdin",
+                    "exclude-globbing-filelist",
+                    "include-globbing-filelist",
+                    "exclude-globbing-filelist-stdin",
+                    "include-globbing-filelist-stdin",
+                    "exclude-regexp",
+                    "include-regexp",
+                )
+            )
+            file_selections = [
+                x[0] for x in self.values.selections if x[0] in possible_file_selections
+            ]
             if file_selections:
-                log.Log("You can't combine restoring of a sub-path and file "
-                        "selection, result would be unpredictable and "
-                        "could lead to data loss", log.ERROR)
+                log.Log(
+                    "You can't combine restoring of a sub-path and file "
+                    "selection, result would be unpredictable and "
+                    "could lead to data loss",
+                    log.ERROR,
+                )
                 ret_code |= Globals.RET_CODE_ERR
 
         # we verify that source directory and target repository are correct
@@ -123,15 +154,17 @@ class RestoreAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self.repo.setup(action_name=self.name,
-                                    not_compressed_regexp=self.values.not_compressed_regexp)
+        ret_code |= self.repo.setup(
+            action_name=self.name,
+            not_compressed_regexp=self.values.not_compressed_regexp,
+        )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
         owners_map = {
             "users_map": self.values.user_mapping_file,
             "groups_map": self.values.group_mapping_file,
-            "preserve_num_ids": self.values.preserve_numerical_ids
+            "preserve_num_ids": self.values.preserve_numerical_ids,
         }
         ret_code |= self.dir.setup(self.repo, owners_map=owners_map)
         if ret_code & Globals.RET_CODE_ERR:
@@ -147,11 +180,15 @@ class RestoreAction(actions.BaseAction):
         elif self.values.increment:
             self.action_time = self.repo.orig_path.getinctime()
         else:  # this should have been catched in the check method
-            log.Log("This shouldn't happen but neither restore time nor "
-                    "an increment have been identified so far", log.ERROR)
+            log.Log(
+                "This shouldn't happen but neither restore time nor "
+                "an increment have been identified so far",
+                log.ERROR,
+            )
             return ret_code | Globals.RET_CODE_ERR
         (select_opts, select_data) = selection.get_prepared_selections(
-            self.values.selections)
+            self.values.selections
+        )
         # We must set both sides because restore filtering is different from
         # select filtering.  For instance, if a file is excluded it should
         # not be deleted from the target directory.
@@ -170,16 +207,20 @@ class RestoreAction(actions.BaseAction):
         ret_code |= self._operate_regress(try_regress=False)
         if ret_code & Globals.RET_CODE_ERR:
             # source could be read-only, so we don't try to regress it
-            log.Log("Previous backup to {rp} seems to have failed. "
-                    "Use rdiff-backup to 'regress' first the failed backup, "
-                    "then try again to restore".format(
-                        rp=self.repo.base_dir), log.ERROR)
+            log.Log(
+                "Previous backup to {rp} seems to have failed. "
+                "Use rdiff-backup to 'regress' first the failed backup, "
+                "then try again to restore".format(rp=self.repo.base_dir),
+                log.ERROR,
+            )
             return ret_code
         try:
             ret_code |= self._operate_restore()
         except OSError as exc:
-            log.Log("Could not complete restore due to exception '{ex}'".format(
-                ex=exc), log.ERROR)
+            log.Log(
+                "Could not complete restore due to exception '{ex}'".format(ex=exc),
+                log.ERROR,
+            )
             return ret_code | Globals.RET_CODE_ERR
         else:
             if ret_code & Globals.RET_CODE_ERR:
@@ -194,8 +235,9 @@ class RestoreAction(actions.BaseAction):
         """
         log.Log(
             "Starting restore operation from source path {sp} to destination "
-            "path {dp}".format(sp=self.repo.base_dir,
-                               dp=self.dir.base_dir), log.NOTE)
+            "path {dp}".format(sp=self.repo.base_dir, dp=self.dir.base_dir),
+            log.NOTE,
+        )
 
         self.repo.init_loop(self.action_time)
         target_iter = self.dir.get_sigs_select()

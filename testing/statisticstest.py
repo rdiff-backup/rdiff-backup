@@ -29,12 +29,12 @@ class StatsObjTest(unittest.TestCase):
     def test_get_stats(self):
         """Test reading and writing stat objects"""
         s = statistics.StatsObj()
-        self.assertIsNone(s.get_stat('SourceFiles'))
+        self.assertIsNone(s.get_stat("SourceFiles"))
         self.set_obj(s)
-        self.assertEqual(s.get_stat('SourceFiles'), 1)
+        self.assertEqual(s.get_stat("SourceFiles"), 1)
 
         s1 = statistics.StatFileObj()
-        self.assertEqual(s1.get_stat('SourceFiles'), 0)
+        self.assertEqual(s1.get_stat("SourceFiles"), 0)
 
     def test_get_stats_string(self):
         """Test conversion of stat object into string"""
@@ -48,7 +48,9 @@ class StatsObjTest(unittest.TestCase):
         tail = "\n".join(ss_list[2:])  # Time varies by time zone, don't check
         # """StartTime 11.00 (Wed Dec 31 16:00:11 1969)
         # EndTime 12.00 (Wed Dec 31 16:00:12 1969)"
-        self.assertEqual(tail, """ElapsedTime 1.00 (1 second)
+        self.assertEqual(
+            tail,
+            """ElapsedTime 1.00 (1 second)
 SourceFiles 1
 SourceFileSize 2 (2 bytes)
 MirrorFiles 13
@@ -63,7 +65,8 @@ ChangedMirrorSize 9 (9 bytes)
 IncrementFiles 15
 IncrementFileSize 10 (10 bytes)
 TotalDestinationSizeChange 7 (7 bytes)
-""")
+""",
+        )
 
     def test_line_string(self):
         """Test conversion to a single line"""
@@ -71,16 +74,16 @@ TotalDestinationSizeChange 7 (7 bytes)
         self.set_obj(s)
         statline = s._get_stats_line(("sample", "index", "w", "new\nline"))
         self.assertEqual(
-            statline,
-            "sample/index/w/new\\nline 1 2 13 14 3 4 5 6 7 8 9 15 10")
+            statline, "sample/index/w/new\\nline 1 2 13 14 3 4 5 6 7 8 9 15 10"
+        )
 
         statline = s._get_stats_line(())
         self.assertEqual(statline, ". 1 2 13 14 3 4 5 6 7 8 9 15 10")
 
-        statline = s._get_stats_line(("file name with spaces", ))
+        statline = s._get_stats_line(("file name with spaces",))
         self.assertEqual(
-            statline,
-            "file\\x20name\\x20with\\x20spaces 1 2 13 14 3 4 5 6 7 8 9 15 10")
+            statline, "file\\x20name\\x20with\\x20spaces 1 2 13 14 3 4 5 6 7 8 9 15 10"
+        )
 
     def test_byte_summary(self):
         """Test conversion of bytes to strings like 7.23MB"""
@@ -99,7 +102,7 @@ TotalDestinationSizeChange 7 (7 bytes)
         s = statistics.StatsObj()
         s._set_stats_from_string("NewFiles 3 hello there")
         for attr in s._stat_attrs:
-            if attr == 'NewFiles':
+            if attr == "NewFiles":
                 self.assertEqual(s.get_stat(attr), 3)
             else:
                 self.assertIsNone(s.get_stat(attr))
@@ -114,8 +117,9 @@ TotalDestinationSizeChange 7 (7 bytes)
 
     def test_write_rp(self):
         """Test reading and writing of statistics object"""
-        rp = rpath.RPath(Globals.local_connection,
-                         os.path.join(abs_test_dir, b"statstest"))
+        rp = rpath.RPath(
+            Globals.local_connection, os.path.join(abs_test_dir, b"statstest")
+        )
         if rp.lstat():
             rp.delete()
         s = statistics.StatsObj()
@@ -193,14 +197,18 @@ class IncStatTest(unittest.TestCase):
 
         Globals.compression = 1
         Myrm(abs_output_dir)
-        InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest1"),
-                       abs_output_dir)
-        InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest2"),
-                       abs_output_dir,
-                       int(time.time()) + 1)
+        InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest1"), abs_output_dir)
+        InternalBackup(
+            1,
+            1,
+            os.path.join(old_test_dir, b"stattest2"),
+            abs_output_dir,
+            int(time.time()) + 1,
+        )
 
-        rbdir = rpath.RPath(Globals.local_connection,
-                            os.path.join(abs_output_dir, b"rdiff-backup-data"))
+        rbdir = rpath.RPath(
+            Globals.local_connection, os.path.join(abs_output_dir, b"rdiff-backup-data")
+        )
 
         incs = sorti(rbdir.append("session_statistics").get_incfiles_list())
         self.assertEqual(len(incs), 2)

@@ -1,8 +1,7 @@
 import unittest
 import pickle
 import os
-from commontest import old_test_dir, abs_output_dir, \
-    compare_recursive, iter_equal
+from commontest import old_test_dir, abs_output_dir, compare_recursive, iter_equal
 from rdiff_backup import rpath, rorpiter, Globals
 from functools import reduce
 
@@ -17,12 +16,13 @@ class index:
 class RORPIterTest(unittest.TestCase):
     def setUp(self):
         self.lc = Globals.local_connection
-        self.inc0rp = rpath.RPath(self.lc,
-                                  os.path.join(old_test_dir, b"empty"), ())
+        self.inc0rp = rpath.RPath(self.lc, os.path.join(old_test_dir, b"empty"), ())
         self.inc1rp = rpath.RPath(
-            self.lc, os.path.join(old_test_dir, b"inc-reg-perms1"), ())
+            self.lc, os.path.join(old_test_dir, b"inc-reg-perms1"), ()
+        )
         self.inc2rp = rpath.RPath(
-            self.lc, os.path.join(old_test_dir, b"inc-reg-perms2"), ())
+            self.lc, os.path.join(old_test_dir, b"inc-reg-perms2"), ()
+        )
         self.output = rpath.RPath(self.lc, abs_output_dir, ())
 
     def testCollateIterators(self):
@@ -31,35 +31,60 @@ class RORPIterTest(unittest.TestCase):
 
         helper = lambda i: indices[i]  # noqa: E731 use def instead of lambda
         makeiter1 = lambda: iter(indices)  # noqa: E731 use def instead of lambda
-        makeiter2 = lambda: iter(map(helper, [0, 1, 3]))  # noqa: E731 use def instead of lambda
-        makeiter3 = lambda: iter(map(helper, [1, 2]))  # noqa: E731 use def instead of lambda
+        makeiter2 = lambda: iter(  # noqa: E731 use def instead of lambda
+            map(helper, [0, 1, 3])
+        )
+        makeiter3 = lambda: iter(  # noqa: E731 use def instead of lambda
+            map(helper, [1, 2])
+        )
 
         outiter = rorpiter.CollateIterators(makeiter1(), makeiter2())
-        self.assertTrue(iter_equal(
-            outiter,
-            iter([(indices[0], indices[0]), (indices[1], indices[1]),
-                  (indices[2], None), (indices[3], indices[3])])))
-
-        self.assertTrue(iter_equal(
-            rorpiter.CollateIterators(makeiter1(), makeiter2(), makeiter3()),
-            iter([(indices[0], indices[0], None),
-                  (indices[1], indices[1], indices[1]),
-                  (indices[2], None, indices[2]),
-                  (indices[3], indices[3], None)])))
+        self.assertTrue(
+            iter_equal(
+                outiter,
+                iter(
+                    [
+                        (indices[0], indices[0]),
+                        (indices[1], indices[1]),
+                        (indices[2], None),
+                        (indices[3], indices[3]),
+                    ]
+                ),
+            )
+        )
 
         self.assertTrue(
-            iter_equal(rorpiter.CollateIterators(makeiter1(), iter([])),
-                       iter([(i, None) for i in indices])))
+            iter_equal(
+                rorpiter.CollateIterators(makeiter1(), makeiter2(), makeiter3()),
+                iter(
+                    [
+                        (indices[0], indices[0], None),
+                        (indices[1], indices[1], indices[1]),
+                        (indices[2], None, indices[2]),
+                        (indices[3], indices[3], None),
+                    ]
+                ),
+            )
+        )
+
         self.assertTrue(
-            iter_equal(iter([(i, None) for i in indices]),
-                       rorpiter.CollateIterators(makeiter1(), iter([]))))
+            iter_equal(
+                rorpiter.CollateIterators(makeiter1(), iter([])),
+                iter([(i, None) for i in indices]),
+            )
+        )
+        self.assertTrue(
+            iter_equal(
+                iter([(i, None) for i in indices]),
+                rorpiter.CollateIterators(makeiter1(), iter([])),
+            )
+        )
 
     def compare_no_times(self, src_rp, dest_rp):
         """Compare but disregard directories attributes"""
 
         def equal(src_rorp, dest_rorp):
-            return ((src_rorp.isdir() and dest_rorp.isdir())
-                    or src_rorp == dest_rorp)
+            return (src_rorp.isdir() and dest_rorp.isdir()) or src_rorp == dest_rorp
 
         return compare_recursive(src_rp, dest_rp, None, equal)
 
@@ -88,8 +113,15 @@ class FillTest(unittest.TestCase):
         rootrp = rpath.RPath(Globals.local_connection, abs_output_dir)
 
         def get_rpiter():
-            for index in [('a', 'b'), ('a', 'c'), ('a', 'd'),
-                          ('b', ), ('b', 'a'), ('c', 'd', 'e'), ('c', 'f')]:
+            for index in [
+                ("a", "b"),
+                ("a", "c"),
+                ("a", "d"),
+                ("b",),
+                ("b", "a"),
+                ("c", "d", "e"),
+                ("c", "f"),
+            ]:
                 yield rootrp.new_index(index)
 
         filled_in = rorpiter.FillInIter(get_rpiter(), rootrp)
@@ -97,10 +129,22 @@ class FillTest(unittest.TestCase):
         # FillInIter complains about non existing directory 'c' and 'c/d',
         # this is normal because indeed the directories don't exist.
         index_list = [tuple(map(os.fsdecode, rp.index)) for rp in filled_in]
-        self.assertEqual(index_list,
-                         [(), ('a', ), ('a', 'b'), ('a', 'c'), ('a', 'd'),
-                          ('b', ), ('b', 'a'),
-                          ('c', ), ('c', 'd'), ('c', 'd', 'e'), ('c', 'f')])
+        self.assertEqual(
+            index_list,
+            [
+                (),
+                ("a",),
+                ("a", "b"),
+                ("a", "c"),
+                ("a", "d"),
+                ("b",),
+                ("b", "a"),
+                ("c",),
+                ("c", "d"),
+                ("c", "d", "e"),
+                ("c", "f"),
+            ],
+        )
 
 
 class ITRBadder(rorpiter.ITRBranch):
@@ -138,13 +182,12 @@ class ITRBadder2(rorpiter.ITRBranch):
 
 class TreeReducerTest(unittest.TestCase):
     def setUp(self):
-        self.i1 = [(), (1, ), (2, ), (3, )]
-        self.i2 = [(0, ), (0, 1), (0, 1, 0), (0, 1, 1), (0, 2), (0, 2, 1),
-                   (0, 3)]
+        self.i1 = [(), (1,), (2,), (3,)]
+        self.i2 = [(0,), (0, 1), (0, 1, 0), (0, 1, 1), (0, 2), (0, 2, 1), (0, 3)]
 
-        self.i1a = [(), (1, )]
-        self.i1b = [(2, ), (3, )]
-        self.i2a = [(0, ), (0, 1), (0, 1, 0)]
+        self.i1a = [(), (1,)]
+        self.i1b = [(2,), (3,)]
+        self.i2a = [(0,), (0, 1), (0, 1, 0)]
         self.i2b = [(0, 1, 1), (0, 2)]
         self.i2c = [(0, 2, 1), (0, 3)]
 
@@ -209,8 +252,8 @@ class CacheIndexableTest(unittest.TestCase):
     def get_iter(self):
         """Return iterator yielding indexed objects, add to dict d"""
         for i in range(100):
-            it = rorpiter.IndexedTuple((i, ), list(range(i)))
-            self.d[(i, )] = it
+            it = rorpiter.IndexedTuple((i,), list(range(i)))
+            self.d[(i,)] = it
             yield it
 
     def testCaching(self):
@@ -221,16 +264,16 @@ class CacheIndexableTest(unittest.TestCase):
         for i in range(3):  # call 3 times next
             next(ci)
 
-        self.assertEqual(ci.get((1, )), self.d[(1, )])
-        self.assertIsNone(ci.get((3, )))
+        self.assertEqual(ci.get((1,)), self.d[(1,)])
+        self.assertIsNone(ci.get((3,)))
 
         for i in range(3):  # call 3 times next
             next(ci)
 
-        self.assertEqual(ci.get((3, )), self.d[(3, )])
-        self.assertEqual(ci.get((4, )), self.d[(4, )])
+        self.assertEqual(ci.get((3,)), self.d[(3,)])
+        self.assertEqual(ci.get((4,)), self.d[(4,)])
         self.assertIsNone(ci.get((3, 5)))
-        self.assertRaises(AssertionError, ci.get, (1, ))
+        self.assertRaises(AssertionError, ci.get, (1,))
 
     def testEqual(self):
         """Make sure CI doesn't alter properties of underlying iter"""

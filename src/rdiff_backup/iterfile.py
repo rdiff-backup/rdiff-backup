@@ -54,7 +54,9 @@ class UnwrapFile:
         if len(header) != 8:
             raise ValueError(
                 "Header {hdr} is only {length} bytes instead of 8".format(
-                    hdr=header, length=len(header)))
+                    hdr=header, length=len(header)
+                )
+            )
         # [0:1] makes sure that the type remains a byte and not an int
         data_type, data_len = header[0:1], self._b2i(header[1:])
         buf = self.file.read(data_len)
@@ -63,12 +65,13 @@ class UnwrapFile:
         elif data_type in b"fc":
             return data_type, buf
         else:
-            raise ValueError("Data type {dtype} must be one of [oehfc]".format(
-                dtype=data_type))
+            raise ValueError(
+                "Data type {dtype} must be one of [oehfc]".format(dtype=data_type)
+            )
 
     def _b2i(self, b):
         """Convert bytes to int using big endian byteorder"""
-        return int.from_bytes(b, byteorder='big')
+        return int.from_bytes(b, byteorder="big")
 
 
 class IterWrappingFile(UnwrapFile):
@@ -155,8 +158,9 @@ class IterVirtualFile(UnwrapFile):
 
     def _add_to_buffer(self):
         """Read a chunk from the file and add it to the buffer"""
-        assert self.iwf.currently_in_file, (
-            "File {iwf} has already been read.".format(iwf=self.iwf.file))
+        assert self.iwf.currently_in_file, "File {iwf} has already been read.".format(
+            iwf=self.iwf.file
+        )
         iwf_type, iwf_data = self.iwf._get()
         if iwf_type == b"e":
             self.iwf.currently_in_file = None
@@ -169,20 +173,23 @@ class IterVirtualFile(UnwrapFile):
                 self._set_close_val()
                 return None
         else:
-            raise ValueError("Type '{itype}' must be one of [ce].".format(
-                itype=iwf_type))
+            raise ValueError(
+                "Type '{itype}' must be one of [ce].".format(itype=iwf_type)
+            )
 
     def _set_close_val(self):
         """Read the close value and clear currently_in_file"""
-        assert self.iwf.currently_in_file, (
-            "File {iwf} has already been read.".format(iwf=self.iwf.file))
+        assert self.iwf.currently_in_file, "File {iwf} has already been read.".format(
+            iwf=self.iwf.file
+        )
         self.iwf.currently_in_file = None
         iwf_type, iwf_object = self.iwf._get()
-        if iwf_type == b'h':
+        if iwf_type == b"h":
             self.close_value = iwf_object
         else:
-            raise ValueError("Type '{itype}' must be equal to 'h'.".format(
-                itype=iwf_type))
+            raise ValueError(
+                "Type '{itype}' must be equal to 'h'.".format(itype=iwf_type)
+            )
 
 
 class FileWrappingIter:
@@ -203,7 +210,7 @@ class FileWrappingIter:
     def __init__(self, iter):
         """Initialize with iter"""
         self.iter = iter
-        self.array_buf = array.array('b')
+        self.array_buf = array.array("b")
         self.currently_in_file = None
         self.closed = None
 
@@ -239,8 +246,7 @@ class FileWrappingIter:
                 self.currently_in_file = currentobj
                 self._add_from_file(b"f")
             else:
-                pickled_data = pickle.dumps(currentobj,
-                                            Globals.PICKLE_PROTOCOL)
+                pickled_data = pickle.dumps(currentobj, Globals.PICKLE_PROTOCOL)
                 self.array_buf.frombytes(b"o")
                 self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
                 self.array_buf.frombytes(pickled_data)
@@ -254,20 +260,21 @@ class FileWrappingIter:
         exception will be added to array_buf instead.
 
         """
-        buf = robust.check_common_error(self._read_error_handler,
-                                        self.currently_in_file.read,
-                                        [Globals.blocksize])
+        buf = robust.check_common_error(
+            self._read_error_handler, self.currently_in_file.read, [Globals.blocksize]
+        )
         if buf is None:  # error occurred above, encode exception
             self.currently_in_file = None
             excstr = pickle.dumps(self.last_exception, Globals.PICKLE_PROTOCOL)
-            total = b"".join((b'e', self._i2b(len(excstr), 7), excstr))
+            total = b"".join((b"e", self._i2b(len(excstr), 7), excstr))
         else:
             total = b"".join((prefix_letter, self._i2b(len(buf), 7), buf))
             if buf == b"":  # end of file
-                cstr = pickle.dumps(self.currently_in_file.close(),
-                                    Globals.PICKLE_PROTOCOL)
+                cstr = pickle.dumps(
+                    self.currently_in_file.close(), Globals.PICKLE_PROTOCOL
+                )
                 self.currently_in_file = None
-                total += b"".join((b'h', self._i2b(len(cstr), 7), cstr))
+                total += b"".join((b"h", self._i2b(len(cstr), 7), cstr))
         self.array_buf.frombytes(total)
 
     def _read_error_handler(self, exc, blocksize):
@@ -277,13 +284,14 @@ class FileWrappingIter:
 
     def _i2b(self, i, size=0):
         """Convert int to string using big endian byteorder"""
-        if (size == 0):
+        if size == 0:
             size = (i.bit_length() + 7) // 8
-        return i.to_bytes(size, byteorder='big')
+        return i.to_bytes(size, byteorder="big")
 
 
 class MiscIterFlush:
     """Used to signal that a MiscIterToFile should flush buffer"""
+
     pass
 
 
@@ -294,6 +302,7 @@ class MiscIterFlushRepeat(MiscIterFlush):
     can cause all the segments to flush in sequence.
 
     """
+
     pass
 
 
@@ -332,10 +341,13 @@ class MiscIterToFile(FileWrappingIter):
         assert not self.closed, "Can't read from a closed file."
         assert length is None or length >= 0, (
             "Length {rlen} to read must be None (for all) or "
-            "an integer positive or zero.".format(rlen=length))
+            "an integer positive or zero.".format(rlen=length)
+        )
         if length is None:
-            while (len(self.array_buf) < self.max_buffer_bytes
-                   and self.rorps_in_buffer < self.max_buffer_rps):
+            while (
+                len(self.array_buf) < self.max_buffer_bytes
+                and self.rorps_in_buffer < self.max_buffer_rps
+            ):
                 if not self._add_to_buffer():
                     break
 
@@ -394,12 +406,14 @@ class MiscIterToFile(FileWrappingIter):
     def _add_rorp(self, rorp):
         """Add a rorp to the buffer"""
         if rorp.file:
-            pickled_data = pickle.dumps((rorp.index, rorp.data, 1),
-                                        Globals.PICKLE_PROTOCOL)
+            pickled_data = pickle.dumps(
+                (rorp.index, rorp.data, 1), Globals.PICKLE_PROTOCOL
+            )
             self.next_in_line = rorp.file
         else:
-            pickled_data = pickle.dumps((rorp.index, rorp.data, 0),
-                                        Globals.PICKLE_PROTOCOL)
+            pickled_data = pickle.dumps(
+                (rorp.index, rorp.data, 0), Globals.PICKLE_PROTOCOL
+            )
             self.rorps_in_buffer += 1
         self.array_buf.frombytes(b"r")
         self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
@@ -435,7 +449,7 @@ class FileToMiscIter(IterWrappingFile):
         elif type == b"o":
             return data
         else:
-            raise IterFileException("Bad file type %s" % (type, ))
+            raise IterFileException("Bad file type %s" % (type,))
 
     def _get_rorp(self, pickled_tuple):
         """Return rorp that data represents"""
@@ -457,7 +471,9 @@ class FileToMiscIter(IterWrappingFile):
             raise ValueError(
                 "File type is '{ftype}', should be one of [fe], or data "
                 "isn't an _e_xception but a {dtype}.".format(
-                    ftype=file_type, dtype=type(file_data)))
+                    ftype=file_type, dtype=type(file_data)
+                )
+            )
 
     def _get(self):
         """Return (type, data or object) pair
@@ -476,8 +492,8 @@ class FileToMiscIter(IterWrappingFile):
         assert len(self.buf) >= 8, "Unexpected end of MiscIter file"
         # [0:1] makes sure that the type remains a byte and not an int
         type, length = self.buf[0:1], self._b2i(self.buf[1:8])
-        data = self.buf[8:8 + length]
-        self.buf = self.buf[8 + length:]
+        data = self.buf[8 : 8 + length]
+        self.buf = self.buf[8 + length :]
         if type in b"oerh":
             return type, pickle.loads(data)
         else:

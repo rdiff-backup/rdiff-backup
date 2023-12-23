@@ -32,14 +32,17 @@ from rdiff_backup import log
 try:
     try:
         from importlib import metadata
-        version = metadata.version('rdiff-backup')
+
+        version = metadata.version("rdiff-backup")
     except ImportError:
         try:  # the fallback library for Python below 3.8
             import importlib_metadata as metadata
-            version = metadata.version('rdiff-backup')
+
+            version = metadata.version("rdiff-backup")
         except ImportError:
             # the old method requiring setuptools to be installed
             import pkg_resources
+
             version = pkg_resources.get_distribution("rdiff-backup").version
 except BaseException:  # if everything else fails...
     version = "DEV.no.metadata"
@@ -48,16 +51,10 @@ except BaseException:  # if everything else fails...
 # An actual value of 0 means that the default version is to be used or whatever
 # makes the connection work within the min-max range, depending on the
 # API versions supported by the remote connection.
-api_version = {
-    "default": 201,
-    "min": 201,
-    "max": 201,
-    "actual": 0
-}
+api_version = {"default": 201, "min": 201, "max": 201, "actual": 0}
 # Allow overwrite from the environment variable RDIFF_BACKUP_API_VERSION
 # we don't do a lot of error handling because it's more of a dev option
-api_version.update(yaml.safe_load(
-    os.environ.get('RDIFF_BACKUP_API_VERSION', '{}')))
+api_version.update(yaml.safe_load(os.environ.get("RDIFF_BACKUP_API_VERSION", "{}")))
 
 # Pre-defined return codes, they must be potence of 2 so that they can be
 # combined.
@@ -103,7 +100,7 @@ change_ownership = None
 # change them back.  This defaults to 1 just in case the process
 # is not running as root (root doesn't need to change
 # permissions).
-change_mirror_perms = (process_uid != 0)
+change_mirror_perms = process_uid != 0
 
 # If true, try to reset the atimes of the source partition.
 preserve_atime = None
@@ -191,13 +188,13 @@ chars_to_quote = None
 chars_to_quote_regexp = None
 chars_to_quote_unregexp = None
 # the quoting character is used to mark quoted characters
-quoting_char = b';'
+quoting_char = b";"
 
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.
 # The default is based on the operating system type (nt or posix).
-escape_dos_devices = os.name == 'nt'
-escape_trailing_spaces = os.name == 'nt'
+escape_dos_devices = os.name == "nt"
+escape_trailing_spaces = os.name == "nt"
 
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
@@ -331,8 +328,10 @@ def set_integer(name, val):
     try:
         intval = int(val)
     except ValueError:
-        log.Log.FatalError("Variable {vr} must be set to an integer, received "
-                           "value '{vl}' instead".format(vr=name, vl=val))
+        log.Log.FatalError(
+            "Variable {vr} must be set to an integer, received "
+            "value '{vl}' instead".format(vr=name, vl=val)
+        )
     set(name, intval)
 
 
@@ -343,12 +342,16 @@ def set_api_version(val):
     try:
         intval = int(val)
     except ValueError:
-        log.Log.FatalError("API version must be set to an integer, "
-                           "received value {va} instead.".format(va=val))
+        log.Log.FatalError(
+            "API version must be set to an integer, "
+            "received value {va} instead.".format(va=val)
+        )
     if intval < api_version["min"] or intval > api_version["max"]:
         log.Log.FatalError(
             "API version {av} must be between {mi} and {ma}.".format(
-                av=val, mi=api_version["min"], ma=api_version["max"]))
+                av=val, mi=api_version["min"], ma=api_version["max"]
+            )
+        )
     api_version["actual"] = intval
 
 
@@ -363,19 +366,19 @@ def get_runtime_info(parsed=None):
     the executable, Python and the operating system.
     Beware that additional information might be added at any time."""
     return {
-        'exec': {
-            'version': version,
-            'api_version': api_version,
-            'argv': sys.argv,
-            'parsed': parsed,
+        "exec": {
+            "version": version,
+            "api_version": api_version,
+            "argv": sys.argv,
+            "parsed": parsed,
         },
-        'python': {
-            'name': sys.implementation.name,
-            'executable': sys.executable,
-            'version': platform.python_version(),
+        "python": {
+            "name": sys.implementation.name,
+            "executable": sys.executable,
+            "version": platform.python_version(),
         },
-        'system': {
-            'platform': platform.platform(),
-            'fs_encoding': sys.getfilesystemencoding(),
+        "system": {
+            "platform": platform.platform(),
+            "fs_encoding": sys.getfilesystemencoding(),
         },
     }
