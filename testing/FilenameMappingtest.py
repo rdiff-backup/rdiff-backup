@@ -61,7 +61,7 @@ class FilenameMappingTest(unittest.TestCase):
             inrp.path,
             outrp.path,
             100000,
-            extra_options=b"--chars-to-quote A backup",
+            extra_options=(b"--chars-to-quote", b"A", b"backup"),
         )
 
         longrp_out = outrp.append(long_filename)

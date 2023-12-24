@@ -4,6 +4,7 @@ import subprocess
 import unittest
 
 from commontest import old_test_dir, abs_test_dir, rdiff_backup
+import commontest as comtst
 from rdiff_backup import Globals
 
 
@@ -71,18 +72,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         self.assertFalse(found)
 
     def tearDown(self):
-        if os.path.exists(self.repo):
-            for root, dirs, files in os.walk(
-                self.repo, followlinks=False, topdown=False
-            ):
-                for f in files:
-                    if not os.path.islink(os.path.join(root, f)):
-                        os.chmod(os.path.join(root, f), 0o777)
-                    os.remove(os.path.join(root, f))
-                for d in dirs:
-                    os.chmod(os.path.join(root, d), 0o777)
-                    os.rmdir(os.path.join(root, d))
-            os.rmdir(self.repo)
+        comtst.Myrm(self.repo)
 
     def test_arguments(self):
         # Call with --help or -h should return 0 and print the usage.

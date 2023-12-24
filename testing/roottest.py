@@ -157,8 +157,11 @@ class RootTest(BaseRootTest):
             in_rp.path,
             out_rp.path,
             extra_options=(
-                b"backup --user-mapping-file %b "
-                b"--group-mapping-file %b" % (user_map, group_map)
+                b"backup",
+                b"--user-mapping-file",
+                user_map,
+                b"--group-mapping-file",
+                group_map,
             ),
         )
         self.assertEqual(get_ownership(out_rp), ((userid, 0), (0, 1)))
@@ -203,7 +206,7 @@ class RootTest(BaseRootTest):
             0,
             in_rp.path,
             out_rp.path,
-            extra_options=(b"backup --preserve-numerical-ids"),
+            extra_options=(b"backup", b"--preserve-numerical-ids"),
         )
         self.assertEqual(get_ownership(out_rp), ((0, 0), (userid, 1)))
 
@@ -286,7 +289,7 @@ class HalfRoot(BaseRootTest):
         rp_new = rp.append("lala")
         rp_new.write_string("asoentuh")
         rp_new.chmod(0)
-        self.assertEqual(os_system(b"chown %s %s" % (user.encode(), rp_new.path)), 0)
+        self.assertEqual(os_system((b"chown", user.encode(), rp_new.path)), 0)
         rp1_3 = rp.append("unreadable_dir")
         rp1_3.chmod(0o700)
         rp1_3_1 = rp1_3.append("file_inside")
@@ -302,26 +305,47 @@ class HalfRoot(BaseRootTest):
         outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
         re_init_rpath_dir(outrp, userid)
         remote_schema = b'su -c "%s server" %s' % (RBBin, user.encode())
-        cmd_schema = (
-            RBBin + b" --current-time %i --remote-schema '{h}' " + b"backup %b '%b'::%b"
-        )
 
-        cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
+        cmd1 = (
+            RBBin,
+            b"--current-time",
+            b"10000",
+            b"--remote-schema",
+            b"{h}",
+            b"backup",
+            in_rp1.path,
+            b"%b::%b" % (remote_schema, outrp.path),
+        )
         self._run_cmd(cmd1)
         in_rp1.setdata()
         outrp.setdata()
 
-        cmd2 = cmd_schema % (20000, in_rp2.path, remote_schema, outrp.path)
+        cmd2 = (
+            RBBin,
+            b"--current-time",
+            b"20000",
+            b"--remote-schema",
+            b"{h}",
+            b"backup",
+            in_rp2.path,
+            b"%b::%b" % (remote_schema, outrp.path),
+        )
         self._run_cmd(cmd2)
         in_rp2.setdata()
         outrp.setdata()
 
         rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
-        restore_schema = (
-            RBBin + b" --remote-schema '{h}' " + b"restore --at %b '%b'::%b %b"
-        )
         Myrm(rout_rp.path)
-        cmd3 = restore_schema % (b"10000", remote_schema, outrp.path, rout_rp.path)
+        cmd3 = (
+            RBBin,
+            b"--remote-schema",
+            b"{h}",
+            b"restore",
+            b"--at",
+            b"10000",
+            b"%b::%b" % (remote_schema, outrp.path),
+            rout_rp.path,
+        )
         self._run_cmd(cmd3)
         self.assertTrue(compare_recursive(in_rp1, rout_rp))
         rout_perms = rout_rp.append("unreadable_dir").getperms()
@@ -330,7 +354,16 @@ class HalfRoot(BaseRootTest):
         self.assertEqual(outrp_perms, 0)
 
         Myrm(rout_rp.path)
-        cmd4 = restore_schema % (b"now", remote_schema, outrp.path, rout_rp.path)
+        cmd4 = (
+            RBBin,
+            b"--remote-schema",
+            b"{h}",
+            b"restore",
+            b"--at",
+            b"now",
+            b"%b::%b" % (remote_schema, outrp.path),
+            rout_rp.path,
+        )
         self._run_cmd(cmd4)
         self.assertTrue(compare_recursive(in_rp2, rout_rp))
         rout_perms = rout_rp.append("unreadable_dir").getperms()
@@ -339,7 +372,7 @@ class HalfRoot(BaseRootTest):
         self.assertEqual(outrp_perms, 0)
 
         self.cause_regress(outrp)
-        cmd5 = b'su -c "%s regress %s" %s' % (RBBin, outrp.path, user.encode())
+        cmd5 = (b"su", b"-c", b"%s regress %s" % (RBBin, outrp.path), user.encode())
         self._run_cmd(cmd5, Globals.RET_CODE_WARN)
 
 
@@ -391,20 +424,25 @@ class NonRoot(BaseRootTest):
             input_rp.path,
             output_rp.path,
         )
-        self._run_cmd(b"su %s -c '%s'" % (user.encode(), backup_cmd))
+        self._run_cmd((b"su", user.encode(), b"-c", backup_cmd))
 
     def restore(self, dest_rp, restore_rp, time=None):
         Myrm(restore_rp.path)
         if time is None or time == "now":
-            restore_cmd = b"%s restore --at now %b %b" % (
+            restore_cmd = (
                 RBBin,
+                b"restore",
+                b"--at",
+                b"now",
                 dest_rp.path,
                 restore_rp.path,
             )
         else:
-            restore_cmd = b"%s restore --at %i %b %b" % (
+            restore_cmd = (
                 RBBin,
-                time,
+                b"restore",
+                b"--at",
+                b"%i" % time,
                 dest_rp.path,
                 restore_rp.path,
             )

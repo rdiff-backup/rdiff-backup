@@ -35,7 +35,7 @@ class FileWrapper:
 
     def __init__(self, fileobj):
         self.fileobj = fileobj
-        self.sha1 = hashlib.sha1()
+        self.sha1 = hashlib.sha1()  # nosec B324 hashlib_insecure_functions
         self.closed = False
 
     def read(self, length=-1):

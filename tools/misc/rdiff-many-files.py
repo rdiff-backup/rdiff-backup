@@ -4,8 +4,10 @@
 import subprocess
 import sys
 
+
 def os_system(*call):
     subprocess.run(call, check=True)
+
 
 dir1, dir2 = sys.argv[1:3]
 for i in range(1000):

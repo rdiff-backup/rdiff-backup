@@ -106,10 +106,9 @@ class PipeConnectionTest(unittest.TestCase):
 
     def setUp(self):
         """Must start a server for this"""
-        pipe_cmd = "%s testing/server.py %s" % (sys.executable, SourceDir)
+        pipe_cmd = (sys.executable, "testing/server.py", SourceDir)
         self.p = subprocess.Popen(
             pipe_cmd,
-            shell=True,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             close_fds=True,
@@ -252,7 +251,7 @@ class LengthyConnectionTest(unittest.TestCase):
         pipe_cmd += "; sleep 10"
         self.p = subprocess.Popen(
             pipe_cmd,
-            shell=True,
+            shell=True,  # nosec B602 subprocess_popen_with_shell_equals_true
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             close_fds=True,

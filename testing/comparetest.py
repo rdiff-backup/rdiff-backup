@@ -230,7 +230,11 @@ class CompareTest(unittest.TestCase):
 
         rdiff_backup(local, local, abs_output_dir, None, extra_options=b"verify")
         rdiff_backup(
-            local, local, abs_output_dir, None, extra_options=b"verify --at 10000"
+            local,
+            local,
+            abs_output_dir,
+            None,
+            extra_options=(b"verify", b"--at", b"10000"),
         )
         modify_diff()
         self.assertTrue(
@@ -239,7 +243,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 abs_output_dir,
                 None,
-                extra_options=b"verify --at 10000",
+                extra_options=(b"verify", b"--at", b"10000"),
                 expected_ret_code=None,
             )
         )

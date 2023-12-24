@@ -87,11 +87,19 @@ class RdiffTest(unittest.TestCase):
         if os.name == "nt":
             # simulate gzip using 7z on Windows
             os_system(
-                "7z a -tgzip -sdel -bb0 -y %s %s"
-                % (os.fsdecode(gzip_path), os.fsdecode(self.delta.path))
+                (
+                    b"7z",
+                    b"a",
+                    b"-tgzip",
+                    b"-sdel",
+                    b"-bb0",
+                    b"-y",
+                    gzip_path,
+                    self.delta.path,
+                )
             )
         else:
-            os_system(b"gzip %s" % self.delta.path)
+            os_system((b"gzip", self.delta.path))
         os.rename(gzip_path, self.delta.path)
         self.delta.setdata()
 
@@ -131,12 +139,19 @@ class RdiffTest(unittest.TestCase):
         if os.name == "nt":
             # simulate gunzip using 7z on Windows
             os_system(
-                "7z e -tgzip -bb0 -y -o%s %s"
-                % (os.fsdecode(delta_gz.get_parent_rp()), os.fsdecode(delta_gz))
+                (
+                    b"7z",
+                    b"e",
+                    b"-tgzip",
+                    b"-bb0",
+                    b"-y",
+                    b"-o%s" % delta_gz.get_parent_rp(),
+                    os.fsdecode(delta_gz),
+                )
             )
             os.unlink(delta_gz.path)
         else:
-            os_system(b"gunzip %s" % delta_gz.path)
+            os_system((b"gunzip", delta_gz.path))
         delta_gz.setdata()
         self.delta.setdata()
         Rdiff.patch_local(self.basis, self.delta, self.output)

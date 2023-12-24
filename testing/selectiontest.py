@@ -799,7 +799,11 @@ class CommandTest(unittest.TestCase):
             selrp.path,
             outrp.path,
             extra_options=(
-                b"backup --include **XX " b"--exclude testfiles/seltest/YYYY"
+                b"backup",
+                b"--include",
+                b"**XX",
+                b"--exclude",
+                b"testfiles/seltest/YYYY",
             ),
         )
 
@@ -825,7 +829,7 @@ class CommandTest(unittest.TestCase):
             1,
             testrp.path,
             backuprp.path,
-            extra_options=b"backup --exclude %s" % backuprp.path,
+            extra_options=(b"backup", b"--exclude", backuprp.path),
             expected_ret_code=Globals.RET_CODE_WARN,
         )
 

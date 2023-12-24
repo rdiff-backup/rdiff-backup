@@ -123,7 +123,7 @@ class RegressTest(unittest.TestCase):
         marker.touch()
         self.change_unreadable()
 
-        cmd = b"rdiff-backup regress %s" % self.output_rp.path
+        cmd = (b"rdiff-backup", b"regress", self.output_rp.path)
         print("Executing:", cmd)
         self.assertEqual(os_system(cmd), Globals.RET_CODE_WARN)
 

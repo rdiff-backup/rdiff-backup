@@ -110,8 +110,8 @@ def many(backup, restore, many_count=MANY_COUNT):
     backout_dir = re_init_subdir(abs_test_dir, b"back_out")
     restout_dir = re_init_subdir(abs_test_dir, b"rest_out")
     create_many(manyout_dir, "a", many_count)
-    backup_cmd = backup % (manyout_dir, backout_dir)
-    restore_cmd = restore % (backout_dir, restout_dir)
+    backup_cmd = backup + (manyout_dir, backout_dir)
+    restore_cmd = restore + (backout_dir, restout_dir)
 
     def update_func():
         create_many(manyout_dir, "e", many_count)
@@ -130,8 +130,8 @@ def nested(backup, restore, nested_depth=NESTED_DEPTH, nested_factor=NESTED_FACT
     backout_dir = re_init_subdir(abs_test_dir, b"back_out")
     restout_dir = re_init_subdir(abs_test_dir, b"rest_out")
     create_nested(nestedout_dir, "a", nested_depth, nested_factor)
-    backup_cmd = backup % (nestedout_dir, backout_dir)
-    restore_cmd = restore % (backout_dir, restout_dir)
+    backup_cmd = backup + (nestedout_dir, backout_dir)
+    restore_cmd = restore + (backout_dir, restout_dir)
 
     def update_func():
         create_nested(nestedout_dir, "e", nested_depth, nested_factor)
@@ -169,40 +169,54 @@ benchmarks = {
         {
             "name": "many_rsync",
             "func": many,
-            "backup": b"rsync -e ssh -aH --delete '%s' '%s'",
-            "restore": b"rsync -e ssh -aH --delete '%s' '%s'",
+            "backup": (b"rsync", b"-e", b"ssh", b"-aH", b"--delete"),
+            "restore": (b"rsync", b"-e", b"ssh", b"-aH", b"--delete"),
         },
         {
             "name": "many_normal",
             "func": many,
-            "backup": b"rdiff-backup backup '%b' '%b'",
-            "restore": b"rdiff-backup --force restore --at now '%b' '%b'",
+            "backup": (b"rdiff-backup", b"backup"),
+            "restore": (b"rdiff-backup", b"--force", b"restore", b"--at", b"now"),
         },
         {
             "name": "many_no_fsync",
             "func": many,
-            "backup": b"rdiff-backup --no-fsync backup '%b' '%b'",
-            "restore": b"rdiff-backup --no-fsync --force restore --at now '%b' '%b'",
+            "backup": (b"rdiff-backup", b"--no-fsync", b"backup"),
+            "restore": (
+                b"rdiff-backup",
+                b"--no-fsync",
+                b"--force",
+                b"restore",
+                b"--at",
+                b"now",
+            ),
         },
     ],
     "nested": [
         {
             "name": "nested_rsync",
             "func": nested,
-            "backup": b"rsync -e ssh -aH --delete '%s' '%s'",
-            "restore": b"rsync -e ssh -aH --delete '%s' '%s'",
+            "backup": (b"rsync", b"-e", b"ssh", b"-aH", b"--delete"),
+            "restore": (b"rsync", b"-e", b"ssh", b"-aH", b"--delete"),
         },
         {
             "name": "nested_normal",
             "func": nested,
-            "backup": b"rdiff-backup backup '%b' '%b'",
-            "restore": b"rdiff-backup --force restore --at now '%b' '%b'",
+            "backup": (b"rdiff-backup", b"backup"),
+            "restore": (b"rdiff-backup", b"--force", b"restore", b"--at", b"now"),
         },
         {
             "name": "nested_no_fsync",
             "func": nested,
-            "backup": b"rdiff-backup --no-fsync backup '%b' '%b'",
-            "restore": b"rdiff-backup --no-fsync --force restore --at now '%b' '%b'",
+            "backup": (b"rdiff-backup", b"--no-fsync", b"backup"),
+            "restore": (
+                b"rdiff-backup",
+                b"--no-fsync",
+                b"--force",
+                b"restore",
+                b"--at",
+                b"now",
+            ),
         },
     ],
 }
