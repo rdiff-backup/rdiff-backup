@@ -1,7 +1,5 @@
 
 #--- mandatory ---
 
-# we need specific versions to properly support pyproject.toml and git archives
-importlib-metadata ; python_version < "3.8"
 pywin32 ; platform_system=="Windows"
 PyYAML  # for rdiff-backup >= 2.1
