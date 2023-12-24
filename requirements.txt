@@ -40,5 +40,6 @@ psutil
 tox
 flake8
 black
+bandit
 coverage
 rpdb

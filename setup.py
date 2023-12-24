@@ -2,6 +2,7 @@
 
 import filecmp
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -89,7 +90,8 @@ class pre_build_exec(Command):
     def _make_exec(self, cmd, infile, outfile, repl_dict={}):
         self.mkpath(os.path.dirname(outfile))
         full_cmd = cmd.format(infile=infile, outfile=outfile, **repl_dict)
-        subprocess.call(full_cmd, shell=True)
+        # for security reasons, we split with shlex and call without shell
+        subprocess.call(shlex.split(full_cmd))
 
     def run(self):
         if DEBUG:
