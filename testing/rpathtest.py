@@ -374,7 +374,7 @@ class FileIO(RPathTest):
             self.assertEqual(
                 os_system((b"7z", b"x", b"-o%s" % abs_output_dir, file_gz)), 0
             )
-            os_system((b"del", file_gz))
+            os_system((b"cmd", b"/c", b"del", file_gz))
         else:
             self.assertEqual(os_system((b"gunzip", file_gz)), 0)
         with rp_nogz.open("rb") as fp_in:
