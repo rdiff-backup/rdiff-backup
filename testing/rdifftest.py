@@ -145,11 +145,11 @@ class RdiffTest(unittest.TestCase):
                     b"-tgzip",
                     b"-bb0",
                     b"-y",
-                    b"-o%s" % delta_gz.get_parent_rp(),
-                    os.fsdecode(delta_gz),
+                    b"-o%b" % os.fspath(delta_gz.get_parent_rp()),
+                    os.fspath(delta_gz),
                 )
             )
-            os.unlink(delta_gz.path)
+            delta_gz.delete()
         else:
             os_system((b"gunzip", delta_gz.path))
         delta_gz.setdata()
