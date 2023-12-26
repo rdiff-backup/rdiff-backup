@@ -331,7 +331,11 @@ def _check_new_index(base, index, make_dirs=0):
                 and exc.winerror == 123) or (
                 exc.errno == errno.ENOENT
                 and hasattr(exc, "winerror")
-                and len(os.path.abspath(exc.filename)) > 256
+                and (
+                    len(os.path.abspath(exc.filename)) > 256
+                    or exc.filename2 is not None
+                    and len(os.path.abspath(exc.filename2)) > 256
+                )
             ):
                 return None
             raise
