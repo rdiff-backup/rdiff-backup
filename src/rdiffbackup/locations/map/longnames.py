@@ -330,7 +330,7 @@ def _check_new_index(base, index, make_dirs=0):
                 and hasattr(exc, "winerror")
                 and exc.winerror == 123) or (
                 exc.errno == errno.ENOENT
-                and hasattr(exc, "winerror")
+                and hasattr(exc, "winerror")  # sometimes it is WinError 3
                 and (
                     len(os.path.abspath(exc.filename)) > 256
                     or exc.filename2 is not None
