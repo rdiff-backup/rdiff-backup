@@ -323,11 +323,15 @@ def _check_new_index(base, index, make_dirs=0):
         except OSError as exc:
             # Windows with enabled long paths seems to consider too long
             # filenames as having an incorrect syntax, but only under certain
-            # circumstances
+            # circumstances. With disabled long paths, Windows just doesn't
+            # find too long filenames, so we can only guess
             if exc.errno == errno.ENAMETOOLONG or (
                 exc.errno == errno.EINVAL
                 and hasattr(exc, "winerror")
-                and exc.winerror == 123
+                and exc.winerror == 123) or (
+                exc.errno == errno.ENOENT
+                and hasattr(exc, "winerror")
+                and len(os.path.abspath(exc.filename)) > 256
             ):
                 return None
             raise
