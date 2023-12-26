@@ -51,6 +51,7 @@ try:
     import win32api
     import win32con
     import pywintypes
+    from ctypes import wintypes
 except ImportError:
     pass
 
@@ -1902,7 +1903,17 @@ def make_file_dict(filename):
 
     try:
         statblock = os.lstat(filename)
-    except (FileNotFoundError, NotADirectoryError, PermissionError):
+    except FileNotFoundError:
+        # With long paths not enabled, Windows just doesn't find too long
+        # filenames and doesn't make the difference
+        if os.name == "nt" and len(os.path.abspath(filename)) >= wintypes.MAX_PATH:
+            raise OSError(
+                errno.ENAMETOOLONG,
+                os.strerror(errno.ENAMETOOLONG),
+                filename,
+            )
+        return {"type": None}
+    except (NotADirectoryError, PermissionError):
         # FIXME not sure if this shouldn't trigger a warning but doing it
         # generates (too) many messages during the tests
         # log.Log("Missing file '{mf}' couldn't be assessed".format(
