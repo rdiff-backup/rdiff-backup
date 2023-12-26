@@ -38,7 +38,7 @@ it later.
 """
 
 import errno
-from rdiff_backup import Globals, log
+from rdiff_backup import Globals, log, rpath
 from rdiffbackup.utils import safestr
 
 _long_name_dir = b"long_filename_data"
@@ -320,17 +320,8 @@ def _check_new_index(base, index, make_dirs=0):
     def wrap_call(func, *args):
         try:
             result = func(*args)
-        except OSError as exc:
-            # Windows with enabled long paths seems to consider too long
-            # filenames as having an incorrect syntax, but only under certain
-            # circumstances.
-            if exc.errno == errno.ENAMETOOLONG or (
-                exc.errno == errno.EINVAL
-                and hasattr(exc, "winerror")
-                and exc.winerror == 123
-            ):
-                return None
-            raise
+        except rpath.NameTooLongError:
+            return None
         return result
 
     def make_parent(rp):

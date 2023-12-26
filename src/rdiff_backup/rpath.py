@@ -72,6 +72,17 @@ class RPathException(Exception):
     pass
 
 
+class NameTooLongError(OSError):
+    """
+    Exception object showing that the filename or path is too long
+    for the OS and/or filesystem.
+    We need a specific error class because errno.ENAMETOOLONG could be different
+    on different platforms, and the transferred value would be wrongly
+    interpreted.
+    """
+    pass
+
+
 class RORPath:
     """Read Only RPath - carry information about a path
 
@@ -1903,16 +1914,6 @@ def make_file_dict(filename):
 
     try:
         statblock = os.lstat(filename)
-    except FileNotFoundError:
-        # With long paths not enabled, Windows just doesn't find too long
-        # filenames and doesn't make the difference
-        if os.name == "nt" and len(os.path.abspath(filename)) >= wintypes.MAX_PATH:
-            raise OSError(
-                errno.ENAMETOOLONG,
-                os.strerror(errno.ENAMETOOLONG),
-                filename,
-            )
-        return {"type": None}
     except (NotADirectoryError, PermissionError):
         # FIXME not sure if this shouldn't trigger a warning but doing it
         # generates (too) many messages during the tests
@@ -1920,6 +1921,24 @@ def make_file_dict(filename):
         #             mf=filename), log.WARNING)
         # FIXME perhaps we should have a different type/flag for this case?
         return {"type": None}
+    except FileNotFoundError as exc:
+        # With long paths not enabled, Windows just doesn't find too long
+        # filenames and doesn't make the difference
+        if os.name == "nt" and len(os.path.abspath(filename)) >= wintypes.MAX_PATH:
+            raise NameTooLongError(exc.errno, exc.strerror, filename)
+        return {"type": None}
+    except OSError as exc:
+        # Windows with enabled long paths seems to consider too long
+        # filenames as having an incorrect syntax, but only under certain
+        # circumstances.
+        if exc.errno == errno.ENAMETOOLONG or (
+                exc.errno == errno.EINVAL
+                and hasattr(exc, "winerror")
+                and exc.winerror == 123
+        ):
+            raise NameTooLongError(exc.errno, exc.strerror, filename)
+        raise
+
     data = {}
     mode = statblock[stat.ST_MODE]
 
