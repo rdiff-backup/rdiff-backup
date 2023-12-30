@@ -1,6 +1,7 @@
 import unittest
 import os
 import signal
+import subprocess
 import sys
 import random
 import time
@@ -66,18 +67,18 @@ class ProcessFuncs(unittest.TestCase):
 
         if wait:
             print("Waiting for ", arglist)
-            return os.spawnvp(os.P_WAIT, sys.executable, arglist)
+            return subprocess.call(arglist)
         else:
-            pid = os.spawnvp(os.P_NOWAIT, sys.executable, arglist)
+            pid = subprocess.Popen(arglist).pid
             print("Running ", arglist, " PID: ", pid)
             return pid
 
     def exec_and_kill(self, min_max_pair, backup_time, arg1, arg2):
-        """Run rdiff-backup, then kill and run again
+        """
+        Run rdiff-backup, then kill and run again
 
         Kill after a time between mintime and maxtime.  First process
         should not terminate before maxtime.
-
         """
         mintime, maxtime = min_max_pair
         pid = self.exec_rb(backup_time, None, "backup", arg1, arg2)

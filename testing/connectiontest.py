@@ -163,29 +163,29 @@ class PipeConnectionTest(unittest.TestCase):
         self.assertTrue(
             self.conn.hasattr(i, "__next__") and self.conn.hasattr(i, "__iter__")
         )
-        ret_val = self.conn.reval("lambda i: next(i)*next(i)", i)
-        self.assertEqual(ret_val, 50)
+        self.assertEqual(self.conn.reval("max", i), 15)
 
     def testRPaths(self):
         """Test transmission of rpaths"""
         rp = rpath.RPath(self.conn, regfilename)
-        self.assertEqual(self.conn.reval("lambda rp: rp.data", rp), rp.data)
-        self.assertTrue(
-            self.conn.reval("lambda rp: rp.conn is Globals.local_connection", rp)
+        self.assertEqual(self.conn.reval("getattr", rp, "data"), rp.data)
+        self.assertEqual(
+            self.conn.reval("getattr", rp, "conn"), Globals.local_connection
         )
 
     def testQuotedRPaths(self):
         """Test transmission of quoted rpaths"""
         qrp = map_filenames.QuotedRPath(self.conn, regfilename)
-        self.assertEqual(self.conn.reval("lambda qrp: qrp.data", qrp), qrp.data)
+        self.assertEqual(self.conn.reval("getattr", qrp, "data"), qrp.data)
         self.assertTrue(qrp.isreg())
-        qrp_class_str = self.conn.reval("lambda qrp: str(qrp.__class__)", qrp)
+        qrp_class_str = str(self.conn.reval("rpath.RPath.__class__", qrp))
         self.assertGreater(qrp_class_str.find("QuotedRPath"), -1)
 
     def testExceptions(self):
         """Test exceptional results"""
         self.assertRaises(os.error, self.conn.os.lstat, "asoeut haosetnuhaoseu tn")
-        self.assertRaises(SyntaxError, self.conn.reval, "aoetnsu aoehtnsu")
+        self.assertRaises(NameError, self.conn.reval, "aoetnsu aoehtnsu")
+        self.assertRaises(NameError, self.conn.reval, "aoetnsu.aoehtnsu")
         self.assertEqual(self.conn.pow(2, 3), 8)
 
     def tearDown(self):
@@ -216,17 +216,6 @@ class RedirectedConnectionTest(unittest.TestCase):
         self.connb.Globals.set("tmp_conna", self.conna)
         self.assertIs(self.conna.Globals.get("tmp_connb"), self.connb)
         self.assertIs(self.connb.Globals.get("tmp_conna"), self.conna)
-
-        val = self.conna.reval("Globals.get('tmp_connb').Globals.get", "tmp_val")
-        self.assertEqual(val, 2)
-        val = self.connb.reval("Globals.get('tmp_conna').Globals.get", "tmp_val")
-        self.assertEqual(val, 1)
-
-        self.assertEqual(self.conna.reval("Globals.get('tmp_connb').pow", 2, 3), 8)
-        self.conna.reval(
-            "Globals.tmp_connb.reval", "Globals.tmp_conna.Globals.set", "tmp_marker", 5
-        )
-        self.assertEqual(self.conna.Globals.get("tmp_marker"), 5)
 
     def testRpaths(self):
         """Test moving rpaths back and forth across connections"""
