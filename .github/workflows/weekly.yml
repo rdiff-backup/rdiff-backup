@@ -134,6 +134,7 @@ jobs:
       run: |
         sudo apt-get --assume-yes update
         sudo apt-get --assume-yes install python3-setuptools-scm
+        pip install build  # package python3-build is too old
     - name: force create weekly tag and push it and create release body
       run: |
         git tag -f weekly && git push -f origin weekly
