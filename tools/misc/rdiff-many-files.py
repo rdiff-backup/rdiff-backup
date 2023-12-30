@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Run rdiff to transform everything in one dir to another"""
 
+import subprocess
 import sys
-import os
+
+
+def os_system(*call):
+    subprocess.run(call, check=True)
+
 
 dir1, dir2 = sys.argv[1:3]
 for i in range(1000):
-    assert not os.system("rdiff signature %s/%s sig" % (dir1, i))
-    assert not os.system("rdiff delta sig %s/%s diff" % (dir2, i))
-    assert not os.system("rdiff patch %s/%s diff %s/%s.out" % (dir1, i, dir1, i))
+    os_system("rdiff", "signature", f"{dir1}/{i}", "sig")
+    os_system("rdiff", "delta", "sig", f"{dir2}/{i}", "diff")
+    os_system("rdiff", "patch", f"{dir1}/{i}", "diff", f"{dir1}/{i}.out")

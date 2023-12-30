@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import tempfile
 import unittest
 from commontest import old_test_dir, abs_test_dir
 from rdiff_backup.connection import (
@@ -60,7 +59,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
 
     objs = ["Hello", ("Tuple", "of", "strings"), [1, 2, 3, 4], 53.34235]
     excts = [TypeError("te"), NameError("ne"), os.error("oe")]
-    filename = tempfile.mktemp()
+    filename = os.path.join(abs_test_dir, b"test_low_level_pipe")
 
     def testObjects(self):
         """Try moving objects across connection"""
@@ -106,10 +105,9 @@ class PipeConnectionTest(unittest.TestCase):
 
     def setUp(self):
         """Must start a server for this"""
-        pipe_cmd = "%s testing/server.py %s" % (sys.executable, SourceDir)
+        pipe_cmd = (sys.executable, "testing/server.py", SourceDir)
         self.p = subprocess.Popen(
             pipe_cmd,
-            shell=True,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             close_fds=True,
@@ -126,7 +124,7 @@ class PipeConnectionTest(unittest.TestCase):
 
     def testModules(self):
         """Test module emulation"""
-        self.assertIsInstance(self.conn.tempfile.mktemp(), str)
+        self.assertIsInstance(self.conn.os.getcwd(), str)
         self.assertEqual(self.conn.os.path.join(b"a", b"b"), os.path.join(b"a", b"b"))
         rp1 = rpath.RPath(self.conn, regfilename)
         self.assertTrue(rp1.isreg())
@@ -165,29 +163,29 @@ class PipeConnectionTest(unittest.TestCase):
         self.assertTrue(
             self.conn.hasattr(i, "__next__") and self.conn.hasattr(i, "__iter__")
         )
-        ret_val = self.conn.reval("lambda i: next(i)*next(i)", i)
-        self.assertEqual(ret_val, 50)
+        self.assertEqual(self.conn.reval("max", i), 15)
 
     def testRPaths(self):
         """Test transmission of rpaths"""
         rp = rpath.RPath(self.conn, regfilename)
-        self.assertEqual(self.conn.reval("lambda rp: rp.data", rp), rp.data)
-        self.assertTrue(
-            self.conn.reval("lambda rp: rp.conn is Globals.local_connection", rp)
+        self.assertEqual(self.conn.reval("getattr", rp, "data"), rp.data)
+        self.assertEqual(
+            self.conn.reval("getattr", rp, "conn"), Globals.local_connection
         )
 
     def testQuotedRPaths(self):
         """Test transmission of quoted rpaths"""
         qrp = map_filenames.QuotedRPath(self.conn, regfilename)
-        self.assertEqual(self.conn.reval("lambda qrp: qrp.data", qrp), qrp.data)
+        self.assertEqual(self.conn.reval("getattr", qrp, "data"), qrp.data)
         self.assertTrue(qrp.isreg())
-        qrp_class_str = self.conn.reval("lambda qrp: str(qrp.__class__)", qrp)
+        qrp_class_str = str(self.conn.reval("rpath.RPath.__class__", qrp))
         self.assertGreater(qrp_class_str.find("QuotedRPath"), -1)
 
     def testExceptions(self):
         """Test exceptional results"""
         self.assertRaises(os.error, self.conn.os.lstat, "asoeut haosetnuhaoseu tn")
-        self.assertRaises(SyntaxError, self.conn.reval, "aoetnsu aoehtnsu")
+        self.assertRaises(NameError, self.conn.reval, "aoetnsu aoehtnsu")
+        self.assertRaises(NameError, self.conn.reval, "aoetnsu.aoehtnsu")
         self.assertEqual(self.conn.pow(2, 3), 8)
 
     def tearDown(self):
@@ -219,17 +217,6 @@ class RedirectedConnectionTest(unittest.TestCase):
         self.assertIs(self.conna.Globals.get("tmp_connb"), self.connb)
         self.assertIs(self.connb.Globals.get("tmp_conna"), self.conna)
 
-        val = self.conna.reval("Globals.get('tmp_connb').Globals.get", "tmp_val")
-        self.assertEqual(val, 2)
-        val = self.connb.reval("Globals.get('tmp_conna').Globals.get", "tmp_val")
-        self.assertEqual(val, 1)
-
-        self.assertEqual(self.conna.reval("Globals.get('tmp_connb').pow", 2, 3), 8)
-        self.conna.reval(
-            "Globals.tmp_connb.reval", "Globals.tmp_conna.Globals.set", "tmp_marker", 5
-        )
-        self.assertEqual(self.conna.Globals.get("tmp_marker"), 5)
-
     def testRpaths(self):
         """Test moving rpaths back and forth across connections"""
         rp = rpath.RPath(self.conna, "foo")
@@ -252,7 +239,7 @@ class LengthyConnectionTest(unittest.TestCase):
         pipe_cmd += "; sleep 10"
         self.p = subprocess.Popen(
             pipe_cmd,
-            shell=True,
+            shell=True,  # nosec B602 subprocess_popen_with_shell_equals_true
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             close_fds=True,

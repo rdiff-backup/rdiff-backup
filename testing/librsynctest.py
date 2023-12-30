@@ -37,24 +37,50 @@ class LibrsyncTest(unittest.TestCase):
             if b"-R" in rdiff_help_text:
                 self.assertEqual(
                     os_system(
-                        b"rdiff -b %i -R rollsum -S 8 -H md4 signature %b %b"
-                        % (blocksize, self.basis.path, self.sig.path)
+                        (
+                            b"rdiff",
+                            b"-b",
+                            b"%i" % blocksize,
+                            b"-R",
+                            b"rollsum",
+                            b"-S",
+                            b"8",
+                            b"-H",
+                            b"md4",
+                            b"signature",
+                            self.basis.path,
+                            self.sig.path,
+                        )
                     ),
                     0,
                 )
             elif b"-H" in rdiff_help_text:
                 self.assertEqual(
                     os_system(
-                        b"rdiff -b %i -H md4 signature %b %b"
-                        % (blocksize, self.basis.path, self.sig.path)
+                        (
+                            b"rdiff",
+                            b"-b",
+                            b"%i" % blocksize,
+                            b"-H",
+                            b"md4",
+                            b"signature",
+                            self.basis.path,
+                            self.sig.path,
+                        )
                     ),
                     0,
                 )
             else:
                 self.assertEqual(
                     os_system(
-                        b"rdiff -b %i signature %b %b"
-                        % (blocksize, self.basis.path, self.sig.path)
+                        (
+                            b"rdiff",
+                            b"-b",
+                            b"%i" % blocksize,
+                            b"signature",
+                            self.basis.path,
+                            self.sig.path,
+                        )
                     ),
                     0,
                 )
@@ -107,14 +133,13 @@ class LibrsyncTest(unittest.TestCase):
         """Test delta generation against Rdiff"""
         MakeRandomFile(self.basis.path)
         self.assertEqual(
-            os_system(b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0
+            os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)), 0
         )
         for i in range(5):
             MakeRandomFile(self.new.path)
             self.assertEqual(
                 os_system(
-                    b"rdiff delta %b %b %b"
-                    % (self.sig.path, self.new.path, self.delta.path)
+                    (b"rdiff", b"delta", self.sig.path, self.new.path, self.delta.path)
                 ),
                 0,
             )
@@ -141,7 +166,7 @@ class LibrsyncTest(unittest.TestCase):
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
         self.assertEqual(
-            os_system(b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0
+            os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)), 0
         )
         for i in range(5):
             MakeRandomFile(self.new.path)
@@ -155,8 +180,13 @@ class LibrsyncTest(unittest.TestCase):
             self._clean_file(self.new2)
             self.assertEqual(
                 os_system(
-                    b"rdiff patch %s %s %s"
-                    % (self.basis.path, self.delta.path, self.new2.path)
+                    (
+                        b"rdiff",
+                        b"patch",
+                        self.basis.path,
+                        self.delta.path,
+                        self.new2.path,
+                    )
                 ),
                 0,
             )
@@ -175,15 +205,14 @@ class LibrsyncTest(unittest.TestCase):
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
         self.assertEqual(
-            os_system(b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0
+            os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)), 0
         )
         for i in range(5):
             MakeRandomFile(self.new.path)
             self._clean_file(self.delta)
             self.assertEqual(
                 os_system(
-                    b"rdiff delta %s %s %s"
-                    % (self.sig.path, self.new.path, self.delta.path)
+                    (b"rdiff", b"delta", self.sig.path, self.new.path, self.delta.path)
                 ),
                 0,
             )

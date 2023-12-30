@@ -372,11 +372,11 @@ class FileIO(RPathTest):
             fp_out.write(s)
         if os.name == "nt":
             self.assertEqual(
-                os_system(b"7z x -o%s %s >NUL" % (abs_output_dir, file_gz)), 0
+                os_system((b"7z", b"x", b"-o%s" % abs_output_dir, file_gz)), 0
             )
-            os_system(b"del %s" % file_gz)
+            os_system((b"cmd", b"/c", b"del", file_gz))
         else:
-            self.assertEqual(os_system(b"gunzip %s" % file_gz), 0)
+            self.assertEqual(os_system((b"gunzip", file_gz)), 0)
         with rp_nogz.open("rb") as fp_in:
             self.assertEqual(fp_in.read(), s)
 
@@ -401,10 +401,10 @@ class FileIO(RPathTest):
 
         if os.name == "nt":
             self.assertEqual(
-                os_system(b"7z a -tgzip -sdel %s %s >NUL" % (file_gz, file_nogz)), 0
+                os_system((b"7z", b"a", b"-tgzip", b"-sdel", file_gz, file_nogz)), 0
             )
         else:
-            self.assertEqual(os_system(b"gzip %s" % file_nogz), 0)
+            self.assertEqual(os_system((b"gzip", file_nogz)), 0)
         rp_nogz.setdata()
         rp_gz.setdata()
         self.assertFalse(rp_nogz.lstat())

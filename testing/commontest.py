@@ -125,7 +125,7 @@ def rdiff_backup(
 
     If expected_ret_code is set to None, no return value comparaison is done.
     """
-    remote_exec = CMD_SEP.join([b'"cd %s', b'%s server::%s"'])
+    remote_exec = CMD_SEP.join([b"cd %s", b"%s server::%s"])
 
     if not source_local:
         src_dir = remote_exec % (abs_remote1_dir, RBBin, src_dir)
@@ -134,23 +134,25 @@ def rdiff_backup(
 
     cmdargs = [RBBin]
     if not (source_local and dest_local):
-        cmdargs.append(b"--remote-schema {h}")
+        cmdargs.extend((b"--remote-schema", b"{h}"))
 
     if current_time:
-        cmdargs.append(b"--current-time %i" % current_time)
-    cmdargs.append(extra_options)
+        cmdargs.extend((b"--current-time", b"%i" % current_time))
+    if isinstance(extra_options, (list, tuple)):
+        cmdargs.extend(extra_options)
+    else:  # we assume those are bytes
+        cmdargs.append(extra_options)
     cmdargs.append(src_dir)
     if dest_dir:
         cmdargs.append(dest_dir)
-    cmdline = b" ".join(cmdargs)
     print("Executing: ", " ".join(map(shlex.quote, map(os.fsdecode, cmdargs))))
-    ret_val = os_system(cmdline, input=input, universal_newlines=False)
+    ret_val = os_system(cmdargs, input=input, universal_newlines=False)
     if expected_ret_code is not None:
         assert (
             expected_ret_code == ret_val
         ), "Return code %d of command `%a` isn't as expected %d." % (
             ret_val,
-            cmdline,
+            cmdargs,
             expected_ret_code,
         )
     return ret_val
@@ -796,18 +798,13 @@ def iter_map(function, iterator):
 
 def os_system(cmd, **kwargs):
     """
-    A wrapper function to use decoded strings instead of bytes under Windows
-
-    It simulates os.system and returns the return code value, an integer
+    Simulates os.system and returns the return code value, an integer
     """
     if isinstance(cmd, (list, tuple)):
         # as list, bytes are accepted even under Windows
         return subprocess.run(cmd, **kwargs).returncode
     else:
-        if os.name == "nt":
-            # bytes args is not allowed on Windows
-            cmd = os.fsdecode(cmd)
-        return subprocess.run(cmd, shell=True, **kwargs).returncode
+        raise TypeError("Only lists and tuples are allowed for security reasons")
 
 
 def xcopytree(source, dest, content=False):

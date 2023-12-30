@@ -128,7 +128,7 @@ class HashTest(unittest.TestCase):
             b"%b %b/server.py" % (os.fsencode(sys.executable), abs_testing_dir)
         )
         # make a connection sanity check
-        self.assertEqual(conn.reval("lambda x: x+1", 4), 5)
+        self.assertEqual(conn.reval("pow", 2, 5), 32)
 
         fp = hash.FileWrapper(io.BytesIO(self.s1.encode()))
         conn.Globals.set_local("tmp_file", fp)

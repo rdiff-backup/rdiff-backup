@@ -81,7 +81,7 @@ class BrokenRepoTest(unittest.TestCase):
             1,
             target_rp.__fspath__(),
             None,
-            extra_options=b"regress --allow-duplicate-timestamps",
+            extra_options=(b"regress", b"--allow-duplicate-timestamps"),
             expected_ret_code=Globals.RET_CODE_WARN,
         )
         # now we can clean-up, getting rid of the duplicate metadata mirrors
@@ -92,7 +92,13 @@ class BrokenRepoTest(unittest.TestCase):
             1,
             target_rp.__fspath__(),
             None,
-            extra_options=b"--force remove increments " b"--older-than 100000",
+            extra_options=(
+                b"--force",
+                b"remove",
+                b"increments",
+                b"--older-than",
+                b"100000",
+            ),
         )
         # and this should at last succeed
         source_rp.append("file16").touch()

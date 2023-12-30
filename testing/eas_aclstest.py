@@ -246,7 +246,11 @@ user.empty
         self.assertTrue(compare_recursive(self.ea_test2_rpath, tempdir, compare_eas=1))
 
         rdiff_backup(
-            1, 1, tempdir.path, restore_dir.path, extra_options=b"restore --at 10000"
+            1,
+            1,
+            tempdir.path,
+            restore_dir.path,
+            extra_options=(b"restore", b"--at", b"10000"),
         )
         self.assertTrue(
             compare_recursive(self.ea_test1_rpath, restore_dir, compare_eas=1)
@@ -519,7 +523,11 @@ other::---
         )
 
         rdiff_backup(
-            1, 1, tempdir.path, restore_dir.path, extra_options=b"restore --at 10000"
+            1,
+            1,
+            tempdir.path,
+            restore_dir.path,
+            extra_options=(b"restore", b"--at", b"10000"),
         )
         self.assertTrue(
             compare_recursive(self.acl_test1_rpath, restore_dir, compare_acls=1)
@@ -527,7 +535,11 @@ other::---
 
         restore_dir.delete()
         rdiff_backup(
-            1, 1, tempdir.path, restore_dir.path, extra_options=b"restore --at now"
+            1,
+            1,
+            tempdir.path,
+            restore_dir.path,
+            extra_options=(b"restore", b"--at", b"now"),
         )
         self.assertTrue(
             compare_recursive(self.acl_test2_rpath, restore_dir, compare_acls=1)
@@ -589,8 +601,13 @@ other::---""".format(
             1,
             rootrp.path,
             tempdir.path,
-            extra_options=b"backup --user-mapping-file %b "
-            b"--group-mapping-file %b" % (users_map_rp.path, groups_map_rp.path),
+            extra_options=(
+                b"backup",
+                b"--user-mapping-file",
+                users_map_rp.path,
+                b"--group-mapping-file",
+                groups_map_rp.path,
+            ),
         )
 
         out_rp = tempdir.append("a1")

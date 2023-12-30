@@ -77,22 +77,29 @@ class SecurityTest(unittest.TestCase):
         out_dir,
         in_local,
         restrict_args,
-        extra_args=b"backup",
+        extra_args=(b"backup",),
         expected_ret_code=0,
         current_time=None,
     ):
         """Run rdiff-backup locally, with given restrict settings"""
         if not current_time:
             current_time = int(time.time())
-        # escape the %s of the remote schema with double %
-        prefix = b"%b --current-time %i --remote-schema {h} " % (RBBin, current_time)
 
         if in_local:
-            out_dir = b'"%b server %b::%b"' % (RBBin, restrict_args, out_dir)
+            out_dir = b"%b server %b::%b" % (RBBin, restrict_args, out_dir)
         else:
-            in_dir = b'"%b server %b::%b"' % (RBBin, restrict_args, in_dir)
+            in_dir = b"%b server %b::%b" % (RBBin, restrict_args, in_dir)
 
-        cmdline = b"%b %b %b %b" % (prefix, extra_args, in_dir, out_dir)
+        cmdline = [
+            RBBin,
+            b"--current-time",
+            b"%i" % current_time,
+            b"--remote-schema",
+            b"{h}",
+        ]
+        cmdline.extend(extra_args)
+        cmdline.append(in_dir)
+        cmdline.append(out_dir)
         print("Executing:", cmdline)
         exit_val = os_system(cmdline)
         if expected_ret_code is not None:
@@ -127,7 +134,7 @@ class SecurityTest(unittest.TestCase):
             abs_restore_dir,
             1,
             b"--restrict-path %b" % abs_restore_dir,
-            extra_args=b"restore --at now",
+            extra_args=(b"restore", b"--at", b"now"),
         )
 
     def test_restrict_negative(self):
@@ -153,7 +160,7 @@ class SecurityTest(unittest.TestCase):
             abs_restore_dir,
             1,
             b"--restrict-path %b" % output2_dir,
-            extra_args=b"restore --at now",
+            extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
@@ -187,7 +194,7 @@ class SecurityTest(unittest.TestCase):
             abs_restore_dir,
             0,
             b"--restrict-path %b " b"--restrict-mode read-only" % abs_output_dir,
-            extra_args=b"restore --at now",
+            extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=Globals.RET_CODE_WARN,
         )
         # there is a warning because log can't be opened in read-only mode
@@ -213,7 +220,7 @@ class SecurityTest(unittest.TestCase):
             abs_restore_dir,
             1,
             b"--restrict-path %b " b"--restrict-mode read-only" % abs_restore_dir,
-            extra_args=b"restore --at now",
+            extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
@@ -247,7 +254,7 @@ class SecurityTest(unittest.TestCase):
             abs_restore_dir,
             1,
             b"--restrict-path %b " b"--restrict-mode update-only" % abs_restore_dir,
-            extra_args=b"restore --at now",
+            extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
@@ -272,7 +279,7 @@ class SecurityTest(unittest.TestCase):
             abs_output_dir,
             1,
             b"",
-            extra_args=b"--chars-to-quote e backup",
+            extra_args=(b"--chars-to-quote", b"e", b"backup"),
         )
 
 

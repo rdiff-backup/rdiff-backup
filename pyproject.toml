@@ -79,3 +79,8 @@ package-data = {"rdiff_backup" = ["*.dll"]}
 "share/bash-completion/completions" = ["tools/completions/bash/rdiff-backup"]
 
 [tool.setuptools_scm]
+
+[tool.bandit]
+# we ignore the pickle warnings because we need pickle
+# we also ignore asserts because there are too many false positives
+skips = ["B301", "B101"]

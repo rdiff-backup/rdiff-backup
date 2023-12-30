@@ -323,21 +323,21 @@ def _init_connection(remote_cmd):
     log.Log(
         "Executing remote command {rc}".format(rc=safestr.to_str(remote_cmd)), log.INFO
     )
+    # Windows doesn't support bytes for command string
+    if os.name == "nt":
+        exec_cmd = os.fsdecode(remote_cmd)
+    else:
+        exec_cmd = remote_cmd
     try:
         # we need buffered read on SSH communications, hence using
         # default value for bufsize parameter
-        if os.name == "nt":
-            # FIXME workaround because python 3.7 doesn't yet accept bytes
-            process = subprocess.Popen(
-                os.fsdecode(remote_cmd),
-                shell=True,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-            )
-        else:
-            process = subprocess.Popen(
-                remote_cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE
-            )
+        # Security risk is acceptable because string comes directly from user
+        process = subprocess.Popen(
+            exec_cmd,
+            shell=True,  # nosec B602 subprocess_popen_with_shell_equals_true
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
         (stdin, stdout) = (process.stdin, process.stdout)
     except OSError:
         (stdin, stdout) = (None, None)

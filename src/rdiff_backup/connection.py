@@ -69,6 +69,28 @@ class Connection:
     def __bool__(self):
         return True
 
+    @staticmethod
+    def _eval(funcstring):
+        """
+        Function to safely evaluate a function string into an actual function
+        """
+        funclist = funcstring.split(".")
+        firstelem = funclist.pop(0)
+        # if we can identify a builtin function, we return it directly
+        if isinstance(__builtins__, dict):
+            if firstelem in __builtins__:
+                return __builtins__[firstelem]
+        elif hasattr(__builtins__, firstelem):
+            return getattr(__builtins__, firstelem)
+        # else we try within the modules, including the current one
+        try:
+            func = globals()[firstelem]
+            for elem in funclist:
+                func = getattr(func, elem)
+        except (KeyError, AttributeError):
+            raise NameError("name '{fs}' is not defined".format(fs=funcstring))
+        return func
+
 
 class LocalConnection(Connection):
     """Local connection
@@ -105,7 +127,7 @@ class LocalConnection(Connection):
         return "LocalConnection"
 
     def reval(self, function_string, *args):
-        return eval(function_string)(*args)
+        return self._eval(function_string)(*args)
 
     def quit(self):
         pass
@@ -491,7 +513,7 @@ class PipeConnection(LowLevelPipeConnection):
             argument_list.append(arg)
         try:
             Security.vet_request(request, argument_list)
-            result = eval(request.function_string)(*argument_list)
+            result = self._eval(request.function_string)(*argument_list)
         except BaseException:
             result = self._extract_exception()
         self._put(result, req_num)
