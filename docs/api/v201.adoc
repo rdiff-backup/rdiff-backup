@@ -183,6 +183,9 @@ toc::[]
 
 == Testing
 
+Those functions use the `override` security level, hence aren't checked.
+This also means that _external_ functions don't need to be part of the API.
+
 === Internal
 
 === External
@@ -195,7 +198,8 @@ toc::[]
 * `os.remove`
 * `pow`
 * `str`
-* `tempfile.mktemp`
+* `tempfile.mktemp`  **removed**
+* `os.getcwd`  **added**
 
 == Repository format
 

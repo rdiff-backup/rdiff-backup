@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import tempfile
 import unittest
 from commontest import old_test_dir, abs_test_dir
 from rdiff_backup.connection import (
@@ -60,7 +59,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
 
     objs = ["Hello", ("Tuple", "of", "strings"), [1, 2, 3, 4], 53.34235]
     excts = [TypeError("te"), NameError("ne"), os.error("oe")]
-    filename = tempfile.mktemp()
+    filename = os.path.join(abs_test_dir, b"test_low_level_pipe")
 
     def testObjects(self):
         """Try moving objects across connection"""
@@ -125,7 +124,7 @@ class PipeConnectionTest(unittest.TestCase):
 
     def testModules(self):
         """Test module emulation"""
-        self.assertIsInstance(self.conn.tempfile.mktemp(), str)
+        self.assertIsInstance(self.conn.os.getcwd(), str)
         self.assertEqual(self.conn.os.path.join(b"a", b"b"), os.path.join(b"a", b"b"))
         rp1 = rpath.RPath(self.conn, regfilename)
         self.assertTrue(rp1.isreg())
