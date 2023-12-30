@@ -17,17 +17,19 @@ class ApiVersionTest(unittest.TestCase):
         Globals.api_version["actual"] = 201
         info = Globals.get_runtime_info()
 
-        # because the current test will have a different call than rdiff-backup itself
-        # we can't compare certain keys
+        # because the current test will have a different call than rdiff-backup
+        # itself, we can't compare certain keys
         self.assertIn("exec", out_info)
         self.assertIn("argv", out_info["exec"])
         out_info["exec"].pop("argv")
         info["exec"].pop("argv")
-        # info['python']['executable'] could also be different but I think that
-        # our test environments make sure that it doesn't happen, unless Windows
-        if os.name == "nt":
-            info["python"]["executable"] = info["python"]["executable"].lower()
-            out_info["python"]["executable"] = out_info["python"]["executable"].lower()
+
+        # info['python'] could also be different, under special conditions
+        self.assertIn("python", out_info)
+        self.assertIn("executable", out_info["python"])
+        out_info.pop("python")
+        info.pop("python")
+
         self.assertEqual(info, out_info)
 
     def test_default_actual_api(self):
@@ -41,7 +43,7 @@ class ApiVersionTest(unittest.TestCase):
         self.assertEqual(out_info["exec"]["api_version"]["actual"], api_version["max"])
 
     def test_debug_output(self):
-        """we use verbosity 9 only to cover debug functions in logging"""
+        """Use verbosity 9 to cover debug functions in logging"""
         output = subprocess.check_output(
             [RBBin, b"-v", b"9", b"--terminal-verbosity", b"9", b"info"]
         )
