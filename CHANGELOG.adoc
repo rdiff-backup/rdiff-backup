@@ -9,6 +9,50 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * *NEW* features and bug-**FIX**es are of course of interest as well.
 * **DOC**umentation (and website) changes are marked as such.
 
+== New in v2.6.0 (never released)
+
+=== Changes
+
+* CHG: introduce pyproject.toml to comply with PEP517 and PEP621, 
+       normal users shouldn't notice a difference, packagers might need to 
+       adapt, closes #757
+* CHG: rdiff-backup executable under Windows is built with Python 
+       3.12.0 and librsync 2.3.4, there shouldn't be any noticeable difference 
+       for normal users
+* CHG: rdiff-backup supports and hence is being tested with Python 3.9 
+       to 3.12
+* CHG: Remove RPM spec files from repository as outdated, check your 
+       favourite distro if you need them, or ask us
+* CHG: the API 200 has been removed from the code and isn't supported 
+       anymore, i.e. rdiff-backup isn't compatible anymore with version 2.0
+* CHG: the placeholder '%s' isn't accepted anymore in remote schemas, 
+       use '{h}' instead
+* DOC: add FAQ example of script validating free disk space before 
+       starting a backup, increasing the chance to avoid a repository 
+       corruption
+* DOC: repository format changes have been moved to API changelog 
+       documentation
+* FIX: correct pyproject license to SPDX notation, closes #948
+* FIX: regression of repository with long filenames could fail because 
+       of wrong order, closes #869
+* FIX: user and group names with UTF-8 characters can now be restored, 
+       closes #938
+* NEW: Git archives, also from GitHub, get enough information for 
+       setuptools-scm resp.  setup.sh to properly identify the rdiff-backup 
+       version; this might make packaging slightly easier
+* NEW: Python module versions are saved as part of zip file for Windows 
+       using pip freeze, closes #957
+* NEW: rdiff-backup uses metadata like the checksum to validate the 
+       need for a regression, greatly improving speed of regression.
+* NEW: tox_smoke.ini for smoke tests with less dependencies, especially 
+       without coverage, avoiding to write in root-protected paths, closes #949
+
+=== Authors
+
+* Eric L
+* Patrik Dufresne
+
+
 == New in v2.4.0 (never released)
 
 === Changes
