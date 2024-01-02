@@ -149,3 +149,4 @@ NOTE: the `--version` option should long term also output the API version(s) sup
 
 * xref:v201.adoc[API v201]
 * xref:v200.adoc[API v200]
+* xref:v300.adoc[API v300]
