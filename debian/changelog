@@ -1,3 +1,13 @@
+rdiff-backup (2.2.3.dev89+g44c34dc.d20240112) UNRELEASED; urgency=medium
+
+  [ Otto Kekäläinen ]
+  * Automatic build
+
+  [ root ]
+  * Automatic build
+
+ -- root <root@3aecac5f90c4>  Fri, 12 Jan 2024 21:10:16 +0000
+
 rdiff-backup (1.9.0b0) unstable; urgency=medium
 
   * Initial changelog entry for native rdiff-backup packaging.
