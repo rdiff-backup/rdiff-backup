@@ -329,7 +329,6 @@ class AccessControlListFile(meta.FlatFile):
             return super().write_object(acl_meta)
 
 
-# @API(set_rp_acl, 200, 200)  # unused
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
     assert (
@@ -361,7 +360,6 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
         def_acl.applyto(rp.path, posix1e.ACL_TYPE_DEFAULT)
 
 
-# @API(get_acl_lists_from_rp, 200, 200)  # unused
 def get_acl_lists_from_rp(rp):
     """Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
     assert (
