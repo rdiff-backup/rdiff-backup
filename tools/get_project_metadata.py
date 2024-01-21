@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Alternative using the build front-end to `python -m setuptools_scm`
 
 import argparse
