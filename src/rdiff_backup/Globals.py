@@ -22,15 +22,14 @@ import os
 import platform
 import sys
 import yaml
+from importlib import metadata
 from rdiff_backup import log
 
 # The current version of rdiff-backup
 # Get it from package info or fall back to DEV version.
 try:
-    from importlib import metadata
-
     version = metadata.version("rdiff-backup")
-except BaseException:  # if everything else fails...
+except metadata.PackageNotFoundError:
     version = "DEV.no.metadata"
 
 # The default, supported (min/max) and actual API versions.
