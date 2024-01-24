@@ -1,5 +1,5 @@
 # Copyright 2002 Ben Escoto
-#
+
 # This file is part of rdiff-backup.
 #
 # rdiff-backup is free software; you can redistribute it and/or modify
@@ -24,20 +24,27 @@ import re
 import shutil
 import sys
 import textwrap
+import typing
 import traceback
 from rdiff_backup import Globals
 
 LOGFILE_ENCODING = "utf-8"
 
+# type definitions
+Verbosity: typing.TypeAlias = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+InputVerbosity: typing.TypeAlias = int | str
+
 # we need to define constants
-ERROR = 1
-WARNING = 2
-NOTE = 3
-INFO = 5
-DEBUG = 8  # we reserve 9 for adding the timestamp
+NONE: Verbosity = 0
+ERROR: Verbosity = 1
+WARNING: Verbosity = 2
+NOTE: Verbosity = 3
+INFO: Verbosity = 5
+DEBUG: Verbosity = 8
+TIMESTAMP: Verbosity = 9  # for adding the timestamp
 
 # mapping from severity to prefix (must be less than 9 characters)
-_LOG_PREFIX = {
+_LOG_PREFIX: dict[Verbosity, str] = {
     1: "ERROR:",
     2: "WARNING:",
     3: "NOTE:",
@@ -56,11 +63,9 @@ class Logger:
     def __init__(self):
         self.log_file_open = None
         self.log_file_local = None
-        self.verbosity = self.term_verbosity = int(
-            os.getenv("RDIFF_BACKUP_VERBOSITY", "3")
-        )
-        # termverbset is true if the term_verbosity has been explicitly set
-        self.termverbset = None
+        # if something wrong happens during initialization, we want to know
+        self.file_verbosity: Verbosity = NONE
+        self.term_verbosity: Verbosity = WARNING
 
     def __call__(self, message, verbosity):
         """
@@ -68,7 +73,7 @@ class Logger:
 
         message can be a string or bytes
         """
-        if verbosity > self.verbosity and verbosity > self.term_verbosity:
+        if verbosity > self.file_verbosity and verbosity > self.term_verbosity:
             return
 
         if not isinstance(message, (bytes, str)):
@@ -76,7 +81,7 @@ class Logger:
                 "You can only log bytes or str, and not {lt}".format(lt=type(message))
             )
 
-        if verbosity <= self.verbosity:
+        if verbosity <= self.file_verbosity:
             self.log_to_file(message, verbosity)
         if verbosity <= self.term_verbosity:
             self.log_to_term(message, verbosity)
@@ -86,7 +91,7 @@ class Logger:
         """Write the message to the log file, if possible"""
         if self.log_file_open:
             if self.log_file_local:
-                tmpstr = self._format(message, self.verbosity, verbosity)
+                tmpstr = self._format(message, self.file_verbosity, verbosity)
                 self.logfp.write(_to_bytes(tmpstr))
                 self.logfp.flush()
             else:
@@ -102,7 +107,7 @@ class Logger:
         tmpstr = self._format(message, self.term_verbosity, verbosity)
         # if the verbosity is below 9 and the string isn't deemed
         # pre-formatted by newlines (we ignore the last character)
-        if self.verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
+        if self.file_verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
             termfp.write(
                 textwrap.fill(
                     tmpstr,
@@ -175,30 +180,27 @@ class Logger:
             print("OS error while trying to log exception!")
             print(exception_string)
 
-    # @API(Log.setverbosity, 200)
-    def setverbosity(self, verbosity_string):
-        """Set verbosity levels.  Takes a number string"""
+    # @API(Log.set_verbosity, 300)
+    def set_verbosity(
+        self,
+        file_verbosity: InputVerbosity,
+        term_verbosity: InputVerbosity | None = None,
+    ) -> int:
+        """
+        Set verbosity levels, logfile and terminal.  Takes numbers or strings.
+        If not provided, the terminal verbosity is set from the logfile one.
+        Returns an integer code.
+        """
         try:
-            self.verbosity = int(verbosity_string)
+            self.file_verbosity = self.validate_verbosity(file_verbosity)
+            if term_verbosity is None:
+                self.term_verbosity = self.file_verbosity
+            else:
+                self.term_verbosity = self.validate_verbosity(term_verbosity)
         except ValueError:
-            Log.FatalError(
-                "Verbosity must be a number, received '{vs}' "
-                "instead".format(vs=verbosity_string)
-            )
-        if not self.termverbset:
-            self.term_verbosity = self.verbosity
-
-    # @API(Log.setterm_verbosity, 200)
-    def setterm_verbosity(self, termverb_string):
-        """Set verbosity to terminal.  Takes a number string"""
-        try:
-            self.term_verbosity = int(termverb_string)
-        except ValueError:
-            Log.FatalError(
-                "Terminal verbosity must be a number, received "
-                "'{tv}' instead".format(tv=termverb_string)
-            )
-        self.termverbset = 1
+            return Globals.RET_CODE_ERR
+        else:
+            return Globals.RET_CODE_OK
 
     def open_logfile(self, log_rp):
         """Inform all connections of an open logfile.
@@ -293,6 +295,32 @@ class Logger:
                 pre=_LOG_PREFIX[msg_verbosity],
                 msg=message,
             )
+
+    @classmethod
+    def validate_verbosity(cls, input_verbosity: InputVerbosity) -> Verbosity:
+        """
+        Validate verbosity and returns its value as integer.
+        The input value can be a string or an integer, between 0 and 9.
+        Any wrong value raises a ValueError exception.
+        """
+        try:
+            verbosity = int(input_verbosity)
+        except ValueError:
+            Log(
+                "Verbosity must be a number, received '{vb}' "
+                "instead".format(vb=input_verbosity),
+                ERROR,
+            )
+            raise ValueError
+        if verbosity in typing.get_args(Verbosity):
+            return typing.cast(Verbosity, verbosity)
+        else:
+            Log(
+                "Verbosity must be between 0 and 9, received '{vb}' "
+                "instead".format(vb=verbosity),
+                ERROR,
+            )
+            raise ValueError
 
 
 Log = Logger()

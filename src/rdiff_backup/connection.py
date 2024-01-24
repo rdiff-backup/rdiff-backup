@@ -523,7 +523,7 @@ class PipeConnection(LowLevelPipeConnection):
         """Return active exception"""
         if robust.is_routine_fatal(sys.exc_info()[1]):
             raise  # Fatal error--No logging necessary, but connection down
-        if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
+        if log.Log.file_verbosity >= log.INFO or log.Log.term_verbosity >= log.INFO:
             log.Log(
                 "Sending back exception '{ex}' of type {ty} with "
                 "traceback {tb}".format(

@@ -333,13 +333,13 @@ def _set_allowed_requests(sec_class, sec_level):
     if sec_class == "server":
         requests.update(
             [
-                "log.Log.setverbosity",
-                "log.Log.setterm_verbosity",
                 "SetConnections.init_connection_remote",
                 # API >= 201
                 "_repo_shadow.RepoShadow.init_owners_mapping",
                 "_dir_shadow.WriteDirShadow.init_owners_mapping",
                 "Globals.set_api_version",
+                # API >= 300
+                "log.Log.set_verbosity",  # FIXME can we pipe this through?
             ]
         )
     return requests

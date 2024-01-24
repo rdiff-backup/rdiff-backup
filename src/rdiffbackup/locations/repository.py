@@ -191,7 +191,7 @@ class Repo(locations.Location):
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
 
-        if log.Log.verbosity > 0 and action_name:
+        if log.Log.file_verbosity > 0 and action_name:
             ret_code |= self._open_logfile(action_name, self.must_be_writable)
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code

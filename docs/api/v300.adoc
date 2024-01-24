@@ -37,8 +37,7 @@ toc::[]
 * `log.Log.log_to_file`
 * `log.Log.open_logfile_allconn`
 * `log.Log.open_logfile_local`
-* `log.Log.setterm_verbosity`
-* `log.Log.setverbosity`
+* `log.Log.set_verbosity`  **new**
 * `robust.install_signal_handlers`
 * `rpath.copy_reg_file`
 * `rpath.delete_dir_no_files`

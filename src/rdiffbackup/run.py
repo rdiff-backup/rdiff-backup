@@ -59,9 +59,11 @@ def main_run(arglist, security_override=False):
     )
 
     # we need verbosity set properly asap
-    if parsed_args.terminal_verbosity is not None:
-        log.Log.setterm_verbosity(parsed_args.terminal_verbosity)
-    log.Log.setverbosity(parsed_args.verbosity)
+    ret_val = log.Log.set_verbosity(
+        parsed_args.verbosity, parsed_args.terminal_verbosity
+    )
+    if ret_val & Globals.RET_CODE_ERR:
+        return ret_val
 
     # compatibility plug
     _parse_cmdlineoptions_compat201(parsed_args)
@@ -78,7 +80,7 @@ def main_run(arglist, security_override=False):
     )
 
     # validate that everything looks good before really starting
-    ret_val = action.pre_check()
+    ret_val |= action.pre_check()
     if ret_val & Globals.RET_CODE_ERR:
         log.Log(
             "Action {ac} failed on step {st}".format(
