@@ -1,6 +1,7 @@
 """
 Test the logging functionality
 """
+
 import unittest
 
 from rdiff_backup import Globals, log

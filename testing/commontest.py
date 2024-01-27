@@ -1,5 +1,6 @@
 """commontest - Some functions and constants common to several test cases.
 Can be called also directly to setup the test environment"""
+
 import os
 import sys
 import code

@@ -1,6 +1,7 @@
 """
 Test the ability to regress/remove read-only paths with api version >= 201
 """
+
 import os
 import unittest
 
