@@ -188,18 +188,23 @@ class Logger:
     ) -> int:
         """
         Set verbosity levels, logfile and terminal.  Takes numbers or strings.
+        The function makes sure that verbosities are only modified if both
+        input values are correct.
         If not provided, the terminal verbosity is set from the logfile one.
         Returns an integer code.
         """
         try:
-            self.file_verbosity = self.validate_verbosity(file_verbosity)
+            # we set a temporary verbosity to make sure we overwrite the
+            # actual one only if both values are correct
+            tmp_verbosity: Verbosity = self.validate_verbosity(file_verbosity)
             if term_verbosity is None:
-                self.term_verbosity = self.file_verbosity
+                self.term_verbosity = tmp_verbosity
             else:
                 self.term_verbosity = self.validate_verbosity(term_verbosity)
         except ValueError:
             return Globals.RET_CODE_ERR
         else:
+            self.file_verbosity = tmp_verbosity
             return Globals.RET_CODE_OK
 
     def open_logfile(self, log_rp):
