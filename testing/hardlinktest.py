@@ -2,25 +2,26 @@ import os
 import time
 import unittest
 
+import commontest as comtst
 from commontest import (
     abs_test_dir,
     abs_output_dir,
     old_test_dir,
     re_init_rpath_dir,
     compare_recursive,
-    BackupRestoreSeries,
     InternalBackup,
     InternalRestore,
-    MakeOutputDir,
+    re_init_output_dir,
     reset_hardlink_dicts,
     xcopytree,
 )
-import commontest as comtst
 import fileset
 
 from rdiff_backup import Globals, rpath, selection
 from rdiffbackup.meta import stdattr
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class HardlinkTest(unittest.TestCase):
@@ -82,12 +83,16 @@ class HardlinkTest(unittest.TestCase):
             self.hlinks_dir3,
             os.path.join(old_test_dir, b"various_file_types"),
         ]
-        BackupRestoreSeries(None, None, dirlist, compare_hardlinks=1)
-        BackupRestoreSeries(1, 1, dirlist, compare_hardlinks=1)
+        comtst.backup_restore_series(
+            None, None, dirlist, compare_hardlinks=1, test_base_dir=TEST_BASE_DIR
+        )
+        comtst.backup_restore_series(
+            1, 1, dirlist, compare_hardlinks=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def testInnerRestore(self):
         """Restore part of a dir, see if hard links preserved"""
-        MakeOutputDir()
+        re_init_output_dir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
         hlout1_dir = os.path.join(abs_test_dir, b"out_hardlink1")
         hlout2_dir = os.path.join(abs_test_dir, b"out_hardlink2")
@@ -215,7 +220,7 @@ class HardlinkTest(unittest.TestCase):
         """
 
         # Setup initial backup
-        MakeOutputDir()
+        re_init_output_dir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
         hlsrc_dir = os.path.join(abs_test_dir, b"src_hardlink")
 
@@ -320,7 +325,7 @@ class HardlinkTest(unittest.TestCase):
         """
 
         # Setup initial backup
-        MakeOutputDir()
+        re_init_output_dir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
         hlsrc_dir = os.path.join(abs_test_dir, b"src_hardlink")
 

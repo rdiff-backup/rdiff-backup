@@ -1,5 +1,5 @@
 import unittest
-from commontest import BackupRestoreSeries
+import commontest as comtst
 from rdiff_backup import rpath, metadata, Globals
 
 """***NOTE***
@@ -8,6 +8,8 @@ None of these tests should work unless your system supports resource
 forks.  So basically these tests should only be run on Mac OS X.
 
 """
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 Globals.read_resource_forks = Globals.write_resource_forks = 1
 
@@ -90,8 +92,7 @@ class ResourceForkTest(unittest.TestCase):
             "testfiles/resource_fork_test2",
             "testfiles/resource_fork_test1",
         ]
-        # BackupRestoreSeries(1, 1, dirlist, compare_resource_forks = 1)
-        BackupRestoreSeries(1, 1, dirlist)
+        comtst.backup_restore_series(1, 1, dirlist, test_base_dir=TEST_BASE_DIR)
 
     def testSeriesRemote(self):
         """Test backing up and restoring directories with ACLs locally"""
@@ -103,8 +104,7 @@ class ResourceForkTest(unittest.TestCase):
             "testfiles/empty",
             "testfiles/resource_fork_test1",
         ]
-        # BackupRestoreSeries(1, 1, dirlist, compare_resource_forks = 1)
-        BackupRestoreSeries(1, 1, dirlist)
+        comtst.backup_restore_series(1, 1, dirlist, test_base_dir=TEST_BASE_DIR)
 
 
 if __name__ == "__main__":

@@ -72,7 +72,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         self.assertFalse(found)
 
     def tearDown(self):
-        comtst.Myrm(self.repo)
+        comtst.remove_dir(self.repo)
 
     def test_arguments(self):
         # Call with --help or -h should return 0 and print the usage.

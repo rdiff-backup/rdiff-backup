@@ -43,7 +43,7 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
-        ct.MakeOutputDir()
+        ct.re_init_output_dir()
         outrp = rpath.RPath(Globals.local_connection, ct.abs_output_dir)
         inrp = rpath.RPath(
             Globals.local_connection, os.path.join(ct.abs_test_dir, b"quotetest")

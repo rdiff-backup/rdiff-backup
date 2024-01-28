@@ -7,12 +7,12 @@ from rdiff_backup import Globals, rpath
 from rdiffbackup import meta_mgr
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, ea
+import commontest as comtst
 from commontest import (
     rdiff_backup,
     abs_test_dir,
     abs_output_dir,
     abs_restore_dir,
-    BackupRestoreSeries,
     compare_recursive,
 )
 
@@ -20,6 +20,8 @@ map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_dir = rpath.RPath(Globals.local_connection, abs_restore_dir)
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class EATest(unittest.TestCase):
@@ -222,7 +224,9 @@ user.empty
             self.ea_test2_dir,
             self.ea_test1_dir,
         ]
-        BackupRestoreSeries(1, 1, dirlist, compare_eas=1)
+        comtst.backup_restore_series(
+            1, 1, dirlist, compare_eas=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def testSeriesRemote(self):
         """Test backing up, restoring directories with EA remotely"""
@@ -233,7 +237,9 @@ user.empty
             self.ea_empty_dir,
             self.ea_test1_dir,
         ]
-        BackupRestoreSeries(None, None, dirlist, compare_eas=1)
+        comtst.backup_restore_series(
+            None, None, dirlist, compare_eas=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def test_final_local(self):
         """Test backing up and restoring using 'rdiff-backup' script"""
@@ -495,7 +501,9 @@ other::---
             self.acl_test2_dir,
             self.acl_test1_dir,
         ]
-        BackupRestoreSeries(1, 1, dirlist, compare_acls=1)
+        comtst.backup_restore_series(
+            1, 1, dirlist, compare_acls=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def testSeriesRemote(self):
         """Test backing up, restoring directories with EA remotely"""
@@ -506,7 +514,9 @@ other::---
             self.acl_empty_dir,
             self.acl_test1_dir,
         ]
-        BackupRestoreSeries(None, None, dirlist, compare_acls=1)
+        comtst.backup_restore_series(
+            None, None, dirlist, compare_acls=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def test_final_local(self):
         """Test backing up and restoring using 'rdiff-backup' script"""
@@ -710,7 +720,9 @@ class CombinedTest(unittest.TestCase):
             self.combo_empty_dir,
             self.combo_test1_dir,
         ]
-        BackupRestoreSeries(1, 1, dirlist, compare_eas=1, compare_acls=1)
+        comtst.backup_restore_series(
+            1, 1, dirlist, compare_eas=1, compare_acls=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def testSeriesRemote(self):
         """Test backing up and restoring EAs/ACLs locally"""
@@ -721,7 +733,14 @@ class CombinedTest(unittest.TestCase):
             self.combo_test2_dir,
             self.combo_test1_dir,
         ]
-        BackupRestoreSeries(None, None, dirlist, compare_eas=1, compare_acls=1)
+        comtst.backup_restore_series(
+            None,
+            None,
+            dirlist,
+            compare_eas=1,
+            compare_acls=1,
+            test_base_dir=TEST_BASE_DIR,
+        )
 
 
 if __name__ == "__main__":

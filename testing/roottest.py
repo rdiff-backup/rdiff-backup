@@ -1,14 +1,14 @@
 import unittest
 import os
+import commontest as comtst
 from commontest import (
     old_test_dir,
     abs_test_dir,
     abs_output_dir,
-    Myrm,
+    remove_dir,
     abs_restore_dir,
     re_init_rpath_dir,
     compare_recursive,
-    BackupRestoreSeries,
     rdiff_backup,
     RBBin,
     xcopytree,
@@ -36,6 +36,8 @@ user = os.getenv("RDIFF_TEST_USER", os.getenv("SUDO_USER"))
 assert userid, "Unable to assess ID of non-root user to be used for tests"
 assert user, "Unable to assess name of non-root user to be used for tests"
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class BaseRootTest(unittest.TestCase):
     def _run_cmd(self, cmd, expect_rc=Globals.RET_CODE_OK):
@@ -59,13 +61,19 @@ class RootTest(BaseRootTest):
     ]
 
     def testLocal1(self):
-        BackupRestoreSeries(1, 1, self.dirlist1, compare_ownership=1)
+        comtst.backup_restore_series(
+            1, 1, self.dirlist1, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def testLocal2(self):
-        BackupRestoreSeries(1, 1, self.dirlist2, compare_ownership=1)
+        comtst.backup_restore_series(
+            1, 1, self.dirlist2, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def testRemote(self):
-        BackupRestoreSeries(None, None, self.dirlist1, compare_ownership=1)
+        comtst.backup_restore_series(
+            None, None, self.dirlist1, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+        )
 
     def test_ownership(self):
         """Test backing up and restoring directory with different uids
@@ -105,9 +113,14 @@ class RootTest(BaseRootTest):
             os.path.join(old_test_dir, b"empty"),
             os.path.join(abs_test_dir, b"root_owner"),
         ]
-        BackupRestoreSeries(1, 1, dirlist, compare_ownership=1)
+        comtst.backup_restore_series(
+            1, 1, dirlist, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+        )
+        # this works only because we know that backup_restore_series creates
+        # the backup in the 'output' sub-directory
         symrp = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_output_dir, b"symlink")
+            Globals.local_connection,
+            os.path.join(TEST_BASE_DIR, b"output", b"symlink"),
         )
         self.assertTrue(symrp.issym())
         self.assertEqual(symrp.getuidgid(), (2004, 2004))
@@ -147,7 +160,7 @@ class RootTest(BaseRootTest):
         user_map, group_map = write_mapping_files(in_rp)
         out_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
         if out_rp.lstat():
-            Myrm(out_rp.path)
+            remove_dir(out_rp.path)
 
         self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
 
@@ -197,7 +210,7 @@ class RootTest(BaseRootTest):
         in_rp = write_ownership_dir()
         out_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
         if out_rp.lstat():
-            Myrm(out_rp.path)
+            remove_dir(out_rp.path)
 
         self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
 
@@ -335,7 +348,7 @@ class HalfRoot(BaseRootTest):
         outrp.setdata()
 
         rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
-        Myrm(rout_rp.path)
+        remove_dir(rout_rp.path)
         cmd3 = (
             RBBin,
             b"--remote-schema",
@@ -353,7 +366,7 @@ class HalfRoot(BaseRootTest):
         self.assertEqual(rout_perms, 0)
         self.assertEqual(outrp_perms, 0)
 
-        Myrm(rout_rp.path)
+        remove_dir(rout_rp.path)
         cmd4 = (
             RBBin,
             b"--remote-schema",
@@ -406,7 +419,7 @@ class NonRoot(BaseRootTest):
             Globals.local_connection, os.path.join(abs_test_dir, b"root_out2")
         )
         if sp.lstat():
-            Myrm(sp.path)
+            remove_dir(sp.path)
         xcopytree(rp.path, sp.path)
         rp2 = sp.append("2")
         rp2.chown(2, 2)
@@ -427,7 +440,7 @@ class NonRoot(BaseRootTest):
         self._run_cmd((b"su", user.encode(), b"-c", backup_cmd))
 
     def restore(self, dest_rp, restore_rp, time=None):
-        Myrm(restore_rp.path)
+        remove_dir(restore_rp.path)
         if time is None or time == "now":
             restore_cmd = (
                 RBBin,

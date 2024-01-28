@@ -1,7 +1,13 @@
 import unittest
 import time
 import os
-from commontest import abs_test_dir, Myrm, InternalBackup, old_test_dir, abs_output_dir
+from commontest import (
+    abs_test_dir,
+    remove_dir,
+    InternalBackup,
+    old_test_dir,
+    abs_output_dir,
+)
 from rdiff_backup import Globals, statistics, rpath
 
 
@@ -196,7 +202,7 @@ class IncStatTest(unittest.TestCase):
             return [inc for (t, inc) in templist]
 
         Globals.compression = 1
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest1"), abs_output_dir)
         InternalBackup(
             1,

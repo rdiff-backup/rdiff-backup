@@ -5,7 +5,7 @@ from commontest import (
     old_test_dir,
     abs_output_dir,
     abs_restore_dir,
-    Myrm,
+    remove_dir,
     rdiff_backup,
     RBBin,
     SetConnections,
@@ -112,7 +112,7 @@ class SecurityTest(unittest.TestCase):
         work, (initial backup, incremental, restore).
 
         """
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             abs_output_dir,
@@ -128,7 +128,7 @@ class SecurityTest(unittest.TestCase):
             b"--restrict-path %b/" % abs_output_dir,
         )
 
-        Myrm(abs_restore_dir)
+        remove_dir(abs_restore_dir)
         self.secure_rdiff_backup(
             abs_output_dir,
             abs_restore_dir,
@@ -141,8 +141,8 @@ class SecurityTest(unittest.TestCase):
         """Test that --restrict switch denies certain operations"""
         # Backup to wrong directory
         output2_dir = abs_output_dir + b"2"
-        Myrm(abs_output_dir)
-        Myrm(output2_dir)
+        remove_dir(abs_output_dir)
+        remove_dir(output2_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             output2_dir,
@@ -152,8 +152,8 @@ class SecurityTest(unittest.TestCase):
         )
 
         # Restore to wrong directory
-        Myrm(abs_output_dir)
-        Myrm(abs_restore_dir)
+        remove_dir(abs_output_dir)
+        remove_dir(abs_restore_dir)
         rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
         self.secure_rdiff_backup(
             abs_output_dir,
@@ -165,7 +165,7 @@ class SecurityTest(unittest.TestCase):
         )
 
         # Backup from wrong directory
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         wrong_files_dir = os.path.join(old_test_dir, b"foobar")
         self.secure_rdiff_backup(
             self.various_files_dir,
@@ -179,8 +179,8 @@ class SecurityTest(unittest.TestCase):
         """
         Test that --restrict-mode read-only switch doesn't impair normal ops
         """
-        Myrm(abs_output_dir)
-        Myrm(abs_restore_dir)
+        remove_dir(abs_output_dir)
+        remove_dir(abs_restore_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             abs_output_dir,
@@ -202,7 +202,7 @@ class SecurityTest(unittest.TestCase):
     def test_restrict_readonly_negative(self):
         """Test that --restrict-mode read-only doesn't allow too much"""
         # Backup to restricted directory
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             abs_output_dir,
@@ -212,8 +212,8 @@ class SecurityTest(unittest.TestCase):
         )
 
         # Restore to restricted directory
-        Myrm(abs_output_dir)
-        Myrm(abs_restore_dir)
+        remove_dir(abs_output_dir)
+        remove_dir(abs_restore_dir)
         rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
         self.secure_rdiff_backup(
             abs_output_dir,
@@ -226,7 +226,7 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_updateonly_positive(self):
         """Test that --restrict-mode update-only allows intended use"""
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         rdiff_backup(1, 1, self.various_files_dir, abs_output_dir, current_time=10000)
         self.secure_rdiff_backup(
             self.various_files_dir,
@@ -237,7 +237,7 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_updateonly_negative(self):
         """Test that --restrict-mode update-only impairs unintended"""
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             abs_output_dir,
@@ -246,8 +246,8 @@ class SecurityTest(unittest.TestCase):
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
-        Myrm(abs_output_dir)
-        Myrm(abs_restore_dir)
+        remove_dir(abs_output_dir)
+        remove_dir(abs_restore_dir)
         rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
         self.secure_rdiff_backup(
             abs_output_dir,
@@ -260,7 +260,7 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_bug(self):
         """Test for bug 14209 --- mkdir outside --restrict arg"""
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             abs_output_dir,
@@ -273,7 +273,7 @@ class SecurityTest(unittest.TestCase):
 
     def test_quoting_bug(self):
         """Test for bug 14545 --- quoting causes bad violation"""
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             abs_output_dir,

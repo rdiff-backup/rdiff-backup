@@ -1,7 +1,13 @@
 import unittest
 import errno
 import os
-from commontest import abs_test_dir, old_test_dir, Myrm, rdiff_backup, compare_recursive
+from commontest import (
+    abs_test_dir,
+    old_test_dir,
+    remove_dir,
+    rdiff_backup,
+    compare_recursive,
+)
 import commontest as comtst
 from rdiff_backup import Globals, rpath, Time
 
@@ -24,7 +30,7 @@ class LongNameTest(unittest.TestCase):
         NAME_MAX_LEN, so check to make sure it's accurate.
 
         """
-        Myrm(self.out_rp.path)
+        remove_dir(self.out_rp.path)
         self.out_rp.mkdir()
 
         really_long = self.out_rp.append("a" * NAME_MAX_LEN)
@@ -41,8 +47,8 @@ class LongNameTest(unittest.TestCase):
         """Create two input directories with long filename(s) in them"""
         dir1 = self.root_rp.append("longname1")
         dir2 = self.root_rp.append("longname2")
-        Myrm(dir1.path)
-        Myrm(dir2.path)
+        remove_dir(dir1.path)
+        remove_dir(dir2.path)
 
         dir1.mkdir()
         rp11 = dir1.append("A" * NAME_MAX_LEN)
@@ -83,7 +89,7 @@ class LongNameTest(unittest.TestCase):
     def generic_test(self, inlocal, outlocal, extra_args, compare_back):
         """Used for some of the tests below"""
         in1, in2 = self.make_input_dirs()
-        Myrm(self.out_rp.path)
+        remove_dir(self.out_rp.path)
         restore_dir = self.root_rp.append("longname_out")
 
         # Test backing up
@@ -109,7 +115,7 @@ class LongNameTest(unittest.TestCase):
             self.check_dir2(self.out_rp)
 
         # Now try restoring
-        Myrm(restore_dir.path)
+        remove_dir(restore_dir.path)
         rdiff_backup(
             inlocal,
             outlocal,
@@ -119,7 +125,7 @@ class LongNameTest(unittest.TestCase):
             extra_options=extra_args + (b"restore", b"--at", b"now"),
         )
         self.check_dir2(restore_dir)
-        Myrm(restore_dir.path)
+        remove_dir(restore_dir.path)
         rdiff_backup(
             1,
             1,
@@ -141,9 +147,9 @@ class LongNameTest(unittest.TestCase):
     def test_regress_basic(self):
         """Test regressing when increments would be too long"""
         in1, in2 = self.make_input_dirs()
-        Myrm(self.out_rp.path)
+        remove_dir(self.out_rp.path)
         restore_dir = self.root_rp.append("longname_out")
-        Myrm(restore_dir.path)
+        remove_dir(restore_dir.path)
 
         rdiff_backup(
             1,
@@ -190,9 +196,9 @@ class LongNameTest(unittest.TestCase):
         input_dir = os.path.join(old_test_dir, b"select", b"filetypes")
         # create a target directory with a long name next to 107
         output_dir = os.path.join(abs_test_dir, b"tenletters" * 10)
-        Myrm(output_dir)
+        remove_dir(output_dir)
         restore_dir = os.path.join(abs_test_dir, b"restoresme" * 10)
-        Myrm(restore_dir)
+        remove_dir(restore_dir)
         # backup and restore the input directory with socket, then compare
         rdiff_backup(True, True, input_dir, output_dir)
         rdiff_backup(

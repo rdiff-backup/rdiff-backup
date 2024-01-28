@@ -5,7 +5,7 @@ import time
 import pathlib
 from commontest import (
     rdiff_backup,
-    Myrm,
+    remove_dir,
     compare_recursive,
     old_test_dir,
     abs_test_dir,
@@ -271,7 +271,7 @@ class Final(PathSetter):
     def testProcLocal(self):
         """Test initial backup of /proc locally"""
         procout_dir = os.path.join(abs_test_dir, b"procoutput")
-        Myrm(procout_dir)
+        remove_dir(procout_dir)
         procout = rpath.RPath(Globals.local_connection, procout_dir)
         rdiff_backup(True, True, "/proc", procout.path, current_time=10000)
         time.sleep(1)
@@ -286,7 +286,7 @@ class Final(PathSetter):
     def testProcLocalToRemote(self):
         """Test mirroring proc remote"""
         procout_dir = os.path.join(abs_test_dir, b"procoutput")
-        Myrm(procout_dir)
+        remove_dir(procout_dir)
         procout = rpath.RPath(Globals.local_connection, procout_dir)
         rdiff_backup(True, False, "/proc", procout.path, current_time=10000)
         time.sleep(1)
@@ -301,7 +301,7 @@ class Final(PathSetter):
     def testProcRemoteToLocal(self):
         """Test mirroring proc, this time when proc is remote, dest local"""
         procout_dir = os.path.join(abs_test_dir, b"procoutput")
-        Myrm(procout_dir)
+        remove_dir(procout_dir)
         procout = rpath.RPath(Globals.local_connection, procout_dir)
         rdiff_backup(False, True, "/proc", procout.path)
 
@@ -500,7 +500,7 @@ class FinalMisc(PathSetter):
 
     def testRemoveOlderThan(self):
         """Test remove-older-than.  Uses restoretest3"""
-        Myrm(Local.rpout.path)
+        remove_dir(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(
             True,
@@ -515,7 +515,7 @@ class FinalMisc(PathSetter):
 
     def testRemoveOlderThan2(self):
         """Test remove-older-than, but '1B'.  Uses restoretest3"""
-        Myrm(Local.rpout.path)
+        remove_dir(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(
             True,
@@ -536,7 +536,7 @@ class FinalMisc(PathSetter):
 
     def testRemoveOlderThanCurrent(self):
         """Make sure remove-older-than doesn't delete current incs"""
-        Myrm(Local.rpout.path)
+        remove_dir(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(
             True,
@@ -564,7 +564,7 @@ class FinalMisc(PathSetter):
 
     def testRemoveOlderThanQuoting(self):
         """Test remove-older-than when dest directory is quoted"""
-        Myrm(Local.rpout.path)
+        remove_dir(Local.rpout.path)
         rdiff_backup(
             True,
             True,
@@ -591,7 +591,7 @@ class FinalMisc(PathSetter):
 
     def testRemoveOlderThanRemote(self):
         """Test remove-older-than remotely"""
-        Myrm(Local.rpout.path)
+        remove_dir(Local.rpout.path)
         xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(
             False,
@@ -606,7 +606,7 @@ class FinalMisc(PathSetter):
 
     def testNonExistingTempDir(self):
         """Test that a missing tempdir is properly catched as an error"""
-        Myrm(Local.rpout.path)
+        remove_dir(Local.rpout.path)
         rdiff_backup(
             True,
             True,
@@ -796,7 +796,7 @@ class FinalSelection(PathSetter):
         rp1.touch()
         rp2.touch()
         rdiff_backup(source_local, dest_local, Local.vft_out.path, Local.rpout.path)
-        Myrm(Local.vft_out.path)
+        remove_dir(Local.vft_out.path)
 
     def make_restore_existing_target(self):
         """Create an existing file in the restore target directory"""
@@ -813,7 +813,7 @@ class FinalCorrupt(PathSetter):
         self.delete_tmpdirs()
         rp1 = Local.get_tgt_local_rp("final_deleted1")
         if rp1.lstat():
-            Myrm(rp1.path)
+            remove_dir(rp1.path)
         rp1.mkdir()
         rp1_1 = rp1.append("regfile")
         rp1_1.touch()
@@ -824,7 +824,7 @@ class FinalCorrupt(PathSetter):
 
         rp2 = Local.get_tgt_local_rp("final_deleted2")
         if rp2.lstat():
-            Myrm(rp2.path)
+            remove_dir(rp2.path)
         xcopytree(rp1.path, rp2.path)
         rp2_2_1 = rp2.append("dir", "regfile2")
         self.assertTrue(rp2_2_1.lstat())

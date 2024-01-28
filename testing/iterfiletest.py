@@ -2,7 +2,7 @@ import unittest
 import io
 import os
 import sys
-from commontest import iter_equal, abs_output_dir, Myrm
+from commontest import iter_equal, abs_output_dir, remove_dir
 from rdiff_backup import rpath, Globals
 from rdiff_backup.iterfile import (
     IterWrappingFile,
@@ -75,7 +75,7 @@ class testMiscIters(unittest.TestCase):
 
     def setUp(self):
         """Make testfiles/output directory and a few files"""
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         self.outputrp = rpath.RPath(Globals.local_connection, abs_output_dir)
         self.regfile1 = self.outputrp.append("reg1")
         self.regfile2 = self.outputrp.append("reg2")

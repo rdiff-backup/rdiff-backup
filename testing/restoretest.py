@@ -3,7 +3,7 @@ import os
 from commontest import (
     abs_output_dir,
     old_test_dir,
-    Myrm,
+    remove_dir,
     InternalRestore,
     compare_recursive,
 )
@@ -142,7 +142,7 @@ class RestoreTest(unittest.TestCase):
         makerestoretest3.
 
         """
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         restore3_dir = os.path.join(old_test_dir, b"restoretest3")
         target_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
         inc1_rp = rpath.RPath(
@@ -169,7 +169,7 @@ class RestoreTest(unittest.TestCase):
 
     def testRestoreNoincs(self):
         """Test restoring a directory with no increments, just mirror"""
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
         InternalRestore(
             1,
             1,

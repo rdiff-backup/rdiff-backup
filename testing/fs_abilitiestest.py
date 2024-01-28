@@ -1,7 +1,7 @@
 import unittest
 import os
 import time
-from commontest import abs_test_dir, Myrm
+from commontest import abs_test_dir, remove_dir
 from rdiff_backup import Globals, rpath
 from rdiffbackup.locations import fs_abilities
 
@@ -66,7 +66,7 @@ class FSAbilitiesTest(unittest.TestCase):
         base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
         new_dir = base_dir.append("fs_abilitiestest")
         if new_dir.lstat():
-            Myrm(new_dir.path)
+            remove_dir(new_dir.path)
         new_dir.setdata()
         new_dir.mkdir()
         t = time.time()

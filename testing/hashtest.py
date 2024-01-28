@@ -7,11 +7,11 @@ import os
 from commontest import (
     abs_test_dir,
     re_init_rpath_dir,
-    Myrm,
+    remove_dir,
     abs_output_dir,
     rdiff_backup,
     abs_testing_dir,
-    MakeOutputDir,
+    re_init_output_dir,
 )
 from rdiff_backup import hash, rpath, Globals, Security, SetConnections
 from rdiffbackup.meta import stdattr
@@ -98,7 +98,7 @@ class HashTest(unittest.TestCase):
 
         """
         in_rp1, hashlist1, in_rp2, hashlist2 = self.make_dirs()
-        Myrm(abs_output_dir)
+        remove_dir(abs_output_dir)
 
         rdiff_backup(1, 1, in_rp1.path, abs_output_dir, 10000)
         meta_prefix = rpath.RPath(
@@ -137,7 +137,7 @@ class HashTest(unittest.TestCase):
         self.assertEqual(fp_remote.close().sha1_digest, self.s1_hash)
 
         # Tested xfer of file, now test xfer of files in rorpiter
-        root = MakeOutputDir()
+        root = re_init_output_dir()
         rp1 = root.append("s1")
         rp1.write_string(self.s1)
         rp2 = root.append("s2")

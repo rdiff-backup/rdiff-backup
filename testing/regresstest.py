@@ -10,7 +10,7 @@ from commontest import (
     abs_output_dir,
     abs_test_dir,
     old_test_dir,
-    Myrm,
+    remove_dir,
     compare_recursive,
     rdiff_backup,
     os_system,
@@ -44,7 +44,7 @@ class RegressTest(unittest.TestCase):
         """
         self.output_rp.setdata()
         if self.output_rp.lstat():
-            Myrm(self.output_rp.path)
+            remove_dir(self.output_rp.path)
 
         rdiff_backup(1, 1, self.incrp[0].path, self.output_rp.path, current_time=10000)
         self.assertTrue(compare_recursive(self.incrp[0], self.output_rp))
@@ -114,7 +114,7 @@ class RegressTest(unittest.TestCase):
         """Run regress test when regular file is unreadable"""
         self.output_rp.setdata()
         if self.output_rp.lstat():
-            Myrm(self.output_rp.path)
+            remove_dir(self.output_rp.path)
         unreadable_rp = self.make_unreadable()
 
         rdiff_backup(1, 1, unreadable_rp.path, self.output_rp.path, current_time=1)
@@ -139,7 +139,7 @@ class RegressTest(unittest.TestCase):
             Globals.local_connection, os.path.join(abs_test_dir, b"regress")
         )
         if rp.lstat():
-            Myrm(rp.path)
+            remove_dir(rp.path)
         rp.setdata()
         rp.mkdir()
         rp1 = rp.append("unreadable_dir")

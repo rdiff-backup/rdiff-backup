@@ -7,7 +7,7 @@ from commontest import (
     old_test_dir,
     abs_test_dir,
     re_init_rpath_dir,
-    MakeOutputDir,
+    re_init_output_dir,
     rdiff_backup,
     iter_equal,
     iter_map,
@@ -784,7 +784,7 @@ class CommandTest(unittest.TestCase):
 
         This checks for a bug present in 1.0.3/1.1.5 and similar.
         """
-        outrp = MakeOutputDir()
+        outrp = re_init_output_dir()
         # we need to change directory to be able to work with relative paths
         os.chdir(abs_test_dir)
         os.chdir(os.pardir)  # chdir one level up

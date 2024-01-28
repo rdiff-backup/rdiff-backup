@@ -1,6 +1,6 @@
 import unittest
 import os
-from commontest import old_test_dir, abs_output_dir, MakeOutputDir
+from commontest import old_test_dir, abs_output_dir, re_init_output_dir
 from rdiff_backup import Globals, rpath, increment, Time, Rdiff
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
@@ -40,7 +40,7 @@ class inctest(unittest.TestCase):
 
     def setUp(self):
         Globals.set("isbackup_writer", 1)
-        MakeOutputDir()
+        re_init_output_dir()
 
     def check_time(self, rp):
         """Make sure that rp is an inc file, and time is prevtime"""
