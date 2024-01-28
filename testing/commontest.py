@@ -2,7 +2,6 @@
 Can be called also directly to setup the test environment"""
 
 import os
-import sys
 import code
 import shlex
 import shutil
@@ -41,7 +40,7 @@ old_inc3_dir = os.path.join(old_test_dir, b"increment3")
 old_inc4_dir = os.path.join(old_test_dir, b"increment4")
 
 # the directory in which all testing scripts are placed is the one
-abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(sys.argv[0])))
+abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(__file__)))
 
 __no_execute__ = 1  # Keeps the actual rdiff-backup program from running
 
