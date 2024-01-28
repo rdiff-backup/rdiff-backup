@@ -1,6 +1,7 @@
 """
 Test the simpleps alternative implementation
 """
+
 import os
 import unittest
 import sys

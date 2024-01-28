@@ -1,6 +1,7 @@
 """
 Test the remove action with api version >= 201
 """
+
 import os
 import unittest
 

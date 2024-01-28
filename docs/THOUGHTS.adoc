@@ -1,0 +1,10 @@
+= Thoughts for code evolution
+
+As I go through a major rewrite and see things I don't like, or would like to improve, a place to store easily such thoughts:
+
+- renumber verbosities to avoid "holes" between 0 and 9
+- replace log verbosity with IntEnum
+- replace return codes with IntFlag
+- extend info to also check locations and output file system information
+- split logging mechanism between front-end and back-end (writing to file, which is specific to the repository format)
+- replace own Logger implementation with standard one (in the background)
