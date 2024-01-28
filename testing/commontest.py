@@ -2,7 +2,6 @@
 Can be called also directly to setup the test environment"""
 
 import os
-import sys
 import code
 import shlex
 import shutil
