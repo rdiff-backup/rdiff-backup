@@ -3,8 +3,8 @@ Test the simpleps alternative implementation
 """
 
 import os
-import unittest
 import sys
+import unittest
 
 from rdiffbackup.utils import simpleps
 

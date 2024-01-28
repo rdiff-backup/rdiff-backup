@@ -1,7 +1,12 @@
-import unittest
 import time
+import unittest
+
+import commontest as comtst
 from commontest import *  # noqa: F403, F401 some side effect or test fails
+
 from rdiff_backup import Globals, Time
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class TimeTest(unittest.TestCase):

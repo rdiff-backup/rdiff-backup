@@ -1,12 +1,13 @@
-import unittest
-import os
-import io
-import pwd
+"""
+Test Extended Attributes and Access Control Lists
+"""
+
 import grp
-from rdiff_backup import Globals, rpath
-from rdiffbackup import meta_mgr
-from rdiffbackup.locations.map import owners as map_owners
-from rdiffbackup.meta import acl_posix, ea
+import io
+import os
+import pwd
+import unittest
+
 import commontest as comtst
 from commontest import (
     rdiff_backup,
@@ -16,12 +17,17 @@ from commontest import (
     compare_recursive,
 )
 
+from rdiff_backup import Globals, rpath
+from rdiffbackup import meta_mgr
+from rdiffbackup.locations.map import owners as map_owners
+from rdiffbackup.meta import acl_posix, ea
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_dir = rpath.RPath(Globals.local_connection, abs_restore_dir)
-
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class EATest(unittest.TestCase):

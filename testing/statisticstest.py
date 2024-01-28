@@ -1,6 +1,8 @@
-import unittest
-import time
 import os
+import time
+import unittest
+
+import commontest as comtst
 from commontest import (
     abs_test_dir,
     remove_dir,
@@ -8,7 +10,10 @@ from commontest import (
     old_test_dir,
     abs_output_dir,
 )
+
 from rdiff_backup import Globals, statistics, rpath
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class StatsObjTest(unittest.TestCase):

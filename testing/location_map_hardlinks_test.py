@@ -8,6 +8,8 @@ import unittest
 import commontest as comtst
 import fileset
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class LocationMapHardlinksTest(unittest.TestCase):
     """

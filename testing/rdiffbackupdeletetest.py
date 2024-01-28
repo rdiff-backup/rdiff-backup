@@ -3,9 +3,12 @@ import shutil
 import subprocess
 import unittest
 
-from commontest import old_test_dir, abs_test_dir, rdiff_backup
 import commontest as comtst
+from commontest import old_test_dir, abs_test_dir, rdiff_backup
+
 from rdiff_backup import Globals
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class RdiffBackupDeleteTest(unittest.TestCase):

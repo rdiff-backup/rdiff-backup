@@ -1,8 +1,11 @@
-import unittest
 import io
 import os
 import sys
+import unittest
+
+import commontest as comtst
 from commontest import iter_equal, abs_output_dir, remove_dir
+
 from rdiff_backup import rpath, Globals
 from rdiff_backup.iterfile import (
     IterWrappingFile,
@@ -12,6 +15,8 @@ from rdiff_backup.iterfile import (
     MiscIterFlush,
     MiscIterFlushRepeat,
 )
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class FileException:

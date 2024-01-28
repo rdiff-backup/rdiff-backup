@@ -1,8 +1,10 @@
-import unittest
 import os
+import pathlib
 import re
 import time
-import pathlib
+import unittest
+
+import commontest as comtst
 from commontest import (
     rdiff_backup,
     remove_dir,
@@ -12,10 +14,12 @@ from commontest import (
     get_increment_rp,
     xcopytree,
 )
-import commontest as comtst
 import fileset
+
 from rdiff_backup import Globals, log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 """Regression tests"""
 

@@ -1,9 +1,14 @@
-import unittest
+import os
 import random
 import subprocess
-import os
+import unittest
+
+import commontest as comtst
 from commontest import abs_test_dir, os_system
+
 from rdiff_backup import Globals, librsync, rpath
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 def MakeRandomFile(path, length=None):

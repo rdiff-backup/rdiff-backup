@@ -1,9 +1,13 @@
-#!/usr/bin/env python3
+"""
+Test hashing Function of rdiff-backup
+"""
 
-import unittest
 import io
-import sys
 import os
+import sys
+import unittest
+
+import commontest as comtst
 from commontest import (
     abs_test_dir,
     re_init_rpath_dir,
@@ -13,8 +17,11 @@ from commontest import (
     abs_testing_dir,
     re_init_output_dir,
 )
+
 from rdiff_backup import hash, rpath, Globals, Security, SetConnections
 from rdiffbackup.meta import stdattr
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class HashTest(unittest.TestCase):

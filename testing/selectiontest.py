@@ -1,8 +1,10 @@
 import io
-import unittest
 import os
 import subprocess
 import sys
+import unittest
+
+import commontest as comtst
 from commontest import (
     old_test_dir,
     abs_test_dir,
@@ -12,10 +14,12 @@ from commontest import (
     iter_equal,
     iter_map,
 )
-import commontest as comtst
 import fileset
+
 from rdiff_backup.selection import Select, GlobbingError, FilePrefixError
 from rdiff_backup import Globals, rpath
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class MatchingTest(unittest.TestCase):

@@ -1,15 +1,18 @@
-import unittest
-import os
 import io
+import os
 import time
+import unittest
 
 import commontest as comtst
-import fileset
 from commontest import old_test_dir, abs_output_dir, iter_equal, xcopytree
+import fileset
+
 from rdiff_backup import rpath, Globals, selection
 from rdiffbackup import meta_mgr
 from rdiffbackup.meta import stdattr
 from rdiffbackup.utils import quoting
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 

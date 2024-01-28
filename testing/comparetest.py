@@ -1,5 +1,7 @@
-import unittest
 import os
+import unittest
+
+import commontest as comtst
 from commontest import (
     rdiff_backup,
     abs_output_dir,
@@ -8,8 +10,10 @@ from commontest import (
     old_inc3_dir,
     re_init_subdir,
 )
-import commontest as comtst
+
 from rdiff_backup import Globals, rpath
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 """Test the compare.py module and overall compare functionality"""
 

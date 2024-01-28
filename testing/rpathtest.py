@@ -1,8 +1,10 @@
 import os
 import pickle
 import sys
-import unittest
 import time
+import unittest
+
+import commontest as comtst
 from commontest import (
     old_test_dir,
     abs_test_dir,
@@ -11,9 +13,11 @@ from commontest import (
     re_init_rpath_dir,
     os_system,
 )
-import commontest as comtst
 import fileset
+
 from rdiff_backup import Globals, rpath
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class RPathTest(unittest.TestCase):

@@ -1,9 +1,14 @@
-import unittest
-import pickle
+import functools
 import os
+import pickle
+import unittest
+
+import commontest as comtst
 from commontest import old_test_dir, abs_output_dir, compare_recursive, iter_equal
+
 from rdiff_backup import rpath, rorpiter, Globals
-from functools import reduce
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class index:
@@ -165,7 +170,7 @@ class ITRBadder2(rorpiter.ITRBranch):
         self.total = 0
 
     def end_process_directory(self):
-        self.total += reduce(lambda x, y: x + y, self.base_index, 0)
+        self.total += functools.reduce(lambda x, y: x + y, self.base_index, 0)
 
     def can_fast_process(self, index):
         if len(index) == 3:

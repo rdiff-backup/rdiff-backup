@@ -1,9 +1,13 @@
 import os
 import time
 import unittest
-import commontest as ct
+
+import commontest as comtst
+
 from rdiff_backup import Globals, rpath
 from rdiffbackup.locations.map import filenames as map_filenames
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class FilenameMappingTest(unittest.TestCase):
@@ -43,19 +47,19 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
-        ct.re_init_output_dir()
-        outrp = rpath.RPath(Globals.local_connection, ct.abs_output_dir)
+        comtst.re_init_output_dir()
+        outrp = rpath.RPath(Globals.local_connection, comtst.abs_output_dir)
         inrp = rpath.RPath(
-            Globals.local_connection, os.path.join(ct.abs_test_dir, b"quotetest")
+            Globals.local_connection, os.path.join(comtst.abs_test_dir, b"quotetest")
         )
-        ct.re_init_rpath_dir(inrp)
+        comtst.re_init_rpath_dir(inrp)
         long_filename = b"A" * 200  # when quoted should cause overflow
         longrp = inrp.append(long_filename)
         longrp.touch()
         shortrp = inrp.append(b"B")
         shortrp.touch()
 
-        ct.rdiff_backup(
+        comtst.rdiff_backup(
             True,
             True,
             inrp.path,
@@ -69,25 +73,25 @@ class FilenameMappingTest(unittest.TestCase):
         shortrp_out = outrp.append("B")
         self.assertTrue(shortrp_out.lstat())
 
-        ct.rdiff_backup(
-            True, True, os.path.join(ct.old_test_dir, b"empty"), outrp.path, 200000
+        comtst.rdiff_backup(
+            True, True, os.path.join(comtst.old_test_dir, b"empty"), outrp.path, 200000
         )
         shortrp_out.setdata()
         self.assertFalse(shortrp_out.lstat())
-        ct.rdiff_backup(True, True, inrp.path, outrp.path, 300000)
+        comtst.rdiff_backup(True, True, inrp.path, outrp.path, 300000)
         shortrp_out.setdata()
         self.assertTrue(shortrp_out.lstat())
 
     def testReQuote(self):
         inrp = rpath.RPath(
-            Globals.local_connection, os.path.join(ct.abs_test_dir, b"requote")
+            Globals.local_connection, os.path.join(comtst.abs_test_dir, b"requote")
         )
-        ct.re_init_rpath_dir(inrp)
+        comtst.re_init_rpath_dir(inrp)
         inrp.append("ABC_XYZ.1").touch()
-        outrp = rpath.RPath(Globals.local_connection, ct.abs_output_dir)
-        ct.re_init_rpath_dir(outrp)
+        outrp = rpath.RPath(Globals.local_connection, comtst.abs_output_dir)
+        comtst.re_init_rpath_dir(outrp)
         self.assertEqual(
-            ct.rdiff_backup_action(
+            comtst.rdiff_backup_action(
                 True,
                 True,
                 inrp.path,
@@ -102,7 +106,7 @@ class FilenameMappingTest(unittest.TestCase):
         inrp.append("ABC_XYZ.2").touch()
         # enforce a requote of the whole repository and see it refused
         self.assertNotEqual(
-            ct.rdiff_backup_action(
+            comtst.rdiff_backup_action(
                 True,
                 True,
                 inrp.path,

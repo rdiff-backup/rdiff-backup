@@ -1,8 +1,13 @@
-import unittest
-import random
 import os
+import random
+import unittest
+
+import commontest as comtst
 from commontest import abs_test_dir, old_test_dir, abs_output_dir, os_system
+
 from rdiff_backup import Globals, Rdiff, rpath
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 def MakeRandomFile(path):

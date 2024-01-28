@@ -1,9 +1,14 @@
-import unittest
 import os
 import time
-from commontest import abs_test_dir, remove_dir
+import unittest
+
+import commontest as comtst
+from commontest import abs_test_dir
+
 from rdiff_backup import Globals, rpath
 from rdiffbackup.locations import fs_abilities
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class FSAbilitiesTest(unittest.TestCase):
@@ -66,7 +71,7 @@ class FSAbilitiesTest(unittest.TestCase):
         base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
         new_dir = base_dir.append("fs_abilitiestest")
         if new_dir.lstat():
-            remove_dir(new_dir.path)
+            comtst.remove_dir(new_dir.path)
         new_dir.setdata()
         new_dir.mkdir()
         t = time.time()

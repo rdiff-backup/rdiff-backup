@@ -1,8 +1,11 @@
 import os
-import sys
 import subprocess
+import sys
 import unittest
+
+import commontest as comtst
 from commontest import old_test_dir, abs_test_dir
+
 from rdiff_backup.connection import (
     LowLevelPipeConnection,
     PipeConnection,
@@ -11,6 +14,8 @@ from rdiff_backup.connection import (
 )
 from rdiff_backup import Globals, rpath, Security
 from rdiffbackup.locations.map import filenames as map_filenames
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 SourceDir = "rdiff_backup"
 regfilename = os.path.join(old_test_dir, b"various_file_types", b"regular_file")

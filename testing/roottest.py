@@ -1,5 +1,6 @@
-import unittest
 import os
+import unittest
+
 import commontest as comtst
 from commontest import (
     old_test_dir,
@@ -14,6 +15,7 @@ from commontest import (
     xcopytree,
     os_system,
 )
+
 from rdiff_backup import Globals, rpath
 
 """Root tests - contain tests which need to be run as root.

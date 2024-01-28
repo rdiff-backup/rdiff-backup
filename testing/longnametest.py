@@ -1,6 +1,8 @@
-import unittest
 import errno
 import os
+import unittest
+
+import commontest as comtst
 from commontest import (
     abs_test_dir,
     old_test_dir,
@@ -8,8 +10,10 @@ from commontest import (
     rdiff_backup,
     compare_recursive,
 )
-import commontest as comtst
+
 from rdiff_backup import Globals, rpath, Time
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 if os.name == "nt":
     NAME_MAX_LEN = 255

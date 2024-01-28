@@ -1,9 +1,14 @@
-import unittest
 import os
+import unittest
+
+import commontest as comtst
 from commontest import old_test_dir, abs_output_dir, re_init_output_dir
+
 from rdiff_backup import Globals, rpath, increment, Time, Rdiff
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1

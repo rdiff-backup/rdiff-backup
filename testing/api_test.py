@@ -2,8 +2,12 @@ import os
 import subprocess
 import unittest
 import yaml
-from commontest import RBBin
+
+import commontest as comtst
+
 from rdiff_backup import Globals
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class ApiVersionTest(unittest.TestCase):
@@ -11,7 +15,7 @@ class ApiVersionTest(unittest.TestCase):
 
     def test_runtime_info_calling(self):
         """make sure that the info output can be read back as YAML when API is 201"""
-        output = subprocess.check_output([RBBin, b"--api-version", b"201", b"info"])
+        output = subprocess.check_output([comtst.RBBin, b"--api-version", b"201", b"info"])
         out_info = yaml.safe_load(output)
 
         Globals.api_version["actual"] = 201
@@ -34,18 +38,18 @@ class ApiVersionTest(unittest.TestCase):
 
     def test_default_actual_api(self):
         """validate that the default version is the actual one or the one explicitly set"""
-        output = subprocess.check_output([RBBin, b"info"])
+        output = subprocess.check_output([comtst.RBBin, b"info"])
         api_version = yaml.safe_load(output)["exec"]["api_version"]
         self.assertEqual(Globals.get_api_version(), api_version["default"])
         api_param = os.fsencode(str(api_version["max"]))
-        output = subprocess.check_output([RBBin, b"--api-version", api_param, b"info"])
+        output = subprocess.check_output([comtst.RBBin, b"--api-version", api_param, b"info"])
         out_info = yaml.safe_load(output)
         self.assertEqual(out_info["exec"]["api_version"]["actual"], api_version["max"])
 
     def test_debug_output(self):
         """Use verbosity 9 to cover debug functions in logging"""
         output = subprocess.check_output(
-            [RBBin, b"-v", b"9", b"--terminal-verbosity", b"9", b"info"]
+            [comtst.RBBin, b"-v", b"9", b"--terminal-verbosity", b"9", b"info"]
         )
         self.assertIn(b"DEBUG: Runtime information =>", output)
 
@@ -56,7 +60,7 @@ class ApiVersionTest(unittest.TestCase):
         # environment and extend it instead of creating a new one.
         local_env = os.environ.copy()
         local_env["RDIFF_BACKUP_API_VERSION"] = "{min: 111, max: 999}"
-        output = subprocess.check_output([RBBin, b"info"], env=local_env)
+        output = subprocess.check_output([comtst.RBBin, b"info"], env=local_env)
         api_version = yaml.safe_load(output)["exec"]["api_version"]
         self.assertEqual(api_version["min"], 111)
         self.assertEqual(api_version["max"], 999)

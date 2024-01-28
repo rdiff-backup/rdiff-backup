@@ -3,6 +3,7 @@ import getpass
 import os
 import pwd
 import unittest
+
 from rdiff_backup import Globals
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners

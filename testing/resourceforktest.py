@@ -1,5 +1,7 @@
 import unittest
+
 import commontest as comtst
+
 from rdiff_backup import rpath, metadata, Globals
 
 """***NOTE***

@@ -1,5 +1,7 @@
-import unittest
 import os
+import unittest
+
+import commontest as comtst
 from commontest import (
     abs_output_dir,
     old_test_dir,
@@ -7,8 +9,11 @@ from commontest import (
     InternalRestore,
     compare_recursive,
 )
+
 from rdiff_backup import Globals, log, rpath, Time
 from rdiffbackup.locations import _repo_shadow
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)

@@ -11,6 +11,8 @@ import fileset
 from rdiff_backup import Globals, rpath, Time
 from rdiffbackup.locations import _repo_shadow
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class ActionRegressTest(unittest.TestCase):
     """

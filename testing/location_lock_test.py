@@ -11,6 +11,8 @@ from rdiffbackup.locations import _repo_shadow
 
 import commontest as comtst
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class LocationLockTest(unittest.TestCase):
     """

@@ -5,6 +5,7 @@ import os
 import shlex
 import shutil
 import subprocess
+
 from rdiff_backup import (
     Globals,
     hash,

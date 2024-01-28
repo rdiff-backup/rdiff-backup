@@ -1,6 +1,8 @@
 import os
-import unittest
 import time
+import unittest
+
+import commontest as comtst
 from commontest import (
     old_test_dir,
     abs_output_dir,
@@ -11,8 +13,10 @@ from commontest import (
     SetConnections,
     os_system,
 )
-from rdiff_backup import Globals, rpath
-import rdiff_backup.Security as Security
+
+from rdiff_backup import Globals, rpath, Security
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class SecurityTest(unittest.TestCase):

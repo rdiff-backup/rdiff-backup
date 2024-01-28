@@ -1,8 +1,13 @@
 import os
 import sys
 import time
-from commontest import re_init_subdir, abs_test_dir, os_system
+
+import commontest as comtst
+from commontest import abs_test_dir
+
 from rdiff_backup import rpath, Globals
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 """benchmark.py
 
@@ -34,7 +39,7 @@ def run_cmd(cmd):
         full_cmd = cmd
     print("Running command '%s'" % (full_cmd,))
     t = time.time()
-    rc = os_system(full_cmd)
+    rc = comtst.os_system(full_cmd)
     if rc & Globals.RET_CODE_ERR:
         raise RuntimeError("Return code of '{cmd}' is '{rc}'".format(cmd=cmd, rc=rc))
     return time.time() - t
@@ -74,7 +79,7 @@ def create_nested(dirname, s, depth, branch_factor):
         else:
             list(map(lambda rp: helper(rp, depth - 1), sub_rps))
 
-    re_init_subdir(abs_test_dir, b"nested_out")
+    comtst.re_init_subdir(abs_test_dir, b"nested_out")
     helper(rpath.RPath(Globals.local_connection, dirname), depth)
 
 
@@ -95,7 +100,7 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func=None):
         times_list.append(run_cmd(backup_cmd))
         print("Updating %s, all changed: %ss" % (desc, times_list[-1]))
 
-    re_init_subdir(abs_test_dir, b"rest_out")
+    comtst.re_init_subdir(abs_test_dir, b"rest_out")
     times_list.append(run_cmd(restore_cmd))
     print("Restoring %s to empty dir: %ss" % (desc, times_list[-1]))
     times_list.append(run_cmd(restore_cmd))
@@ -106,9 +111,9 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func=None):
 
 def many(backup, restore, many_count=MANY_COUNT):
     """Time backup and restore of many_count files"""
-    manyout_dir = re_init_subdir(abs_test_dir, b"many_out")
-    backout_dir = re_init_subdir(abs_test_dir, b"back_out")
-    restout_dir = re_init_subdir(abs_test_dir, b"rest_out")
+    manyout_dir = comtst.re_init_subdir(abs_test_dir, b"many_out")
+    backout_dir = comtst.re_init_subdir(abs_test_dir, b"back_out")
+    restout_dir = comtst.re_init_subdir(abs_test_dir, b"rest_out")
     create_many(manyout_dir, "a", many_count)
     backup_cmd = backup + (manyout_dir, backout_dir)
     restore_cmd = restore + (backout_dir, restout_dir)
@@ -126,9 +131,9 @@ def many(backup, restore, many_count=MANY_COUNT):
 
 def nested(backup, restore, nested_depth=NESTED_DEPTH, nested_factor=NESTED_FACTOR):
     """Time backup and restore of factor**depth nested files"""
-    nestedout_dir = re_init_subdir(abs_test_dir, b"nested_out")
-    backout_dir = re_init_subdir(abs_test_dir, b"back_out")
-    restout_dir = re_init_subdir(abs_test_dir, b"rest_out")
+    nestedout_dir = comtst.re_init_subdir(abs_test_dir, b"nested_out")
+    backout_dir = comtst.re_init_subdir(abs_test_dir, b"back_out")
+    restout_dir = comtst.re_init_subdir(abs_test_dir, b"rest_out")
     create_nested(nestedout_dir, "a", nested_depth, nested_factor)
     backup_cmd = backup + (nestedout_dir, backout_dir)
     restore_cmd = restore + (backout_dir, restout_dir)
