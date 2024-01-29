@@ -1,3 +1,7 @@
+"""
+Test file system abilities gathering
+"""
+
 import os
 import time
 import unittest

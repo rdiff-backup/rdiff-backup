@@ -1,3 +1,7 @@
+"""
+Test user and group handling
+"""
+
 import code
 import getpass
 import os

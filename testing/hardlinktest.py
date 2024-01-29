@@ -1,3 +1,7 @@
+"""
+Test handling of hardlinks
+"""
+
 import os
 import time
 import unittest

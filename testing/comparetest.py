@@ -1,3 +1,7 @@
+"""
+Test the compare.py module and overall compare functionality
+"""
+
 import os
 import unittest
 
@@ -14,8 +18,6 @@ from commontest import (
 from rdiff_backup import Globals, rpath
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-"""Test the compare.py module and overall compare functionality"""
 
 # FIXME the remote comparison tests have to be skipped under Windows
 # see https://github.com/rdiff-backup/rdiff-backup/issues/788

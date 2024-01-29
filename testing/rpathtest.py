@@ -1,3 +1,7 @@
+"""
+Tests of Remote paths
+"""
+
 import os
 import pickle
 import sys

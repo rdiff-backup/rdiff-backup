@@ -1,3 +1,7 @@
+"""
+Test handling of long names
+"""
+
 import errno
 import os
 import unittest

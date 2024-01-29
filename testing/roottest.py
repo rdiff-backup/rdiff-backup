@@ -1,3 +1,11 @@
+"""
+Root tests - contain tests which need to be run as root.
+
+Some of the quoting here may not work with csh (works on bash).
+Requires the usage of sudo to determine the normal user name and ID,
+or the explicit definition of RDIFF_TEST_UID and RDIFF_TEST_USER.
+"""
+
 import os
 import unittest
 
@@ -18,12 +26,7 @@ from commontest import (
 
 from rdiff_backup import Globals, rpath
 
-"""Root tests - contain tests which need to be run as root.
-
-Some of the quoting here may not work with csh (works on bash).  Also,
-if you aren't me, check out the 'user' global variable.
-
-"""
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 Globals.set("change_source_perms", None)
 Globals.counter = 0
@@ -37,8 +40,6 @@ userid = int(os.getenv("RDIFF_TEST_UID", os.getenv("SUDO_UID")))
 user = os.getenv("RDIFF_TEST_USER", os.getenv("SUDO_USER"))
 assert userid, "Unable to assess ID of non-root user to be used for tests"
 assert user, "Unable to assess name of non-root user to be used for tests"
-
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class BaseRootTest(unittest.TestCase):

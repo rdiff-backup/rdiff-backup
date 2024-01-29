@@ -1,3 +1,7 @@
+"""
+Test the API functions
+"""
+
 import os
 import subprocess
 import unittest

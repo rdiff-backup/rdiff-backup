@@ -1,3 +1,7 @@
+"""
+Test the connection functionality of rdiff-backup
+"""
+
 import os
 import subprocess
 import sys

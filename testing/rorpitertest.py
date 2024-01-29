@@ -1,3 +1,7 @@
+"""
+Test iteration of read-only paths
+"""
+
 import functools
 import os
 import pickle

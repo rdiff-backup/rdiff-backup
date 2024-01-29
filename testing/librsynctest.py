@@ -1,3 +1,7 @@
+"""
+Test the librsync functionality
+"""
+
 import os
 import random
 import subprocess

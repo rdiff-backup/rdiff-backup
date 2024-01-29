@@ -1,5 +1,5 @@
 """
-Test the remove action with api version >= 201
+Test the regress action with api version >= 201
 """
 
 import os

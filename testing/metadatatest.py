@@ -1,3 +1,7 @@
+"""
+Test handling of metadata
+"""
+
 import io
 import os
 import time

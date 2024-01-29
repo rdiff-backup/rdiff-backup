@@ -1,3 +1,7 @@
+"""
+Test file iteration
+"""
+
 import io
 import os
 import sys

@@ -1,3 +1,11 @@
+"""
+Benchmark rdiff-backup
+
+When possible, use 'rdiff-backup' from the shell, which allows using
+different versions of rdiff-backup by altering the PYTHONPATH.
+We just use clock time, so this isn't exact at all.
+"""
+
 import os
 import sys
 import time
@@ -8,14 +16,6 @@ from commontest import abs_test_dir
 from rdiff_backup import rpath, Globals
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-"""benchmark.py
-
-When possible, use 'rdiff-backup' from the shell, which allows using
-different versions of rdiff-backup by altering the PYTHONPATH.  We
-just use clock time, so this isn't exact at all.
-
-"""
 
 new_pythonpath = None
 

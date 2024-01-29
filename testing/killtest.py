@@ -1,3 +1,7 @@
+"""
+Test consistency by killing rdiff-backup as it is backing up
+"""
+
 import os
 import random
 import signal
@@ -12,8 +16,6 @@ from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin, xco
 from rdiff_backup import Globals, rpath, Time
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-"""Test consistency by killing rdiff-backup as it is backing up"""
 
 
 class Local:

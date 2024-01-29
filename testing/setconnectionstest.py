@@ -1,3 +1,7 @@
+"""
+Test the setup of connections
+"""
+
 import unittest
 
 from rdiff_backup import SetConnections

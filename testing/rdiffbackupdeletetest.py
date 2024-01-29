@@ -1,3 +1,7 @@
+"""
+Test deletion of files from a repo using rdiff-backup-delete
+"""
+
 import os
 import shutil
 import subprocess

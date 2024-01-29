@@ -1,3 +1,7 @@
+"""
+Test the restore action
+"""
+
 import os
 import unittest
 

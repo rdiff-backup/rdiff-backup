@@ -1,3 +1,7 @@
+"""
+Test the statistics function of rdiff-backup
+"""
+
 import os
 import time
 import unittest

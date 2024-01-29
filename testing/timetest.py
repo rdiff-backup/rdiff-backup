@@ -1,3 +1,7 @@
+"""
+Test the time functionality of rdiff-backup
+"""
+
 import time
 import unittest
 

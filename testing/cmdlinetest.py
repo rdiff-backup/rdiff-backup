@@ -1,3 +1,7 @@
+"""
+Regression tests
+"""
+
 import os
 import pathlib
 import re
@@ -20,8 +24,6 @@ from rdiff_backup import Globals, log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-"""Regression tests"""
 
 Globals.exclude_mirror_regexps = [re.compile(b".*/rdiff-backup-data")]
 

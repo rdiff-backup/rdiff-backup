@@ -1,5 +1,5 @@
 """
-Test the basic backup and restore actions with api version >= 201
+Test the calculate action with api version >= 201
 """
 
 import glob

@@ -1,3 +1,7 @@
+"""
+Test the security functionality of rdiff-backup
+"""
+
 import os
 import time
 import unittest

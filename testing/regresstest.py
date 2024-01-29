@@ -1,7 +1,7 @@
-"""regresstest - test the regress module.
+"""
+regresstest - test the regress module.
 
 Not to be confused with the regression tests.
-
 """
 
 import os

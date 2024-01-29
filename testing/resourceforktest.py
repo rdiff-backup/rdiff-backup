@@ -1,15 +1,14 @@
+"""
+Test resource forks under MacOSX
+
+None of these tests should work unless your system supports resource
+forks. So basically these tests should only be run on Mac OS X.
+"""
 import unittest
 
 import commontest as comtst
 
 from rdiff_backup import rpath, metadata, Globals
-
-"""***NOTE***
-
-None of these tests should work unless your system supports resource
-forks.  So basically these tests should only be run on Mac OS X.
-
-"""
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

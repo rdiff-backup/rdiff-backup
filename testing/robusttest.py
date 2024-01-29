@@ -1,3 +1,7 @@
+"""
+Test making the code robust against specific exceptions
+"""
+
 import os
 import unittest
 

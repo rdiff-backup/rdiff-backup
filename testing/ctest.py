@@ -1,3 +1,7 @@
+"""
+Test quoting using the C function
+"""
+
 import unittest
 
 from rdiff_backup import C

@@ -1,3 +1,7 @@
+"""
+Compare results with call to rdiff utility
+"""
+
 import os
 import random
 import unittest

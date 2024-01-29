@@ -1,3 +1,9 @@
+"""
+This testing file is meant for tests based on errors introduced by
+earlier versions of rdiff-backup and how newer versions are able to cope
+with those.
+"""
+
 import unittest
 
 import commontest as comtst
@@ -6,10 +12,6 @@ from commontest import abs_test_dir, re_init_rpath_dir, rdiff_backup
 from rdiff_backup import rpath, Globals
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-# This testing file is meant for tests based on errors introduced by
-# earlier versions of rdiff-backup and how newer versions are able to cope
-# with those.
 
 
 class BrokenRepoTest(unittest.TestCase):

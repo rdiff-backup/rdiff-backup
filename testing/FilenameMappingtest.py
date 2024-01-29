@@ -1,3 +1,7 @@
+"""
+Test filename mapping functions
+"""
+
 import os
 import time
 import unittest

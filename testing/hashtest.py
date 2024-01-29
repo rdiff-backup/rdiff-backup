@@ -1,5 +1,5 @@
 """
-Test hashing Function of rdiff-backup
+Test hashing function of rdiff-backup
 """
 
 import io

@@ -1,3 +1,7 @@
+"""
+Test selection aspects of rdiff-backup
+"""
+
 import io
 import os
 import subprocess

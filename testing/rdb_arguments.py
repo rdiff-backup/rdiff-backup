@@ -1,3 +1,7 @@
+"""
+Test handling of of rdiff-backup CLI arguments
+"""
+
 import subprocess
 import unittest
 
