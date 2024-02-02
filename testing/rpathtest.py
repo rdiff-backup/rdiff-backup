@@ -11,7 +11,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     old_test_dir,
-    abs_test_dir,
     re_init_subdir,
     abs_output_dir,
     re_init_rpath_dir,
@@ -28,7 +27,7 @@ class RPathTest(unittest.TestCase):
     lc = Globals.local_connection
     mainprefix = old_test_dir
     prefix = os.path.join(mainprefix, b"various_file_types")
-    write_dir = re_init_subdir(abs_test_dir, b"rpathtests")
+    write_dir = re_init_subdir(TEST_BASE_DIR, b"rpathtests")
     rp_prefix = rpath.RPath(lc, prefix, ())
 
 
@@ -456,7 +455,7 @@ class FileCopying(RPathTest):
     def testDirSizeComp(self):
         """Make sure directories can be equal,
         even if they are of different sizes"""
-        base_path = os.path.join(comtst.abs_test_dir, b"dircomptest")
+        base_path = os.path.join(TEST_BASE_DIR, b"dircomptest")
         struct = {
             "1": {"type": "directory"},
             "2": {"contents": {"{}": {"range": 500}}},

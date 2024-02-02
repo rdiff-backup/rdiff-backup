@@ -8,7 +8,6 @@ import subprocess
 import unittest
 
 import commontest as comtst
-from commontest import abs_test_dir, os_system
 
 from rdiff_backup import Globals, librsync, rpath
 
@@ -26,16 +25,16 @@ def MakeRandomFile(path, length=None):
 class LibrsyncTest(unittest.TestCase):
     """Test various librsync wrapper functions"""
 
-    basis = rpath.RPath(Globals.local_connection, os.path.join(abs_test_dir, b"basis"))
-    new = rpath.RPath(Globals.local_connection, os.path.join(abs_test_dir, b"new"))
-    new2 = rpath.RPath(Globals.local_connection, os.path.join(abs_test_dir, b"new2"))
+    basis = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"basis"))
+    new = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"new"))
+    new2 = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"new2"))
     sig = rpath.RPath(
-        Globals.local_connection, os.path.join(abs_test_dir, b"signature")
+        Globals.local_connection, os.path.join(TEST_BASE_DIR, b"signature")
     )
     sig2 = rpath.RPath(
-        Globals.local_connection, os.path.join(abs_test_dir, b"signature2")
+        Globals.local_connection, os.path.join(TEST_BASE_DIR, b"signature2")
     )
-    delta = rpath.RPath(Globals.local_connection, os.path.join(abs_test_dir, b"delta"))
+    delta = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"delta"))
 
     def sig_file_test_helper(self, blocksize, iterations, file_len=None):
         """Compare SigFile output to rdiff output at given blocksize"""
@@ -45,7 +44,7 @@ class LibrsyncTest(unittest.TestCase):
             rdiff_help_text = subprocess.check_output(["rdiff", "--help"])
             if b"-R" in rdiff_help_text:
                 self.assertEqual(
-                    os_system(
+                    comtst.os_system(
                         (
                             b"rdiff",
                             b"-b",
@@ -65,7 +64,7 @@ class LibrsyncTest(unittest.TestCase):
                 )
             elif b"-H" in rdiff_help_text:
                 self.assertEqual(
-                    os_system(
+                    comtst.os_system(
                         (
                             b"rdiff",
                             b"-b",
@@ -81,7 +80,7 @@ class LibrsyncTest(unittest.TestCase):
                 )
             else:
                 self.assertEqual(
-                    os_system(
+                    comtst.os_system(
                         (
                             b"rdiff",
                             b"-b",
@@ -142,12 +141,13 @@ class LibrsyncTest(unittest.TestCase):
         """Test delta generation against Rdiff"""
         MakeRandomFile(self.basis.path)
         self.assertEqual(
-            os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)), 0
+            comtst.os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)),
+            0,
         )
         for i in range(5):
             MakeRandomFile(self.new.path)
             self.assertEqual(
-                os_system(
+                comtst.os_system(
                     (b"rdiff", b"delta", self.sig.path, self.new.path, self.delta.path)
                 ),
                 0,
@@ -175,7 +175,8 @@ class LibrsyncTest(unittest.TestCase):
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
         self.assertEqual(
-            os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)), 0
+            comtst.os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)),
+            0,
         )
         for i in range(5):
             MakeRandomFile(self.new.path)
@@ -188,7 +189,7 @@ class LibrsyncTest(unittest.TestCase):
 
             self._clean_file(self.new2)
             self.assertEqual(
-                os_system(
+                comtst.os_system(
                     (
                         b"rdiff",
                         b"patch",
@@ -214,13 +215,14 @@ class LibrsyncTest(unittest.TestCase):
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
         self.assertEqual(
-            os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)), 0
+            comtst.os_system((b"rdiff", b"signature", self.basis.path, self.sig.path)),
+            0,
         )
         for i in range(5):
             MakeRandomFile(self.new.path)
             self._clean_file(self.delta)
             self.assertEqual(
-                os_system(
+                comtst.os_system(
                     (b"rdiff", b"delta", self.sig.path, self.new.path, self.delta.path)
                 ),
                 0,

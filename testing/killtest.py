@@ -11,7 +11,7 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin, xcopytree
+from commontest import old_test_dir, compare_recursive, RBBin, xcopytree
 
 from rdiff_backup import Globals, rpath, Time
 
@@ -22,7 +22,7 @@ class Local:
     """Hold some local RPaths"""
 
     def get_local_rp(ext):
-        return rpath.RPath(Globals.local_connection, os.path.join(abs_test_dir, ext))
+        return rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, ext))
 
     ktrp = []
     for i in range(4):

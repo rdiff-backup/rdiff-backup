@@ -10,7 +10,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     abs_output_dir,
-    abs_test_dir,
     old_test_dir,
     remove_dir,
     compare_recursive,
@@ -140,7 +139,7 @@ class RegressTest(unittest.TestCase):
 
         """
         rp = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, b"regress")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"regress")
         )
         if rp.lstat():
             remove_dir(rp.path)

@@ -18,7 +18,7 @@ class ActionBackupRestoreTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"action_backuprestore")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"action_backup_restore")
         # Windows can't handle too long filenames
         long_multi = 10 if os.name == "nt" else 25
         self.from1_struct = {
@@ -405,7 +405,7 @@ class PreQuotingTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"action_backuprestore")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"pre_quoting")
         self.from1_struct = {
             "from1": {
                 "contents": {  # CODE.txt pre-quoted

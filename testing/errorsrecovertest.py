@@ -7,7 +7,7 @@ with those.
 import unittest
 
 import commontest as comtst
-from commontest import abs_test_dir, re_init_rpath_dir, rdiff_backup
+from commontest import re_init_rpath_dir, rdiff_backup
 
 from rdiff_backup import rpath, Globals
 
@@ -31,7 +31,7 @@ class BrokenRepoTest(unittest.TestCase):
         the repo can be fixed."""
 
         # create an empty directory
-        test_base_rp = self.makerp(abs_test_dir).append("dupl_meta_time")
+        test_base_rp = self.makerp(TEST_BASE_DIR).append("dupl_meta_time")
         re_init_rpath_dir(test_base_rp)
 
         # create enough incremental backups to have one metadata snapshot

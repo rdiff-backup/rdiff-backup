@@ -8,7 +8,6 @@ import unittest
 
 import commontest as comtst
 from commontest import (
-    abs_test_dir,
     old_test_dir,
     remove_dir,
     rdiff_backup,
@@ -22,13 +21,13 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 if os.name == "nt":
     NAME_MAX_LEN = 255
 else:
-    NAME_MAX_LEN = os.pathconf(abs_test_dir, "PC_NAME_MAX")
+    NAME_MAX_LEN = os.pathconf(TEST_BASE_DIR, "PC_NAME_MAX")
 
 
 class LongNameTest(unittest.TestCase):
     """Test the longname module"""
 
-    root_rp = rpath.RPath(Globals.local_connection, abs_test_dir)
+    root_rp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
     out_rp = root_rp.append_path("output")
 
     def test_length_limit(self):
@@ -203,9 +202,9 @@ class LongNameTest(unittest.TestCase):
         with socket.socket and bind, which has a limit at 107 characters."""
         input_dir = os.path.join(old_test_dir, b"select", b"filetypes")
         # create a target directory with a long name next to 107
-        output_dir = os.path.join(abs_test_dir, b"tenletters" * 10)
+        output_dir = os.path.join(TEST_BASE_DIR, b"tenletters" * 10)
         remove_dir(output_dir)
-        restore_dir = os.path.join(abs_test_dir, b"restoresme" * 10)
+        restore_dir = os.path.join(TEST_BASE_DIR, b"restoresme" * 10)
         remove_dir(restore_dir)
         # backup and restore the input directory with socket, then compare
         rdiff_backup(True, True, input_dir, output_dir)

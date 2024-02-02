@@ -39,7 +39,7 @@ class RobustTest(unittest.TestCase):
         Validate that one unreadable file doesn't fail the whole backup
         """
         src_dir = os.path.join(comtst.old_test_dir, b"rpath2")
-        base_dir = comtst.re_init_subdir(comtst.abs_test_dir, b"robust")
+        base_dir = comtst.re_init_subdir(TEST_BASE_DIR, b"robust")
         target_dir = os.path.join(base_dir, b"bak")
         self.assertEqual(
             comtst.rdiff_backup_action(

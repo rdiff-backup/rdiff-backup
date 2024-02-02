@@ -17,7 +17,7 @@ class ActionListTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"action_list")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"action_list")
         self.from1_struct = {
             "from1": {
                 "contents": {

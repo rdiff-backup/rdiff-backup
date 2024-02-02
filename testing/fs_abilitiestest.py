@@ -7,7 +7,6 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import abs_test_dir
 
 from rdiff_backup import Globals, rpath
 from rdiffbackup.locations import fs_abilities
@@ -26,7 +25,7 @@ class FSAbilitiesTest(unittest.TestCase):
     """
 
     # Describes standard linux file system without acls/eas
-    dir_to_test = abs_test_dir
+    dir_to_test = TEST_BASE_DIR
     eas = acls = None
     chars_to_quote = ""
     extended_filenames = True
@@ -56,7 +55,7 @@ class FSAbilitiesTest(unittest.TestCase):
     # sudo mount -o loop,uid=$(id -u) build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive
     # touch build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive/some_File
 
-    case_insensitive_path = os.path.join(abs_test_dir, b"fs_insensitive")
+    case_insensitive_path = os.path.join(TEST_BASE_DIR, b"fs_insensitive")
 
     def testReadOnly(self):
         """Test basic querying read only"""

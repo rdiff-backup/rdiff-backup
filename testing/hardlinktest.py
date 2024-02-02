@@ -8,7 +8,6 @@ import unittest
 
 import commontest as comtst
 from commontest import (
-    abs_test_dir,
     abs_output_dir,
     old_test_dir,
     re_init_rpath_dir,
@@ -98,8 +97,8 @@ class HardlinkTest(unittest.TestCase):
         """Restore part of a dir, see if hard links preserved"""
         re_init_output_dir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
-        hlout1_dir = os.path.join(abs_test_dir, b"out_hardlink1")
-        hlout2_dir = os.path.join(abs_test_dir, b"out_hardlink2")
+        hlout1_dir = os.path.join(TEST_BASE_DIR, b"out_hardlink1")
+        hlout2_dir = os.path.join(TEST_BASE_DIR, b"out_hardlink2")
 
         # Now set up directories out_hardlink1 and out_hardlink2
         hlout1 = rpath.RPath(Globals.local_connection, hlout1_dir)
@@ -170,7 +169,7 @@ class HardlinkTest(unittest.TestCase):
 
         # Now try restoring, still checking hard links.
         sub_dir = os.path.join(abs_output_dir, b"subdir")
-        out2_dir = os.path.join(abs_test_dir, b"out2")
+        out2_dir = os.path.join(TEST_BASE_DIR, b"out2")
         out2 = rpath.RPath(Globals.local_connection, out2_dir)
         hlout1 = out2.append("hardlink1")
         hlout2 = out2.append("hardlink2")
@@ -226,7 +225,7 @@ class HardlinkTest(unittest.TestCase):
         # Setup initial backup
         re_init_output_dir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
-        hlsrc_dir = os.path.join(abs_test_dir, b"src_hardlink")
+        hlsrc_dir = os.path.join(TEST_BASE_DIR, b"src_hardlink")
 
         hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
         if hlsrc.lstat():
@@ -292,7 +291,7 @@ class HardlinkTest(unittest.TestCase):
 
         # Now try restoring, still checking hard links.
         sub_path = os.path.join(abs_output_dir, b"subdir")
-        restore_path = os.path.join(abs_test_dir, b"hl_restore")
+        restore_path = os.path.join(TEST_BASE_DIR, b"hl_restore")
         restore_dir = rpath.RPath(Globals.local_connection, restore_path)
         hlrestore_file1 = restore_dir.append("hardlink1")
         hlrestore_file2 = restore_dir.append("hardlink2")
@@ -331,7 +330,7 @@ class HardlinkTest(unittest.TestCase):
         # Setup initial backup
         re_init_output_dir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
-        hlsrc_dir = os.path.join(abs_test_dir, b"src_hardlink")
+        hlsrc_dir = os.path.join(TEST_BASE_DIR, b"src_hardlink")
 
         hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
         if hlsrc.lstat():
@@ -393,7 +392,7 @@ class HardlinkTest(unittest.TestCase):
 
         # Now try restoring, still checking hard links.
         sub_path = os.path.join(abs_output_dir, b"subdir")
-        restore_path = os.path.join(abs_test_dir, b"hl_restore")
+        restore_path = os.path.join(TEST_BASE_DIR, b"hl_restore")
         restore_dir = rpath.RPath(Globals.local_connection, restore_path)
         hlrestore_file1 = restore_dir.append("hardlink1")
         hlrestore_file2 = restore_dir.append("hardlink2")
@@ -420,7 +419,7 @@ class BackupUnchangedHardlinksTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"hardlink_unchanged")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"hardlink_unchanged")
         self.from1_struct = {
             "from1": {
                 "contents": {

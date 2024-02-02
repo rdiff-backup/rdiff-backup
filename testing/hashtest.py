@@ -9,7 +9,6 @@ import unittest
 
 import commontest as comtst
 from commontest import (
-    abs_test_dir,
     re_init_rpath_dir,
     remove_dir,
     abs_output_dir,
@@ -34,7 +33,7 @@ class HashTest(unittest.TestCase):
     s3 = "foobar"
     s3_hash = "8843d7f92416211de9ebb963ff4ce28125932878"
 
-    root_rp = rpath.RPath(Globals.local_connection, abs_test_dir)
+    root_rp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
 
     def test_basic(self):
         """Compare sha1sum of a few strings"""

@@ -19,7 +19,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"location_map_filenames")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"location_map_filenames")
         # Windows can't handle too long filenames
         long_multi = 5 if os.name == "nt" else 25
         self.from1_struct = {

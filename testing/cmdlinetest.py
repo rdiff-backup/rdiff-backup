@@ -14,7 +14,6 @@ from commontest import (
     remove_dir,
     compare_recursive,
     old_test_dir,
-    abs_test_dir,
     get_increment_rp,
     xcopytree,
 )
@@ -41,7 +40,8 @@ class Local:
 
     def get_tgt_local_rp(extension):
         return rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, os.fsencode(extension))
+            Globals.local_connection,
+            os.path.join(TEST_BASE_DIR, os.fsencode(extension)),
         )
 
     vftrp = get_src_local_rp("various_file_types")
@@ -276,7 +276,7 @@ class Final(PathSetter):
     @unittest.skip("Not sure it makes any sense to backup proc FIXME")
     def testProcLocal(self):
         """Test initial backup of /proc locally"""
-        procout_dir = os.path.join(abs_test_dir, b"procoutput")
+        procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         remove_dir(procout_dir)
         procout = rpath.RPath(Globals.local_connection, procout_dir)
         rdiff_backup(True, True, "/proc", procout.path, current_time=10000)
@@ -291,7 +291,7 @@ class Final(PathSetter):
     @unittest.skip("Not sure it makes any sense to backup proc FIXME")
     def testProcLocalToRemote(self):
         """Test mirroring proc remote"""
-        procout_dir = os.path.join(abs_test_dir, b"procoutput")
+        procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         remove_dir(procout_dir)
         procout = rpath.RPath(Globals.local_connection, procout_dir)
         rdiff_backup(True, False, "/proc", procout.path, current_time=10000)
@@ -306,7 +306,7 @@ class Final(PathSetter):
     @unittest.skip("Not sure it makes any sense to backup proc FIXME")
     def testProcRemoteToLocal(self):
         """Test mirroring proc, this time when proc is remote, dest local"""
-        procout_dir = os.path.join(abs_test_dir, b"procoutput")
+        procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         remove_dir(procout_dir)
         procout = rpath.RPath(Globals.local_connection, procout_dir)
         rdiff_backup(False, True, "/proc", procout.path)
@@ -888,7 +888,7 @@ class FinalBugs(PathSetter):
             rp2.delete()
         rp2.mkdir()
         rp2_s = rp2.append("subdir")
-        rp2_s.symlink("%s/%s" % (abs_test_dir, rp1_d.path))
+        rp2_s.symlink("%s/%s" % (TEST_BASE_DIR, rp1_d.path))
 
         # Backup
         rdiff_backup(True, True, rp1.path, Local.rpout.path, current_time=10000)
@@ -924,7 +924,7 @@ class FinalBugs(PathSetter):
         self.delete_tmpdirs()
 
         # create the bigdir on the fly
-        bigdir_path = os.path.join(comtst.abs_test_dir, b"cmd_bigdir")
+        bigdir_path = os.path.join(TEST_BASE_DIR, b"cmd_bigdir")
         bigrp = rpath.RPath(Globals.local_connection, bigdir_path)
         bigdir_struct = {
             "subdir{}": {

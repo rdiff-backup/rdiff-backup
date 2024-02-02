@@ -8,8 +8,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     rdiff_backup,
-    abs_output_dir,
-    abs_test_dir,
     old_inc2_dir,
     old_inc3_dir,
     re_init_subdir,
@@ -25,7 +23,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class CompareTest(unittest.TestCase):
     def setUp(self):
-        self.outdir = re_init_subdir(abs_test_dir, b"output")
+        self.outdir = re_init_subdir(TEST_BASE_DIR, b"output")
         rdiff_backup(1, 1, old_inc2_dir, self.outdir, current_time=10000)
         rdiff_backup(1, 1, old_inc3_dir, self.outdir, current_time=20000)
 
@@ -126,7 +124,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 local,
                 os.path.join(old_inc3_dir, b"various_file_types"),
-                os.path.join(abs_output_dir, b"various_file_types"),
+                os.path.join(self.outdir, b"various_file_types"),
                 options,
                 b"compare",
                 compare_options,
@@ -138,7 +136,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 local,
                 os.path.join(old_inc2_dir, b"increment1"),
-                os.path.join(abs_output_dir, b"increment1"),
+                os.path.join(self.outdir, b"increment1"),
                 options,
                 b"compare",
                 compare_options,
@@ -153,7 +151,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 local,
                 os.path.join(old_inc2_dir, b"newdir"),
-                os.path.join(abs_output_dir, b"newdir"),
+                os.path.join(self.outdir, b"newdir"),
                 options,
                 b"compare",
                 compare_options,
@@ -165,7 +163,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 local,
                 os.path.join(old_inc3_dir, b"newdir"),
-                os.path.join(abs_output_dir, b"newdir"),
+                os.path.join(self.outdir, b"newdir"),
                 options,
                 b"compare",
                 compare_options,
@@ -217,7 +215,7 @@ class CompareTest(unittest.TestCase):
 
         def modify_diff():
             """Write to the stph_icons.h diff"""
-            incs_dir = os.path.join(abs_output_dir, b"rdiff-backup-data", b"increments")
+            incs_dir = os.path.join(self.outdir, b"rdiff-backup-data", b"increments")
             templist = [
                 filename
                 for filename in os.listdir(incs_dir)
@@ -234,11 +232,11 @@ class CompareTest(unittest.TestCase):
             )
             change_file(diff_rp)
 
-        rdiff_backup(local, local, abs_output_dir, None, extra_options=b"verify")
+        rdiff_backup(local, local, self.outdir, None, extra_options=b"verify")
         rdiff_backup(
             local,
             local,
-            abs_output_dir,
+            self.outdir,
             None,
             extra_options=(b"verify", b"--at", b"10000"),
         )
@@ -247,7 +245,7 @@ class CompareTest(unittest.TestCase):
             rdiff_backup(
                 local,
                 local,
-                abs_output_dir,
+                self.outdir,
                 None,
                 extra_options=(b"verify", b"--at", b"10000"),
                 expected_ret_code=None,
@@ -255,14 +253,14 @@ class CompareTest(unittest.TestCase):
         )
         change_file(
             rpath.RPath(
-                Globals.local_connection, os.path.join(abs_output_dir, b"stph_icons.h")
+                Globals.local_connection, os.path.join(self.outdir, b"stph_icons.h")
             )
         )
         self.assertTrue(
             rdiff_backup(
                 local,
                 local,
-                abs_output_dir,
+                self.outdir,
                 None,
                 extra_options=b"verify",
                 expected_ret_code=None,

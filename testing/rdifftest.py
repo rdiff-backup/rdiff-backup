@@ -7,7 +7,7 @@ import random
 import unittest
 
 import commontest as comtst
-from commontest import abs_test_dir, old_test_dir, abs_output_dir, os_system
+from commontest import old_test_dir, abs_output_dir, os_system
 
 from rdiff_backup import Globals, Rdiff, rpath
 
@@ -29,11 +29,11 @@ class RdiffTest(unittest.TestCase):
 
     lc = Globals.local_connection
 
-    basis = rpath.RPath(lc, os.path.join(abs_test_dir, b"basis"))
-    new = rpath.RPath(lc, os.path.join(abs_test_dir, b"new"))
+    basis = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"basis"))
+    new = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"new"))
     output = rpath.RPath(lc, abs_output_dir)
-    delta = rpath.RPath(lc, os.path.join(abs_test_dir, b"delta"))
-    signature = rpath.RPath(lc, os.path.join(abs_test_dir, b"signature"))
+    delta = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"delta"))
+    signature = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"signature"))
 
     def testRdiffSig(self):
         """Test making rdiff signatures"""

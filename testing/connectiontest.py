@@ -8,7 +8,6 @@ import sys
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, abs_test_dir
 
 from rdiff_backup.connection import (
     LowLevelPipeConnection,
@@ -22,7 +21,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 SourceDir = "rdiff_backup"
-regfilename = os.path.join(old_test_dir, b"various_file_types", b"regular_file")
+regfilename = os.path.join(comtst.old_test_dir, b"various_file_types", b"regular_file")
 
 
 class LocalConnectionTest(unittest.TestCase):
@@ -68,7 +67,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
 
     objs = ["Hello", ("Tuple", "of", "strings"), [1, 2, 3, 4], 53.34235]
     excts = [TypeError("te"), NameError("ne"), os.error("oe")]
-    filename = os.path.join(abs_test_dir, b"test_low_level_pipe")
+    filename = os.path.join(TEST_BASE_DIR, b"test_low_level_pipe")
 
     def testObjects(self):
         """Try moving objects across connection"""
@@ -141,7 +140,7 @@ class PipeConnectionTest(unittest.TestCase):
     def testVirtualFiles(self):
         """Testing virtual files"""
         # generate file name for temporary file
-        temp_file = os.path.join(abs_test_dir, b"tempout")
+        temp_file = os.path.join(TEST_BASE_DIR, b"tempout")
 
         tempout = self.conn.open(temp_file, "wb")
         self.assertIsInstance(tempout, VirtualFile)

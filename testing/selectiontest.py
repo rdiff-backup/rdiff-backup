@@ -11,7 +11,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     old_test_dir,
-    abs_test_dir,
     re_init_rpath_dir,
     re_init_output_dir,
     rdiff_backup,
@@ -681,7 +680,7 @@ class SelectionIfPresentTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"select_if_present")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"select_if_present")
         self.from1_struct = {
             "from1": {
                 "contents": {
@@ -794,9 +793,10 @@ class CommandTest(unittest.TestCase):
         """
         outrp = re_init_output_dir()
         # we need to change directory to be able to work with relative paths
-        os.chdir(abs_test_dir)
+        os.chdir(TEST_BASE_DIR)
+        currdir = os.path.basename(os.getcwdb())
         os.chdir(os.pardir)  # chdir one level up
-        selrp = rpath.RPath(Globals.local_connection, "testfiles/seltest")
+        selrp = rpath.RPath(Globals.local_connection, os.path.join(currdir, b"seltest"))
         re_init_rpath_dir(selrp)
         emptydir = selrp.append("emptydir")
         emptydir.mkdir()
@@ -811,7 +811,7 @@ class CommandTest(unittest.TestCase):
                 b"--include",
                 b"**XX",
                 b"--exclude",
-                b"testfiles/seltest/YYYY",
+                os.path.join(currdir, b"seltest", b"YYYY"),
             ),
         )
 
@@ -824,7 +824,7 @@ class CommandTest(unittest.TestCase):
         while ignoring this repo
         """
 
-        testrp = rpath.RPath(Globals.local_connection, abs_test_dir).append(
+        testrp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR).append(
             "selection_overlap"
         )
         re_init_rpath_dir(testrp)

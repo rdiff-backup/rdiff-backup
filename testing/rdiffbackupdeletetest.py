@@ -8,7 +8,7 @@ import subprocess
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, abs_test_dir, rdiff_backup
+from commontest import old_test_dir, rdiff_backup
 
 from rdiff_backup import Globals
 
@@ -52,7 +52,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     def _copy_repo(self, reponame):
         # Copy the required repo to a temporary location.
         # We need to use os command line to properly copy and delete special files.
-        self.repo = os.path.join(abs_test_dir, b"deletetest")
+        self.repo = os.path.join(TEST_BASE_DIR, b"deletetest")
         self.assertFalse(
             os.path.exists(self.repo),
             "repository should not already exists, previous test fail to clean-up. Run rm -Rf %s"

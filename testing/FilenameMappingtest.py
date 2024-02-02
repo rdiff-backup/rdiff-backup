@@ -54,7 +54,7 @@ class FilenameMappingTest(unittest.TestCase):
         comtst.re_init_output_dir()
         outrp = rpath.RPath(Globals.local_connection, comtst.abs_output_dir)
         inrp = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.abs_test_dir, b"quotetest")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"quotetest")
         )
         comtst.re_init_rpath_dir(inrp)
         long_filename = b"A" * 200  # when quoted should cause overflow
@@ -88,7 +88,7 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testReQuote(self):
         inrp = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.abs_test_dir, b"requote")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"requote")
         )
         comtst.re_init_rpath_dir(inrp)
         inrp.append("ABC_XYZ.1").touch()

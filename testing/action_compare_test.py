@@ -19,7 +19,7 @@ class ActionCompareTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"action_compare")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"action_compare")
         self.from1_struct = {
             "from1": {
                 "contents": {

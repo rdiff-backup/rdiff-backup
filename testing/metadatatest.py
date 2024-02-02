@@ -95,7 +95,7 @@ class MetadataTest(unittest.TestCase):
             return temprp
 
         # create the bigdir on the fly
-        bigdir_path = os.path.join(comtst.abs_test_dir, b"meta_bigdir")
+        bigdir_path = os.path.join(TEST_BASE_DIR, b"meta_bigdir")
         bigdir_struct = {
             "subdir{}": {
                 "range": 4,

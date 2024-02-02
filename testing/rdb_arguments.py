@@ -32,7 +32,9 @@ class ArgumentsTest(unittest.TestCase):
         """
         - verify that a wrong arguments returns 1 instead of the standard 2
         """
-        output = subprocess.run([comtst.RBBin, b"--thisdoesntexist"], capture_output=True)
+        output = subprocess.run(
+            [comtst.RBBin, b"--thisdoesntexist"], capture_output=True
+        )
         self.assertIn(b"the following arguments are required:", output.stderr)
         self.assertEqual(Globals.RET_CODE_ERR, output.returncode)
 

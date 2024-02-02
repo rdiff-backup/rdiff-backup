@@ -12,7 +12,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     old_test_dir,
-    abs_test_dir,
     abs_output_dir,
     remove_dir,
     abs_restore_dir,
@@ -89,7 +88,7 @@ class RootTest(BaseRootTest):
 
         """
         dirrp = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, b"root_owner")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_owner")
         )
 
         def make_dir():
@@ -112,9 +111,9 @@ class RootTest(BaseRootTest):
 
         make_dir()
         dirlist = [
-            os.path.join(abs_test_dir, b"root_owner"),
+            os.path.join(TEST_BASE_DIR, b"root_owner"),
             os.path.join(old_test_dir, b"empty"),
-            os.path.join(abs_test_dir, b"root_owner"),
+            os.path.join(TEST_BASE_DIR, b"root_owner"),
         ]
         comtst.backup_restore_series(
             1, 1, dirlist, compare_ownership=1, test_base_dir=TEST_BASE_DIR
@@ -134,7 +133,7 @@ class RootTest(BaseRootTest):
         def write_ownership_dir():
             """Write the directory testfiles/root_mapping"""
             rp = rpath.RPath(
-                Globals.local_connection, os.path.join(abs_test_dir, b"root_mapping")
+                Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
             )
             re_init_rpath_dir(rp)
             rp1 = rp.append("1")
@@ -193,7 +192,7 @@ class RootTest(BaseRootTest):
         def write_ownership_dir():
             """Write the directory testfiles/root_mapping"""
             rp = rpath.RPath(
-                Globals.local_connection, os.path.join(abs_test_dir, b"root_mapping")
+                Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
             )
             re_init_rpath_dir(rp)
             rp1 = rp.append("1")
@@ -238,7 +237,7 @@ class HalfRoot(BaseRootTest):
 
         """
         rp1 = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, b"root_half1")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_half1")
         )
         re_init_rpath_dir(rp1)
         rp1_1 = rp1.append("foo")
@@ -261,7 +260,7 @@ class HalfRoot(BaseRootTest):
         rp1_3.chmod(0)
 
         rp2 = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, b"root_half2")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_half2")
         )
         re_init_rpath_dir(rp2)
         rp2_1 = rp2.append("foo")
@@ -404,7 +403,7 @@ class NonRoot(BaseRootTest):
     def make_root_dirs(self):
         """Make directory createable only by root"""
         rp = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, b"root_out1")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_out1")
         )
         re_init_rpath_dir(rp)
         rp1 = rp.append("1")
@@ -419,7 +418,7 @@ class NonRoot(BaseRootTest):
         rp4.makedev("c", 4, 28)
 
         sp = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_test_dir, b"root_out2")
+            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_out2")
         )
         if sp.lstat():
             remove_dir(sp.path)
