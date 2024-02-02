@@ -11,7 +11,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     rdiff_backup,
-    abs_output_dir,
     abs_restore_dir,
     compare_recursive,
 )
@@ -25,7 +24,6 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
-tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_dir = rpath.RPath(Globals.local_connection, abs_restore_dir)
 
 
@@ -58,13 +56,15 @@ class EATest(unittest.TestCase):
     ea_test2_rpath = rpath.RPath(Globals.local_connection, ea_test2_dir)
     ea_empty_dir = os.path.join(TEST_BASE_DIR, b"ea_empty")
     ea_empty_rpath = rpath.RPath(Globals.local_connection, ea_empty_dir)
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+    out_rp = rpath.RPath(Globals.local_connection, out_dir)
 
     def make_temp_out_dirs(self):
         """Make temp output and restore directories empty"""
-        tempdir.setdata()  # in case the file changed in-between
-        if tempdir.lstat():
-            tempdir.delete()
-        tempdir.mkdir()
+        self.out_rp.setdata()  # in case the file changed in-between
+        if self.out_rp.lstat():
+            self.out_rp.delete()
+        self.out_rp.mkdir()
         restore_dir.setdata()
         if restore_dir.lstat():
             restore_dir.delete()
@@ -73,21 +73,21 @@ class EATest(unittest.TestCase):
         """Test basic writing and reading of extended attributes"""
         self.make_temp_out_dirs()
         new_ea = ea.ExtendedAttributes(())
-        new_ea.read_from_rp(tempdir)
+        new_ea.read_from_rp(self.out_rp)
         # we ignore SELinux extended attributes for comparison
         if new_ea.attr_dict:
             new_ea.attr_dict.pop(b"security.selinux", None)
         self.assertFalse(
             new_ea.attr_dict,
             "The attributes of {dir} should have been empty: {attr}".format(
-                dir=tempdir, attr=new_ea.attr_dict
+                dir=self.out_rp, attr=new_ea.attr_dict
             ),
         )
         self.assertNotEqual(new_ea, self.sample_ea)
         self.assertEqual(new_ea, self.empty_ea)
 
-        self.sample_ea.write_to_rp(tempdir)
-        new_ea.read_from_rp(tempdir)
+        self.sample_ea.write_to_rp(self.out_rp)
+        new_ea.read_from_rp(self.out_rp)
         if new_ea.attr_dict:
             new_ea.attr_dict.pop(b"security.selinux", None)
         self.assertEqual(new_ea.attr_dict, self.sample_ea.attr_dict)
@@ -186,7 +186,7 @@ user.empty
         rp3 = self.ea_test1_rpath.append("e3")
 
         # Now write records corresponding to above rps into file
-        Globals.rbdir = tempdir
+        Globals.rbdir = self.out_rp
         man = meta_mgr.PatchDiffMan()
         writer = man._writer_helper(
             "snapshot", 10000, ea.get_plugin_class(), force=True
@@ -250,16 +250,16 @@ user.empty
         """Test backing up and restoring using 'rdiff-backup' script"""
         self.make_backup_dirs()
         self.make_temp_out_dirs()
-        rdiff_backup(1, 1, self.ea_test1_rpath.path, tempdir.path, current_time=10000)
-        self.assertTrue(compare_recursive(self.ea_test1_rpath, tempdir, compare_eas=1))
+        rdiff_backup(1, 1, self.ea_test1_rpath.path, self.out_dir, current_time=10000)
+        self.assertTrue(compare_recursive(self.ea_test1_rpath, self.out_rp, compare_eas=1))
 
-        rdiff_backup(1, 1, self.ea_test2_rpath.path, tempdir.path, current_time=20000)
-        self.assertTrue(compare_recursive(self.ea_test2_rpath, tempdir, compare_eas=1))
+        rdiff_backup(1, 1, self.ea_test2_rpath.path, self.out_dir, current_time=20000)
+        self.assertTrue(compare_recursive(self.ea_test2_rpath, self.out_rp, compare_eas=1))
 
         rdiff_backup(
             1,
             1,
-            tempdir.path,
+            self.out_dir,
             restore_dir.path,
             extra_options=(b"restore", b"--at", b"10000"),
         )
@@ -333,13 +333,15 @@ other::---""",
     acl_test2_rpath = rpath.RPath(Globals.local_connection, acl_test2_dir)
     acl_empty_dir = os.path.join(TEST_BASE_DIR, b"acl_empty")
     acl_empty_rpath = rpath.RPath(Globals.local_connection, acl_empty_dir)
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+    out_rp = rpath.RPath(Globals.local_connection, out_dir)
 
     def make_temp_out_dirs(self):
         """Make temp output and restore directories empty"""
-        tempdir.setdata()  # in case the file changed in-between
-        if tempdir.lstat():
-            tempdir.delete()
-        tempdir.mkdir()
+        self.out_rp.setdata()  # in case the file changed in-between
+        if self.out_rp.lstat():
+            self.out_rp.delete()
+        self.out_rp.mkdir()
         restore_dir.setdata()  # in case the file changed in-between
         if restore_dir.lstat():
             restore_dir.delete()
@@ -348,14 +350,14 @@ other::---""",
         """Test basic writing and reading of ACLs"""
         self.make_temp_out_dirs()
         new_acl = acl_posix.AccessControlLists(())
-        tempdir.chmod(0o700)
-        new_acl.read_from_rp(tempdir)
+        self.out_rp.chmod(0o700)
+        new_acl.read_from_rp(self.out_rp)
         self.assertTrue(new_acl.is_basic())
         self.assertNotEqual(new_acl, self.sample_acl)
         self.assertEqual(new_acl, self.empty_acl)
 
-        self.sample_acl.write_to_rp(tempdir)
-        new_acl.read_from_rp(tempdir)
+        self.sample_acl.write_to_rp(self.out_rp)
+        new_acl.read_from_rp(self.out_rp)
         self.assertEqual(str(new_acl), str(self.sample_acl))
         self.assertEqual(new_acl, self.sample_acl)
 
@@ -363,12 +365,12 @@ other::---""",
         """Test reading and writing of ACL w/ defaults to directory"""
         self.make_temp_out_dirs()
         new_acl = acl_posix.AccessControlLists(())
-        new_acl.read_from_rp(tempdir)
+        new_acl.read_from_rp(self.out_rp)
         self.assertTrue(new_acl.is_basic())
         self.assertNotEqual(new_acl, self.dir_acl)
 
-        self.dir_acl.write_to_rp(tempdir)
-        new_acl.read_from_rp(tempdir)
+        self.dir_acl.write_to_rp(self.out_rp)
+        new_acl.read_from_rp(self.out_rp)
         self.assertFalse(new_acl.is_basic())
         if not new_acl == self.dir_acl:
             self.assertTrue(new_acl._eq_verbose(self.dir_acl))
@@ -474,7 +476,7 @@ other::---
         rp3 = self.acl_test1_rpath.append("a3")
 
         # Now write records corresponding to above rps into file
-        Globals.rbdir = tempdir
+        Globals.rbdir = self.out_rp
         man = meta_mgr.PatchDiffMan()
         writer = man._writer_helper(
             "snapshot", 10000, acl_posix.get_plugin_class(), force=True
@@ -527,20 +529,20 @@ other::---
         """Test backing up and restoring using 'rdiff-backup' script"""
         self.make_backup_dirs()
         self.make_temp_out_dirs()
-        rdiff_backup(1, 1, self.acl_test1_rpath.path, tempdir.path, current_time=10000)
+        rdiff_backup(1, 1, self.acl_test1_rpath.path, self.out_dir, current_time=10000)
         self.assertTrue(
-            compare_recursive(self.acl_test1_rpath, tempdir, compare_acls=1)
+            compare_recursive(self.acl_test1_rpath, self.out_rp, compare_acls=1)
         )
 
-        rdiff_backup(1, 1, self.acl_test2_rpath.path, tempdir.path, current_time=20000)
+        rdiff_backup(1, 1, self.acl_test2_rpath.path, self.out_dir, current_time=20000)
         self.assertTrue(
-            compare_recursive(self.acl_test2_rpath, tempdir, compare_acls=1)
+            compare_recursive(self.acl_test2_rpath, self.out_rp, compare_acls=1)
         )
 
         rdiff_backup(
             1,
             1,
-            tempdir.path,
+            self.out_dir,
             restore_dir.path,
             extra_options=(b"restore", b"--at", b"10000"),
         )
@@ -552,7 +554,7 @@ other::---
         rdiff_backup(
             1,
             1,
-            tempdir.path,
+            self.out_dir,
             restore_dir.path,
             extra_options=(b"restore", b"--at", b"now"),
         )
@@ -615,7 +617,7 @@ other::---""".format(
             1,
             1,
             rootrp.path,
-            tempdir.path,
+            self.out_dir,
             extra_options=(
                 b"backup",
                 b"--user-mapping-file",
@@ -625,9 +627,9 @@ other::---""".format(
             ),
         )
 
-        out_rp = tempdir.append("a1")
+        out_rp = self.out_rp.append("a1")
         self.assertTrue(out_rp.isreg())
-        out_acl = tempdir.append("a1").get_acl()
+        out_acl = self.out_rp.append("a1").get_acl()
         self.assertEqual(get_perms(out_acl, "root", "u"), 4)
         self.assertEqual(get_perms(out_acl, self.current_user, "u"), 7)
         self.assertEqual(get_perms(out_acl, "bin", "u"), 0)
@@ -638,7 +640,7 @@ other::---""".format(
     def test_acl_dropping(self):
         """Test dropping of ACL names"""
         self.make_temp_out_dirs()
-        rp = tempdir.append("a1")
+        rp = self.out_rp.append("a1")
         rp.touch()
         """ben uses a dvorak keyboard, and these sequences are
         analogous to asdfsjkd for a qwerty user... these
@@ -653,7 +655,7 @@ group:enutohnh:-w-
 other::---""",
         )
         rp.write_acl(acl)
-        rp2 = tempdir.append("a1")
+        rp2 = self.out_rp.append("a1")
         acl2 = acl_posix.AccessControlLists(("a1",))
         acl2.read_from_rp(rp2)
         self.assertTrue(acl2.is_basic())
@@ -666,9 +668,9 @@ other::---""",
         """Make sure files with ACLs not unnecessarily flagged changed"""
         self.make_temp_out_dirs()
         self.make_backup_dirs()
-        rdiff_backup(1, 1, self.acl_test1_rpath.path, tempdir.path, current_time=10000)
-        rdiff_backup(1, 1, self.acl_test1_rpath.path, tempdir.path, current_time=20000)
-        incdir = tempdir.append("rdiff-backup-data", "increments")
+        rdiff_backup(1, 1, self.acl_test1_rpath.path, self.out_dir, current_time=10000)
+        rdiff_backup(1, 1, self.acl_test1_rpath.path, self.out_dir, current_time=20000)
+        incdir = self.out_rp.append("rdiff-backup-data", "increments")
         self.assertTrue(incdir.isdir())
         self.assertFalse(incdir.listdir())
 
@@ -682,6 +684,8 @@ class CombinedTest(unittest.TestCase):
     combo_test2_rpath = rpath.RPath(Globals.local_connection, combo_test2_dir)
     combo_empty_dir = os.path.join(TEST_BASE_DIR, b"ea_acl_empty")
     combo_empty_rpath = rpath.RPath(Globals.local_connection, combo_empty_dir)
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+    out_rp = rpath.RPath(Globals.local_connection, out_dir)
 
     def make_backup_dirs(self):
         """Create testfiles/ea_acl_test[12] directories"""

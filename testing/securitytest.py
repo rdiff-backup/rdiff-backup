@@ -9,7 +9,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     old_test_dir,
-    abs_output_dir,
     abs_restore_dir,
     remove_dir,
     rdiff_backup,
@@ -25,6 +24,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class SecurityTest(unittest.TestCase):
     various_files_dir = os.path.join(old_test_dir, b"various_file_types")
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def test_vet_request_ro(self):
         """Test vetting of ConnectionRequests on read-only server"""
@@ -120,25 +120,25 @@ class SecurityTest(unittest.TestCase):
         work, (initial backup, incremental, restore).
 
         """
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             1,
-            b"--restrict-path %b" % abs_output_dir,
+            b"--restrict-path %b" % self.out_dir,
             current_time=10000,
         )
         # Note the backslash below -- eest for bug in path normalization
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             1,
-            b"--restrict-path %b/" % abs_output_dir,
+            b"--restrict-path %b/" % self.out_dir,
         )
 
         remove_dir(abs_restore_dir)
         self.secure_rdiff_backup(
-            abs_output_dir,
+            self.out_dir,
             abs_restore_dir,
             1,
             b"--restrict-path %b" % abs_restore_dir,
@@ -148,23 +148,23 @@ class SecurityTest(unittest.TestCase):
     def test_restrict_negative(self):
         """Test that --restrict switch denies certain operations"""
         # Backup to wrong directory
-        output2_dir = abs_output_dir + b"2"
-        remove_dir(abs_output_dir)
+        output2_dir = self.out_dir + b"2"
+        remove_dir(self.out_dir)
         remove_dir(output2_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             output2_dir,
             1,
-            b"--restrict-path %b" % abs_output_dir,
+            b"--restrict-path %b" % self.out_dir,
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
         # Restore to wrong directory
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         remove_dir(abs_restore_dir)
-        rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
+        rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
-            abs_output_dir,
+            self.out_dir,
             abs_restore_dir,
             1,
             b"--restrict-path %b" % output2_dir,
@@ -173,11 +173,11 @@ class SecurityTest(unittest.TestCase):
         )
 
         # Backup from wrong directory
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         wrong_files_dir = os.path.join(old_test_dir, b"foobar")
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             0,
             b"--restrict-path %b" % wrong_files_dir,
             expected_ret_code=Globals.RET_CODE_ERR,
@@ -187,21 +187,21 @@ class SecurityTest(unittest.TestCase):
         """
         Test that --restrict-mode read-only switch doesn't impair normal ops
         """
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         remove_dir(abs_restore_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             0,
             b"--restrict-path %b "
             b"--restrict-mode read-only" % self.various_files_dir,
         )
 
         self.secure_rdiff_backup(
-            abs_output_dir,
+            self.out_dir,
             abs_restore_dir,
             0,
-            b"--restrict-path %b " b"--restrict-mode read-only" % abs_output_dir,
+            b"--restrict-path %b " b"--restrict-mode read-only" % self.out_dir,
             extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=Globals.RET_CODE_WARN,
         )
@@ -210,21 +210,21 @@ class SecurityTest(unittest.TestCase):
     def test_restrict_readonly_negative(self):
         """Test that --restrict-mode read-only doesn't allow too much"""
         # Backup to restricted directory
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode read-only" % abs_output_dir,
+            b"--restrict-path %b " b"--restrict-mode read-only" % self.out_dir,
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
         # Restore to restricted directory
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         remove_dir(abs_restore_dir)
-        rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
+        rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
-            abs_output_dir,
+            self.out_dir,
             abs_restore_dir,
             1,
             b"--restrict-path %b " b"--restrict-mode read-only" % abs_restore_dir,
@@ -234,31 +234,31 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_updateonly_positive(self):
         """Test that --restrict-mode update-only allows intended use"""
-        remove_dir(abs_output_dir)
-        rdiff_backup(1, 1, self.various_files_dir, abs_output_dir, current_time=10000)
+        remove_dir(self.out_dir)
+        rdiff_backup(1, 1, self.various_files_dir, self.out_dir, current_time=10000)
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode update-only" % abs_output_dir,
+            b"--restrict-path %b " b"--restrict-mode update-only" % self.out_dir,
         )
 
     def test_restrict_updateonly_negative(self):
         """Test that --restrict-mode update-only impairs unintended"""
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode update-only" % abs_output_dir,
+            b"--restrict-path %b " b"--restrict-mode update-only" % self.out_dir,
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         remove_dir(abs_restore_dir)
-        rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
+        rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
-            abs_output_dir,
+            self.out_dir,
             abs_restore_dir,
             1,
             b"--restrict-path %b " b"--restrict-mode update-only" % abs_restore_dir,
@@ -268,23 +268,23 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_bug(self):
         """Test for bug 14209 --- mkdir outside --restrict arg"""
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             1,
             b"--restrict-path foobar",
             expected_ret_code=Globals.RET_CODE_ERR,
         )
-        output = rpath.RPath(Globals.local_connection, abs_output_dir)
+        output = rpath.RPath(Globals.local_connection, self.out_dir)
         self.assertFalse(output.lstat())
 
     def test_quoting_bug(self):
         """Test for bug 14545 --- quoting causes bad violation"""
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
-            abs_output_dir,
+            self.out_dir,
             1,
             b"",
             extra_args=(b"--chars-to-quote", b"e", b"backup"),

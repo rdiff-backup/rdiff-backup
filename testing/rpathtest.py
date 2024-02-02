@@ -12,7 +12,6 @@ import commontest as comtst
 from commontest import (
     old_test_dir,
     re_init_subdir,
-    abs_output_dir,
     re_init_rpath_dir,
     os_system,
 )
@@ -24,6 +23,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class RPathTest(unittest.TestCase):
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
     lc = Globals.local_connection
     mainprefix = old_test_dir
     prefix = os.path.join(mainprefix, b"various_file_types")
@@ -364,10 +364,10 @@ class FileIO(RPathTest):
     def testGzipWrite(self):
         """Test writing of gzipped files"""
         try:
-            os.mkdir(abs_output_dir)
+            os.mkdir(self.out_dir)
         except OSError:
             pass
-        file_nogz = os.path.join(abs_output_dir, b"file")
+        file_nogz = os.path.join(self.out_dir, b"file")
         file_gz = file_nogz + b".gz"
         rp_gz = rpath.RPath(self.lc, file_gz)
         rp_nogz = rpath.RPath(self.lc, file_nogz)
@@ -379,7 +379,7 @@ class FileIO(RPathTest):
             fp_out.write(s)
         if os.name == "nt":
             self.assertEqual(
-                os_system((b"7z", b"x", b"-o%s" % abs_output_dir, file_gz)), 0
+                os_system((b"7z", b"x", b"-o%s" % self.out_dir, file_gz)), 0
             )
             os_system((b"cmd", b"/c", b"del", file_gz))
         else:
@@ -390,10 +390,10 @@ class FileIO(RPathTest):
     def testGzipRead(self):
         """Test reading of gzipped files"""
         try:
-            os.mkdir(abs_output_dir)
+            os.mkdir(self.out_dir)
         except OSError:
             pass
-        file_nogz = os.path.join(abs_output_dir, b"file")
+        file_nogz = os.path.join(self.out_dir, b"file")
         file_gz = file_nogz + b".gz"
         rp_gz = rpath.RPath(self.lc, file_gz)
         if rp_gz.lstat():
@@ -575,6 +575,7 @@ class FileAttributes(FileCopying):
 
 class CheckPath(unittest.TestCase):
     """Check to make sure paths generated properly"""
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def testpath(self):
         """Test root paths"""
@@ -591,7 +592,7 @@ class Gzip(RPathTest):
 
     def test_maybe_gzip(self):
         """Test MaybeGzip"""
-        dirrp = rpath.RPath(self.lc, abs_output_dir)
+        dirrp = rpath.RPath(self.lc, self.out_dir)
         re_init_rpath_dir(dirrp)
 
         base_rp = dirrp.append("foo")

@@ -16,6 +16,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class FilenameMappingTest(unittest.TestCase):
     """Test the map_filenames module, for quoting filenames"""
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def setUp(self):
         """Just initialize quoting"""
@@ -51,8 +52,8 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
-        comtst.re_init_output_dir()
-        outrp = rpath.RPath(Globals.local_connection, comtst.abs_output_dir)
+        outrp = rpath.RPath(Globals.local_connection, self.out_dir)
+        comtst.re_init_rpath_dir(outrp)
         inrp = rpath.RPath(
             Globals.local_connection, os.path.join(TEST_BASE_DIR, b"quotetest")
         )
@@ -92,7 +93,7 @@ class FilenameMappingTest(unittest.TestCase):
         )
         comtst.re_init_rpath_dir(inrp)
         inrp.append("ABC_XYZ.1").touch()
-        outrp = rpath.RPath(Globals.local_connection, comtst.abs_output_dir)
+        outrp = rpath.RPath(Globals.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(outrp)
         self.assertEqual(
             comtst.rdiff_backup_action(

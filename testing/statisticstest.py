@@ -11,7 +11,6 @@ from commontest import (
     remove_dir,
     InternalBackup,
     old_test_dir,
-    abs_output_dir,
 )
 
 from rdiff_backup import Globals, statistics, rpath
@@ -21,6 +20,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class StatsObjTest(unittest.TestCase):
     """Test StatsObj class"""
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def set_obj(self, s):
         """Set values of s's statistics"""
@@ -175,6 +175,7 @@ TotalDestinationSizeChange 7 (7 bytes)
 
 class IncStatTest(unittest.TestCase):
     """Test statistics as produced by actual backup"""
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def stats_check_initial(self, s):
         """Make sure stats object s compatible with initial mirroring
@@ -210,18 +211,18 @@ class IncStatTest(unittest.TestCase):
             return [inc for (t, inc) in templist]
 
         Globals.compression = 1
-        remove_dir(abs_output_dir)
-        InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest1"), abs_output_dir)
+        remove_dir(self.out_dir)
+        InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest1"), self.out_dir)
         InternalBackup(
             1,
             1,
             os.path.join(old_test_dir, b"stattest2"),
-            abs_output_dir,
+            self.out_dir,
             int(time.time()) + 1,
         )
 
         rbdir = rpath.RPath(
-            Globals.local_connection, os.path.join(abs_output_dir, b"rdiff-backup-data")
+            Globals.local_connection, os.path.join(self.out_dir, b"rdiff-backup-data")
         )
 
         incs = sorti(rbdir.append("session_statistics").get_incfiles_list())

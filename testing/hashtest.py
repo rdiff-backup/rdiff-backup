@@ -9,12 +9,9 @@ import unittest
 
 import commontest as comtst
 from commontest import (
-    re_init_rpath_dir,
     remove_dir,
-    abs_output_dir,
     rdiff_backup,
     abs_testing_dir,
-    re_init_output_dir,
 )
 
 from rdiff_backup import hash, rpath, Globals, Security, SetConnections
@@ -33,6 +30,8 @@ class HashTest(unittest.TestCase):
     s3 = "foobar"
     s3_hash = "8843d7f92416211de9ebb963ff4ce28125932878"
 
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+    out_rp = rpath.RPath(Globals.local_connection, out_dir)
     root_rp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
 
     def test_basic(self):
@@ -54,9 +53,9 @@ class HashTest(unittest.TestCase):
     def make_dirs(self):
         """Make two input directories"""
         d1 = self.root_rp.append("hashtest1")
-        re_init_rpath_dir(d1)
+        comtst.re_init_rpath_dir(d1)
         d2 = self.root_rp.append("hashtest2")
-        re_init_rpath_dir(d2)
+        comtst.re_init_rpath_dir(d2)
 
         d1f1 = d1.append("file1")
         d1f1.write_string(self.s1)
@@ -104,12 +103,12 @@ class HashTest(unittest.TestCase):
 
         """
         in_rp1, hashlist1, in_rp2, hashlist2 = self.make_dirs()
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
 
-        rdiff_backup(1, 1, in_rp1.path, abs_output_dir, 10000)
+        rdiff_backup(1, 1, in_rp1.path, self.out_dir, 10000)
         meta_prefix = rpath.RPath(
             Globals.local_connection,
-            os.path.join(abs_output_dir, b"rdiff-backup-data", b"mirror_metadata"),
+            os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
         )
         incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 1)
@@ -117,7 +116,7 @@ class HashTest(unittest.TestCase):
         hashlist = self.extract_hashs(metadata_rp)
         self.assertEqual(hashlist, hashlist1)
 
-        rdiff_backup(1, 1, in_rp2.path, abs_output_dir, 20000)
+        rdiff_backup(1, 1, in_rp2.path, self.out_dir, 20000)
         incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == "snapshot":
@@ -143,10 +142,10 @@ class HashTest(unittest.TestCase):
         self.assertEqual(fp_remote.close().sha1_digest, self.s1_hash)
 
         # Tested xfer of file, now test xfer of files in rorpiter
-        root = re_init_output_dir()
-        rp1 = root.append("s1")
+        comtst.re_init_rpath_dir(self.out_rp)
+        rp1 = self.out_rp.append("s1")
         rp1.write_string(self.s1)
-        rp2 = root.append("s2")
+        rp2 = self.out_rp.append("s2")
         rp2.write_string(self.s2)
         rp1.setfile(hash.FileWrapper(rp1.open("rb")))
         rp2.setfile(hash.FileWrapper(rp2.open("rb")))

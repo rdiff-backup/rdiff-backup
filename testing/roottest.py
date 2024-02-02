@@ -12,7 +12,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     old_test_dir,
-    abs_output_dir,
     remove_dir,
     abs_restore_dir,
     re_init_rpath_dir,
@@ -42,6 +41,8 @@ assert user, "Unable to assess name of non-root user to be used for tests"
 
 
 class BaseRootTest(unittest.TestCase):
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+
     def _run_cmd(self, cmd, expect_rc=Globals.RET_CODE_OK):
         print("Running: ", cmd)
         rc = os_system(cmd)
@@ -160,7 +161,7 @@ class RootTest(BaseRootTest):
 
         in_rp = write_ownership_dir()
         user_map, group_map = write_mapping_files(in_rp)
-        out_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         if out_rp.lstat():
             remove_dir(out_rp.path)
 
@@ -210,7 +211,7 @@ class RootTest(BaseRootTest):
             return (rp1.getuidgid(), rp2.getuidgid())
 
         in_rp = write_ownership_dir()
-        out_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         if out_rp.lstat():
             remove_dir(out_rp.path)
 
@@ -317,7 +318,7 @@ class HalfRoot(BaseRootTest):
     def test_backup(self):
         """Test back up, simple restores"""
         in_rp1, in_rp2 = self.make_dirs()
-        outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        outrp = rpath.RPath(Globals.local_connection, self.out_dir)
         re_init_rpath_dir(outrp, userid)
         remote_schema = b'su -c "%s server" %s' % (RBBin, user.encode())
 
@@ -467,7 +468,7 @@ class NonRoot(BaseRootTest):
         """Main non-root -> root test"""
         input_rp1, input_rp2 = self.make_root_dirs()
         Globals.change_ownership = 1
-        output_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        output_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         re_init_rpath_dir(output_rp, userid)
         restore_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
         empty_rp = rpath.RPath(

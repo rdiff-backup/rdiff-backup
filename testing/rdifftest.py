@@ -7,7 +7,6 @@ import random
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, abs_output_dir, os_system
 
 from rdiff_backup import Globals, Rdiff, rpath
 
@@ -31,7 +30,7 @@ class RdiffTest(unittest.TestCase):
 
     basis = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"basis"))
     new = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"new"))
-    output = rpath.RPath(lc, abs_output_dir)
+    output = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"output"))
     delta = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"delta"))
     signature = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"signature"))
 
@@ -39,13 +38,13 @@ class RdiffTest(unittest.TestCase):
         """Test making rdiff signatures"""
         sig = rpath.RPath(
             self.lc,
-            os.path.join(old_test_dir, b"various_file_types", b"regular_file.sig"),
+            os.path.join(comtst.old_test_dir, b"various_file_types", b"regular_file.sig"),
         )
         sigfp = sig.open("rb")
         rfsig = Rdiff.get_signature(
             rpath.RPath(
                 self.lc,
-                os.path.join(old_test_dir, b"various_file_types", b"regular_file"),
+                os.path.join(comtst.old_test_dir, b"various_file_types", b"regular_file"),
             ),
             2048,
         )
@@ -95,7 +94,7 @@ class RdiffTest(unittest.TestCase):
         gzip_path = self.delta.path + b".gz"
         if os.name == "nt":
             # simulate gzip using 7z on Windows
-            os_system(
+            comtst.os_system(
                 (
                     b"7z",
                     b"a",
@@ -108,7 +107,7 @@ class RdiffTest(unittest.TestCase):
                 )
             )
         else:
-            os_system((b"gzip", self.delta.path))
+            comtst.os_system((b"gzip", self.delta.path))
         os.rename(gzip_path, self.delta.path)
         self.delta.setdata()
 
@@ -147,7 +146,7 @@ class RdiffTest(unittest.TestCase):
         self.assertTrue(delta_gz.lstat())
         if os.name == "nt":
             # simulate gunzip using 7z on Windows
-            os_system(
+            comtst.os_system(
                 (
                     b"7z",
                     b"e",
@@ -160,7 +159,7 @@ class RdiffTest(unittest.TestCase):
             )
             delta_gz.delete()
         else:
-            os_system((b"gunzip", delta_gz.path))
+            comtst.os_system((b"gunzip", delta_gz.path))
         delta_gz.setdata()
         self.delta.setdata()
         Rdiff.patch_local(self.basis, self.delta, self.output)

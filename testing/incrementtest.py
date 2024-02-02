@@ -6,7 +6,6 @@ import os
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, abs_output_dir, re_init_output_dir
 
 from rdiff_backup import Globals, rpath, increment, Time, Rdiff
 from rdiffbackup import actions
@@ -19,7 +18,9 @@ Globals.change_source_perms = 1
 
 
 def getrp(ending):
-    return rpath.RPath(lc, os.path.join(old_test_dir, b"various_file_types", ending))
+    return rpath.RPath(
+        lc, os.path.join(comtst.old_test_dir, b"various_file_types", ending)
+    )
 
 
 base_dir = getrp(b".")
@@ -29,9 +30,9 @@ exec1 = getrp(b"executable")
 sym = getrp(b"symbolic_link")
 nothing = getrp(b"nothing")
 
-target = rpath.RPath(lc, os.path.join(abs_output_dir, b"out"))
-out2 = rpath.RPath(lc, os.path.join(abs_output_dir, b"out2"))
-out_gz = rpath.RPath(lc, os.path.join(abs_output_dir, b"out.gz"))
+target = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"out"))
+out2 = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"out2"))
+out_gz = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"out.gz"))
 
 Time.set_current_time(1000000000)
 prevtime = 999424113
@@ -39,7 +40,7 @@ if os.name == "nt":
     prevtimestr = b"2001-09-02T02-48-33-07-00"
 else:
     prevtimestr = b"2001-09-02T02:48:33-07:00"
-t_diff = os.path.join(abs_output_dir, b"out.%s.diff" % prevtimestr)
+t_diff = os.path.join(TEST_BASE_DIR, b"out.%s.diff" % prevtimestr)
 
 repository.Repo.setup_not_compressed_regexp(actions.DEFAULT_NOT_COMPRESSED_REGEXP)
 
@@ -49,7 +50,6 @@ class inctest(unittest.TestCase):
 
     def setUp(self):
         Globals.set("isbackup_writer", 1)
-        re_init_output_dir()
 
     def check_time(self, rp):
         """Make sure that rp is an inc file, and time is prevtime"""

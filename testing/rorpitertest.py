@@ -8,7 +8,6 @@ import pickle
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, abs_output_dir, compare_recursive, iter_equal
 
 from rdiff_backup import rpath, rorpiter, Globals
 
@@ -23,16 +22,20 @@ class index:
 
 
 class RORPIterTest(unittest.TestCase):
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+
     def setUp(self):
         self.lc = Globals.local_connection
-        self.inc0rp = rpath.RPath(self.lc, os.path.join(old_test_dir, b"empty"), ())
+        self.inc0rp = rpath.RPath(
+            self.lc, os.path.join(comtst.old_test_dir, b"empty"), ()
+        )
         self.inc1rp = rpath.RPath(
-            self.lc, os.path.join(old_test_dir, b"inc-reg-perms1"), ()
+            self.lc, os.path.join(comtst.old_test_dir, b"inc-reg-perms1"), ()
         )
         self.inc2rp = rpath.RPath(
-            self.lc, os.path.join(old_test_dir, b"inc-reg-perms2"), ()
+            self.lc, os.path.join(comtst.old_test_dir, b"inc-reg-perms2"), ()
         )
-        self.output = rpath.RPath(self.lc, abs_output_dir, ())
+        self.output = rpath.RPath(self.lc, self.out_dir, ())
 
     def testCollateIterators(self):
         """Test basic collating"""
@@ -49,7 +52,7 @@ class RORPIterTest(unittest.TestCase):
 
         outiter = rorpiter.CollateIterators(makeiter1(), makeiter2())
         self.assertTrue(
-            iter_equal(
+            comtst.iter_equal(
                 outiter,
                 iter(
                     [
@@ -63,7 +66,7 @@ class RORPIterTest(unittest.TestCase):
         )
 
         self.assertTrue(
-            iter_equal(
+            comtst.iter_equal(
                 rorpiter.CollateIterators(makeiter1(), makeiter2(), makeiter3()),
                 iter(
                     [
@@ -77,13 +80,13 @@ class RORPIterTest(unittest.TestCase):
         )
 
         self.assertTrue(
-            iter_equal(
+            comtst.iter_equal(
                 rorpiter.CollateIterators(makeiter1(), iter([])),
                 iter([(i, None) for i in indices]),
             )
         )
         self.assertTrue(
-            iter_equal(
+            comtst.iter_equal(
                 iter([(i, None) for i in indices]),
                 rorpiter.CollateIterators(makeiter1(), iter([])),
             )
@@ -95,7 +98,7 @@ class RORPIterTest(unittest.TestCase):
         def equal(src_rorp, dest_rorp):
             return (src_rorp.isdir() and dest_rorp.isdir()) or src_rorp == dest_rorp
 
-        return compare_recursive(src_rp, dest_rp, None, equal)
+        return comtst.compare_recursive(src_rp, dest_rp, None, equal)
 
 
 class IndexedTupleTest(unittest.TestCase):
@@ -117,9 +120,11 @@ class IndexedTupleTest(unittest.TestCase):
 
 
 class FillTest(unittest.TestCase):
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+
     def test_fill_in(self):
         """Test fill_in_iter"""
-        rootrp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        rootrp = rpath.RPath(Globals.local_connection, self.out_dir)
 
         def get_rpiter():
             for index in [

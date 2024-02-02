@@ -8,7 +8,6 @@ import sys
 import unittest
 
 import commontest as comtst
-from commontest import iter_equal, abs_output_dir, remove_dir
 
 from rdiff_backup import rpath, Globals
 from rdiff_backup.iterfile import (
@@ -49,7 +48,7 @@ class testIterFile(unittest.TestCase):
         """Test iter to file conversion"""
         for itm in [self.iter1maker, self.iter2maker]:
             self.assertTrue(
-                iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm())))
+                comtst.iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm())))
             )
 
     def testFile(self):
@@ -81,11 +80,12 @@ class testIterFile(unittest.TestCase):
 
 class testMiscIters(unittest.TestCase):
     """Test sending rorpiter back and forth"""
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def setUp(self):
         """Make testfiles/output directory and a few files"""
-        remove_dir(abs_output_dir)
-        self.outputrp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        comtst.remove_dir(self.out_dir)
+        self.outputrp = rpath.RPath(Globals.local_connection, self.out_dir)
         self.regfile1 = self.outputrp.append("reg1")
         self.regfile2 = self.outputrp.append("reg2")
         self.regfile3 = self.outputrp.append("reg3")

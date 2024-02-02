@@ -8,7 +8,7 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, abs_output_dir, iter_equal, xcopytree
+from commontest import old_test_dir, iter_equal, xcopytree
 import fileset
 
 from rdiff_backup import rpath, Globals, selection
@@ -18,16 +18,10 @@ from rdiffbackup.utils import quoting
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
-tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
-
 
 class MetadataTest(unittest.TestCase):
-    def make_temp(self):
-        """Make temp directory testfiles/output"""
-        global tempdir
-        if tempdir.lstat():
-            tempdir.delete()
-        tempdir.mkdir()
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
+    out_rp = rpath.RPath(Globals.local_connection, out_dir)
 
     def testQuote(self):
         """Test quoting and unquoting"""
@@ -86,11 +80,10 @@ class MetadataTest(unittest.TestCase):
 
     def write_metadata_to_temp(self, compress):
         """If necessary, write metadata of bigdir to file metadata.gz"""
-        global tempdir
         meta_file_name = "mirror_metadata.2005-11-03T14:51:06-06:00.snapshot"
         if compress:
             meta_file_name += ".gz"
-        temprp = tempdir.append(meta_file_name)
+        temprp = self.out_rp.append(meta_file_name)
         if temprp.lstat():
             return temprp
 
@@ -109,7 +102,7 @@ class MetadataTest(unittest.TestCase):
         }
         fileset.create_fileset(bigdir_path, bigdir_struct)
 
-        self.make_temp()
+        comtst.re_init_rpath_dir(self.out_rp)
         rootrp = rpath.RPath(Globals.local_connection, bigdir_path)
         rpath_iter = selection.Select(rootrp).get_select_iter()
 
@@ -192,15 +185,14 @@ class MetadataTest(unittest.TestCase):
         return self.helper_iterate_restricted(compress=False)
 
     def helper_write(self, compress):
-        global tempdir
         meta_file_name = "mirror_metadata.2005-11-03T12:51:06-06:00.snapshot"
         if compress:
             meta_file_name += ".gz"
-        temprp = tempdir.append(meta_file_name)
+        temprp = self.out_rp.append(meta_file_name)
         if temprp.lstat():
             temprp.delete()
 
-        self.make_temp()
+        comtst.re_init_rpath_dir(self.out_rp)
         rootrp = rpath.RPath(
             Globals.local_connection, os.path.join(old_test_dir, b"various_file_types")
         )
@@ -235,19 +227,19 @@ class MetadataTest(unittest.TestCase):
 
     def test_patch(self):
         """Test combining 3 iters of metadata rorps"""
-        self.make_temp()
+        comtst.re_init_rpath_dir(self.out_rp)
         xcopytree(
             os.path.join(old_test_dir, b"various_file_types"),
-            tempdir.path,
+            self.out_dir,
             content=True,
         )
 
-        rp1 = tempdir.append("regular_file")
-        rp2 = tempdir.append("subdir")
+        rp1 = self.out_rp.append("regular_file")
+        rp2 = self.out_rp.append("subdir")
         rp3 = rp2.append("subdir_file")
-        rp4 = tempdir.append("test")
+        rp4 = self.out_rp.append("test")
 
-        rp1new = tempdir.append("regular_file")
+        rp1new = self.out_rp.append("regular_file")
         rp1new.chmod(0)
         zero = rpath.RORPath(("test",))
 
@@ -255,7 +247,7 @@ class MetadataTest(unittest.TestCase):
         diff1 = [rp1, rp4]
         diff2 = [rp1new, rp2, zero]
 
-        Globals.rbdir = tempdir
+        Globals.rbdir = self.out_rp
         output = meta_mgr.PatchDiffMan()._iterate_patched_attr(
             [iter(current), iter(diff1), iter(diff2)]
         )
@@ -294,8 +286,8 @@ class MetadataTest(unittest.TestCase):
                 )
             )
 
-        self.make_temp()
-        Globals.rbdir = tempdir
+        comtst.re_init_rpath_dir(self.out_rp)
+        Globals.rbdir = self.out_rp
         man = meta_mgr.PatchDiffMan()
         inc1 = rpath.RPath(
             Globals.local_connection, os.path.join(old_test_dir, b"increment1")

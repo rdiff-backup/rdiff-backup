@@ -11,8 +11,6 @@ import unittest
 import commontest as comtst
 from commontest import (
     old_test_dir,
-    re_init_rpath_dir,
-    re_init_output_dir,
     rdiff_backup,
     iter_equal,
     iter_map,
@@ -791,13 +789,15 @@ class CommandTest(unittest.TestCase):
 
         This checks for a bug present in 1.0.3/1.1.5 and similar.
         """
-        outrp = re_init_output_dir()
+        out_dir = os.path.join(TEST_BASE_DIR, b"output")
+        out_rp = rpath.RPath(Globals.local_connection, out_dir)
+        comtst.re_init_rpath_dir(out_rp)
         # we need to change directory to be able to work with relative paths
         os.chdir(TEST_BASE_DIR)
         currdir = os.path.basename(os.getcwdb())
         os.chdir(os.pardir)  # chdir one level up
         selrp = rpath.RPath(Globals.local_connection, os.path.join(currdir, b"seltest"))
-        re_init_rpath_dir(selrp)
+        comtst.re_init_rpath_dir(selrp)
         emptydir = selrp.append("emptydir")
         emptydir.mkdir()
 
@@ -805,7 +805,7 @@ class CommandTest(unittest.TestCase):
             1,
             1,
             selrp.path,
-            outrp.path,
+            out_dir,
             extra_options=(
                 b"backup",
                 b"--include",
@@ -815,7 +815,7 @@ class CommandTest(unittest.TestCase):
             ),
         )
 
-        outempty = outrp.append("emptydir")
+        outempty = out_rp.append("emptydir")
         self.assertTrue(outempty.isdir())
 
     def test_overlapping_dirs(self):
@@ -827,7 +827,7 @@ class CommandTest(unittest.TestCase):
         testrp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR).append(
             "selection_overlap"
         )
-        re_init_rpath_dir(testrp)
+        comtst.re_init_rpath_dir(testrp)
         backuprp = testrp.append("backup")
         emptyrp = testrp.append("empty")  # just to have something to backup
         emptyrp.mkdir()

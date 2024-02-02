@@ -7,7 +7,6 @@ import unittest
 
 import commontest as comtst
 from commontest import (
-    abs_output_dir,
     old_test_dir,
     remove_dir,
     InternalRestore,
@@ -20,7 +19,6 @@ from rdiffbackup.locations import _repo_shadow
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 lc = Globals.local_connection
-tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_base_rp = rpath.RPath(
     Globals.local_connection, os.path.join(old_test_dir, b"restoretest")
 )
@@ -40,6 +38,8 @@ class RestoreFileComparer:
     def __init__(self, rf):
         self.rf = rf
         self.time_rp_dict = {}
+        self.out_dir = os.path.join(TEST_BASE_DIR, b"output")
+        self.out_rp = rpath.RPath(Globals.local_connection, out_dir)
 
     def add_rpath(self, rp, t):
         """Add rp, which represents what rf should be at given time t"""
@@ -54,7 +54,7 @@ class RestoreFileComparer:
     def _compare_at_time(self, t):
         """Restore file, make sure it is the same at time t"""
         log.Log("Checking result at time %s" % (t,), 7)
-        tf = tempdir.get_temp_rpath()
+        tf = self.out_rp.get_temp_rpath()
         _repo_shadow.RepoShadow._mirror_time = mirror_time
         _repo_shadow.RepoShadow._restore_time = t
         self.rf.set_relevant_incs()
@@ -93,6 +93,7 @@ class RestoreFileComparer:
 
 class RestoreTest(unittest.TestCase):
     """Test Restore class"""
+    out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def get_rfcs(self):
         """Return available RestoreFileComparer objects"""
@@ -151,9 +152,9 @@ class RestoreTest(unittest.TestCase):
         makerestoretest3.
 
         """
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         restore3_dir = os.path.join(old_test_dir, b"restoretest3")
-        target_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
+        target_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         inc1_rp = rpath.RPath(
             Globals.local_connection, os.path.join(old_test_dir, b"increment1")
         )
@@ -167,26 +168,26 @@ class RestoreTest(unittest.TestCase):
             Globals.local_connection, os.path.join(old_test_dir, b"increment4")
         )
 
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 45000)
+        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 45000)
         self.assertTrue(compare_recursive(inc4_rp, target_rp))
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 35000)
+        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 35000)
         self.assertTrue(compare_recursive(inc3_rp, target_rp, compare_hardlinks=0))
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 25000)
+        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 25000)
         self.assertTrue(compare_recursive(inc2_rp, target_rp, compare_hardlinks=0))
-        InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir, 5000)
+        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 5000)
         self.assertTrue(compare_recursive(inc1_rp, target_rp, compare_hardlinks=0))
 
     def testRestoreNoincs(self):
         """Test restoring a directory with no increments, just mirror"""
-        remove_dir(abs_output_dir)
+        remove_dir(self.out_dir)
         InternalRestore(
             1,
             1,
             os.path.join(old_test_dir, b"restoretest5", b"regular_file"),
-            abs_output_dir,
+            self.out_dir,
             10000,
         )
-        self.assertTrue(os.lstat(abs_output_dir))
+        self.assertTrue(os.lstat(self.out_dir))
 
 
 if __name__ == "__main__":

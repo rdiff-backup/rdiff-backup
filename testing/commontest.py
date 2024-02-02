@@ -33,7 +33,6 @@ abs_work_dir = os.fsencode(
     )
 )
 abs_test_dir = os.path.join(abs_work_dir, b"testfiles")
-abs_output_dir = os.path.join(abs_test_dir, b"output")
 abs_restore_dir = os.path.join(abs_test_dir, b"restore")
 
 # the directory with the testfiles used as input is in the parent directory of the Git clone
@@ -92,14 +91,6 @@ def re_init_subdir(maindir, *subdirs):
 # two temporary directories to simulate remote actions
 abs_remote1_dir = re_init_subdir(abs_test_dir, b"remote1")
 abs_remote2_dir = re_init_subdir(abs_test_dir, b"remote2")
-
-
-def re_init_output_dir():
-    """Initialize the output directory"""
-    remove_dir(abs_output_dir)
-    rp = rpath.RPath(Globals.local_connection, abs_output_dir)
-    rp.mkdir()
-    return rp
 
 
 def get_test_base_dir(module_file):
