@@ -575,6 +575,7 @@ class FileAttributes(FileCopying):
 
 class CheckPath(unittest.TestCase):
     """Check to make sure paths generated properly"""
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def testpath(self):

@@ -38,13 +38,17 @@ class RdiffTest(unittest.TestCase):
         """Test making rdiff signatures"""
         sig = rpath.RPath(
             self.lc,
-            os.path.join(comtst.old_test_dir, b"various_file_types", b"regular_file.sig"),
+            os.path.join(
+                comtst.old_test_dir, b"various_file_types", b"regular_file.sig"
+            ),
         )
         sigfp = sig.open("rb")
         rfsig = Rdiff.get_signature(
             rpath.RPath(
                 self.lc,
-                os.path.join(comtst.old_test_dir, b"various_file_types", b"regular_file"),
+                os.path.join(
+                    comtst.old_test_dir, b"various_file_types", b"regular_file"
+                ),
             ),
             2048,
         )

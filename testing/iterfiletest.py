@@ -80,6 +80,7 @@ class testIterFile(unittest.TestCase):
 
 class testMiscIters(unittest.TestCase):
     """Test sending rorpiter back and forth"""
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def setUp(self):

@@ -39,7 +39,7 @@ class RestoreFileComparer:
         self.rf = rf
         self.time_rp_dict = {}
         self.out_dir = os.path.join(TEST_BASE_DIR, b"output")
-        self.out_rp = rpath.RPath(Globals.local_connection, out_dir)
+        self.out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
 
     def add_rpath(self, rp, t):
         """Add rp, which represents what rf should be at given time t"""
@@ -93,6 +93,7 @@ class RestoreFileComparer:
 
 class RestoreTest(unittest.TestCase):
     """Test Restore class"""
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def get_rfcs(self):

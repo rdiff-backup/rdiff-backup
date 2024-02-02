@@ -20,6 +20,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class StatsObjTest(unittest.TestCase):
     """Test StatsObj class"""
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def set_obj(self, s):
@@ -175,6 +176,7 @@ TotalDestinationSizeChange 7 (7 bytes)
 
 class IncStatTest(unittest.TestCase):
     """Test statistics as produced by actual backup"""
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def stats_check_initial(self, s):

@@ -16,6 +16,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class FilenameMappingTest(unittest.TestCase):
     """Test the map_filenames module, for quoting filenames"""
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def setUp(self):

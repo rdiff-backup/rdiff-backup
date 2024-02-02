@@ -27,6 +27,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class HardlinkTest(unittest.TestCase):
     """Test cases for Hard links"""
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     hlinks_dir = os.path.join(old_test_dir, b"hardlinks")
@@ -413,6 +414,7 @@ class BackupUnchangedHardlinksTest(unittest.TestCase):
     """
     Test that rdiff-backup doesn't moan about moving hardlinks over same inode
     """
+
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def setUp(self):

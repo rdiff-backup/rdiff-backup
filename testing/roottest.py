@@ -13,7 +13,6 @@ import commontest as comtst
 from commontest import (
     old_test_dir,
     remove_dir,
-    abs_restore_dir,
     re_init_rpath_dir,
     compare_recursive,
     rdiff_backup,
@@ -42,6 +41,7 @@ assert user, "Unable to assess name of non-root user to be used for tests"
 
 class BaseRootTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
+    restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
 
     def _run_cmd(self, cmd, expect_rc=Globals.RET_CODE_OK):
         print("Running: ", cmd)
@@ -79,14 +79,14 @@ class RootTest(BaseRootTest):
         )
 
     def test_ownership(self):
-        """Test backing up and restoring directory with different uids
+        """
+        Test backing up and restoring directory with different uids
 
         This checks for a bug in 0.13.4 where uids and gids would not
         be restored correctly.
 
         Also test to make sure symlinks get the right ownership.
         (Earlier symlink ownership was not preserved.)
-
         """
         dirrp = rpath.RPath(
             Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_owner")
@@ -350,7 +350,7 @@ class HalfRoot(BaseRootTest):
         in_rp2.setdata()
         outrp.setdata()
 
-        rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
+        rout_rp = rpath.RPath(Globals.local_connection, self.restore_dir)
         remove_dir(rout_rp.path)
         cmd3 = (
             RBBin,
@@ -470,7 +470,7 @@ class NonRoot(BaseRootTest):
         Globals.change_ownership = 1
         output_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         re_init_rpath_dir(output_rp, userid)
-        restore_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
+        restore_rp = rpath.RPath(Globals.local_connection, self.restore_dir)
         empty_rp = rpath.RPath(
             Globals.local_connection, os.path.join(old_test_dir, b"empty")
         )
