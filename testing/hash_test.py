@@ -168,6 +168,7 @@ class HashTest(unittest.TestCase):
         self.assertEqual(fp2.close().sha1_digest, self.s2_hash)
 
         conn.quit()
+        comtst.reset_connections()
 
 
 if __name__ == "__main__":

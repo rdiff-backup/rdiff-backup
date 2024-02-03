@@ -73,7 +73,7 @@ def re_init_rpath_dir(rp, uid=-1, gid=-1):
     if rp.lstat():
         remove_dir(rp.path)
         rp.setdata()
-    rp.mkdir()
+    rp.makedirs()
     if os.name != "nt":
         rp.chown(uid, gid)
 
@@ -261,27 +261,6 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
     return (src_dir, dest_dir)
 
 
-def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
-    """Function returns a tuple of connections based on the given parameters.
-    One or both directories are faked for remote connection if not local,
-    and the connections are set accordingly.
-    Note that the function relies on the global variables
-    abs_remote1_dir, abs_remote2_dir and abs_testing_dir."""
-
-    remote_schema = b"{h}"
-    remote_format = b"cd %s; %s/server.py::%s"
-
-    if not src_local:
-        src_dir = remote_format % (abs_remote1_dir, abs_testing_dir, src_dir)
-    if not dest_local:
-        dest_dir = remote_format % (abs_remote2_dir, abs_testing_dir, dest_dir)
-
-    if src_local and dest_local:
-        return SetConnections.get_cmd_pairs([src_dir, dest_dir])
-    else:
-        return SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
-
-
 def InternalBackup(
     source_local,
     dest_local,
@@ -322,6 +301,7 @@ def InternalBackup(
     args.extend(_get_locations(source_local, dest_local, src_dir, dest_dir))
 
     run.main_run(args, security_override=True)
+    reset_connections()
 
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
@@ -346,12 +326,12 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
 def InternalRestore(
     mirror_local, dest_local, mirror_dir, dest_dir, time, eas=None, acls=None
 ):
-    """Restore mirror_dir to dest_dir at given time
+    """
+    Restore mirror_dir to dest_dir at given time
 
     This will automatically find the increments.XXX.dir representing
     the time specified.  The mirror_dir and dest_dir are relative to
     the testing directory and will be modified for remote trials.
-
     """
     args = []
     args.append("--force")
@@ -374,6 +354,7 @@ def InternalRestore(
     args.extend(_get_locations(mirror_local, dest_local, mirror_dir, dest_dir))
 
     run.main_run(args, security_override=True)
+    reset_connections()
 
 
 def get_increment_rp(mirror_rp, time):
@@ -389,11 +370,21 @@ def get_increment_rp(mirror_rp, time):
     return None  # Couldn't find appropriate increment
 
 
-def _reset_connections(src_rp, dest_rp):
+def reset_connections():
     """Reset some global connection information"""
     Security._security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
-    Globals.set_all("rbdir", None)
+    Globals.rbdir = None
+    # reset the connection status
+    Globals.connection_number = 0
+    Globals.connections = [Globals.local_connection]
+    Globals.connection_dict = {0: Globals.local_connection}
+    # reset the quoting status
+    Globals.chars_to_quote = None
+    Globals.chars_to_quote_regexp = None
+    Globals.chars_to_quote_unregexp = None
+    # EAs and ACLs support
+    Globals.eas_active = Globals.acls_active = None
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):
@@ -661,7 +652,7 @@ def backup_restore_series(
     for dirname in list_of_dirnames:
         src_rp = rpath.RPath(Globals.local_connection, dirname)
         reset_hardlink_dicts()
-        _reset_connections(src_rp, dest_rp)
+        reset_connections()
 
         InternalBackup(
             source_local,
@@ -673,7 +664,6 @@ def backup_restore_series(
             acls=compare_acls,
         )
         time += 10000
-        _reset_connections(src_rp, dest_rp)
         if compare_backups:
             assert compare_recursive(
                 src_rp,

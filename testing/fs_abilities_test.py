@@ -57,6 +57,9 @@ class FSAbilitiesTest(unittest.TestCase):
 
     case_insensitive_path = os.path.join(TEST_BASE_DIR, b"fs_insensitive")
 
+    def setUp(self):
+        comtst.reset_connections()
+
     def testReadOnly(self):
         """Test basic querying read only"""
         base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)

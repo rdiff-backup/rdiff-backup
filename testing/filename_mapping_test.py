@@ -25,9 +25,12 @@ class FilenameMappingTest(unittest.TestCase):
         # FIXME possibly too much internas
         regexp, unregexp = map_filenames.get_quoting_regexps(ctq, Globals.quoting_char)
 
-        Globals.set_all("chars_to_quote", ctq)
-        Globals.set_all("chars_to_quote_regexp", regexp)
-        Globals.set_all("chars_to_quote_unregexp", unregexp)
+        Globals.chars_to_quote = ctq
+        Globals.chars_to_quote_regexp = regexp
+        Globals.chars_to_quote_unregexp = unregexp
+
+    def tearDown(self):
+        comtst.reset_connections()
 
     def testBasicQuote(self):
         """Test basic quoting and unquoting"""
