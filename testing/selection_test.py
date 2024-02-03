@@ -808,7 +808,7 @@ class CommandTest(unittest.TestCase):
                 b"--include",
                 b"**XX",
                 b"--exclude",
-                os.path.join(currdir, b"seltest", b"YYYY"),
+                b"/".join((currdir, b"seltest", b"YYYY")),
             ),
         )
 
