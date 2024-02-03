@@ -10,6 +10,8 @@ import fileset
 
 from rdiff_backup import Globals, rpath
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class ActionReadOnlyTest(unittest.TestCase):
     """
@@ -17,7 +19,7 @@ class ActionReadOnlyTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"readonly_actions")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"readonly_actions")
         self.from1_struct = {
             "from1": {
                 "contents": {

@@ -1,11 +1,15 @@
-"""commontest - Some functions and constants common to several test cases.
-Can be called also directly to setup the test environment"""
+"""
+commontest
+
+Some functions and constants common to several test cases.
+Can be called also directly to setup the test environment
+"""
 
 import os
-import code
 import shlex
 import shutil
 import subprocess
+
 from rdiff_backup import (
     Globals,
     hash,
@@ -14,7 +18,6 @@ from rdiff_backup import (
     rpath,
     Security,
     selection,
-    SetConnections,
 )
 from rdiffbackup import actions, run
 from rdiffbackup.meta import ea, acl_posix
@@ -29,8 +32,6 @@ abs_work_dir = os.fsencode(
     )
 )
 abs_test_dir = os.path.join(abs_work_dir, b"testfiles")
-abs_output_dir = os.path.join(abs_test_dir, b"output")
-abs_restore_dir = os.path.join(abs_test_dir, b"restore")
 
 # the directory with the testfiles used as input is in the parent directory of the Git clone
 old_test_dir = os.path.join(os.path.dirname(os.getcwdb()), b"rdiff-backup_testfiles")
@@ -51,7 +52,7 @@ else:
     CMD_SEP = b" ; "
 
 
-def Myrm(dirstring):
+def remove_dir(dirstring):
     """Run myrm on given directory string"""
     root_rp = rpath.RPath(Globals.local_connection, dirstring)
     for rp in selection.Select(root_rp).get_select_iter():
@@ -69,20 +70,20 @@ def Myrm(dirstring):
 def re_init_rpath_dir(rp, uid=-1, gid=-1):
     """Delete directory if present, then recreate"""
     if rp.lstat():
-        Myrm(rp.path)
+        remove_dir(rp.path)
         rp.setdata()
-    rp.mkdir()
+    rp.makedirs()
     if os.name != "nt":
         rp.chown(uid, gid)
 
 
-def re_init_subdir(maindir, subdir):
-    """Remove a sub-directory and return its name joined
+def re_init_subdir(maindir, *subdirs):
+    """Remove a sub-directory, or more, and return its name joined
     to the main directory as an empty directory"""
-    dir = os.path.join(maindir, subdir)
-    Myrm(dir)
-    os.makedirs(dir)
-    return dir
+    directory = os.path.join(maindir, *subdirs)
+    remove_dir(directory)
+    os.makedirs(directory)
+    return directory
 
 
 # two temporary directories to simulate remote actions
@@ -90,12 +91,14 @@ abs_remote1_dir = re_init_subdir(abs_test_dir, b"remote1")
 abs_remote2_dir = re_init_subdir(abs_test_dir, b"remote2")
 
 
-def MakeOutputDir():
-    """Initialize the output directory"""
-    Myrm(abs_output_dir)
-    rp = rpath.RPath(Globals.local_connection, abs_output_dir)
-    rp.mkdir()
-    return rp
+def get_test_base_dir(module_file):
+    """
+    Create a subdirectory out of the given potentially absolute path.
+    The function is meant to be used with the '__file__' variable of a module,
+    creating one unique test directory for each module.
+    """
+    basename = os.fsencode(os.path.splitext(os.path.basename(module_file))[0])
+    return re_init_subdir(abs_test_dir, basename)
 
 
 def rdiff_backup(
@@ -257,27 +260,6 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
     return (src_dir, dest_dir)
 
 
-def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
-    """Function returns a tuple of connections based on the given parameters.
-    One or both directories are faked for remote connection if not local,
-    and the connections are set accordingly.
-    Note that the function relies on the global variables
-    abs_remote1_dir, abs_remote2_dir and abs_testing_dir."""
-
-    remote_schema = b"{h}"
-    remote_format = b"cd %s; %s/server.py::%s"
-
-    if not src_local:
-        src_dir = remote_format % (abs_remote1_dir, abs_testing_dir, src_dir)
-    if not dest_local:
-        dest_dir = remote_format % (abs_remote2_dir, abs_testing_dir, dest_dir)
-
-    if src_local and dest_local:
-        return SetConnections.get_cmd_pairs([src_dir, dest_dir])
-    else:
-        return SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
-
-
 def InternalBackup(
     source_local,
     dest_local,
@@ -318,6 +300,7 @@ def InternalBackup(
     args.extend(_get_locations(source_local, dest_local, src_dir, dest_dir))
 
     run.main_run(args, security_override=True)
+    reset_connections()
 
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
@@ -334,7 +317,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
 
     InternalBackup(source_local, dest_local, src_dir, dest_dir, force=force)
     dest_root.setdata()
-    Myrm(dest_rbdir.path)
+    remove_dir(dest_rbdir.path)
     # Restore old attributes
     rpath.copy_attribs(src_root, dest_root)
 
@@ -342,12 +325,12 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
 def InternalRestore(
     mirror_local, dest_local, mirror_dir, dest_dir, time, eas=None, acls=None
 ):
-    """Restore mirror_dir to dest_dir at given time
+    """
+    Restore mirror_dir to dest_dir at given time
 
     This will automatically find the increments.XXX.dir representing
     the time specified.  The mirror_dir and dest_dir are relative to
     the testing directory and will be modified for remote trials.
-
     """
     args = []
     args.append("--force")
@@ -370,6 +353,7 @@ def InternalRestore(
     args.extend(_get_locations(mirror_local, dest_local, mirror_dir, dest_dir))
 
     run.main_run(args, security_override=True)
+    reset_connections()
 
 
 def get_increment_rp(mirror_rp, time):
@@ -385,11 +369,21 @@ def get_increment_rp(mirror_rp, time):
     return None  # Couldn't find appropriate increment
 
 
-def _reset_connections(src_rp, dest_rp):
+def reset_connections():
     """Reset some global connection information"""
     Security._security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
-    Globals.set_all("rbdir", None)
+    Globals.rbdir = None
+    # reset the connection status
+    Globals.connection_number = 0
+    Globals.connections = [Globals.local_connection]
+    Globals.connection_dict = {0: Globals.local_connection}
+    # reset the quoting status
+    Globals.chars_to_quote = None
+    Globals.chars_to_quote_regexp = None
+    Globals.chars_to_quote_unregexp = None
+    # EAs and ACLs support
+    Globals.eas_active = Globals.acls_active = None
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):
@@ -623,13 +617,12 @@ def reset_hardlink_dicts():
     map_hardlinks._inode_index = {}
 
 
-def BackupRestoreSeries(
+def backup_restore_series(
     source_local,
     dest_local,
     list_of_dirnames,
     compare_hardlinks=1,
-    dest_dirname=abs_output_dir,
-    restore_dirname=abs_restore_dir,
+    test_base_dir=abs_test_dir,
     compare_backups=1,
     compare_eas=0,
     compare_acls=0,
@@ -640,35 +633,36 @@ def BackupRestoreSeries(
     The dirnames correspond to a single directory at different times.
     After each backup, the dest dir will be compared.  After the whole
     set, each of the earlier directories will be recovered to the
-    restore_dirname and compared.
+    restore_dir and compared.
 
     """
+    backup_dir = os.path.join(test_base_dir, b"output")
+    restore_dir = os.path.join(test_base_dir, b"restore")
     Globals.set("preserve_hardlinks", compare_hardlinks)
     Globals.set(
         "no_compression_regexp_string",
         os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP),
     )
     time = 10000
-    dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
-    restore_rp = rpath.RPath(Globals.local_connection, restore_dirname)
+    dest_rp = rpath.RPath(Globals.local_connection, backup_dir)
+    restore_rp = rpath.RPath(Globals.local_connection, restore_dir)
 
-    Myrm(dest_dirname)
+    remove_dir(backup_dir)
     for dirname in list_of_dirnames:
         src_rp = rpath.RPath(Globals.local_connection, dirname)
         reset_hardlink_dicts()
-        _reset_connections(src_rp, dest_rp)
+        reset_connections()
 
         InternalBackup(
             source_local,
             dest_local,
             dirname,
-            dest_dirname,
+            backup_dir,
             time,
             eas=compare_eas,
             acls=compare_acls,
         )
         time += 10000
-        _reset_connections(src_rp, dest_rp)
         if compare_backups:
             assert compare_recursive(
                 src_rp,
@@ -682,12 +676,12 @@ def BackupRestoreSeries(
     time = 10000
     for dirname in list_of_dirnames[:-1]:
         reset_hardlink_dicts()
-        Myrm(restore_dirname)
+        remove_dir(restore_dir)
         InternalRestore(
             dest_local,
             source_local,
-            dest_dirname,
-            restore_dirname,
+            backup_dir,
+            restore_dir,
             time,
             eas=compare_eas,
             acls=compare_acls,
@@ -707,61 +701,6 @@ def BackupRestoreSeries(
             time = 21000
 
         time += 10000
-
-
-def MirrorTest(
-    source_local,
-    dest_local,
-    list_of_dirnames,
-    compare_hardlinks=1,
-    dest_dirname=abs_output_dir,
-):
-    """Mirror each of list_of_dirnames, and compare after each"""
-    Globals.set("preserve_hardlinks", compare_hardlinks)
-    Globals.set(
-        "no_compression_regexp_string",
-        os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP),
-    )
-    dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
-
-    Myrm(dest_dirname)
-    for dirname in list_of_dirnames:
-        src_rp = rpath.RPath(Globals.local_connection, dirname)
-        reset_hardlink_dicts()
-        _reset_connections(src_rp, dest_rp)
-
-        InternalMirror(source_local, dest_local, dirname, dest_dirname, force=True)
-        _reset_connections(src_rp, dest_rp)
-        assert compare_recursive(src_rp, dest_rp, compare_hardlinks)
-
-
-def raise_interpreter(use_locals=None):
-    """Start Python interpreter, with local variables if locals is true"""
-    if use_locals:
-        local_dict = locals()
-    else:
-        local_dict = globals()
-    code.InteractiveConsole(local_dict).interact()
-
-
-def getrefs(i, depth):
-    """Get the i'th object in memory, return objects that reference it"""
-    import sys
-    import gc
-    import types
-
-    o = sys.getobjects(i)[-1]
-    for d in range(depth):
-        for ref in gc.get_referrers(o):
-            if type(ref) in (list, dict, types.InstanceType):
-                if type(ref) is dict and "copyright" in ref:
-                    continue
-                o = ref
-                break
-        else:
-            print("Max depth ", d)
-            return o
-    return o
 
 
 def iter_equal(iter1, iter2, verbose=None, operator=lambda x, y: x == y):

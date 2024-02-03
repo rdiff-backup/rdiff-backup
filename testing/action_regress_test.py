@@ -1,5 +1,5 @@
 """
-Test the remove action with api version >= 201
+Test the regress action with api version >= 201
 """
 
 import os
@@ -11,6 +11,8 @@ import fileset
 from rdiff_backup import Globals, rpath, Time
 from rdiffbackup.locations import _repo_shadow
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class ActionRegressTest(unittest.TestCase):
     """
@@ -18,7 +20,7 @@ class ActionRegressTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"action_regress")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"action_regress")
         self.from1_struct = {
             "from1": {
                 "contents": {

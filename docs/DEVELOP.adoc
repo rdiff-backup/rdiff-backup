@@ -264,6 +264,15 @@ That's it, you can now run the tests:
 
 For more details on testing, see the `test` sections in the link:../Makefile[Makefile] and the link:../.github/workflows[GitHub Actions].
 
+A naming convention has been introduced to be able to easily use https://pytest.org/[pytest] if we want so, e.g. with `pytest --cov --cov-config=tox.ini testing/*_test.py`.
+So, all "normal" test files are to be named `*_test.py`.
+Specific files are similarly called `*_SPECIFICtest.py` e.g. `generic_roottest.py` for (generic) root tests.
+All these files are placed under the `testing` directory.
+
+NOTE: the interest of `pytest` would be to parallelize tests, but this is currently difficult due to the usage of global variables.
+
+TIP: check the files `commontest.py` and `fileset.py` for reusable functions.
+
 == DEBUGGING
 
 === Trace back a coredump

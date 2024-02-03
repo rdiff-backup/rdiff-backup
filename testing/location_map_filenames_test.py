@@ -7,7 +7,10 @@ import unittest
 
 import commontest as comtst
 import fileset
+
 from rdiff_backup import Globals
+
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class LocationMapFilenamesTest(unittest.TestCase):
@@ -16,7 +19,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"location_map_filenames")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"location_map_filenames")
         # Windows can't handle too long filenames
         long_multi = 5 if os.name == "nt" else 25
         self.from1_struct = {
@@ -302,12 +305,14 @@ class LocationMapFilenamesUnitTest(unittest.TestCase):
         regexp, unregexp = map_filenames.get_quoting_regexps(
             chars_to_quote, Globals.quoting_char
         )
-        Globals.set_all("chars_to_quote", chars_to_quote)
-        Globals.set_all("chars_to_quote_regexp", regexp)
-        Globals.set_all("chars_to_quote_unregexp", unregexp)
+        Globals.chars_to_quote = chars_to_quote
+        Globals.chars_to_quote_regexp = regexp
+        Globals.chars_to_quote_unregexp = unregexp
 
         self.assertEqual(map_filenames.quote(b"aux.123"), b";097ux.123")
         self.assertEqual(map_filenames.quote(b"ends in space "), b"ends in space;032")
+
+        comtst.reset_connections()
 
 
 if __name__ == "__main__":

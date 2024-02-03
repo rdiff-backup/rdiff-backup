@@ -8,6 +8,8 @@ import unittest
 import commontest as comtst
 import fileset
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class LocationMapHardlinksTest(unittest.TestCase):
     """
@@ -15,7 +17,7 @@ class LocationMapHardlinksTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"location_map_hardlinks")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"location_map_hardlinks")
         self.from1_struct = {
             "from1": {
                 "contents": {

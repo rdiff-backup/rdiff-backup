@@ -1,5 +1,5 @@
 """
-Test the basic backup and restore actions with api version >= 201
+Test the calculate action with api version >= 201
 """
 
 import glob
@@ -11,6 +11,8 @@ import unittest
 import commontest as comtst
 import fileset
 
+TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+
 
 class ActionCalculateTest(unittest.TestCase):
     """
@@ -18,7 +20,7 @@ class ActionCalculateTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.base_dir = os.path.join(comtst.abs_test_dir, b"action_calculate")
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"action_calculate")
         # Windows can't handle too long filenames
         long_multi = 10 if os.name == "nt" else 25
         self.from1_struct = {

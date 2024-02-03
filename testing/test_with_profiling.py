@@ -1,6 +1,6 @@
+import os
 import profile
 import pstats
-import os
 
 # if you need to profile a certain test, replace the "metadatatest" placeholder
 # with the test you want to profile and all functions will get imported into
