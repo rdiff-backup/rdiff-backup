@@ -7,28 +7,22 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    remove_dir,
-    rdiff_backup,
-    RBBin,
-    SetConnections,
-    os_system,
-)
 
-from rdiff_backup import Globals, rpath, Security
+from rdiff_backup import Globals, rpath, Security, SetConnections
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class SecurityTest(unittest.TestCase):
-    various_files_dir = os.path.join(old_test_dir, b"various_file_types")
+    various_files_dir = os.path.join(comtst.old_test_dir, b"various_file_types")
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
     restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
 
     def test_vet_request_ro(self):
         """Test vetting of ConnectionRequests on read-only server"""
-        remote_cmd = b"%s server --restrict-path foo --restrict-mode read-only" % RBBin
+        remote_cmd = (
+            b"%s server --restrict-path foo --restrict-mode read-only" % comtst.RBBin
+        )
         conn = SetConnections._init_connection(remote_cmd)
         self.assertIsInstance(conn.os.getuid(), int)
         with self.assertRaises(Security.Violation):
@@ -38,7 +32,7 @@ class SecurityTest(unittest.TestCase):
     def test_vet_request_minimal(self):
         """Test vetting of ConnectionRequests on minimal server"""
         remote_cmd = (
-            b"%s server --restrict-path foo --restrict-mode update-only" % RBBin
+            b"%s server --restrict-path foo --restrict-mode update-only" % comtst.RBBin
         )
         conn = SetConnections._init_connection(remote_cmd)
         self.assertIsInstance(conn.os.getuid(), int)
@@ -49,7 +43,7 @@ class SecurityTest(unittest.TestCase):
     def test_vet_rpath(self):
         """Test to make sure rpaths not in restricted path will be rejected"""
         remote_cmd = (
-            b"%s server --restrict-path foo --restrict-mode update-only" % RBBin
+            b"%s server --restrict-path foo --restrict-mode update-only" % comtst.RBBin
         )
         conn = SetConnections._init_connection(remote_cmd)
 
@@ -69,7 +63,9 @@ class SecurityTest(unittest.TestCase):
 
     def test_vet_rpath_root(self):
         """Test vetting when restricted to root"""
-        remote_cmd = b"%s server --restrict-path / --restrict-mode update-only" % RBBin
+        remote_cmd = (
+            b"%s server --restrict-path / --restrict-mode update-only" % comtst.RBBin
+        )
         conn = SetConnections._init_connection(remote_cmd)
         for rp in [
             rpath.RPath(Globals.local_connection, "blahblah"),
@@ -94,12 +90,12 @@ class SecurityTest(unittest.TestCase):
             current_time = int(time.time())
 
         if in_local:
-            out_dir = b"%b server %b::%b" % (RBBin, restrict_args, out_dir)
+            out_dir = b"%b server %b::%b" % (comtst.RBBin, restrict_args, out_dir)
         else:
-            in_dir = b"%b server %b::%b" % (RBBin, restrict_args, in_dir)
+            in_dir = b"%b server %b::%b" % (comtst.RBBin, restrict_args, in_dir)
 
         cmdline = [
-            RBBin,
+            comtst.RBBin,
             b"--current-time",
             b"%i" % current_time,
             b"--remote-schema",
@@ -109,7 +105,7 @@ class SecurityTest(unittest.TestCase):
         cmdline.append(in_dir)
         cmdline.append(out_dir)
         print("Executing:", cmdline)
-        exit_val = os_system(cmdline)
+        exit_val = comtst.os_system(cmdline)
         if expected_ret_code is not None:
             self.assertEqual(exit_val, expected_ret_code)
 
@@ -120,7 +116,7 @@ class SecurityTest(unittest.TestCase):
         work, (initial backup, incremental, restore).
 
         """
-        remove_dir(self.out_dir)
+        comtst.remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
@@ -136,7 +132,7 @@ class SecurityTest(unittest.TestCase):
             b"--restrict-path %b/" % self.out_dir,
         )
 
-        remove_dir(self.restore_dir)
+        comtst.remove_dir(self.restore_dir)
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
@@ -149,8 +145,8 @@ class SecurityTest(unittest.TestCase):
         """Test that --restrict switch denies certain operations"""
         # Backup to wrong directory
         output2_dir = self.out_dir + b"2"
-        remove_dir(self.out_dir)
-        remove_dir(output2_dir)
+        comtst.remove_dir(self.out_dir)
+        comtst.remove_dir(output2_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             output2_dir,
@@ -160,9 +156,9 @@ class SecurityTest(unittest.TestCase):
         )
 
         # Restore to wrong directory
-        remove_dir(self.out_dir)
-        remove_dir(self.restore_dir)
-        rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
+        comtst.remove_dir(self.out_dir)
+        comtst.remove_dir(self.restore_dir)
+        comtst.rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
@@ -173,8 +169,8 @@ class SecurityTest(unittest.TestCase):
         )
 
         # Backup from wrong directory
-        remove_dir(self.out_dir)
-        wrong_files_dir = os.path.join(old_test_dir, b"foobar")
+        comtst.remove_dir(self.out_dir)
+        wrong_files_dir = os.path.join(comtst.old_test_dir, b"foobar")
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
@@ -187,8 +183,8 @@ class SecurityTest(unittest.TestCase):
         """
         Test that --restrict-mode read-only switch doesn't impair normal ops
         """
-        remove_dir(self.out_dir)
-        remove_dir(self.restore_dir)
+        comtst.remove_dir(self.out_dir)
+        comtst.remove_dir(self.restore_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
@@ -210,7 +206,7 @@ class SecurityTest(unittest.TestCase):
     def test_restrict_readonly_negative(self):
         """Test that --restrict-mode read-only doesn't allow too much"""
         # Backup to restricted directory
-        remove_dir(self.out_dir)
+        comtst.remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
@@ -220,9 +216,9 @@ class SecurityTest(unittest.TestCase):
         )
 
         # Restore to restricted directory
-        remove_dir(self.out_dir)
-        remove_dir(self.restore_dir)
-        rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
+        comtst.remove_dir(self.out_dir)
+        comtst.remove_dir(self.restore_dir)
+        comtst.rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
@@ -234,8 +230,10 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_updateonly_positive(self):
         """Test that --restrict-mode update-only allows intended use"""
-        remove_dir(self.out_dir)
-        rdiff_backup(1, 1, self.various_files_dir, self.out_dir, current_time=10000)
+        comtst.remove_dir(self.out_dir)
+        comtst.rdiff_backup(
+            1, 1, self.various_files_dir, self.out_dir, current_time=10000
+        )
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
@@ -245,7 +243,7 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_updateonly_negative(self):
         """Test that --restrict-mode update-only impairs unintended"""
-        remove_dir(self.out_dir)
+        comtst.remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
@@ -254,9 +252,9 @@ class SecurityTest(unittest.TestCase):
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
-        remove_dir(self.out_dir)
-        remove_dir(self.restore_dir)
-        rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
+        comtst.remove_dir(self.out_dir)
+        comtst.remove_dir(self.restore_dir)
+        comtst.rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
@@ -268,7 +266,7 @@ class SecurityTest(unittest.TestCase):
 
     def test_restrict_bug(self):
         """Test for bug 14209 --- mkdir outside --restrict arg"""
-        remove_dir(self.out_dir)
+        comtst.remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
@@ -281,7 +279,7 @@ class SecurityTest(unittest.TestCase):
 
     def test_quoting_bug(self):
         """Test for bug 14545 --- quoting causes bad violation"""
-        remove_dir(self.out_dir)
+        comtst.remove_dir(self.out_dir)
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,

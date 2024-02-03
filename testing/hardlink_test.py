@@ -7,15 +7,6 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    re_init_rpath_dir,
-    compare_recursive,
-    InternalBackup,
-    InternalRestore,
-    reset_hardlink_dicts,
-    xcopytree,
-)
 import fileset
 
 from rdiff_backup import Globals, rpath, selection
@@ -30,7 +21,7 @@ class HardlinkTest(unittest.TestCase):
 
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
-    hlinks_dir = os.path.join(old_test_dir, b"hardlinks")
+    hlinks_dir = os.path.join(comtst.old_test_dir, b"hardlinks")
     hlinks_dir1 = os.path.join(hlinks_dir, b"dir1")
     hlinks_dir1copy = os.path.join(hlinks_dir, b"dir1copy")
     hlinks_dir2 = os.path.join(hlinks_dir, b"dir2")
@@ -44,18 +35,22 @@ class HardlinkTest(unittest.TestCase):
 
     def testEquality(self):
         """Test rorp_eq function in conjunction with compare_recursive"""
-        self.assertTrue(compare_recursive(self.hlinks_rp1, self.hlinks_rp1copy))
+        self.assertTrue(comtst.compare_recursive(self.hlinks_rp1, self.hlinks_rp1copy))
         self.assertTrue(
-            compare_recursive(self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=None)
+            comtst.compare_recursive(
+                self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=None
+            )
         )
         self.assertFalse(
-            compare_recursive(self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=1)
+            comtst.compare_recursive(
+                self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=1
+            )
         )
 
     def testBuildingDict(self):
         """See if the partial inode dictionary is correct"""
         Globals.preserve_hardlinks = 1
-        reset_hardlink_dicts()
+        comtst.reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp3).get_select_iter():
             map_hardlinks.add_rorp(dsrp)
 
@@ -63,13 +58,13 @@ class HardlinkTest(unittest.TestCase):
 
     def testCompletedDict(self):
         """See if the hardlink dictionaries are built correctly"""
-        reset_hardlink_dicts()
+        comtst.reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp1).get_select_iter():
             map_hardlinks.add_rorp(dsrp)
             map_hardlinks.del_rorp(dsrp)
         self.assertEqual(map_hardlinks._inode_index, {})
 
-        reset_hardlink_dicts()
+        comtst.reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp2).get_select_iter():
             map_hardlinks.add_rorp(dsrp)
             map_hardlinks.del_rorp(dsrp)
@@ -81,7 +76,7 @@ class HardlinkTest(unittest.TestCase):
             self.hlinks_dir1,
             self.hlinks_dir2,
             self.hlinks_dir3,
-            os.path.join(old_test_dir, b"various_file_types"),
+            os.path.join(comtst.old_test_dir, b"various_file_types"),
         ]
         comtst.backup_restore_series(
             None, None, dirlist, compare_hardlinks=1, test_base_dir=TEST_BASE_DIR
@@ -93,7 +88,7 @@ class HardlinkTest(unittest.TestCase):
     def testInnerRestore(self):
         """Restore part of a dir, see if hard links preserved"""
         out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
-        re_init_rpath_dir(out_rp)
+        comtst.re_init_rpath_dir(out_rp)
         hlout1_dir = os.path.join(TEST_BASE_DIR, b"out_hardlink1")
         hlout2_dir = os.path.join(TEST_BASE_DIR, b"out_hardlink2")
 
@@ -117,7 +112,7 @@ class HardlinkTest(unittest.TestCase):
         hlout2 = rpath.RPath(Globals.local_connection, hlout2_dir)
         if hlout2.lstat():
             hlout2.delete()
-        xcopytree(hlout1_dir, hlout2_dir)
+        comtst.xcopytree(hlout1_dir, hlout2_dir)
         hlout2_sub = hlout2.append("subdir")
         hl2_1 = hlout2_sub.append("hardlink1")
         hl2_2 = hlout2_sub.append("hardlink2")
@@ -133,7 +128,7 @@ class HardlinkTest(unittest.TestCase):
         rpath.copy_attribs(hlout1_sub, hlout2_sub)
 
         # Now try backing up twice, making sure hard links are preserved
-        InternalBackup(1, 1, hlout1.path, self.out_dir)
+        comtst.InternalBackup(1, 1, hlout1.path, self.out_dir)
         out_subdir = out_rp.append("subdir")
         self.assertEqual(
             out_subdir.append("hardlink1").getinode(),
@@ -149,7 +144,7 @@ class HardlinkTest(unittest.TestCase):
         )
 
         time.sleep(1)
-        InternalBackup(1, 1, hlout2.path, self.out_dir)
+        comtst.InternalBackup(1, 1, hlout2.path, self.out_dir)
         out_subdir.setdata()
         self.assertEqual(
             out_subdir.append("hardlink1").getinode(),
@@ -175,7 +170,7 @@ class HardlinkTest(unittest.TestCase):
 
         if out2.lstat():
             out2.delete()
-        InternalRestore(1, 1, sub_dir, out2_dir, 1)
+        comtst.InternalRestore(1, 1, sub_dir, out2_dir, 1)
         out2.setdata()
         for rp in [hlout1, hlout2, hlout3, hlout4]:
             rp.setdata()
@@ -185,7 +180,7 @@ class HardlinkTest(unittest.TestCase):
 
         if out2.lstat():
             out2.delete()
-        InternalRestore(1, 1, sub_dir, out2_dir, int(time.time()))
+        comtst.InternalRestore(1, 1, sub_dir, out2_dir, int(time.time()))
         out2.setdata()
         for rp in [hlout1, hlout2, hlout3, hlout4]:
             rp.setdata()
@@ -221,7 +216,7 @@ class HardlinkTest(unittest.TestCase):
 
         # Setup initial backup
         out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
-        re_init_rpath_dir(out_rp)
+        comtst.re_init_rpath_dir(out_rp)
         hlsrc_dir = os.path.join(TEST_BASE_DIR, b"src_hardlink")
 
         hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
@@ -235,7 +230,7 @@ class HardlinkTest(unittest.TestCase):
         hl_file3 = hlsrc_sub.append("hardlink3")
         hl_file3.hardlink(hl_file1.path)
 
-        InternalBackup(1, 1, hlsrc.path, self.out_dir, 10000)
+        comtst.InternalBackup(1, 1, hlsrc.path, self.out_dir, 10000)
         out_subdir = out_rp.append("subdir")
         self.assertEqual(
             out_subdir.append("hardlink1").getinode(),
@@ -261,7 +256,7 @@ class HardlinkTest(unittest.TestCase):
         hl_file2 = hlsrc_sub.append("hardlink2")
         hl_file2.hardlink(hl_file1.path)
 
-        InternalBackup(1, 1, hlsrc.path, self.out_dir, 20000)
+        comtst.InternalBackup(1, 1, hlsrc.path, self.out_dir, 20000)
         self.assertEqual(
             out_subdir.append("hardlink1").getinode(),
             out_subdir.append("hardlink2").getinode(),
@@ -296,14 +291,14 @@ class HardlinkTest(unittest.TestCase):
 
         if restore_dir.lstat():
             restore_dir.delete()
-        InternalRestore(1, 1, sub_path, restore_path, 10000)
+        comtst.InternalRestore(1, 1, sub_path, restore_path, 10000)
         for rp in [hlrestore_file1, hlrestore_file3]:
             rp.setdata()
         self.assertEqual(hlrestore_file1.getinode(), hlrestore_file3.getinode())
 
         if restore_dir.lstat():
             restore_dir.delete()
-        InternalRestore(1, 1, sub_path, restore_path, 20000)
+        comtst.InternalRestore(1, 1, sub_path, restore_path, 20000)
         for rp in [hlrestore_file1, hlrestore_file2, hlrestore_file3]:
             rp.setdata()
         self.assertEqual(hlrestore_file1.getinode(), hlrestore_file2.getinode())
@@ -326,7 +321,7 @@ class HardlinkTest(unittest.TestCase):
 
         # Setup initial backup
         out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
-        re_init_rpath_dir(out_rp)
+        comtst.re_init_rpath_dir(out_rp)
         hlsrc_dir = os.path.join(TEST_BASE_DIR, b"src_hardlink")
 
         hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
@@ -340,7 +335,7 @@ class HardlinkTest(unittest.TestCase):
         hl_file2 = hlsrc_sub.append("hardlink2")
         hl_file2.hardlink(hl_file1.path)
 
-        InternalBackup(1, 1, hlsrc.path, self.out_dir, 10000)
+        comtst.InternalBackup(1, 1, hlsrc.path, self.out_dir, 10000)
         out_subdir = out_rp.append("subdir")
         self.assertEqual(
             out_subdir.append("hardlink1").getinode(),
@@ -366,7 +361,7 @@ class HardlinkTest(unittest.TestCase):
         hl_file3 = hlsrc_sub.append("hardlink3")
         rpath.rename(hl_file1, hl_file3)
 
-        InternalBackup(1, 1, hlsrc.path, self.out_dir, 20000)
+        comtst.InternalBackup(1, 1, hlsrc.path, self.out_dir, 20000)
         self.assertEqual(
             out_subdir.append("hardlink2").getinode(),
             out_subdir.append("hardlink3").getinode(),
@@ -397,14 +392,14 @@ class HardlinkTest(unittest.TestCase):
 
         if restore_dir.lstat():
             restore_dir.delete()
-        InternalRestore(1, 1, sub_path, restore_path, 10000)
+        comtst.InternalRestore(1, 1, sub_path, restore_path, 10000)
         for rp in [hlrestore_file1, hlrestore_file2]:
             rp.setdata()
         self.assertEqual(hlrestore_file1.getinode(), hlrestore_file2.getinode())
 
         if restore_dir.lstat():
             restore_dir.delete()
-        InternalRestore(1, 1, sub_path, restore_path, 20000)
+        comtst.InternalRestore(1, 1, sub_path, restore_path, 20000)
         for rp in [hlrestore_file2, hlrestore_file3]:
             rp.setdata()
         self.assertEqual(hlrestore_file2.getinode(), hlrestore_file3.getinode())

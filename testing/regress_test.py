@@ -8,13 +8,6 @@ import os
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    remove_dir,
-    compare_recursive,
-    rdiff_backup,
-    os_system,
-)
 
 from rdiff_backup import Globals, rpath, Time
 
@@ -30,7 +23,7 @@ class RegressTest(unittest.TestCase):
         incrp.append(
             rpath.RPath(
                 Globals.local_connection,
-                os.path.join(old_test_dir, b"increment%d" % (i + 1)),
+                os.path.join(comtst.old_test_dir, b"increment%d" % (i + 1)),
             )
         )
 
@@ -47,33 +40,33 @@ class RegressTest(unittest.TestCase):
         """
         self.out_rp.setdata()
         if self.out_rp.lstat():
-            remove_dir(self.out_dir)
+            comtst.remove_dir(self.out_dir)
 
-        rdiff_backup(1, 1, self.incrp[0].path, self.out_dir, current_time=10000)
-        self.assertTrue(compare_recursive(self.incrp[0], self.out_rp))
+        comtst.rdiff_backup(1, 1, self.incrp[0].path, self.out_dir, current_time=10000)
+        self.assertTrue(comtst.compare_recursive(self.incrp[0], self.out_rp))
 
-        rdiff_backup(1, 1, self.incrp[1].path, self.out_dir, current_time=20000)
-        self.assertTrue(compare_recursive(self.incrp[1], self.out_rp))
+        comtst.rdiff_backup(1, 1, self.incrp[1].path, self.out_dir, current_time=20000)
+        self.assertTrue(comtst.compare_recursive(self.incrp[1], self.out_rp))
 
-        rdiff_backup(1, 1, self.incrp[2].path, self.out_dir, current_time=30000)
-        self.assertTrue(compare_recursive(self.incrp[2], self.out_rp))
+        comtst.rdiff_backup(1, 1, self.incrp[2].path, self.out_dir, current_time=30000)
+        self.assertTrue(comtst.compare_recursive(self.incrp[2], self.out_rp))
 
-        rdiff_backup(1, 1, self.incrp[3].path, self.out_dir, current_time=40000)
-        self.assertTrue(compare_recursive(self.incrp[3], self.out_rp))
+        comtst.rdiff_backup(1, 1, self.incrp[3].path, self.out_dir, current_time=40000)
+        self.assertTrue(comtst.compare_recursive(self.incrp[3], self.out_rp))
 
         Globals.rbdir = self.out_rbdir_rp
 
         regress_function(30000)
         self.assertTrue(
-            compare_recursive(self.incrp[2], self.out_rp, compare_hardlinks=0)
+            comtst.compare_recursive(self.incrp[2], self.out_rp, compare_hardlinks=0)
         )
         regress_function(20000)
         self.assertTrue(
-            compare_recursive(self.incrp[1], self.out_rp, compare_hardlinks=0)
+            comtst.compare_recursive(self.incrp[1], self.out_rp, compare_hardlinks=0)
         )
         regress_function(10000)
         self.assertTrue(
-            compare_recursive(self.incrp[0], self.out_rp, compare_hardlinks=0)
+            comtst.compare_recursive(self.incrp[0], self.out_rp, compare_hardlinks=0)
         )
 
     def regress_to_time_local(self, time):
@@ -96,7 +89,7 @@ class RegressTest(unittest.TestCase):
         self.out_rbdir_rp.setdata()
         self.add_current_mirror(time)
 
-        rdiff_backup(
+        comtst.rdiff_backup(
             False,
             False,
             self.out_dir,
@@ -117,10 +110,10 @@ class RegressTest(unittest.TestCase):
         """Run regress test when regular file is unreadable"""
         self.out_rp.setdata()
         if self.out_rp.lstat():
-            remove_dir(self.out_dir)
+            comtst.remove_dir(self.out_dir)
         unreadable_rp = self.make_unreadable()
 
-        rdiff_backup(1, 1, unreadable_rp.path, self.out_dir, current_time=1)
+        comtst.rdiff_backup(1, 1, unreadable_rp.path, self.out_dir, current_time=1)
         rbdir = self.out_rp.append("rdiff-backup-data")
         marker = rbdir.append("current_mirror.2000-12-31T21:33:20-07:00.data")
         marker.touch()
@@ -128,7 +121,7 @@ class RegressTest(unittest.TestCase):
 
         cmd = (b"rdiff-backup", b"regress", self.out_dir)
         print("Executing:", cmd)
-        self.assertEqual(os_system(cmd), Globals.RET_CODE_WARN)
+        self.assertEqual(comtst.os_system(cmd), Globals.RET_CODE_WARN)
 
     def make_unreadable(self):
         """Make unreadable input directory
@@ -142,7 +135,7 @@ class RegressTest(unittest.TestCase):
             Globals.local_connection, os.path.join(TEST_BASE_DIR, b"regress")
         )
         if rp.lstat():
-            remove_dir(rp.path)
+            comtst.remove_dir(rp.path)
         rp.setdata()
         rp.mkdir()
         rp1 = rp.append("unreadable_dir")

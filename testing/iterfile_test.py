@@ -9,15 +9,7 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import rpath, Globals
-from rdiff_backup.iterfile import (
-    IterWrappingFile,
-    FileWrappingIter,
-    FileToMiscIter,
-    MiscIterToFile,
-    MiscIterFlush,
-    MiscIterFlushRepeat,
-)
+from rdiff_backup import Globals, iterfile, rpath
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -48,7 +40,9 @@ class testIterFile(unittest.TestCase):
         """Test iter to file conversion"""
         for itm in [self.iter1maker, self.iter2maker]:
             self.assertTrue(
-                comtst.iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm())))
+                comtst.iter_equal(
+                    itm(), iterfile.IterWrappingFile(iterfile.FileWrappingIter(itm()))
+                )
             )
 
     def testFile(self):
@@ -57,9 +51,9 @@ class testIterFile(unittest.TestCase):
         file1 = io.BytesIO(buf1)
         buf2 = b"goodbye" * 10000
         file2 = io.BytesIO(buf2)
-        file_iter = FileWrappingIter(iter([file1, file2]))
+        file_iter = iterfile.FileWrappingIter(iter([file1, file2]))
 
-        new_iter = IterWrappingFile(file_iter)
+        new_iter = iterfile.IterWrappingFile(file_iter)
         self.assertEqual(next(new_iter).read(), buf1)
         self.assertEqual(next(new_iter).read(), buf2)
 
@@ -68,7 +62,9 @@ class testIterFile(unittest.TestCase):
     def testFileException(self):
         """Test encoding a file which raises an exception"""
         f = FileException(200 * 1024)  # size depends on buffer size
-        new_iter = IterWrappingFile(FileWrappingIter(iter([f, b"foo"])))
+        new_iter = iterfile.IterWrappingFile(
+            iterfile.FileWrappingIter(iter([f, b"foo"]))
+        )
         f_out = next(new_iter)
         self.assertEqual(f_out.read(50000), b"a" * 50000)
         with self.assertRaises(OSError):
@@ -119,7 +115,7 @@ class testMiscIters(unittest.TestCase):
     def testBasic(self):
         """Test basic conversion"""
         rplist = [self.outputrp, self.regfile1, self.regfile2, self.regfile3]
-        i_out = FileToMiscIter(MiscIterToFile(iter(rplist)))
+        i_out = iterfile.FileToMiscIter(iterfile.MiscIterToFile(iter(rplist)))
 
         out1 = next(i_out)
         self.assertEqual(out1, self.outputrp)
@@ -143,8 +139,8 @@ class testMiscIters(unittest.TestCase):
     def testMix(self):
         """Test a mix of RPs and ordinary objects"""
         filelist = [5, self.regfile3, "hello"]
-        s = MiscIterToFile(iter(filelist)).read()
-        i_out = FileToMiscIter(io.BytesIO(s))
+        s = iterfile.MiscIterToFile(iter(filelist)).read()
+        i_out = iterfile.FileToMiscIter(io.BytesIO(s))
 
         out1 = next(i_out)
         self.assertEqual(out1, 5)
@@ -162,31 +158,31 @@ class testMiscIters(unittest.TestCase):
 
     def testFlush(self):
         """Test flushing property of MiscIterToFile"""
-        rplist = [self.outputrp, MiscIterFlush, self.outputrp]
-        filelike = MiscIterToFile(iter(rplist))
+        rplist = [self.outputrp, iterfile.MiscIterFlush, self.outputrp]
+        filelike = iterfile.MiscIterToFile(iter(rplist))
         new_filelike = io.BytesIO((filelike.read() + b"z" + filelike._i2b(0, 7)))
 
-        i_out = FileToMiscIter(new_filelike)
+        i_out = iterfile.FileToMiscIter(new_filelike)
         self.assertEqual(next(i_out), self.outputrp)
         self.assertRaises(StopIteration, i_out.__next__)
 
-        i_out2 = FileToMiscIter(filelike)
+        i_out2 = iterfile.FileToMiscIter(filelike)
         self.assertEqual(next(i_out2), self.outputrp)
         self.assertRaises(StopIteration, i_out2.__next__)
 
     @unittest.skipIf(os.name == "nt", "FIXME fails under Windows")
     def testFlushRepeat(self):
         """Test flushing like above, but have Flush obj emerge from iter"""
-        rplist = [self.outputrp, MiscIterFlushRepeat, self.outputrp]
-        filelike = MiscIterToFile(iter(rplist))
+        rplist = [self.outputrp, iterfile.MiscIterFlushRepeat, self.outputrp]
+        filelike = iterfile.MiscIterToFile(iter(rplist))
         new_filelike = io.BytesIO((filelike.read() + b"z" + filelike._i2b(0, 7)))
 
-        i_out = FileToMiscIter(new_filelike)
+        i_out = iterfile.FileToMiscIter(new_filelike)
         self.assertEqual(next(i_out), self.outputrp)
-        self.assertIs(next(i_out), MiscIterFlushRepeat)
+        self.assertIs(next(i_out), iterfile.MiscIterFlushRepeat)
         self.assertRaises(StopIteration, i_out.__next__)
 
-        i_out2 = FileToMiscIter(filelike)
+        i_out2 = iterfile.FileToMiscIter(filelike)
         self.assertEqual(next(i_out2), self.outputrp)
         self.assertRaises(StopIteration, i_out2.__next__)
 

@@ -7,12 +7,6 @@ import os
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    remove_dir,
-    rdiff_backup,
-    compare_recursive,
-)
 
 from rdiff_backup import Globals, rpath, Time
 
@@ -37,7 +31,7 @@ class LongNameTest(unittest.TestCase):
         NAME_MAX_LEN, so check to make sure it's accurate.
 
         """
-        remove_dir(self.out_rp.path)
+        comtst.remove_dir(self.out_rp.path)
         self.out_rp.mkdir()
 
         really_long = self.out_rp.append("a" * NAME_MAX_LEN)
@@ -54,8 +48,8 @@ class LongNameTest(unittest.TestCase):
         """Create two input directories with long filename(s) in them"""
         dir1 = self.root_rp.append("longname1")
         dir2 = self.root_rp.append("longname2")
-        remove_dir(dir1.path)
-        remove_dir(dir2.path)
+        comtst.remove_dir(dir1.path)
+        comtst.remove_dir(dir2.path)
 
         dir1.mkdir()
         rp11 = dir1.append("A" * NAME_MAX_LEN)
@@ -96,11 +90,11 @@ class LongNameTest(unittest.TestCase):
     def generic_test(self, inlocal, outlocal, extra_args, compare_back):
         """Used for some of the tests below"""
         in1, in2 = self.make_input_dirs()
-        remove_dir(self.out_rp.path)
+        comtst.remove_dir(self.out_rp.path)
         restore_dir = self.root_rp.append("longname_out")
 
         # Test backing up
-        rdiff_backup(
+        comtst.rdiff_backup(
             inlocal,
             outlocal,
             in1.path,
@@ -110,7 +104,7 @@ class LongNameTest(unittest.TestCase):
         )
         if compare_back:
             self.check_dir1(self.out_rp)
-        rdiff_backup(
+        comtst.rdiff_backup(
             inlocal,
             outlocal,
             in2.path,
@@ -122,8 +116,8 @@ class LongNameTest(unittest.TestCase):
             self.check_dir2(self.out_rp)
 
         # Now try restoring
-        remove_dir(restore_dir.path)
-        rdiff_backup(
+        comtst.remove_dir(restore_dir.path)
+        comtst.rdiff_backup(
             inlocal,
             outlocal,
             self.out_rp.path,
@@ -132,8 +126,8 @@ class LongNameTest(unittest.TestCase):
             extra_options=extra_args + (b"restore", b"--at", b"now"),
         )
         self.check_dir2(restore_dir)
-        remove_dir(restore_dir.path)
-        rdiff_backup(
+        comtst.remove_dir(restore_dir.path)
+        comtst.rdiff_backup(
             1,
             1,
             self.out_rp.path,
@@ -154,18 +148,18 @@ class LongNameTest(unittest.TestCase):
     def test_regress_basic(self):
         """Test regressing when increments would be too long"""
         in1, in2 = self.make_input_dirs()
-        remove_dir(self.out_rp.path)
+        comtst.remove_dir(self.out_rp.path)
         restore_dir = self.root_rp.append("longname_out")
-        remove_dir(restore_dir.path)
+        comtst.remove_dir(restore_dir.path)
 
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             in1.path,
             self.out_rp.path,
             10000,
         )
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             in2.path,
@@ -178,7 +172,7 @@ class LongNameTest(unittest.TestCase):
         comtst.rdiff_backup_action(True, True, self.out_rp, None, (), b"regress", ())
 
         # Restore in1 and compare
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             self.out_rp.path,
@@ -200,22 +194,22 @@ class LongNameTest(unittest.TestCase):
         """Test when socket name is saved to a backup directory with a long name
         It addresses an issue where socket wasn't created with mknod but
         with socket.socket and bind, which has a limit at 107 characters."""
-        input_dir = os.path.join(old_test_dir, b"select", b"filetypes")
+        input_dir = os.path.join(comtst.old_test_dir, b"select", b"filetypes")
         # create a target directory with a long name next to 107
         output_dir = os.path.join(TEST_BASE_DIR, b"tenletters" * 10)
-        remove_dir(output_dir)
+        comtst.remove_dir(output_dir)
         restore_dir = os.path.join(TEST_BASE_DIR, b"restoresme" * 10)
-        remove_dir(restore_dir)
+        comtst.remove_dir(restore_dir)
         # backup and restore the input directory with socket, then compare
-        rdiff_backup(True, True, input_dir, output_dir)
-        rdiff_backup(
+        comtst.rdiff_backup(True, True, input_dir, output_dir)
+        comtst.rdiff_backup(
             True,
             True,
             output_dir,
             restore_dir,
             extra_options=(b"restore", b"--at", b"0"),
         )
-        compare_recursive(
+        comtst.compare_recursive(
             rpath.RPath(Globals.local_connection, input_dir),
             rpath.RPath(Globals.local_connection, restore_dir),
         )

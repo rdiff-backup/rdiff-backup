@@ -10,16 +10,6 @@ import os
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    remove_dir,
-    re_init_rpath_dir,
-    compare_recursive,
-    rdiff_backup,
-    RBBin,
-    xcopytree,
-    os_system,
-)
 
 from rdiff_backup import Globals, rpath
 
@@ -45,7 +35,7 @@ class BaseRootTest(unittest.TestCase):
 
     def _run_cmd(self, cmd, expect_rc=Globals.RET_CODE_OK):
         print("Running: ", cmd)
-        rc = os_system(cmd)
+        rc = comtst.os_system(cmd)
         self.assertEqual(
             rc, expect_rc, "Command '{cmd}' failed with rc={rc}".format(cmd=cmd, rc=rc)
         )
@@ -53,14 +43,14 @@ class BaseRootTest(unittest.TestCase):
 
 class RootTest(BaseRootTest):
     dirlist1 = [
-        os.path.join(old_test_dir, b"root"),
-        os.path.join(old_test_dir, b"various_file_types"),
-        os.path.join(old_test_dir, b"increment4"),
+        os.path.join(comtst.old_test_dir, b"root"),
+        os.path.join(comtst.old_test_dir, b"various_file_types"),
+        os.path.join(comtst.old_test_dir, b"increment4"),
     ]
     dirlist2 = [
-        os.path.join(old_test_dir, b"increment4"),
-        os.path.join(old_test_dir, b"root"),
-        os.path.join(old_test_dir, b"increment1"),
+        os.path.join(comtst.old_test_dir, b"increment4"),
+        os.path.join(comtst.old_test_dir, b"root"),
+        os.path.join(comtst.old_test_dir, b"increment1"),
     ]
 
     def testLocal1(self):
@@ -93,7 +83,7 @@ class RootTest(BaseRootTest):
         )
 
         def make_dir():
-            re_init_rpath_dir(dirrp)
+            comtst.re_init_rpath_dir(dirrp)
             rp1 = dirrp.append("file1")
             rp2 = dirrp.append("file2")
             rp3 = dirrp.append("file3")
@@ -113,7 +103,7 @@ class RootTest(BaseRootTest):
         make_dir()
         dirlist = [
             os.path.join(TEST_BASE_DIR, b"root_owner"),
-            os.path.join(old_test_dir, b"empty"),
+            os.path.join(comtst.old_test_dir, b"empty"),
             os.path.join(TEST_BASE_DIR, b"root_owner"),
         ]
         comtst.backup_restore_series(
@@ -136,7 +126,7 @@ class RootTest(BaseRootTest):
             rp = rpath.RPath(
                 Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
             )
-            re_init_rpath_dir(rp)
+            comtst.re_init_rpath_dir(rp)
             rp1 = rp.append("1")
             rp1.touch()
             rp2 = rp.append("2")
@@ -163,11 +153,11 @@ class RootTest(BaseRootTest):
         user_map, group_map = write_mapping_files(in_rp)
         out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         if out_rp.lstat():
-            remove_dir(out_rp.path)
+            comtst.remove_dir(out_rp.path)
 
         self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
 
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             0,
             in_rp.path,
@@ -195,7 +185,7 @@ class RootTest(BaseRootTest):
             rp = rpath.RPath(
                 Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
             )
-            re_init_rpath_dir(rp)
+            comtst.re_init_rpath_dir(rp)
             rp1 = rp.append("1")
             rp1.touch()
             rp2 = rp.append("2")
@@ -213,11 +203,11 @@ class RootTest(BaseRootTest):
         in_rp = write_ownership_dir()
         out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         if out_rp.lstat():
-            remove_dir(out_rp.path)
+            comtst.remove_dir(out_rp.path)
 
         self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
 
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             0,
             in_rp.path,
@@ -240,7 +230,7 @@ class HalfRoot(BaseRootTest):
         rp1 = rpath.RPath(
             Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_half1")
         )
-        re_init_rpath_dir(rp1)
+        comtst.re_init_rpath_dir(rp1)
         rp1_1 = rp1.append("foo")
         rp1_1.write_string("hello")
         rp1_1.chmod(0)
@@ -263,7 +253,7 @@ class HalfRoot(BaseRootTest):
         rp2 = rpath.RPath(
             Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_half2")
         )
-        re_init_rpath_dir(rp2)
+        comtst.re_init_rpath_dir(rp2)
         rp2_1 = rp2.append("foo")
         rp2_1.write_string("goodbye")
         rp2_1.chmod(0)
@@ -305,7 +295,7 @@ class HalfRoot(BaseRootTest):
         rp_new = rp.append("lala")
         rp_new.write_string("asoentuh")
         rp_new.chmod(0)
-        self.assertEqual(os_system((b"chown", user.encode(), rp_new.path)), 0)
+        self.assertEqual(comtst.os_system((b"chown", user.encode(), rp_new.path)), 0)
         rp1_3 = rp.append("unreadable_dir")
         rp1_3.chmod(0o700)
         rp1_3_1 = rp1_3.append("file_inside")
@@ -319,11 +309,11 @@ class HalfRoot(BaseRootTest):
         """Test back up, simple restores"""
         in_rp1, in_rp2 = self.make_dirs()
         outrp = rpath.RPath(Globals.local_connection, self.out_dir)
-        re_init_rpath_dir(outrp, userid)
-        remote_schema = b'su -c "%s server" %s' % (RBBin, user.encode())
+        comtst.re_init_rpath_dir(outrp, userid)
+        remote_schema = b'su -c "%s server" %s' % (comtst.RBBin, user.encode())
 
         cmd1 = (
-            RBBin,
+            comtst.RBBin,
             b"--current-time",
             b"10000",
             b"--remote-schema",
@@ -337,7 +327,7 @@ class HalfRoot(BaseRootTest):
         outrp.setdata()
 
         cmd2 = (
-            RBBin,
+            comtst.RBBin,
             b"--current-time",
             b"20000",
             b"--remote-schema",
@@ -351,9 +341,9 @@ class HalfRoot(BaseRootTest):
         outrp.setdata()
 
         rout_rp = rpath.RPath(Globals.local_connection, self.restore_dir)
-        remove_dir(rout_rp.path)
+        comtst.remove_dir(rout_rp.path)
         cmd3 = (
-            RBBin,
+            comtst.RBBin,
             b"--remote-schema",
             b"{h}",
             b"restore",
@@ -363,15 +353,15 @@ class HalfRoot(BaseRootTest):
             rout_rp.path,
         )
         self._run_cmd(cmd3)
-        self.assertTrue(compare_recursive(in_rp1, rout_rp))
+        self.assertTrue(comtst.compare_recursive(in_rp1, rout_rp))
         rout_perms = rout_rp.append("unreadable_dir").getperms()
         outrp_perms = outrp.append("unreadable_dir").getperms()
         self.assertEqual(rout_perms, 0)
         self.assertEqual(outrp_perms, 0)
 
-        remove_dir(rout_rp.path)
+        comtst.remove_dir(rout_rp.path)
         cmd4 = (
-            RBBin,
+            comtst.RBBin,
             b"--remote-schema",
             b"{h}",
             b"restore",
@@ -381,14 +371,19 @@ class HalfRoot(BaseRootTest):
             rout_rp.path,
         )
         self._run_cmd(cmd4)
-        self.assertTrue(compare_recursive(in_rp2, rout_rp))
+        self.assertTrue(comtst.compare_recursive(in_rp2, rout_rp))
         rout_perms = rout_rp.append("unreadable_dir").getperms()
         outrp_perms = outrp.append("unreadable_dir").getperms()
         self.assertEqual(rout_perms, 0)
         self.assertEqual(outrp_perms, 0)
 
         self.cause_regress(outrp)
-        cmd5 = (b"su", b"-c", b"%s regress %s" % (RBBin, outrp.path), user.encode())
+        cmd5 = (
+            b"su",
+            b"-c",
+            b"%s regress %s" % (comtst.RBBin, outrp.path),
+            user.encode(),
+        )
         self._run_cmd(cmd5, Globals.RET_CODE_WARN)
 
 
@@ -406,7 +401,7 @@ class NonRoot(BaseRootTest):
         rp = rpath.RPath(
             Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_out1")
         )
-        re_init_rpath_dir(rp)
+        comtst.re_init_rpath_dir(rp)
         rp1 = rp.append("1")
         rp1.touch()
         rp2 = rp.append("2")
@@ -422,20 +417,20 @@ class NonRoot(BaseRootTest):
             Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_out2")
         )
         if sp.lstat():
-            remove_dir(sp.path)
-        xcopytree(rp.path, sp.path)
+            comtst.remove_dir(sp.path)
+        comtst.xcopytree(rp.path, sp.path)
         rp2 = sp.append("2")
         rp2.chown(2, 2)
         rp3 = sp.append("3")
         rp3.chown(1, 1)
-        self.assertFalse(compare_recursive(rp, sp, compare_ownership=1))
+        self.assertFalse(comtst.compare_recursive(rp, sp, compare_ownership=1))
 
         return rp, sp
 
     def backup(self, input_rp, output_rp, time):
         global user
         backup_cmd = b"%s --current-time %i backup --no-compare-inode %b %b" % (
-            RBBin,
+            comtst.RBBin,
             time,
             input_rp.path,
             output_rp.path,
@@ -443,10 +438,10 @@ class NonRoot(BaseRootTest):
         self._run_cmd((b"su", user.encode(), b"-c", backup_cmd))
 
     def restore(self, dest_rp, restore_rp, time=None):
-        remove_dir(restore_rp.path)
+        comtst.remove_dir(restore_rp.path)
         if time is None or time == "now":
             restore_cmd = (
-                RBBin,
+                comtst.RBBin,
                 b"restore",
                 b"--at",
                 b"now",
@@ -455,7 +450,7 @@ class NonRoot(BaseRootTest):
             )
         else:
             restore_cmd = (
-                RBBin,
+                comtst.RBBin,
                 b"restore",
                 b"--at",
                 b"%i" % time,
@@ -469,29 +464,39 @@ class NonRoot(BaseRootTest):
         input_rp1, input_rp2 = self.make_root_dirs()
         Globals.change_ownership = 1
         output_rp = rpath.RPath(Globals.local_connection, self.out_dir)
-        re_init_rpath_dir(output_rp, userid)
+        comtst.re_init_rpath_dir(output_rp, userid)
         restore_rp = rpath.RPath(Globals.local_connection, self.restore_dir)
         empty_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(old_test_dir, b"empty")
+            Globals.local_connection, os.path.join(comtst.old_test_dir, b"empty")
         )
 
         self.backup(input_rp1, output_rp, 1000000)
         self.restore(output_rp, restore_rp)
-        self.assertTrue(compare_recursive(input_rp1, restore_rp, compare_ownership=1))
+        self.assertTrue(
+            comtst.compare_recursive(input_rp1, restore_rp, compare_ownership=1)
+        )
 
         self.backup(input_rp2, output_rp, 2000000)
         self.restore(output_rp, restore_rp)
-        self.assertTrue(compare_recursive(input_rp2, restore_rp, compare_ownership=1))
+        self.assertTrue(
+            comtst.compare_recursive(input_rp2, restore_rp, compare_ownership=1)
+        )
 
         self.backup(empty_rp, output_rp, 3000000)
         self.restore(output_rp, restore_rp)
-        self.assertTrue(compare_recursive(empty_rp, restore_rp, compare_ownership=1))
+        self.assertTrue(
+            comtst.compare_recursive(empty_rp, restore_rp, compare_ownership=1)
+        )
 
         self.restore(output_rp, restore_rp, 1000000)
-        self.assertTrue(compare_recursive(input_rp1, restore_rp, compare_ownership=1))
+        self.assertTrue(
+            comtst.compare_recursive(input_rp1, restore_rp, compare_ownership=1)
+        )
 
         self.restore(output_rp, restore_rp, 2000000)
-        self.assertTrue(compare_recursive(input_rp2, restore_rp, compare_ownership=1))
+        self.assertTrue(
+            comtst.compare_recursive(input_rp2, restore_rp, compare_ownership=1)
+        )
 
 
 if __name__ == "__main__":

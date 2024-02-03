@@ -7,7 +7,6 @@ with those.
 import unittest
 
 import commontest as comtst
-from commontest import re_init_rpath_dir, rdiff_backup
 
 from rdiff_backup import rpath, Globals
 
@@ -32,7 +31,7 @@ class BrokenRepoTest(unittest.TestCase):
 
         # create an empty directory
         test_base_rp = self.makerp(TEST_BASE_DIR).append("dupl_meta_time")
-        re_init_rpath_dir(test_base_rp)
+        comtst.re_init_rpath_dir(test_base_rp)
 
         # create enough incremental backups to have one metadata snapshot
         # in-between, which we can manipulate to simulate the error
@@ -41,7 +40,7 @@ class BrokenRepoTest(unittest.TestCase):
         source_rp.mkdir()
         for suffix in range(1, 15):
             source_rp.append("file%02d" % suffix).touch()
-            rdiff_backup(
+            comtst.rdiff_backup(
                 1,
                 1,
                 source_rp.__fspath__(),
@@ -62,10 +61,12 @@ class BrokenRepoTest(unittest.TestCase):
         rpath.copy(meta_snapshot_rp, meta_dupldiff_rp)
 
         # this succeeds
-        rdiff_backup(1, 1, target_rp.__fspath__(), None, extra_options=b"regress")
+        comtst.rdiff_backup(
+            1, 1, target_rp.__fspath__(), None, extra_options=b"regress"
+        )
         # now this should fail
         source_rp.append("file15").touch()
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             source_rp.__fspath__(),
@@ -74,7 +75,7 @@ class BrokenRepoTest(unittest.TestCase):
             expected_ret_code=Globals.RET_CODE_ERR,
         )
         # and this should also fail
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             target_rp.__fspath__(),
@@ -83,7 +84,7 @@ class BrokenRepoTest(unittest.TestCase):
             extra_options=b"regress",
         )
         # but this should succeed (with a warning)
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             target_rp.__fspath__(),
@@ -94,7 +95,7 @@ class BrokenRepoTest(unittest.TestCase):
         # now we can clean-up, getting rid of the duplicate metadata mirrors
         # NOTE: we could have cleaned-up even without checking/fixing the
         #       directory but this shouldn't be the recommended practice.
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             target_rp.__fspath__(),
@@ -109,7 +110,7 @@ class BrokenRepoTest(unittest.TestCase):
         )
         # and this should at last succeed
         source_rp.append("file16").touch()
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             source_rp.__fspath__(),

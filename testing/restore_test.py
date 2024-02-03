@@ -6,12 +6,6 @@ import os
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    remove_dir,
-    InternalRestore,
-    compare_recursive,
-)
 
 from rdiff_backup import Globals, log, rpath, Time
 from rdiffbackup.locations import _repo_shadow
@@ -20,7 +14,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 lc = Globals.local_connection
 restore_base_rp = rpath.RPath(
-    Globals.local_connection, os.path.join(old_test_dir, b"restoretest")
+    Globals.local_connection, os.path.join(comtst.old_test_dir, b"restoretest")
 )
 restore_base_filenames = restore_base_rp.listdir()
 mirror_time = 1041109438  # just some late time
@@ -153,38 +147,52 @@ class RestoreTest(unittest.TestCase):
         makerestoretest3.
 
         """
-        remove_dir(self.out_dir)
-        restore3_dir = os.path.join(old_test_dir, b"restoretest3")
+        comtst.remove_dir(self.out_dir)
+        restore3_dir = os.path.join(comtst.old_test_dir, b"restoretest3")
         target_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         inc1_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(old_test_dir, b"increment1")
+            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment1")
         )
         inc2_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(old_test_dir, b"increment2")
+            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment2")
         )
         inc3_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(old_test_dir, b"increment3")
+            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment3")
         )
         inc4_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(old_test_dir, b"increment4")
+            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment4")
         )
 
-        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 45000)
-        self.assertTrue(compare_recursive(inc4_rp, target_rp))
-        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 35000)
-        self.assertTrue(compare_recursive(inc3_rp, target_rp, compare_hardlinks=0))
-        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 25000)
-        self.assertTrue(compare_recursive(inc2_rp, target_rp, compare_hardlinks=0))
-        InternalRestore(mirror_local, dest_local, restore3_dir, self.out_dir, 5000)
-        self.assertTrue(compare_recursive(inc1_rp, target_rp, compare_hardlinks=0))
+        comtst.InternalRestore(
+            mirror_local, dest_local, restore3_dir, self.out_dir, 45000
+        )
+        self.assertTrue(comtst.compare_recursive(inc4_rp, target_rp))
+        comtst.InternalRestore(
+            mirror_local, dest_local, restore3_dir, self.out_dir, 35000
+        )
+        self.assertTrue(
+            comtst.compare_recursive(inc3_rp, target_rp, compare_hardlinks=0)
+        )
+        comtst.InternalRestore(
+            mirror_local, dest_local, restore3_dir, self.out_dir, 25000
+        )
+        self.assertTrue(
+            comtst.compare_recursive(inc2_rp, target_rp, compare_hardlinks=0)
+        )
+        comtst.InternalRestore(
+            mirror_local, dest_local, restore3_dir, self.out_dir, 5000
+        )
+        self.assertTrue(
+            comtst.compare_recursive(inc1_rp, target_rp, compare_hardlinks=0)
+        )
 
     def testRestoreNoincs(self):
         """Test restoring a directory with no increments, just mirror"""
-        remove_dir(self.out_dir)
-        InternalRestore(
+        comtst.remove_dir(self.out_dir)
+        comtst.InternalRestore(
             1,
             1,
-            os.path.join(old_test_dir, b"restoretest5", b"regular_file"),
+            os.path.join(comtst.old_test_dir, b"restoretest5", b"regular_file"),
             self.out_dir,
             10000,
         )

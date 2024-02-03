@@ -9,16 +9,9 @@ import sys
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    rdiff_backup,
-    iter_equal,
-    iter_map,
-)
 import fileset
 
-from rdiff_backup.selection import Select, GlobbingError, FilePrefixError
-from rdiff_backup import Globals, rpath
+from rdiff_backup import Globals, rpath, selection
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -34,12 +27,12 @@ class MatchingTest(unittest.TestCase):
 
     def setUp(self):
         # we need to change directory to be able to work with relative paths
-        os.chdir(old_test_dir)
+        os.chdir(comtst.old_test_dir)
         os.chdir(os.pardir)  # chdir one level up
         self.root = rpath.RPath(
             Globals.local_connection, "rdiff-backup_testfiles/select"
         )
-        self.Select = Select(self.root)
+        self.Select = selection.Select(self.root)
 
     def testRegexp(self):
         """Test regular expression selection func"""
@@ -55,15 +48,17 @@ class MatchingTest(unittest.TestCase):
 
     def testTupleInclude(self):
         """Test include selection function made from a regular filename"""
-        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf, b"foo", 1)
         self.assertRaises(
-            FilePrefixError,
+            selection.FilePrefixError, self.Select._glob_get_filename_sf, b"foo", 1
+        )
+        self.assertRaises(
+            selection.FilePrefixError,
             self.Select._glob_get_filename_sf,
             b"rdiff-backup_testfiles/sel",
             1,
         )
         self.assertRaises(
-            FilePrefixError,
+            selection.FilePrefixError,
             self.Select._glob_get_filename_sf,
             b"rdiff-backup_testfiles/selection",
             1,
@@ -81,15 +76,17 @@ class MatchingTest(unittest.TestCase):
 
     def testTupleExclude(self):
         """Test exclude selection function made from a regular filename"""
-        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf, b"foo", 0)
         self.assertRaises(
-            FilePrefixError,
+            selection.FilePrefixError, self.Select._glob_get_filename_sf, b"foo", 0
+        )
+        self.assertRaises(
+            selection.FilePrefixError,
             self.Select._glob_get_filename_sf,
             b"rdiff-backup_testfiles/sel",
             0,
         )
         self.assertRaises(
-            FilePrefixError,
+            selection.FilePrefixError,
             self.Select._glob_get_filename_sf,
             b"rdiff-backup_testfiles/selection",
             0,
@@ -274,19 +271,19 @@ rdiff-backup_testfiles/select/1/1
     def testGlobSFException(self):
         """testGlobSFException - see if globbing errors returned"""
         self.assertRaises(
-            GlobbingError,
+            selection.GlobbingError,
             self.Select._glob_get_normal_sf,
             b"rdiff-backup_testfiles/select/hello//there",
             1,
         )
         self.assertRaises(
-            FilePrefixError,
+            selection.FilePrefixError,
             self.Select._glob_get_sf,
             b"rdiff-backup_testfiles/whatever",
             1,
         )
         self.assertRaises(
-            FilePrefixError,
+            selection.FilePrefixError,
             self.Select._glob_get_sf,
             b"rdiff-backup_testfiles/?hello",
             0,
@@ -302,7 +299,7 @@ rdiff-backup_testfiles/select/1/1
         self.assertEqual(sf(self.makeext("foo/bar")), 1)
         self.assertEqual(sf(self.makeext("fOo/BaR")), 1)
         self.assertRaises(
-            FilePrefixError,
+            selection.FilePrefixError,
             self.Select._glob_get_sf,
             b"ignorecase:testfiles/sect/foo/bar",
             1,
@@ -353,7 +350,7 @@ rdiff-backup_testfiles/select/1/1
     def testRoot(self):
         """testRoot - / may be a counterexample to several of these.."""
         root = rpath.RPath(Globals.local_connection, "/")
-        select = Select(root)
+        select = selection.Select(root)
 
         self.assertEqual(select._glob_get_sf("/", 1)(root), 1)
         self.assertEqual(select._glob_get_sf("/foo", 1)(root), 1)
@@ -381,7 +378,7 @@ rdiff-backup_testfiles/select/1/1
     def testOtherFilesystems(self):
         """Test to see if --exclude-other-filesystems works correctly"""
         root = rpath.RPath(Globals.local_connection, "/")
-        select = Select(root)
+        select = selection.Select(root)
         sf = select._other_filesystems_get_sf(0)
         self.assertIsNone(sf(root))
         self.assertIsNone(
@@ -419,11 +416,11 @@ class ParseSelectionArgsTest(unittest.TestCase):
             self.root = rpath.RPath(
                 Globals.local_connection, "rdiff-backup_testfiles/select"
             )
-        self.Select = Select(self.root)
+        self.Select = selection.Select(self.root)
         self.Select.parse_selection_args(tuplelist, self.remake_filelists(filelists))
         self.assertTrue(
-            iter_equal(
-                iter_map(lambda dsrp: dsrp.index, self.Select.get_select_iter()),
+            comtst.iter_equal(
+                comtst.iter_map(lambda dsrp: dsrp.index, self.Select.get_select_iter()),
                 map(tuple_fsencode, indices),
                 verbose=1,
             )
@@ -801,7 +798,7 @@ class CommandTest(unittest.TestCase):
         emptydir = selrp.append("emptydir")
         emptydir.mkdir()
 
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             selrp.path,
@@ -832,7 +829,7 @@ class CommandTest(unittest.TestCase):
         emptyrp = testrp.append("empty")  # just to have something to backup
         emptyrp.mkdir()
 
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             testrp.path,

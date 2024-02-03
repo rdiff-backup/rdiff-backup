@@ -18,7 +18,6 @@ from rdiff_backup import (
     rpath,
     Security,
     selection,
-    SetConnections,
 )
 from rdiffbackup import actions, run
 from rdiffbackup.meta import ea, acl_posix

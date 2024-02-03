@@ -26,11 +26,10 @@ if len(sys.argv) > 2:
 try:
     if len(sys.argv) == 2:
         sys.path.insert(0, sys.argv[1])
-    import rdiff_backup.Security
-    from rdiff_backup.connection import PipeConnection
+    from rdiff_backup import connection, Security
 except (OSError, ImportError):
     print_usage()
     raise
 
-rdiff_backup.Security._security_level = "override"
-sys.exit(PipeConnection(sys.stdin.buffer, sys.stdout.buffer).Server())
+Security._security_level = "override"
+sys.exit(connection.PipeConnection(sys.stdin.buffer, sys.stdout.buffer).Server())

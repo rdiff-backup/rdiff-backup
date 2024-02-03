@@ -8,7 +8,6 @@ import subprocess
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, rdiff_backup
 
 from rdiff_backup import Globals
 
@@ -58,7 +57,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
             "repository should not already exists, previous test fail to clean-up. Run rm -Rf %s"
             % self.repo.decode("utf-8"),
         )
-        src = os.path.join(old_test_dir, reponame)
+        src = os.path.join(comtst.old_test_dir, reponame)
         subprocess.check_call([b"cp", b"-R", src, self.repo])
 
     def _find(self, search):
@@ -109,13 +108,13 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     def test_delete_with_file(self):
         self._copy_repo(b"restoretest4")
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b"tmp/changed"))
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"changed")
 
     def test_delete_with_directory(self):
         self._copy_repo(b"restoretest4")
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b"tmp"))
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"tmp")
 
     def test_delete_with_directory_with_perm(self):
@@ -125,13 +124,13 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         self._copy_repo(b"restoretest4")
         os.chmod(os.path.join(self.repo, b"tmp"), 0o400)
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b"tmp"))
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"tmp")
 
     def test_delete_with_deleted_directory(self):
         self._copy_repo(b"restoretest3")
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b"increment1"))
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"increment1")
 
     def test_delete_with_symlink(self):
@@ -139,7 +138,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         self._rdiff_backup_delete(
             to_delete=os.path.join(self.repo, b"various_file_types/symbolic_link")
         )
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"symbolic_link")
 
     def test_delete_with_hardlink(self):
@@ -149,13 +148,13 @@ class RdiffBackupDeleteTest(unittest.TestCase):
                 self.repo, b"various_file_types/two_hardlinked_files1"
             )
         )
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"two_hardlinked_files1")
 
     def test_delete_with_fifo(self):
         self._copy_repo(b"restoretest5")
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b"fifo"))
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             self.repo,
@@ -173,7 +172,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
                 b"various_file_types/\xd8\xab\xb1Wb\xae\xc5]\x8a\xbb\x15v*\xf4\x0f!\xf9>\xe2Y\x86\xbb\xab\xdbp\xb0\x84\x13k\x1d\xc2\xf1\xf5e\xa5U\x82\x9aUV\xa0\xf4\xdf4\xba\xfdX\x03\x82\x07s\xce\x9e\x8b\xb34\x04\x9f\x17 \xf4\x8f\xa6\xfa\x97\xab\xd8\xac\xda\x85\xdcKvC\xfa#\x94\x92\x9e\xc9\xb7\xc3_\x0f\x84g\x9aB\x11<=^\xdbM\x13\x96c\x8b\xa7|*\"\\'^$@#!(){}?+ ~` ",
             )
         )
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             self.repo,
@@ -185,13 +184,13 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     def test_delete_access_control_lists(self):
         self._copy_repo(b"restoretest3")
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b"increment1"))
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"increment1")
 
     def test_extended_attributes(self):
         self._copy_repo(b"restoretest3")
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b"newdir2"))
-        rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
+        comtst.rdiff_backup(1, 1, self.repo, None, extra_options=b"verify")
         self.assertNotFound(b"newdir2")
 
     def test_delete_with_dryrun(self):
@@ -199,7 +198,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         self._rdiff_backup_delete(
             to_delete=os.path.join(self.repo, b"tmp"), extra_args=[b"--dry-run"]
         )
-        rdiff_backup(
+        comtst.rdiff_backup(
             1,
             1,
             self.repo,

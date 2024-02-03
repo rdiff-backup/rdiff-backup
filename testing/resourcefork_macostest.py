@@ -4,6 +4,7 @@ Test resource forks under MacOSX
 None of these tests should work unless your system supports resource
 forks. So basically these tests should only be run on Mac OS X.
 """
+
 import unittest
 
 import commontest as comtst

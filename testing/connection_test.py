@@ -9,13 +9,7 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup.connection import (
-    LowLevelPipeConnection,
-    PipeConnection,
-    VirtualFile,
-    SetConnections,
-)
-from rdiff_backup import Globals, rpath, Security
+from rdiff_backup import connection, Globals, rpath, Security, SetConnections
 from rdiffbackup.locations.map import filenames as map_filenames
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
@@ -72,7 +66,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
     def testObjects(self):
         """Try moving objects across connection"""
         with open(self.filename, "wb") as outpipe:
-            LLPC = LowLevelPipeConnection(None, outpipe)
+            LLPC = connection.LowLevelPipeConnection(None, outpipe)
             for obj in self.objs:
                 LLPC._putobj(obj, 3)
         with open(self.filename, "rb") as inpipe:
@@ -85,7 +79,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
     def testBuf(self):
         """Try moving a buffer"""
         with open(self.filename, "wb") as outpipe:
-            LLPC = LowLevelPipeConnection(None, outpipe)
+            LLPC = connection.LowLevelPipeConnection(None, outpipe)
             with open(regfilename, "rb") as inpipe:
                 inbuf = inpipe.read()
             LLPC._putbuf(inbuf, 234)
@@ -97,7 +91,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
     def testSendingExceptions(self):
         """Exceptions should also be sent down pipe well"""
         with open(self.filename, "wb") as outpipe:
-            LLPC = LowLevelPipeConnection(None, outpipe)
+            LLPC = connection.LowLevelPipeConnection(None, outpipe)
             for exception in self.excts:
                 LLPC._putobj(exception, 0)
         with open(self.filename, "rb") as inpipe:
@@ -121,7 +115,7 @@ class PipeConnectionTest(unittest.TestCase):
             close_fds=True,
         )
         (stdin, stdout) = (self.p.stdin, self.p.stdout)
-        self.conn = PipeConnection(stdout, stdin, process=self.p)
+        self.conn = connection.PipeConnection(stdout, stdin, process=self.p)
         Security._security_level = "override"
 
     def testBasic(self):
@@ -143,7 +137,7 @@ class PipeConnectionTest(unittest.TestCase):
         temp_file = os.path.join(TEST_BASE_DIR, b"tempout")
 
         tempout = self.conn.open(temp_file, "wb")
-        self.assertIsInstance(tempout, VirtualFile)
+        self.assertIsInstance(tempout, connection.VirtualFile)
         regfilefp = open(regfilename, "rb")
         rpath.copyfileobj(regfilefp, tempout)
         tempout.close()
@@ -253,7 +247,7 @@ class LengthyConnectionTest(unittest.TestCase):
             close_fds=True,
         )
         (stdin, stdout) = (self.p.stdin, self.p.stdout)
-        self.conn = PipeConnection(stdout, stdin, process=self.p)
+        self.conn = connection.PipeConnection(stdout, stdin, process=self.p)
         Security._security_level = "override"
         # the sleep command should never be finished at this stage
         self.conn.quit()

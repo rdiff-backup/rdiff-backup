@@ -9,12 +9,6 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import (
-    old_test_dir,
-    re_init_subdir,
-    re_init_rpath_dir,
-    os_system,
-)
 import fileset
 
 from rdiff_backup import Globals, rpath
@@ -25,9 +19,9 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 class RPathTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
     lc = Globals.local_connection
-    mainprefix = old_test_dir
+    mainprefix = comtst.old_test_dir
     prefix = os.path.join(mainprefix, b"various_file_types")
-    write_dir = re_init_subdir(TEST_BASE_DIR, b"rpathtests")
+    write_dir = comtst.re_init_subdir(TEST_BASE_DIR, b"rpathtests")
     rp_prefix = rpath.RPath(lc, prefix, ())
 
 
@@ -379,11 +373,11 @@ class FileIO(RPathTest):
             fp_out.write(s)
         if os.name == "nt":
             self.assertEqual(
-                os_system((b"7z", b"x", b"-o%s" % self.out_dir, file_gz)), 0
+                comtst.os_system((b"7z", b"x", b"-o%s" % self.out_dir, file_gz)), 0
             )
-            os_system((b"cmd", b"/c", b"del", file_gz))
+            comtst.os_system((b"cmd", b"/c", b"del", file_gz))
         else:
-            self.assertEqual(os_system((b"gunzip", file_gz)), 0)
+            self.assertEqual(comtst.os_system((b"gunzip", file_gz)), 0)
         with rp_nogz.open("rb") as fp_in:
             self.assertEqual(fp_in.read(), s)
 
@@ -408,10 +402,13 @@ class FileIO(RPathTest):
 
         if os.name == "nt":
             self.assertEqual(
-                os_system((b"7z", b"a", b"-tgzip", b"-sdel", file_gz, file_nogz)), 0
+                comtst.os_system(
+                    (b"7z", b"a", b"-tgzip", b"-sdel", file_gz, file_nogz)
+                ),
+                0,
             )
         else:
-            self.assertEqual(os_system((b"gzip", file_nogz)), 0)
+            self.assertEqual(comtst.os_system((b"gzip", file_nogz)), 0)
         rp_nogz.setdata()
         rp_gz.setdata()
         self.assertFalse(rp_nogz.lstat())
@@ -594,7 +591,7 @@ class Gzip(RPathTest):
     def test_maybe_gzip(self):
         """Test MaybeGzip"""
         dirrp = rpath.RPath(self.lc, self.out_dir)
-        re_init_rpath_dir(dirrp)
+        comtst.re_init_rpath_dir(dirrp)
 
         base_rp = dirrp.append("foo")
         fileobj = rpath.MaybeGzip(base_rp)

@@ -11,7 +11,6 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import old_test_dir, compare_recursive, RBBin, xcopytree
 
 from rdiff_backup import Globals, rpath, Time
 
@@ -66,7 +65,7 @@ class ProcessFuncs(unittest.TestCase):
 
     def exec_rb(self, time, wait=None, *args):
         """Run rdiff-backup return pid.  Wait until done if wait is true"""
-        arglist = [sys.executable, RBBin]
+        arglist = [sys.executable, comtst.RBBin]
         if time:
             arglist.append("--current-time")
             arglist.append(str(time))
@@ -125,16 +124,17 @@ class ProcessFuncs(unittest.TestCase):
 
         def copy_thrice(input, output):
             """Copy input directory to output directory three times"""
-            xcopytree(input, output)
-            xcopytree(input, os.path.join(output, b"killtesta"))
-            xcopytree(input, os.path.join(output, b"killtestb"))
+            comtst.xcopytree(input, output)
+            comtst.xcopytree(input, os.path.join(output, b"killtesta"))
+            comtst.xcopytree(input, os.path.join(output, b"killtestb"))
 
         for i in range(len(Local.ktrp)):
             Local.ktrp[i].setdata()
             if Local.ktrp[i].lstat():
                 Local.ktrp[i].delete()
             copy_thrice(
-                os.path.join(old_test_dir, b"increment%d" % (i + 1)), Local.ktrp[i].path
+                os.path.join(comtst.old_test_dir, b"increment%d" % (i + 1)),
+                Local.ktrp[i].path,
             )
 
 
@@ -239,7 +239,7 @@ class KillTest(ProcessFuncs):
         # is kind of special (there's no incrementing, so different
         # code)
         self.exec_rb(10000, 1, "backup", Local.ktrp[2].path, Local.rpout.path)
-        self.assertTrue(compare_recursive(Local.ktrp[2], Local.rpout))
+        self.assertTrue(comtst.compare_recursive(Local.ktrp[2], Local.rpout))
 
         def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
             """Backup input_rp, kill, regress, and then compare"""
@@ -252,7 +252,9 @@ class KillTest(ProcessFuncs):
                 self.exec_rb(None, 1, "regress", Local.rpout.path),
                 Globals.RET_CODE_WARN,
             )
-            self.assertTrue(compare_recursive(old_rp, Local.rpout, compare_hardlinks=0))
+            self.assertTrue(
+                comtst.compare_recursive(old_rp, Local.rpout, compare_hardlinks=0)
+            )
             return result
 
         # Keep backing ktrp[0], and then regressing to ktrp[2].  Then go to ktrp[0]

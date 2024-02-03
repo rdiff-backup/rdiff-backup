@@ -6,12 +6,6 @@ import os
 import unittest
 
 import commontest as comtst
-from commontest import (
-    rdiff_backup,
-    old_inc2_dir,
-    old_inc3_dir,
-    re_init_subdir,
-)
 
 from rdiff_backup import Globals, rpath
 
@@ -23,9 +17,9 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class CompareTest(unittest.TestCase):
     def setUp(self):
-        self.outdir = re_init_subdir(TEST_BASE_DIR, b"output")
-        rdiff_backup(1, 1, old_inc2_dir, self.outdir, current_time=10000)
-        rdiff_backup(1, 1, old_inc3_dir, self.outdir, current_time=20000)
+        self.outdir = comtst.re_init_subdir(TEST_BASE_DIR, b"output")
+        comtst.rdiff_backup(1, 1, comtst.old_inc2_dir, self.outdir, current_time=10000)
+        comtst.rdiff_backup(1, 1, comtst.old_inc3_dir, self.outdir, current_time=20000)
 
     def generic_test(self, local, compare_method):
         """Used for 6 tests below"""
@@ -39,7 +33,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                old_inc3_dir,
+                comtst.old_inc3_dir,
                 self.outdir,
                 options,
                 b"compare",
@@ -51,7 +45,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                old_inc2_dir,
+                comtst.old_inc2_dir,
                 self.outdir,
                 options,
                 b"compare",
@@ -66,7 +60,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                old_inc2_dir,
+                comtst.old_inc2_dir,
                 self.outdir,
                 options,
                 b"compare",
@@ -78,7 +72,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                old_inc3_dir,
+                comtst.old_inc3_dir,
                 self.outdir,
                 options,
                 b"compare",
@@ -123,7 +117,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                os.path.join(old_inc3_dir, b"various_file_types"),
+                os.path.join(comtst.old_inc3_dir, b"various_file_types"),
                 os.path.join(self.outdir, b"various_file_types"),
                 options,
                 b"compare",
@@ -135,7 +129,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                os.path.join(old_inc2_dir, b"increment1"),
+                os.path.join(comtst.old_inc2_dir, b"increment1"),
                 os.path.join(self.outdir, b"increment1"),
                 options,
                 b"compare",
@@ -150,7 +144,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                os.path.join(old_inc2_dir, b"newdir"),
+                os.path.join(comtst.old_inc2_dir, b"newdir"),
                 os.path.join(self.outdir, b"newdir"),
                 options,
                 b"compare",
@@ -162,7 +156,7 @@ class CompareTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 local,
                 local,
-                os.path.join(old_inc3_dir, b"newdir"),
+                os.path.join(comtst.old_inc3_dir, b"newdir"),
                 os.path.join(self.outdir, b"newdir"),
                 options,
                 b"compare",
@@ -232,8 +226,8 @@ class CompareTest(unittest.TestCase):
             )
             change_file(diff_rp)
 
-        rdiff_backup(local, local, self.outdir, None, extra_options=b"verify")
-        rdiff_backup(
+        comtst.rdiff_backup(local, local, self.outdir, None, extra_options=b"verify")
+        comtst.rdiff_backup(
             local,
             local,
             self.outdir,
@@ -242,7 +236,7 @@ class CompareTest(unittest.TestCase):
         )
         modify_diff()
         self.assertTrue(
-            rdiff_backup(
+            comtst.rdiff_backup(
                 local,
                 local,
                 self.outdir,
@@ -257,7 +251,7 @@ class CompareTest(unittest.TestCase):
             )
         )
         self.assertTrue(
-            rdiff_backup(
+            comtst.rdiff_backup(
                 local,
                 local,
                 self.outdir,

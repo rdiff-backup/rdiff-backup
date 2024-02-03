@@ -7,11 +7,6 @@ import time
 import unittest
 
 import commontest as comtst
-from commontest import (
-    remove_dir,
-    InternalBackup,
-    old_test_dir,
-)
 
 from rdiff_backup import Globals, statistics, rpath
 
@@ -213,12 +208,14 @@ class IncStatTest(unittest.TestCase):
             return [inc for (t, inc) in templist]
 
         Globals.compression = 1
-        remove_dir(self.out_dir)
-        InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest1"), self.out_dir)
-        InternalBackup(
+        comtst.remove_dir(self.out_dir)
+        comtst.InternalBackup(
+            1, 1, os.path.join(comtst.old_test_dir, b"stattest1"), self.out_dir
+        )
+        comtst.InternalBackup(
             1,
             1,
-            os.path.join(old_test_dir, b"stattest2"),
+            os.path.join(comtst.old_test_dir, b"stattest2"),
             self.out_dir,
             int(time.time()) + 1,
         )
