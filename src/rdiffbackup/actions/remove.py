@@ -65,7 +65,7 @@ class RemoveAction(actions.BaseAction):
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
                 self.connected_locations[0],
-                self.values.force,
+                self.values["force"],
                 must_be_writable=True,
                 must_exist=True,
             )
@@ -107,7 +107,7 @@ class RemoveAction(actions.BaseAction):
             return ret_code
 
         self.action_time = self._get_removal_time(
-            self.values.older_than, self.values.size
+            self.values["older_than"], self.values["size"]
         )
         if self.action_time is None:
             return ret_code | Globals.RET_CODE_ERR
@@ -124,7 +124,9 @@ class RemoveAction(actions.BaseAction):
 
         if self.action_time < 0:  # no increment is old enough
             log.Log(
-                "No increment is older than '{ot}'".format(ot=self.values.older_than),
+                "No increment is older than '{ot}'".format(
+                    ot=self.values["older_than"]
+                ),
                 log.WARNING,
             )
             return ret_code | Globals.RET_CODE_WARN
@@ -145,7 +147,7 @@ class RemoveAction(actions.BaseAction):
         if action_time is None:
             return None
 
-        if self.values.size:
+        if self.values["size"]:
             triples = self.repo.get_increments_sizes()[:-1]
             times_in_secs = [triple["time"] for triple in triples]
         else:
@@ -163,7 +165,7 @@ class RemoveAction(actions.BaseAction):
             return -1
 
         times_in_secs.sort()
-        if self.values.size:
+        if self.values["size"]:
             sizes = [
                 triple["size"] for triple in triples if triple["time"] in times_in_secs
             ]
@@ -179,7 +181,7 @@ class RemoveAction(actions.BaseAction):
         else:
             pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
         if len(times_in_secs) > 1:
-            if not self.values.force:
+            if not self.values["force"]:
                 log.Log(
                     "Found {ri} relevant increments, dates/times:\n{dt}\n"
                     "If you want to delete multiple increments in this way, "

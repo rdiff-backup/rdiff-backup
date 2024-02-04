@@ -64,7 +64,7 @@ class CompleteAction(actions.BaseAction):
     def pre_check(self):
         ret_code = super().pre_check()
 
-        if not self.values.words:
+        if not self.values["words"]:
             log.Log(
                 "There must be at least one word, "
                 "the command rdiff-backup itself, to complete",
@@ -73,11 +73,13 @@ class CompleteAction(actions.BaseAction):
             ret_code |= Globals.RET_CODE_ERR
 
         try:
-            self.values.words[self.values.cword]
+            self.values["words"][self.values["cword"]]
         except IndexError:
             log.Log(
                 "The word count {wc} isn't within range of the "
-                "words list {wl}".format(wc=self.values.cword, wl=self.values.words),
+                "words list {wl}".format(
+                    wc=self.values["cword"], wl=self.values["words"]
+                ),
                 log.ERROR,
             )
             ret_code |= Globals.RET_CODE_ERR
@@ -103,7 +105,7 @@ class CompleteAction(actions.BaseAction):
         )
 
         possible_options = self._get_possible_options(
-            parser, self.values.words, self.values.cword, self.values.unique
+            parser, self.values["words"], self.values["cword"], self.values["unique"]
         )
 
         for option in possible_options:

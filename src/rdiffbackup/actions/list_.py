@@ -82,7 +82,7 @@ class ListAction(actions.BaseAction):
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
                 self.connected_locations[0],
-                self.values.force,
+                self.values["force"],
                 must_be_writable=False,
                 must_exist=True,
                 can_be_sub_path=True,
@@ -111,9 +111,9 @@ class ListAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if self.values.entity == "files":
+        if self.values["entity"] == "files":
             self.action_time = self.repo.get_parsed_time(
-                self.values.changed_since or self.values.at
+                self.values["changed_since"] or self.values["at"]
             )
             if self.action_time is None:
                 return ret_code | Globals.RET_CODE_ERR
@@ -125,15 +125,15 @@ class ListAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if self.values.entity == "increments":
-            if self.values.size:
+        if self.values["entity"] == "increments":
+            if self.values["size"]:
                 ret_code |= self._list_increments_sizes()
             else:
                 ret_code |= self._list_increments()
-        elif self.values.entity == "files":
-            if self.values.changed_since:
+        elif self.values["entity"] == "files":
+            if self.values["changed_since"]:
                 ret_code |= self._list_files_changed_since()
-            elif self.values.at:
+            elif self.values["at"]:
                 ret_code |= self._list_files_at_time()
         return ret_code
 
@@ -144,7 +144,7 @@ class ListAction(actions.BaseAction):
         """
         triples = self.repo.get_increments_sizes()
 
-        if self.values.parsable_output:
+        if self.values["parsable_output"]:
             print(yaml.safe_dump(triples, explicit_start=True, explicit_end=True))
         else:
             stat_obj = statistics.StatsObj()  # used for byte summary string
@@ -174,7 +174,7 @@ class ListAction(actions.BaseAction):
         Print out a summary of the increments and their times
         """
         incs = self.repo.get_increments()
-        if self.values.parsable_output:
+        if self.values["parsable_output"]:
             print(yaml.safe_dump(incs, explicit_start=True, explicit_end=True))
         else:
             print("Found {ni} increments:".format(ni=len(incs) - 1))

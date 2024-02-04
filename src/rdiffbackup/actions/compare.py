@@ -66,10 +66,12 @@ class CompareAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
-            self.dir = directory.ReadDir(self.connected_locations[0], self.values.force)
+            self.dir = directory.ReadDir(
+                self.connected_locations[0], self.values["force"]
+            )
             self.repo = repository.Repo(
                 self.connected_locations[1],
-                self.values.force,
+                self.values["force"],
                 must_be_writable=False,
                 must_exist=True,
                 can_be_sub_path=True,
@@ -104,11 +106,11 @@ class CompareAction(actions.BaseAction):
             return ret_code
 
         (select_opts, select_data) = selection.get_prepared_selections(
-            self.values.selections
+            self.values["selections"]
         )
         self.dir.set_select(select_opts, select_data)
 
-        self.action_time = self.repo.get_parsed_time(self.values.at)
+        self.action_time = self.repo.get_parsed_time(self.values["at"])
         if self.action_time is None:
             return ret_code & Globals.RET_CODE_ERR
 
@@ -124,8 +126,8 @@ class CompareAction(actions.BaseAction):
             "hash": self._compare_hash,
             "full": self._compare_full,
         }
-        reports_iter = compare_funcs[self.values.method](self.action_time)
-        ret_code |= self._print_reports(reports_iter, self.values.parsable_output)
+        reports_iter = compare_funcs[self.values["method"]](self.action_time)
+        ret_code |= self._print_reports(reports_iter, self.values["parsable_output"])
         self.repo.finish_loop()
 
         return ret_code

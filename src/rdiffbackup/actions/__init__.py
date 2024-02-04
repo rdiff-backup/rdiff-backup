@@ -489,12 +489,12 @@ class BaseAction:
         values is a Namespace as returned by argparse.
         """
         self.values = values
-        if self.values.remote_schema:
-            self.remote_schema = os.fsencode(self.values.remote_schema)
+        if self.values["remote_schema"]:
+            self.remote_schema = os.fsencode(self.values["remote_schema"])
         else:
             self.remote_schema = None
-        if self.values.remote_tempdir:
-            self.remote_tempdir = os.fsencode(self.values.remote_tempdir)
+        if self.values["remote_tempdir"]:
+            self.remote_tempdir = os.fsencode(self.values["remote_tempdir"])
         else:
             self.remote_tempdir = None
 
@@ -527,9 +527,7 @@ class BaseAction:
         Debug output method
         """
         print(
-            yaml.safe_dump(
-                self.values.__dict__, explicit_start=explicit, explicit_end=explicit
-            )
+            yaml.safe_dump(self.values, explicit_start=explicit, explicit_end=explicit)
         )
 
     def pre_check(self):
@@ -545,17 +543,17 @@ class BaseAction:
         their entries step by step.
         """
         ret_code = 0
-        if self.values.action != self.name:
+        if self.values["action"] != self.name:
             log.Log(
                 "Action value '{av}' doesn't fit name of action class "
-                "'{ac}'.".format(av=self.values.action, ac=self.name),
+                "'{ac}'.".format(av=self.values["action"], ac=self.name),
                 log.ERROR,
             )
             ret_code |= Globals.RET_CODE_ERR
-        if self.values.tempdir and not os.path.isdir(self.values.tempdir):
+        if self.values["tempdir"] and not os.path.isdir(self.values["tempdir"]):
             log.Log(
                 "Temporary directory '{td}' doesn't exist.".format(
-                    td=self.values.tempdir
+                    td=self.values["tempdir"]
                 ),
                 log.ERROR,
             )
@@ -563,7 +561,7 @@ class BaseAction:
         if (
             self.security is None
             and "locations" in self.values
-            and self.values.locations
+            and self.values["locations"]
         ):
             log.Log(
                 "Action '{ac}' must have a security class to handle "
@@ -580,15 +578,15 @@ class BaseAction:
         Returns self, to be used as context manager.
         """
 
-        if "locations" in self.values:
+        if self.values.get("locations"):
             # TODO encapsulate the following lines into one
             # connections/connections_mgr construct, so that the action doesn't
             # need to care about cmdpairs and Security (which would become a
             # feature of the connection).
             cmdpairs = SetConnections.get_cmd_pairs(
-                self.values.locations,
+                self.values["locations"],
                 remote_schema=self.remote_schema,
-                ssh_compression=self.values.ssh_compression,
+                ssh_compression=self.values["ssh_compression"],
                 remote_tempdir=self.remote_tempdir,
                 term_verbosity=log.Log.term_verbosity,
             )
@@ -598,7 +596,7 @@ class BaseAction:
             )
 
             # if a connection is None, it's an error
-            for conn, loc in zip(self.connected_locations, self.values.locations):
+            for conn, loc in zip(self.connected_locations, self.values["locations"]):
                 if conn is None:
                     log.Log(
                         "Location '{lo}' couldn't be connected.".format(lo=loc),
@@ -628,14 +626,14 @@ class BaseAction:
         """
         # we can define "now" as being the current time,
         # unless the user defined a fixed a current time.
-        Time.set_current_time(self.values.current_time)
+        Time.set_current_time(self.values["current_time"])
 
-        if self.values.tempdir:
+        if self.values["tempdir"]:
             # At least until Python 3.10, the module tempfile doesn't work
             # properly,
             # especially under Windows, if tempdir is stored as bytes.
             # See https://github.com/python/cpython/pull/20442
-            tempfile.tempdir = self.values.tempdir
+            tempfile.tempdir = self.values["tempdir"]
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
         Globals.set_all("client_conn", Globals.local_connection)

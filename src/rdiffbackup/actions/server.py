@@ -49,7 +49,7 @@ class ServerAction(actions.BaseAction):
 
     def __init__(self, values):
         super().__init__(values)
-        if "debug" in self.values and self.values.debug:
+        if self.values.get("debug"):
             self._set_breakpoint()
 
     def connect(self):
@@ -58,8 +58,8 @@ class ServerAction(actions.BaseAction):
             Security.initialize(
                 self.get_security_class(),
                 [],
-                security_level=self.values.restrict_mode,
-                restrict_path=self.values.restrict_path,
+                security_level=self.values["restrict_mode"],
+                restrict_path=self.values["restrict_path"],
             )
         return conn_value
 

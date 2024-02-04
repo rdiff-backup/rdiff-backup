@@ -35,10 +35,10 @@ import sys
 
 def parse_args(parser, args):
     """
-    Function overwriting the default exit code for parsing errors
+    Function overwriting the default exit code for parsing errors.
 
-    Once we're only supporting Python 3.9+ we can use the exit_on_error=False
-    option and simply catch ArgumentError
+    The exit_on_error=False introduced with Python 3.9 doesn't help because
+    it covers only wrong values but not wrong parameters.
     """
     try:
         parsed_args = parser.parse_args(args)
@@ -60,17 +60,12 @@ def parse(args, version_string, generic_parsers, actions_dict=None):
     the generic_parsers is a list of argument parsers common to all actions,
     actions_dict is a dictionary of the form `{"action_name": ActionClass}`.
 
-    Returns an argparse Namespace containing the parsed parameters.
+    Returns a dictionary containing the parsed parameters.
     """
     parser = get_parser(version_string, generic_parsers, actions_dict)
     parsed_args = parse_args(parser, args)
 
-    if not (sys.version_info.major >= 3 and sys.version_info.minor >= 7):
-        # we need a work-around as long as Python 3.6 doesn't know about required
-        if not parsed_args.action:
-            parser.error(message="the following arguments are required: action")
-
-    return parsed_args
+    return vars(parsed_args)  # make a dictionary out of a Namespace
 
 
 def get_parser(version_string, parent_parsers, actions_dict):
@@ -81,23 +76,17 @@ def get_parser(version_string, parent_parsers, actions_dict):
         description="local/remote mirror and incremental backup",
         parents=parent_parsers,
         fromfile_prefix_chars="@",
+        exit_on_error=False,
     )
 
     _add_version_option_to_parser(parser, version_string)
 
-    if sys.version_info.major >= 3 and sys.version_info.minor >= 7:
-        sub_handler = parser.add_subparsers(
-            title="possible actions",
-            required=True,
-            dest="action",
-            help="call '%(prog)s <action> --help' for more information",
-        )
-    else:  # required didn't exist in Python 3.6
-        sub_handler = parser.add_subparsers(
-            title="possible actions",
-            dest="action",
-            help="call '%(prog)s <action> --help' for more information",
-        )
+    sub_handler = parser.add_subparsers(
+        title="possible actions",
+        required=True,
+        dest="action",
+        help="call '%(prog)s <action> --help' for more information",
+    )
 
     for action in actions_dict.values():
         action.add_action_subparser(sub_handler)
