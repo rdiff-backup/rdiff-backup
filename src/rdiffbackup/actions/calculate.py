@@ -64,7 +64,7 @@ class CalculateAction(actions.BaseAction):
             statistics.StatsObj().read_stats_from_rp(loc)
             for loc in self.connected_locations
         ]
-        if self.values.method == "average":  # there is no other right now
+        if self.values["method"] == "average":  # there is no other right now
             calc_stats = statistics.StatsObj().set_to_average(statobjs)
         print(
             calc_stats.get_stats_logstring(

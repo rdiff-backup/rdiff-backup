@@ -60,7 +60,7 @@ def main_run(arglist, security_override=False):
 
     # we need verbosity set properly asap
     ret_val = log.Log.set_verbosity(
-        parsed_args.verbosity, parsed_args.terminal_verbosity
+        parsed_args.get("verbosity"), parsed_args.get("terminal_verbosity")
     )
     if ret_val & Globals.RET_CODE_ERR:
         return ret_val
@@ -70,11 +70,11 @@ def main_run(arglist, security_override=False):
 
     # instantiate the action object from the dictionary, handing over the
     # parsed arguments
-    action = discovered_actions[parsed_args.action](parsed_args)
+    action = discovered_actions[parsed_args["action"]](parsed_args)
 
     log.Log(
         "Runtime information =>{ri}<=".format(
-            ri=Globals.get_runtime_info(parsed=vars(parsed_args))
+            ri=Globals.get_runtime_info(parsed=parsed_args)
         ),
         log.DEBUG,
     )
@@ -84,7 +84,7 @@ def main_run(arglist, security_override=False):
     if ret_val & Globals.RET_CODE_ERR:
         log.Log(
             "Action {ac} failed on step {st}".format(
-                ac=parsed_args.action, st="pre_check"
+                ac=parsed_args["action"], st="pre_check"
             ),
             log.ERROR,
         )
@@ -95,7 +95,7 @@ def main_run(arglist, security_override=False):
         if not conn_act.is_connection_ok():
             log.Log(
                 "Action {ac} failed on step {st}".format(
-                    ac=parsed_args.action, st="connect"
+                    ac=parsed_args["action"], st="connect"
                 ),
                 log.ERROR,
             )
@@ -112,7 +112,7 @@ def main_run(arglist, security_override=False):
         if ret_val & Globals.RET_CODE_ERR:
             log.Log(
                 "Action {ac} failed on step {st}".format(
-                    ac=parsed_args.action, st="check"
+                    ac=parsed_args["action"], st="check"
                 ),
                 log.ERROR,
             )
@@ -122,7 +122,7 @@ def main_run(arglist, security_override=False):
         if ret_val & Globals.RET_CODE_ERR:
             log.Log(
                 "Action {ac} failed on step {st}".format(
-                    ac=parsed_args.action, st="setup"
+                    ac=parsed_args["action"], st="setup"
                 ),
                 log.ERROR,
             )
@@ -132,7 +132,7 @@ def main_run(arglist, security_override=False):
         if ret_val & Globals.RET_CODE_ERR:
             log.Log(
                 "Action {ac} failed on step {st}".format(
-                    ac=parsed_args.action, st="run"
+                    ac=parsed_args["action"], st="run"
                 ),
                 log.ERROR,
             )
@@ -142,19 +142,19 @@ def main_run(arglist, security_override=False):
     if ret_val & Globals.RET_CODE_WARN:
         log.Log(
             "Action {ac} emitted warnings, "
-            "see previous messages for details".format(ac=parsed_args.action),
+            "see previous messages for details".format(ac=parsed_args["action"]),
             log.WARNING,
         )
     if ret_val & Globals.RET_CODE_FILE_ERR:
         log.Log(
             "Action {ac} failed on one or more files, "
-            "see previous messages for details".format(ac=parsed_args.action),
+            "see previous messages for details".format(ac=parsed_args["action"]),
             log.WARNING,
         )
     if ret_val & Globals.RET_CODE_FILE_WARN:
         log.Log(
             "Action {ac} emitted a warning on one or more files, "
-            "see previous messages for details".format(ac=parsed_args.action),
+            "see previous messages for details".format(ac=parsed_args["action"]),
             log.WARNING,
         )
 
@@ -167,33 +167,33 @@ def _parse_cmdlineoptions_compat201(arglist):  # noqa: C901
     between old and new way of parsing parameters.
     """
 
-    if arglist.action in ("backup", "restore"):
-        Globals.set("acls_active", arglist.acls)
-        Globals.set("win_acls_active", arglist.acls)
-        Globals.set("carbonfile_active", arglist.carbonfile)
-        Globals.set("compare_inode", arglist.compare_inode)
-        Globals.set("eas_active", arglist.eas)
-        Globals.set("preserve_hardlinks", arglist.hard_links)
-        Globals.set("resource_forks_active", arglist.resource_forks)
-        Globals.set("never_drop_acls", arglist.never_drop_acls)
-    if arglist.action in ("backup", "regress", "restore"):
-        Globals.set("compression", arglist.compression)
-    if arglist.action in ("server"):
+    # if action in ("backup", "restore"):
+    Globals.set("acls_active", arglist.get("acls"))
+    Globals.set("win_acls_active", arglist.get("acls"))
+    Globals.set("carbonfile_active", arglist.get("carbonfile"))
+    Globals.set("compare_inode", arglist.get("compare_inode"))
+    Globals.set("eas_active", arglist.get("eas"))
+    Globals.set("preserve_hardlinks", arglist.get("hard_links"))
+    Globals.set("resource_forks_active", arglist.get("resource_forks"))
+    Globals.set("never_drop_acls", arglist.get("never_drop_acls"))
+    # if action in ("backup", "regress", "restore"):
+    Globals.set("compression", arglist.get("compression"))
+    # if action in ("backup"):
+    Globals.set("file_statistics", arglist.get("file_statistics"))
+    Globals.set("print_statistics", arglist.get("print_statistics"))
+    # if action in ("regress"):
+    Globals.set("allow_duplicate_timestamps", arglist.get("allow_duplicate_timestamps"))
+    Globals.set("null_separator", arglist.get("null_separator"))
+    Globals.set("use_compatible_timestamps", arglist.get("use_compatible_timestamps"))
+    Globals.set("do_fsync", arglist.get("fsync"))
+    if arglist["action"] in ("server"):
         Globals.server = True
-    if arglist.action in ("backup"):
-        Globals.set("file_statistics", arglist.file_statistics)
-        Globals.set("print_statistics", arglist.print_statistics)
-    if arglist.action in ("regress"):
-        Globals.set("allow_duplicate_timestamps", arglist.allow_duplicate_timestamps)
-    Globals.set("null_separator", arglist.null_separator)
-    Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
-    Globals.set("do_fsync", arglist.fsync)
-    if arglist.current_time is not None:
-        Globals.set_integer("current_time", arglist.current_time)
-    if arglist.chars_to_quote is not None:
-        Globals.set("chars_to_quote", os.fsencode(arglist.chars_to_quote))
-    if arglist.api_version is not None:  # FIXME catch also env variable?
-        Globals.set_api_version(arglist.api_version)
+    if arglist.get("current_time") is not None:
+        Globals.set_integer("current_time", arglist.get("current_time"))
+    if arglist.get("chars_to_quote") is not None:
+        Globals.set("chars_to_quote", os.fsencode(arglist.get("chars_to_quote")))
+    if arglist.get("api_version") is not None:  # FIXME catch also env variable?
+        Globals.set_api_version(arglist.get("api_version"))
 
 
 if __name__ == "__main__":

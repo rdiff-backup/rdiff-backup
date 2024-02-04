@@ -60,9 +60,9 @@ class ArgumentsTest(unittest.TestCase):
             actions_mgr.get_generic_parsers(),
             disc_actions,
         )
-        self.assertEqual("list", values.action)
-        self.assertEqual("increments", values.entity)
-        self.assertIn("dummy_test_repo", values.locations)
+        self.assertEqual("list", values["action"])
+        self.assertEqual("increments", values["entity"])
+        self.assertIn("dummy_test_repo", values["locations"])
 
         # negative test of the parsing due to too many or wrong arguments
         with self.assertRaises(SystemExit):

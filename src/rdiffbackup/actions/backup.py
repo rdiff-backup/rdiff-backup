@@ -58,13 +58,15 @@ class BackupAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
-            self.dir = directory.ReadDir(self.connected_locations[0], self.values.force)
+            self.dir = directory.ReadDir(
+                self.connected_locations[0], self.values["force"]
+            )
             self.repo = repository.Repo(
                 self.connected_locations[1],
-                self.values.force,
+                self.values["force"],
                 must_be_writable=True,
                 must_exist=False,
-                create_full_path=self.values.create_full_path,
+                create_full_path=self.values["create_full_path"],
             )
         return conn_value
 
@@ -92,15 +94,15 @@ class BackupAction(actions.BaseAction):
             return ret_code
 
         owners_map = {
-            "users_map": self.values.user_mapping_file,
-            "groups_map": self.values.group_mapping_file,
-            "preserve_num_ids": self.values.preserve_numerical_ids,
+            "users_map": self.values["user_mapping_file"],
+            "groups_map": self.values["group_mapping_file"],
+            "preserve_num_ids": self.values["preserve_numerical_ids"],
         }
         ret_code = self.repo.setup(
             self.dir,
             owners_map=owners_map,
             action_name=self.name,
-            not_compressed_regexp=self.values.not_compressed_regexp,
+            not_compressed_regexp=self.values["not_compressed_regexp"],
         )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
@@ -110,10 +112,10 @@ class BackupAction(actions.BaseAction):
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return ret_code | Globals.RET_CODE_ERR
 
-        log.ErrorLog.open(Time.getcurtimestr(), compress=self.values.compression)
+        log.ErrorLog.open(Time.getcurtimestr(), compress=self.values["compression"])
 
         (select_opts, select_data) = selection.get_prepared_selections(
-            self.values.selections
+            self.values["selections"]
         )
         self.dir.set_select(select_opts, select_data)
         ret_code |= self._warn_if_infinite_recursion(

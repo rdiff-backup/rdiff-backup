@@ -68,15 +68,15 @@ class RestoreAction(actions.BaseAction):
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
                 self.connected_locations[0],
-                self.values.force,
+                self.values["force"],
                 must_be_writable=False,
                 must_exist=True,
                 can_be_sub_path=True,
             )
             self.dir = directory.WriteDir(
                 self.connected_locations[1],
-                self.values.force,
-                self.values.create_full_path,
+                self.values["force"],
+                self.values["create_full_path"],
             )
         return conn_value
 
@@ -89,30 +89,30 @@ class RestoreAction(actions.BaseAction):
         # we validate that the discovered restore type and the given options
         # fit together
         if self.repo.ref_type == "inc":
-            if self.values.at:
+            if self.values["at"]:
                 log.Log(
                     "You can't give an increment file and a time to "
                     "restore at the same time.",
                     log.ERROR,
                 )
                 ret_code |= Globals.RET_CODE_ERR
-            elif not self.values.increment:
-                self.values.increment = True
+            elif not self.values["increment"]:
+                self.values["increment"] = True
         elif self.repo.ref_type in ("base", "subpath"):
-            if self.values.increment:
+            if self.values["increment"]:
                 log.Log(
                     "You can't use the --increment option and _not_ "
                     "give an increment file",
                     log.ERROR,
                 )
                 ret_code |= Globals.RET_CODE_ERR
-            elif not self.values.at:
-                self.values.at = "now"
+            elif not self.values["at"]:
+                self.values["at"] = "now"
 
         # it's dangerous to restore a sub-path and use selection at the same
         # time, rdiff-backup might remove files in the target directory
         # see issue #463
-        if self.values.selections and self.repo.ref_index:
+        if self.values["selections"] and self.repo.ref_index:
             possible_file_selections = set(
                 (
                     "include",
@@ -130,7 +130,9 @@ class RestoreAction(actions.BaseAction):
                 )
             )
             file_selections = [
-                x[0] for x in self.values.selections if x[0] in possible_file_selections
+                x[0]
+                for x in self.values["selections"]
+                if x[0] in possible_file_selections
             ]
             if file_selections:
                 log.Log(
@@ -156,15 +158,15 @@ class RestoreAction(actions.BaseAction):
 
         ret_code |= self.repo.setup(
             action_name=self.name,
-            not_compressed_regexp=self.values.not_compressed_regexp,
+            not_compressed_regexp=self.values["not_compressed_regexp"],
         )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
         owners_map = {
-            "users_map": self.values.user_mapping_file,
-            "groups_map": self.values.group_mapping_file,
-            "preserve_num_ids": self.values.preserve_numerical_ids,
+            "users_map": self.values["user_mapping_file"],
+            "groups_map": self.values["group_mapping_file"],
+            "preserve_num_ids": self.values["preserve_numerical_ids"],
         }
         ret_code |= self.dir.setup(self.repo, owners_map=owners_map)
         if ret_code & Globals.RET_CODE_ERR:
@@ -173,11 +175,11 @@ class RestoreAction(actions.BaseAction):
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
 
-        if self.values.at:
-            self.action_time = self.repo.get_parsed_time(self.values.at)
+        if self.values["at"]:
+            self.action_time = self.repo.get_parsed_time(self.values["at"])
             if self.action_time is None:
                 return ret_code | Globals.RET_CODE_ERR
-        elif self.values.increment:
+        elif self.values["increment"]:
             self.action_time = self.repo.orig_path.getinctime()
         else:  # this should have been catched in the check method
             log.Log(
@@ -187,7 +189,7 @@ class RestoreAction(actions.BaseAction):
             )
             return ret_code | Globals.RET_CODE_ERR
         (select_opts, select_data) = selection.get_prepared_selections(
-            self.values.selections
+            self.values["selections"]
         )
         # We must set both sides because restore filtering is different from
         # select filtering.  For instance, if a file is excluded it should

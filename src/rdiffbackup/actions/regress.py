@@ -57,7 +57,7 @@ class RegressAction(actions.BaseAction):
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
                 self.connected_locations[0],
-                self.values.force,
+                self.values["force"],
                 must_be_writable=True,
                 must_exist=True,
             )
@@ -82,14 +82,14 @@ class RegressAction(actions.BaseAction):
             return ret_code
 
         owners_map = {
-            "users_map": self.values.user_mapping_file,
-            "groups_map": self.values.group_mapping_file,
-            "preserve_num_ids": self.values.preserve_numerical_ids,
+            "users_map": self.values["user_mapping_file"],
+            "groups_map": self.values["group_mapping_file"],
+            "preserve_num_ids": self.values["preserve_numerical_ids"],
         }
         ret_code = self.repo.setup(
             owners_map=owners_map,
             action_name=self.name,
-            not_compressed_regexp=self.values.not_compressed_regexp,
+            not_compressed_regexp=self.values["not_compressed_regexp"],
         )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
@@ -104,7 +104,7 @@ class RegressAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self._operate_regress(noticeable=True, force=self.values.force)
+        ret_code |= self._operate_regress(noticeable=True, force=self.values["force"])
 
         return ret_code
 

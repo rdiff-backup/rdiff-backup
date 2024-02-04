@@ -18,14 +18,17 @@ class ApiVersionTest(unittest.TestCase):
     """Test api versioning functionality"""
 
     def test_runtime_info_calling(self):
-        """make sure that the info output can be read back as YAML when API is 201"""
+        """make sure that the info output can be read back as YAML"""
+        latest_api = Globals.api_version["max"]
         output = subprocess.check_output(
-            [comtst.RBBin, b"--api-version", b"201", b"info"]
+            [comtst.RBBin, b"--api-version", b"%i" % latest_api, b"info"]
         )
         out_info = yaml.safe_load(output)
+        self.assertEqual(out_info["exec"]["parsed"]["action"], "info")
 
-        Globals.api_version["actual"] = 201
-        info = Globals.get_runtime_info()
+        Globals.api_version["actual"] = latest_api
+        # we make sure that the parsed info is the same
+        info = Globals.get_runtime_info(parsed=out_info["exec"]["parsed"])
 
         # because the current test will have a different call than rdiff-backup
         # itself, we can't compare certain keys
