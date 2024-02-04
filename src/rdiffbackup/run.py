@@ -74,7 +74,7 @@ def main_run(arglist, security_override=False):
 
     log.Log(
         "Runtime information =>{ri}<=".format(
-            ri=Globals.get_runtime_info(parsed=parsed_args)
+            ri=action.get_runtime_info(parsed=parsed_args)
         ),
         log.DEBUG,
     )

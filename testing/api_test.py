@@ -10,6 +10,7 @@ import yaml
 import commontest as comtst
 
 from rdiff_backup import Globals
+from rdiffbackup import actions
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -28,7 +29,7 @@ class ApiVersionTest(unittest.TestCase):
 
         Globals.api_version["actual"] = latest_api
         # we make sure that the parsed info is the same
-        info = Globals.get_runtime_info(parsed=out_info["exec"]["parsed"])
+        info = actions.BaseAction.get_runtime_info(parsed=out_info["exec"]["parsed"])
 
         # because the current test will have a different call than rdiff-backup
         # itself, we can't compare certain keys

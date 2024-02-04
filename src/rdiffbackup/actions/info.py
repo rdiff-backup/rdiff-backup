@@ -47,7 +47,7 @@ class InfoAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        runtime_info = Globals.get_runtime_info(parsed=self.values)
+        runtime_info = self.get_runtime_info(parsed=self.values)
         print(yaml.safe_dump(runtime_info, explicit_start=True, explicit_end=True))
         return ret_code
 
