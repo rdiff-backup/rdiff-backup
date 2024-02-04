@@ -411,7 +411,6 @@ class PipeConnection(LowLevelPipeConnection):
 
     def Server(self):
         """Start server's read eval return loop"""
-        Globals.server = 1
         Globals.connections.append(self)
         log.Log("Starting server", log.INFO)
         self._get_response(-1)
