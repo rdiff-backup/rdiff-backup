@@ -25,6 +25,7 @@ plugins can inheritate default behaviors.
 
 import argparse
 import os
+import platform
 import sys
 import tempfile
 import yaml
@@ -693,6 +694,31 @@ class BaseAction:
         else:
             log.Log("Given repository doesn't need to be regressed", regress_verbosity)
             return Globals.RET_CODE_OK
+
+    @classmethod
+    def get_runtime_info(cls, parsed=None):
+        """
+        Return a structure containing all relevant runtime information about
+        the executable, Python and the operating system.
+        Beware that additional information might be added at any time.
+        """
+        return {
+            "exec": {
+                "version": Globals.version,
+                "api_version": Globals.api_version,
+                "argv": sys.argv,
+                "parsed": parsed,
+            },
+            "python": {
+                "name": sys.implementation.name,
+                "executable": sys.executable,
+                "version": platform.python_version(),
+            },
+            "system": {
+                "platform": platform.platform(),
+                "fs_encoding": sys.getfilesystemencoding(),
+            },
+        }
 
 
 def get_plugin_class():
