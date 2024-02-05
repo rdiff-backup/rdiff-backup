@@ -66,12 +66,10 @@ class CompareAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value.is_connection_ok():
-            self.dir = directory.ReadDir(
-                self.connected_locations[0], self.values["force"]
-            )
+            self.dir = directory.ReadDir(self.connected_locations[0], self.values)
             self.repo = repository.Repo(
                 self.connected_locations[1],
-                self.values["force"],
+                self.values,
                 must_be_writable=False,
                 must_exist=True,
                 can_be_sub_path=True,

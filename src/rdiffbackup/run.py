@@ -194,6 +194,7 @@ def _system_setup(arglist):
         Globals.set_integer("current_time", arglist.get("current_time"))
     if arglist.get("chars_to_quote") is not None:
         Globals.set("chars_to_quote", os.fsencode(arglist.get("chars_to_quote")))
+    return ret_val
 
 
 if __name__ == "__main__":

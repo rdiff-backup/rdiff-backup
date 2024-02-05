@@ -161,7 +161,7 @@ class WriteDir(Dir, locations.WriteLocation):
 
         # if the target is a non-empty existing directory
         if self.base_dir.lstat() and self.base_dir.isdir() and self.base_dir.listdir():
-            if self.force:
+            if self.values["force"]:
                 log.Log(
                     "Target path {tp} exists and isn't empty, content "
                     "might be force overwritten by restore".format(tp=self.base_dir),
