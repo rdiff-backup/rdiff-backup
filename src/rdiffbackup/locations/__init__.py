@@ -35,9 +35,9 @@ class Location:
     Abstract location class representing a user@hostname::/dir location
     """
 
-    def __init__(self, base_dir, force):
+    def __init__(self, base_dir, values):
         self.base_dir = base_dir
-        self.force = force
+        self.values = values
 
     def __str__(self):
         return str(self.base_dir)
@@ -89,7 +89,7 @@ class Location:
         """
         # TODO The writable aspect hasn't yet been implemented
         if self.base_dir.lstat() and not self.base_dir.isdir():
-            if self.force:
+            if self.values["force"]:
                 log.Log(
                     "Target path {tp} exists but isn't a directory, "
                     "and will be force deleted".format(tp=self.base_dir),
@@ -110,7 +110,11 @@ class Location:
         """
         try:
             # if the target exists and isn't a directory, force delete it
-            if self.base_dir.lstat() and not self.base_dir.isdir() and self.force:
+            if (
+                self.base_dir.lstat()
+                and not self.base_dir.isdir()
+                and self.values["force"]
+            ):
                 self.base_dir.delete()
 
             # if the target doesn't exist, create it
@@ -162,8 +166,8 @@ class WriteLocation(Location):
     Abstract writable location class, possibly not pre-existing
     """
 
-    def __init__(self, base_dir, force, create_full_path):
-        super().__init__(base_dir, force)
+    def __init__(self, base_dir, values, create_full_path):
+        super().__init__(base_dir, values)
         self.create_full_path = create_full_path
 
     def check(self):

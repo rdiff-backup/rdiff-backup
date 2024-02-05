@@ -68,14 +68,14 @@ class RestoreAction(actions.BaseAction):
         if conn_value.is_connection_ok():
             self.repo = repository.Repo(
                 self.connected_locations[0],
-                self.values["force"],
+                self.values,
                 must_be_writable=False,
                 must_exist=True,
                 can_be_sub_path=True,
             )
             self.dir = directory.WriteDir(
                 self.connected_locations[1],
-                self.values["force"],
+                self.values,
                 self.values["create_full_path"],
             )
         return conn_value

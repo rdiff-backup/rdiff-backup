@@ -49,6 +49,7 @@ class ServerAction(actions.BaseAction):
 
     def __init__(self, values):
         super().__init__(values)
+        Globals.server = True  # FIXME make local?
         if self.values.get("debug"):
             self._set_breakpoint()
 

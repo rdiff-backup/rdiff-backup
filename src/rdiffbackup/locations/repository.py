@@ -43,7 +43,7 @@ class Repo(locations.Location):
     def __init__(
         self,
         base_dir,
-        force,
+        values,
         must_be_writable,
         must_exist,
         create_full_path=False,
@@ -70,7 +70,7 @@ class Repo(locations.Location):
             self.ref_type = None
 
         # Finish the initialization with the identified base_dir
-        super().__init__(base_dir, force)
+        super().__init__(base_dir, values)
         self.create_full_path = create_full_path
         self.must_be_writable = must_be_writable
         self.must_exist = must_exist
@@ -129,7 +129,7 @@ class Repo(locations.Location):
 
         lock_result = self.lock()
         if lock_result is False:
-            if self.force:
+            if self.values["force"]:
                 log.Log(
                     "Repository is locked by file {lf}, another "
                     "action is probably on-going. Enforcing anyway "
@@ -300,7 +300,7 @@ class Repo(locations.Location):
         Shadow function for RepoShadow.needs_regress
         """
         return self._shadow.needs_regress(
-            self.base_dir, self.data_dir, self.incs_dir, self.force
+            self.base_dir, self.data_dir, self.incs_dir, self.values["force"]
         )
 
     def force_regress(self):
@@ -645,7 +645,7 @@ class Repo(locations.Location):
             and self.base_dir.listdir()
             and not self.data_dir.lstat()
         ):
-            if self.force:
+            if self.values["force"]:
                 log.Log(
                     "Target path '{tp}' does not look like a rdiff-backup "
                     "repository but will be force overwritten".format(tp=self.base_dir),
@@ -672,7 +672,7 @@ class Repo(locations.Location):
             # independently from the API version
             self.lockfile.setdata()
             if self.lockfile.lstat():
-                if self.force:
+                if self.values["force"]:
                     log.Log(
                         "An initial backup in a strange state with "
                         "lockfile {lf}. Enforcing continuation, "

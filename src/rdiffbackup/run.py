@@ -58,15 +58,10 @@ def main_run(arglist, security_override=False):
         discovered_actions,
     )
 
-    # we need verbosity set properly asap
-    ret_val = log.Log.set_verbosity(
-        parsed_args.get("verbosity"), parsed_args.get("terminal_verbosity")
-    )
+    # setup the system settings globally
+    ret_val = _system_setup(parsed_args)
     if ret_val & Globals.RET_CODE_ERR:
         return ret_val
-
-    # compatibility plug
-    _parse_cmdlineoptions_compat201(parsed_args)
 
     # instantiate the action object from the dictionary, handing over the
     # parsed arguments
@@ -161,11 +156,19 @@ def main_run(arglist, security_override=False):
     return ret_val
 
 
-def _parse_cmdlineoptions_compat201(arglist):  # noqa: C901
+def _system_setup(arglist):
     """
     Parse argument list and set global preferences, compatibility function
     between old and new way of parsing parameters.
     """
+    # we need verbosity set properly asap
+    ret_val = log.Log.set_verbosity(
+        arglist.get("verbosity"), arglist.get("terminal_verbosity")
+    )
+    if ret_val & Globals.RET_CODE_ERR:
+        return ret_val
+    if arglist.get("api_version") is not None:  # FIXME catch also env variable?
+        Globals.set_api_version(arglist.get("api_version"))
 
     # if action in ("backup", "restore"):
     Globals.set("acls_active", arglist.get("acls"))
@@ -183,17 +186,15 @@ def _parse_cmdlineoptions_compat201(arglist):  # noqa: C901
     Globals.set("print_statistics", arglist.get("print_statistics"))
     # if action in ("regress"):
     Globals.set("allow_duplicate_timestamps", arglist.get("allow_duplicate_timestamps"))
+    # generic settings
     Globals.set("null_separator", arglist.get("null_separator"))
     Globals.set("use_compatible_timestamps", arglist.get("use_compatible_timestamps"))
     Globals.set("do_fsync", arglist.get("fsync"))
-    if arglist["action"] in ("server"):
-        Globals.server = True
     if arglist.get("current_time") is not None:
         Globals.set_integer("current_time", arglist.get("current_time"))
     if arglist.get("chars_to_quote") is not None:
         Globals.set("chars_to_quote", os.fsencode(arglist.get("chars_to_quote")))
-    if arglist.get("api_version") is not None:  # FIXME catch also env variable?
-        Globals.set_api_version(arglist.get("api_version"))
+    return ret_val
 
 
 if __name__ == "__main__":
