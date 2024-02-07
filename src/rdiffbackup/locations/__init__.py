@@ -56,9 +56,7 @@ class Location:
             users_map = users_map.read()
         if groups_map is not None:
             groups_map = groups_map.read()
-        self._shadow.init_owners_mapping(users_map, groups_map, preserve_num_ids)
-
-        return Globals.RET_CODE_OK
+        return self._shadow.init_owners_mapping(users_map, groups_map, preserve_num_ids)
 
     def exit(self):
         """
@@ -119,7 +117,7 @@ class Location:
 
             # if the target doesn't exist, create it
             if not self.base_dir.lstat():
-                if self.create_full_path:
+                if self.values["create_full_path"]:
                     self.base_dir.makedirs()
                 else:
                     self.base_dir.mkdir()
@@ -166,9 +164,8 @@ class WriteLocation(Location):
     Abstract writable location class, possibly not pre-existing
     """
 
-    def __init__(self, base_dir, values, create_full_path):
+    def __init__(self, base_dir, values):
         super().__init__(base_dir, values)
-        self.create_full_path = create_full_path
 
     def check(self):
         """

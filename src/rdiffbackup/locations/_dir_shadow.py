@@ -338,6 +338,7 @@ class WriteDirShadow:
     def init_owners_mapping(cls, users_map, groups_map, preserve_num_ids):
         map_owners.init_users_mapping(users_map, preserve_num_ids)
         map_owners.init_groups_mapping(groups_map, preserve_num_ids)
+        return Globals.RET_CODE_OK
 
 
 class _DirPatchITRB(rorpiter.ITRBranch):

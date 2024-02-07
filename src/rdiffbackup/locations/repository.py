@@ -46,7 +46,6 @@ class Repo(locations.Location):
         values,
         must_be_writable,
         must_exist,
-        create_full_path=False,
         can_be_sub_path=False,
     ):
         """
@@ -71,7 +70,6 @@ class Repo(locations.Location):
 
         # Finish the initialization with the identified base_dir
         super().__init__(base_dir, values)
-        self.create_full_path = create_full_path
         self.must_be_writable = must_be_writable
         self.must_exist = must_exist
         self.can_be_sub_path = can_be_sub_path
@@ -105,9 +103,7 @@ class Repo(locations.Location):
     def setup(
         self,
         src_dir=None,
-        owners_map=None,
         action_name=None,
-        not_compressed_regexp=None,
     ):
         if self.must_be_writable and not self._create():
             return Globals.RET_CODE_ERR
@@ -181,15 +177,20 @@ class Repo(locations.Location):
         self.setup_quoting()
         self.setup_paths()
 
-        if not_compressed_regexp is not None:
-            ret_code |= self.setup_not_compressed_regexp(not_compressed_regexp)
+        if self.values.get("not_compressed_regexp") is not None:
+            ret_code |= self.setup_not_compressed_regexp(
+                self.values["not_compressed_regexp"]
+            )
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
 
-        if owners_map is not None:
-            ret_code |= self.init_owners_mapping(**owners_map)
-            if ret_code & Globals.RET_CODE_ERR:
-                return ret_code
+        ret_code |= self.init_owners_mapping(
+            users_map=self.values.get("user_mapping_file"),
+            groups_map=self.values.get("group_mapping_file"),
+            preserve_num_ids=self.values.get("preserve_numerical_ids", False),
+        )
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         if log.Log.file_verbosity > 0 and action_name:
             ret_code |= self._open_logfile(action_name, self.must_be_writable)
@@ -247,7 +248,7 @@ class Repo(locations.Location):
     @classmethod  # so that we can easily use in tests
     def setup_not_compressed_regexp(cls, not_compressed_regexp=None):
         """
-        Sets the no_compression_regexp setting globally
+        Sets the not_compressed_regexp setting globally
         """
         not_compressed_regexp = os.fsencode(not_compressed_regexp)
         try:
@@ -260,7 +261,7 @@ class Repo(locations.Location):
             )
             return Globals.RET_CODE_ERR
 
-        Globals.set_all("no_compression_regexp", not_compressed_regexp)
+        Globals.set_all("not_compressed_regexp", not_compressed_regexp)
 
         return Globals.RET_CODE_OK
 

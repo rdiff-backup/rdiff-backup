@@ -11,3 +11,5 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - replace own Logger implementation with standard one (in the background)
 - extend runtime info to also check locations and output file system information
 - set api version to 300
+- move creation of self._shadow to __init__ of locations
+- make check and setup functions mostly remote to encapsulate repo structure
