@@ -35,10 +35,9 @@ class Dir:
 
 
 class ReadDir(Dir, locations.ReadLocation):
-    def setup(self):
-        ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
-            return ret_code
+
+    def __init__(self, base_dir, values):
+        super().__init__(base_dir, values)
 
         if self.base_dir.conn is Globals.local_connection:
             # should be more efficient than going through the connection
@@ -47,6 +46,12 @@ class ReadDir(Dir, locations.ReadLocation):
             self._shadow = _dir_shadow.ReadDirShadow
         else:
             self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
+
+    def setup(self):
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
             return ret_code | Globals.RET_CODE_ERR
@@ -123,10 +128,9 @@ class ReadDir(Dir, locations.ReadLocation):
 
 
 class WriteDir(Dir, locations.WriteLocation):
-    def setup(self, src_repo):
-        ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
-            return ret_code
+
+    def __init__(self, base_dir, values):
+        super().__init__(base_dir, values)
 
         if self.base_dir.conn is Globals.local_connection:
             # should be more efficient than going through the connection
@@ -135,6 +139,12 @@ class WriteDir(Dir, locations.WriteLocation):
             self._shadow = _dir_shadow.WriteDirShadow
         else:
             self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
+
+    def setup(self, src_repo):
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
             return ret_code | Globals.RET_CODE_ERR

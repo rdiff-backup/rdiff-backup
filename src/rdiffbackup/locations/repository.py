@@ -70,9 +70,19 @@ class Repo(locations.Location):
 
         # Finish the initialization with the identified base_dir
         super().__init__(base_dir, values)
+
+        if self.base_dir.conn is Globals.local_connection:
+            # should be more efficient than going through the connection
+            from rdiffbackup.locations import _repo_shadow
+
+            self._shadow = _repo_shadow.RepoShadow
+        else:
+            self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
+
         self.must_be_writable = must_be_writable
         self.must_exist = must_exist
         self.can_be_sub_path = can_be_sub_path
+        # TODO remove and move to shadow to better encapsulate structure
         self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
         self.incs_dir = self.data_dir.append_path(b"increments")
         self.lockfile = self.data_dir.append(locations.LOCK)
@@ -114,14 +124,6 @@ class Repo(locations.Location):
         Globals.set_all("rbdir", self.data_dir)  # compat201
 
         ret_code = Globals.RET_CODE_OK
-
-        if self.base_dir.conn is Globals.local_connection:
-            # should be more efficient than going through the connection
-            from rdiffbackup.locations import _repo_shadow
-
-            self._shadow = _repo_shadow.RepoShadow
-        else:
-            self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
 
         lock_result = self.lock()
         if lock_result is False:
