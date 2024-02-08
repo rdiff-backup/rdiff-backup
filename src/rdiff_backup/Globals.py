@@ -205,8 +205,8 @@ compression = 1
 # case-insensitive regular expression won't be compressed (applies
 # to .snapshots and .diffs).
 # The regexp is the compiled version of the argument provided by
-# --no-compression-regexp (or its default value)
-no_compression_regexp = None
+# --not-compressed-regexp (or its default value)
+not_compressed_regexp = None
 
 # If true, filelists and directory statistics will be split on
 # nulls instead of newlines.

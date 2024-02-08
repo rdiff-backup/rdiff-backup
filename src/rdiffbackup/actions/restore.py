@@ -73,11 +73,7 @@ class RestoreAction(actions.BaseAction):
                 must_exist=True,
                 can_be_sub_path=True,
             )
-            self.dir = directory.WriteDir(
-                self.connected_locations[1],
-                self.values,
-                self.values["create_full_path"],
-            )
+            self.dir = directory.WriteDir(self.connected_locations[1], self.values)
         return conn_value
 
     def check(self):
@@ -156,19 +152,11 @@ class RestoreAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self.repo.setup(
-            action_name=self.name,
-            not_compressed_regexp=self.values["not_compressed_regexp"],
-        )
+        ret_code |= self.repo.setup(action_name=self.name)
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        owners_map = {
-            "users_map": self.values["user_mapping_file"],
-            "groups_map": self.values["group_mapping_file"],
-            "preserve_num_ids": self.values["preserve_numerical_ids"],
-        }
-        ret_code |= self.dir.setup(self.repo, owners_map=owners_map)
+        ret_code |= self.dir.setup(self.repo)
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 

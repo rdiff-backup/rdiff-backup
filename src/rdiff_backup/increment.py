@@ -88,8 +88,8 @@ def _make_missing_increment(incpref, inc_time):
 def _is_compressed(mirror):
     """Return true if mirror's increments should be compressed"""
     return Globals.compression and (
-        Globals.no_compression_regexp is None
-        or not Globals.no_compression_regexp.match(mirror.path)
+        Globals.not_compressed_regexp is None
+        or not Globals.not_compressed_regexp.match(mirror.path)
     )
 
 

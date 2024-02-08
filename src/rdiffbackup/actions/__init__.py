@@ -299,7 +299,6 @@ COMPRESSION_PARSER.add_argument(
 )
 COMPRESSION_PARSER.add_argument(
     "--not-compressed-regexp",
-    "--no-compression-regexp",
     metavar="REGEXP",
     default=DEFAULT_NOT_COMPRESSED_REGEXP,
     help="[sub] regexp to select files not being compressed "

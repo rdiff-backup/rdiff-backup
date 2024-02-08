@@ -123,7 +123,7 @@ class ReadDir(Dir, locations.ReadLocation):
 
 
 class WriteDir(Dir, locations.WriteLocation):
-    def setup(self, src_repo, owners_map=None):
+    def setup(self, src_repo):
         ret_code = super().setup()
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
@@ -149,10 +149,13 @@ class WriteDir(Dir, locations.WriteLocation):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if owners_map is not None:
-            ret_code |= self.init_owners_mapping(**owners_map)
-            if ret_code & Globals.RET_CODE_ERR:
-                return ret_code
+        ret_code |= self.init_owners_mapping(
+            users_map=self.values.get("user_mapping_file"),
+            groups_map=self.values.get("group_mapping_file"),
+            preserve_num_ids=self.values.get("preserve_numerical_ids", False),
+        )
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         return ret_code
 
