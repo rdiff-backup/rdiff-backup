@@ -164,9 +164,6 @@ class WriteLocation(Location):
     Abstract writable location class, possibly not pre-existing
     """
 
-    def __init__(self, base_dir, values):
-        super().__init__(base_dir, values)
-
     def check(self):
         """
         Check anything which can be checked about the location
