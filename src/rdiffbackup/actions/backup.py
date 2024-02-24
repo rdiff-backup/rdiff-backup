@@ -99,8 +99,6 @@ class BackupAction(actions.BaseAction):
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return ret_code | Globals.RET_CODE_ERR
 
-        log.ErrorLog.open(Time.getcurtimestr(), compress=self.values["compression"])
-
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values["selections"]
         )

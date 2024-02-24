@@ -42,11 +42,12 @@ from rdiff_backup import (
     robust,
     rorpiter,
     rpath,
+    Security,
     selection,
     statistics,
     Time,
 )
-from rdiffbackup import meta_mgr
+from rdiffbackup import locations, meta_mgr
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
@@ -57,7 +58,7 @@ from rdiffbackup.utils import locking, simpleps
 
 
 # @API(RepoShadow, 201)
-class RepoShadow:
+class RepoShadow(locations.LocationShadow):
     """
     Shadow repository for the local repository representation
     """
@@ -91,22 +92,105 @@ class RepoShadow:
         False: {"open": "r", "lock": locking.LOCK_SH | locking.LOCK_NB},
     }
 
-    # @API(RepoShadow.setup_paths, 201)
+    # @API(RepoShadow.init, 300)
     @classmethod
-    def setup_paths(cls, base_dir, data_dir, incs_dir):
-        """
-        Setup the base, data and increments directories for further use
-        """
-        cls._base_dir = base_dir
-        cls._data_dir = data_dir
-        cls._incs_dir = incs_dir
-
-        # FIXME this should belong in a more generic setup function
+    def init(
+        cls,
+        orig_path,
+        values,
+        must_be_writable,
+        must_exist,
+        can_be_sub_path=False,
+    ):
+        # if the base_dir can be a sub-file, we need to identify the actual
+        # base directory of the repository
+        cls._orig_path = orig_path
+        if can_be_sub_path:
+            (base_dir, ref_index, ref_type) = cls._get_repository_dirs(orig_path)
+            cls._base_dir = base_dir
+            cls._ref_index = ref_index
+            cls._ref_type = ref_type
+        else:
+            cls._base_dir = orig_path
+            cls._ref_index = ()
+            cls._ref_type = None
+        cls._data_dir = cls._base_dir.append_path(b"rdiff-backup-data")
+        cls._incs_dir = cls._data_dir.append_path(b"increments")
+        cls._lockfile = cls._data_dir.append(b"lock.yml")
+        if can_be_sub_path:
+            if cls._ref_type is None:
+                # nothing to save, the user must first give a correct path
+                log.FatalError(
+                    "Something was wrong with the given path '{gp}'".format(
+                        gp=orig_path
+                    )
+                )
+            else:
+                cls._ref_path = cls._base_dir.new_index(cls._ref_index)
+                cls._ref_inc = cls._data_dir.append_path(b"increments", cls._ref_index)
+        else:
+            cls._ref_path = cls._base_dir
+            cls._ref_inc = cls._data_dir.append_path(b"increments", cls._ref_index)
+            log.Log("Using repository '{re}'".format(re=cls._base_dir), log.INFO)
+        cls._values = values
+        cls._must_be_writable = must_be_writable
+        cls._must_exist = must_exist
+        cls._can_be_sub_path = can_be_sub_path
+        cls._has_been_locked = False
         # we need this to be able to use multiple times the class
         cls._mirror_time = None
         cls._restore_time = None
         cls._regress_time = None
         cls._unsuccessful_backup_time = None
+
+        return cls._base_dir
+
+    # @API(RepoShadow.check, 300)  # inherited
+
+    # @API(RepoShadow.setup, 300)
+    @classmethod
+    def setup(cls):
+        if cls._must_be_writable and not cls._create():
+            return Globals.RET_CODE_ERR
+        Security.reset_restrict_path(cls._base_dir)
+        lock_result = cls._lock()
+        if lock_result is False:
+            if cls._values["force"]:
+                log.Log(
+                    "Repository is locked by file {lf}, another "
+                    "action is probably on-going. Enforcing anyway "
+                    "at your own risk".format(lf=cls._lockfile),
+                    log.WARNING,
+                )
+            else:
+                log.Log(
+                    "Repository is locked by file {lf}, another "
+                    "is probably on-going, or something went "
+                    "wrong. Either wait, remove the lock "
+                    "or use the --force option".format(lf=cls._lockfile),
+                    log.ERROR,
+                )
+                return Globals.RET_CODE_ERR
+        elif lock_result is None:
+            log.Log(
+                "Repository couldn't be locked by file {lf}, probably "
+                "because the repository was never written with "
+                "API >= 201, ignoring".format(lf=cls._lockfile),
+                log.NOTE,
+            )
+        map_longnames.setup(cls._data_dir)
+        if cls._must_be_writable:
+            log.ErrorLog.open(
+                data_dir=cls._data_dir,
+                time_string=Time.getcurtimestr(),
+                compress=cls._values["compression"],
+            )
+        return Globals.RET_CODE_OK
+
+    # @API(RepoShadow.exit, 300)
+    @classmethod
+    def exit(cls):
+        cls._unlock()
 
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
@@ -142,6 +226,232 @@ class RepoShadow:
         dest_rpath.setdata()
 
     @classmethod
+    def _is_existing(cls):
+        # check first that the directory itself exists
+        if not super()._is_existing():
+            return False
+
+        if not cls._data_dir.isdir():
+            log.Log(
+                "Source directory '{sd}' doesn't have a sub-directory "
+                "'rdiff-backup-data'".format(sd=cls._base_dir),
+                log.ERROR,
+            )
+            return False
+        elif not cls._incs_dir.isdir():
+            log.Log(
+                "Data directory '{dd}' doesn't have an 'increments' "
+                "sub-directory".format(dd=cls._data_dir),
+                log.WARNING,
+            )  # used to be normal  # compat200repo
+            # return False # compat200repo
+        return True
+
+    @classmethod
+    def _is_writable(cls):
+        # check first that the directory itself is writable
+        # (or doesn't yet exist)
+        if not super()._is_writable():
+            return False
+        # if the target is a non-empty existing directory
+        # without rdiff-backup-data sub-directory
+        if (
+            cls._base_dir.lstat()
+            and cls._base_dir.isdir()
+            and cls._base_dir.listdir()
+            and not cls._data_dir.lstat()
+        ):
+            if cls._values["force"]:
+                log.Log(
+                    "Target path '{tp}' does not look like a rdiff-backup "
+                    "repository but will be force overwritten".format(tp=cls._base_dir),
+                    log.WARNING,
+                )
+            else:
+                log.Log(
+                    "Target path '{tp}' does not look like a rdiff-backup "
+                    "repository, call with '--force' to overwrite".format(
+                        tp=cls._base_dir
+                    ),
+                    log.ERROR,
+                )
+                return False
+        return True
+
+    @classmethod
+    def _create(cls):
+        # create the underlying location/directory
+        if not super()._create():
+            return False
+
+        if cls._is_failed_initial_backup():
+            # poor man's locking mechanism to protect starting backup
+            # independently from the API version
+            cls._lockfile.setdata()
+            if cls._lockfile.lstat():
+                if cls._values["force"]:
+                    log.Log(
+                        "An initial backup in a strange state with "
+                        "lockfile {lf}. Enforcing continuation, "
+                        "hopefully you know what you're doing".format(lf=cls._lockfile),
+                        log.WARNING,
+                    )
+                else:
+                    log.Log(
+                        "An initial backup in a strange state with "
+                        "lockfile {lf}. Either it's just an initial backup "
+                        "running, wait a bit and try again later, or "
+                        "something is really wrong. --force will remove "
+                        "the complete repo, at your own risk".format(lf=cls._lockfile),
+                        log.ERROR,
+                    )
+                    return False
+            log.Log(
+                "Found interrupted initial backup in data directory {dd}. "
+                "Removing...".format(dd=cls._data_dir),
+                log.NOTE,
+            )
+            cls._clean_failed_initial_backup()
+
+        # define a few essential subdirectories
+        if not cls._data_dir.lstat():
+            try:
+                cls._data_dir.mkdir()
+            except OSError as exc:
+                log.Log(
+                    "Could not create 'rdiff-backup-data' sub-directory "
+                    "in base directory '{bd}' due to exception '{ex}'. "
+                    "Please fix the access rights and retry.".format(
+                        bd=cls._base_dir, ex=exc
+                    ),
+                    log.ERROR,
+                )
+                return False
+        if not cls._incs_dir.lstat():
+            try:
+                cls._incs_dir.mkdir()
+            except OSError as exc:
+                log.Log(
+                    "Could not create 'increments' sub-directory "
+                    "in data directory '{dd}' due to exception '{ex}'. "
+                    "Please fix the access rights and retry.".format(
+                        dd=cls._data_dir, ex=exc
+                    ),
+                    log.ERROR,
+                )
+                return False
+
+        return True
+
+    @classmethod
+    def _is_failed_initial_backup(cls):
+        """
+        Returns True if it looks like the rdiff-backup-data directory contains
+        a failed initial backup, else False.
+        """
+        if cls._data_dir.lstat():
+            rbdir_files = cls._data_dir.listdir()
+            mirror_markers = [x for x in rbdir_files if x.startswith(b"current_mirror")]
+            error_logs = [x for x in rbdir_files if x.startswith(b"error_log")]
+            metadata_mirrors = [
+                x for x in rbdir_files if x.startswith(b"mirror_metadata")
+            ]
+            # If we have no current_mirror marker, and one or less error logs
+            # and metadata files, we most likely have a failed backup.
+            return (
+                not mirror_markers
+                and len(error_logs) <= 1
+                and len(metadata_mirrors) <= 1
+            )
+        return False
+
+    @classmethod
+    def _clean_failed_initial_backup(cls):
+        """
+        Clear the given rdiff-backup-data if possible, it's faster than
+        trying to do a regression, which would probably anyway fail.
+        """
+        cls._data_dir.delete()  # setdata is implicit
+        cls._incs_dir.setdata()
+
+
+    @classmethod
+    def _get_repository_dirs(cls, orig_path):
+        """
+        Determine the base_dir of a repo based on a given path.
+
+        The rpath can be either the repository itself, a sub-directory
+        (in the mirror) or a dated increment file.
+        Return a tuple made of (the identified base directory, a path index,
+        the recovery type). The path index is the split relative path of the
+        sub-directory to restore (or of the path corresponding to the
+        increment). The type is either 'base', 'subpath', 'inc' or None if the
+        given rpath couldn't be properly analyzed.
+
+        Note that the current path can be relative but must still
+        contain the name of the repository (it can't be just within it).
+        """
+        # get the path as a list of directories/file
+        path_list = orig_path.get_path_as_list()
+        if orig_path.isincfile():
+            if b"rdiff-backup-data" not in path_list:
+                log.Log(
+                    "Path '{pa}' looks like an increment but doesn't "
+                    "have 'rdiff-backup-data' in its path".format(pa=orig_path),
+                    log.ERROR,
+                )
+                return (orig_path, (), None)
+            else:
+                data_idx = path_list.index(b"rdiff-backup-data")
+                if b"increments" in path_list:
+                    inc_idx = path_list.index(b"increments")
+                    # base_index is the path within the increments directory,
+                    # replacing the name of the increment with the name of the
+                    # file it represents
+                    base_index = path_list[inc_idx + 1 : -1]
+                    base_index.append(orig_path.inc_basestr.split(b"/")[-1])
+                elif path_list[-1].startswith(b"increments."):
+                    inc_idx = len(path_list) - 1
+                    base_index = []
+                else:
+                    inc_idx = -1
+                if inc_idx != data_idx + 1:
+                    log.Log(
+                        "Path '{pa}' looks like an increment but "
+                        "doesn't have 'rdiff-backup-data/increments' "
+                        "in its path.".format(pa=orig_path),
+                        log.ERROR,
+                    )
+                    return (orig_path, (), None)
+                # base_dir is the directory above the data directory
+                base_dir = rpath.RPath(orig_path.conn, b"/".join(path_list[:data_idx]))
+                return (base_dir, tuple(base_index), "inc")
+        else:
+            # rpath is either the base directory itself or a sub-dir of it
+            if (
+                orig_path.lstat()
+                and orig_path.isdir()
+                and b"rdiff-backup-data" in orig_path.listdir()
+            ):
+                # it's a base directory, simple case...
+                return (orig_path, (), "base")
+            parent_rp = orig_path
+            for element in range(1, len(path_list)):
+                parent_rp = parent_rp.get_parent_rp()
+                if (
+                    parent_rp.lstat()
+                    and parent_rp.isdir()
+                    and b"rdiff-backup-data" in parent_rp.listdir()
+                ):
+                    return (parent_rp, tuple(path_list[-element:]), "subpath")
+            log.Log(
+                "Path '{pa}' couldn't be identified as being within "
+                "an existing backup repository".format(pa=orig_path),
+                log.ERROR,
+            )
+            return (orig_path, (), None)
+
+    @classmethod
     def _get_dest_select(cls, rpath, previous_time):
         """
         Return destination select rorpath iterator
@@ -156,7 +466,7 @@ class RepoShadow:
             sel.parse_rbdir_exclude()
             return sel.get_select_iter()
 
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         if previous_time:  # it's an increment, not the first mirror
             rorp_iter = meta_manager.get_metas_at_time(previous_time)
             if rorp_iter:
@@ -175,7 +485,7 @@ class RepoShadow:
         dest_iter = cls._get_dest_select(baserp, previous_time)
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
         cls.CCPP = _CacheCollatedPostProcess(
-            collated, Globals.pipeline_max_length * 4, baserp
+            collated, Globals.pipeline_max_length * 4, baserp, cls._data_dir
         )
         # pipeline len adds some leeway over just*3 (to and from and back)
 
@@ -328,7 +638,7 @@ class RepoShadow:
             statistics.print_active_stats(end_time)
         if Globals.file_statistics:
             statistics.FileStats.close()
-        statistics.write_active_statfileobj(end_time)
+        statistics.write_active_statfileobj(cls._data_dir, end_time)
 
     # ### COPIED FROM RESTORE ####
 
@@ -444,7 +754,7 @@ class RepoShadow:
         if rest_time is None:
             rest_time = cls._restore_time
 
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         rorp_iter = meta_manager.get_metas_at_time(rest_time, cls.mirror_base.index)
         if not rorp_iter:
             if require_metadata:
@@ -969,7 +1279,7 @@ information in it.
         If there are two current_mirror increments, then the last one
         corresponds to a backup session that failed.
         """
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         curmir_incs = meta_manager.sorted_prefix_inclist(b"current_mirror")
         assert (
             len(curmir_incs) == 2
@@ -1093,7 +1403,7 @@ information in it.
         """
         Iterate rorps from metadata file, if any are available
         """
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         metadata_iter = meta_manager.get_metas_at_time(cls._regress_time)
         if metadata_iter:
             return metadata_iter
@@ -1105,15 +1415,16 @@ information in it.
 
     # ### COPIED FROM FS_ABILITIES ####
 
-    # @API(RepoShadow.get_fs_abilities_readonly, 201)
+    # @API(RepoShadow.get_fs_abilities, 300)
     @classmethod
-    def get_fs_abilities_readonly(cls, base_dir):
-        return fs_abilities.FSAbilities(base_dir, writable=False)
-
-    # @API(RepoShadow.get_fs_abilities_readwrite, 201)
-    @classmethod
-    def get_fs_abilities_readwrite(cls, base_dir):
-        return fs_abilities.FSAbilities(base_dir, writable=True)
+    def get_fs_abilities(cls):
+        if cls._must_be_writable:
+            # base dir can be _potentially_ writable but actually read-only
+            # to map the actual rights of the root directory, whereas the
+            # data dir is alway writable
+            return fs_abilities.FSAbilities(cls._data_dir, writable=True)
+        else:
+            return fs_abilities.FSAbilities(cls._base_dir, writable=False)
 
     # @API(RepoShadow.get_config, 201)
     @classmethod
@@ -1170,9 +1481,8 @@ information in it.
 
     # ### LOCKING ####
 
-    # @API(RepoShadow.is_locked, 201)
     @classmethod
-    def is_locked(cls, lockfile, exclusive):
+    def _is_locked(cls):
         """
         Validate if the repository is locked or not by the file
         'rdiff-backup-data/lock.yml'
@@ -1180,19 +1490,18 @@ information in it.
         Returns True if the file exists and is locked, else returns False
         """
         # we need to make sure we have the last state of the lock
-        lockfile.setdata()
-        if not lockfile.lstat():
+        cls._lockfile.setdata()
+        if not cls._lockfile.lstat():
             return False  # if the file doesn't exist, it can't be locked
-        with open(lockfile, cls.LOCK_MODE[exclusive]["open"]) as lockfd:
+        with open(cls._lockfile, cls.LOCK_MODE[cls._must_be_writable]["open"]) as lockfd:
             try:
-                locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+                locking.lock(lockfd, cls.LOCK_MODE[cls._must_be_writable]["lock"])
                 return False
             except BlockingIOError:
                 return True
 
-    # @API(RepoShadow.lock, 201)
     @classmethod
-    def lock(cls, lockfile, exclusive, force=False):
+    def _lock(cls):
         """
         Write a specific file 'rdiff-backup-data/lock.yml' to grab the lock,
         and verify that no other process took the lock by comparing its
@@ -1211,19 +1520,19 @@ information in it.
             "hostname": socket.gethostname(),
         }
         id_yaml = yaml.safe_dump(identifier)
-        lockfile.setdata()
-        if not lockfile.lstat():
-            if exclusive:
-                open_mode = cls.LOCK_MODE[exclusive]["truncate"]
+        cls._lockfile.setdata()
+        if not cls._lockfile.lstat():
+            if cls._must_be_writable:
+                open_mode = cls.LOCK_MODE[cls._must_be_writable]["truncate"]
             else:
                 # we can't take the lock if the file doesn't exist
                 return None
         else:
-            open_mode = cls.LOCK_MODE[exclusive]["open"]
+            open_mode = cls.LOCK_MODE[cls._must_be_writable]["open"]
         try:
-            lockfd = open(lockfile, open_mode)
-            locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
-            if exclusive:  # let's keep a trace of who's writing
+            lockfd = open(cls._lockfile, open_mode)
+            locking.lock(lockfd, cls.LOCK_MODE[cls._must_be_writable]["lock"])
+            if cls._must_be_writable:  # let's keep a trace of who's writing
                 lockfd.seek(0)
                 lockfd.truncate()
                 lockfd.write(id_yaml)
@@ -1235,9 +1544,8 @@ information in it.
                 lockfd.close()
             return False
 
-    # @API(RepoShadow.unlock, 201)
     @classmethod
-    def unlock(cls, lockfile, exclusive):
+    def _unlock(cls):
         """
         Remove any lock existing.
 
@@ -1245,7 +1553,7 @@ information in it.
         the only process running on this repository.
         """
         if cls._lockfd:
-            if exclusive:  # empty the file without removing it
+            if cls._must_be_writable:  # empty the file without removing it
                 cls._lockfd.seek(0)
                 cls._lockfd.truncate()
             # Unlocking isn't absolutely necessary as we close the file just
@@ -1287,15 +1595,16 @@ class _CacheCollatedPostProcess:
     metadata for it.
     """
 
-    def __init__(self, collated_iter, cache_size, dest_root_rp):
+    def __init__(self, collated_iter, cache_size, dest_root_rp, data_rp):
         """Initialize new CCWP."""
         self.iter = collated_iter  # generates (source_rorp, dest_rorp) pairs
         self.cache_size = cache_size
         self.dest_root_rp = dest_root_rp
+        self.data_rp = data_rp
 
         self.statfileobj = statistics.init_statfileobj()
         if Globals.file_statistics:
-            statistics.FileStats.init()
+            statistics.FileStats.init(self.data_rp)
         self.metawriter = meta_mgr.get_meta_manager().get_writer()
 
         # the following should map indices to lists

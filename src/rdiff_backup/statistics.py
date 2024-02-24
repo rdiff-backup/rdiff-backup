@@ -364,10 +364,10 @@ class FileStats:
     _line_sep = None
 
     @classmethod
-    def init(cls):
+    def init(cls, data_dir):
         """Open file stats object and prepare to write"""
         assert not (cls._fileobj or cls._rp), "FileStats has already been initialized."
-        rpbase = Globals.rbdir.append(b"file_statistics")
+        rpbase = data_dir.append(b"file_statistics")
         suffix = Globals.compression and "data.gz" or "data"
         cls._rp = increment.get_inc(rpbase, suffix, Time.getcurtime())
         assert not cls._rp.lstat(), "Path '{rp}' shouldn't be existing.".format(
@@ -468,11 +468,11 @@ def process_increment(inc_rorp):
         _active_statfileobj.add_increment(inc_rorp)
 
 
-def write_active_statfileobj(end_time=None):
+def write_active_statfileobj(data_dir, end_time=None):
     """Write active StatFileObj object to session statistics file"""
     global _active_statfileobj
     assert _active_statfileobj, "Stats object must be set before writing."
-    rp_base = Globals.rbdir.append(b"session_statistics")
+    rp_base = data_dir.append(b"session_statistics")
     session_stats_rp = increment.get_inc(rp_base, "data", Time.getcurtime())
     _active_statfileobj.finish(end_time)
     _active_statfileobj.write_stats_to_rp(session_stats_rp)

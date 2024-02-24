@@ -35,6 +35,7 @@ from rdiff_backup import (
     rpath,
     selection,
 )
+from rdiffbackup import locations
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import owners as map_owners
@@ -43,12 +44,15 @@ from rdiffbackup.locations.map import owners as map_owners
 
 
 # @API(ReadDirShadow, 201)
-class ReadDirShadow:
+class ReadDirShadow(locations.LocationShadow):
     """
     Shadow read directory for the local directory representation
     """
 
     _select = None  # will be set to source Select iterator
+
+    # @API(ReadDirShadow.init, 300)  # inherited
+    # @API(ReadDirShadow.check, 300)  # inherited
 
     # @API(ReadDirShadow.set_select, 201)
     @classmethod
@@ -212,10 +216,7 @@ class ReadDirShadow:
             else:
                 cls._log_success(repo_rorp)
 
-    # @API(ReadDirShadow.get_fs_abilities, 201)
-    @classmethod
-    def get_fs_abilities(cls, base_dir):
-        return fs_abilities.FSAbilities(base_dir, writable=False)
+    # @API(ReadDirShadow.get_fs_abilities, 201)  # inherited
 
     @classmethod
     def _get_basic_report(cls, src_rp, repo_rorp, comp_data_func=None):
@@ -285,10 +286,36 @@ class _CompareReport:
 
 
 # @API(WriteDirShadow, 201)
-class WriteDirShadow:
+class WriteDirShadow(locations.LocationShadow):
     """Hold functions to be run on the target side when restoring"""
 
     _select = None
+
+    # @API(WriteDirShadow.init, 300)  # inherited
+
+    # @API(WriteDirShadow.check, 300)
+    @classmethod
+    def check(cls):
+        ret_code = super().check()
+
+        # if the target is a non-empty existing directory
+        if cls._base_dir.lstat() and cls._base_dir.isdir() and cls._base_dir.listdir():
+            if cls._values["force"]:
+                log.Log(
+                    "Target path {tp} exists and isn't empty, content "
+                    "might be force overwritten by restore".format(tp=cls._base_dir),
+                    log.WARNING,
+                )
+                ret_code |= Globals.RET_CODE_WARN
+            else:
+                log.Log(
+                    "Target path {tp} exists and isn't empty, "
+                    "call with '--force' to overwrite".format(tp=cls._base_dir),
+                    log.ERROR,
+                )
+                ret_code |= Globals.RET_CODE_ERR
+
+        return ret_code
 
     # @API(WriteDirShadow.set_select, 201)
     @classmethod
@@ -328,10 +355,7 @@ class WriteDirShadow:
         ITR.finish_processing()
         target.setdata()
 
-    # @API(WriteDirShadow.get_fs_abilities, 201)
-    @classmethod
-    def get_fs_abilities(cls, base_dir):
-        return fs_abilities.FSAbilities(base_dir, writable=True)
+    # @API(WriteDirShadow.get_fs_abilities, 201)  # inherited
 
     # @API(WriteDirShadow.init_owners_mapping, 201)
     @classmethod

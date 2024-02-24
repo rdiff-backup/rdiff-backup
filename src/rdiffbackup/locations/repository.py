@@ -42,7 +42,7 @@ class Repo(locations.Location):
 
     def __init__(
         self,
-        base_dir,
+        orig_path,
         values,
         must_be_writable,
         must_exist,
@@ -51,105 +51,30 @@ class Repo(locations.Location):
         """
         Initialize the repository class
 
-        can_be_sub_path is True if the base_dir can actually be a repository,
+        can_be_sub_path is True if the orig_path can actually be a repository,
         but also a sub-directory or even an increment file, mostly used for
         restore actions.
         """
-        # if the base_dir can be a sub-file, we need to identify the actual
-        # base directory of the repository
-        if can_be_sub_path:
-            self.orig_path = base_dir
-            (base_dir, ref_index, ref_type) = base_dir.get_repository_dirs()
-            self.ref_index = ref_index
-            self.ref_type = ref_type
-            # we delay the error handling until the check step,
-            # and as well the definition of ref_path and ref_inc
-        else:
-            self.ref_index = ()
-            self.ref_type = None
-
-        # Finish the initialization with the identified base_dir
-        super().__init__(base_dir, values)
-
-        if self.base_dir.conn is Globals.local_connection:
+        super().__init__(orig_path, values)
+        if orig_path.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _repo_shadow
 
             self._shadow = _repo_shadow.RepoShadow
         else:
-            self._shadow = self.base_dir.conn._repo_shadow.RepoShadow
-
-        self.must_be_writable = must_be_writable
-        self.must_exist = must_exist
-        self.can_be_sub_path = can_be_sub_path
-        # TODO remove and move to shadow to better encapsulate structure
-        self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
-        self.incs_dir = self.data_dir.append_path(b"increments")
-        self.lockfile = self.data_dir.append(locations.LOCK)
-        self.has_been_locked = False
-
-    def check(self):
-        if self.can_be_sub_path:
-            if self.ref_type is None:
-                # nothing to save, the user must first give a correct path
-                return Globals.RET_CODE_ERR
-            else:
-                self.ref_path = self.base_dir.new_index(self.ref_index)
-                self.ref_inc = self.data_dir.append_path(b"increments", self.ref_index)
-        else:
-            self.ref_path = self.base_dir
-            self.ref_inc = self.data_dir.append_path(b"increments", self.ref_index)
-            log.Log("Using repository '{re}'".format(re=self.base_dir), log.INFO)
-        ret_code = Globals.RET_CODE_OK
-
-        if self.must_exist and not self._is_existing():
-            ret_code |= Globals.RET_CODE_ERR
-
-        if self.must_be_writable and not self._is_writable():
-            ret_code |= Globals.RET_CODE_ERR
-
-        return ret_code
+            self._shadow = orig_path.conn._repo_shadow.RepoShadow
+        self.base_dir = self._shadow.init(
+            orig_path, values, must_be_writable, must_exist, can_be_sub_path
+        )
 
     def setup(
         self,
         src_dir=None,
         action_name=None,
     ):
-        if self.must_be_writable and not self._create():
-            return Globals.RET_CODE_ERR
-
-        if self.can_be_sub_path and self.base_dir.conn is Globals.local_connection:
-            Security.reset_restrict_path(self.base_dir)
-
-        Globals.set_all("rbdir", self.data_dir)  # compat201
-
-        ret_code = Globals.RET_CODE_OK
-
-        lock_result = self.lock()
-        if lock_result is False:
-            if self.values["force"]:
-                log.Log(
-                    "Repository is locked by file {lf}, another "
-                    "action is probably on-going. Enforcing anyway "
-                    "at your own risk".format(lf=self.lockfile),
-                    log.WARNING,
-                )
-            else:
-                log.Log(
-                    "Repository is locked by file {lf}, another "
-                    "is probably on-going, or something went "
-                    "wrong. Either wait, remove the lock "
-                    "or use the --force option".format(lf=self.lockfile),
-                    log.ERROR,
-                )
-                return Globals.RET_CODE_ERR
-        elif lock_result is None:
-            log.Log(
-                "Repository couldn't be locked by file {lf}, probably "
-                "because the repository was never written with "
-                "API >= 201, ignoring".format(lf=self.lockfile),
-                log.NOTE,
-            )
+        ret_code = self._shadow.setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
@@ -177,7 +102,6 @@ class Repo(locations.Location):
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
         self.setup_quoting()
-        self.setup_paths()
 
         if self.values.get("not_compressed_regexp") is not None:
             ret_code |= self.setup_not_compressed_regexp(
@@ -203,13 +127,13 @@ class Repo(locations.Location):
 
     def exit(self):
         """
-        Close the repository, mainly unlock it if it's been previously locked
+        Close the repository
         """
         # FIXME this shouldn't be necessary, and the setting of variable
         # across the connection should happen through the shadow
         Globals.set_all("backup_writer", None)
         self.base_dir.conn.Globals.set_local("isbackup_writer", False)
-        self.unlock()
+        self._shadow.exit()
         if self.logging_to_file:
             log.Log.close_logfile()
 
@@ -237,15 +161,7 @@ class Repo(locations.Location):
             self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
             self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
 
-        Globals.set_all("rbdir", self.data_dir)  # compat201
-
         return True
-
-    def setup_paths(self):
-        """
-        Shadow function for RepoShadow.setup_paths
-        """
-        return self._shadow.setup_paths(self.base_dir, self.data_dir, self.incs_dir)
 
     @classmethod  # so that we can easily use in tests
     def setup_not_compressed_regexp(cls, not_compressed_regexp=None):
@@ -266,37 +182,6 @@ class Repo(locations.Location):
         Globals.set_all("not_compressed_regexp", not_compressed_regexp)
 
         return Globals.RET_CODE_OK
-
-    def get_fs_abilities(self):
-        """
-        Shadow function for RepoShadow.get_fs_abilities_readonly/write
-        """
-        if self.must_be_writable:
-            # base dir can be _potentially_ writable but actually read-only
-            # to map the actual rights of the root directory, whereas the
-            # data dir is alway writable
-            return self._shadow.get_fs_abilities_readwrite(self.data_dir)
-        else:
-            return self._shadow.get_fs_abilities_readonly(self.base_dir)
-
-    def is_locked(self):
-        """
-        Shadow function for RepoShadow.is_locked
-        """
-        return self._shadow.is_locked(self.lockfile, self.must_be_writable)
-
-    def lock(self):
-        """
-        Shadow function for RepoShadow.lock
-        """
-        return self._shadow.lock(self.lockfile, self.must_be_writable)
-
-    def unlock(self):
-        """
-        Shadow function for RepoShadow.unlock
-        """
-        if hasattr(self, "_shadow"):
-            return self._shadow.unlock(self.lockfile, self.must_be_writable)
 
     def needs_regress(self):
         """
@@ -613,150 +498,6 @@ class Repo(locations.Location):
         return self._shadow.set_config(
             self.data_dir, "special_escapes", special_escapes
         )
-
-    def _is_existing(self):
-        # check first that the directory itself exists
-        if not super()._is_existing():
-            return False
-
-        if not self.data_dir.isdir():
-            log.Log(
-                "Source directory '{sd}' doesn't have a sub-directory "
-                "'rdiff-backup-data'".format(sd=self.base_dir),
-                log.ERROR,
-            )
-            return False
-        elif not self.incs_dir.isdir():
-            log.Log(
-                "Data directory '{dd}' doesn't have an 'increments' "
-                "sub-directory".format(dd=self.data_dir),
-                log.WARNING,
-            )  # used to be normal  # compat200repo
-            # return False # compat200repo
-        return True
-
-    def _is_writable(self):
-        # check first that the directory itself is writable
-        # (or doesn't yet exist)
-        if not super()._is_writable():
-            return False
-        # if the target is a non-empty existing directory
-        # without rdiff-backup-data sub-directory
-        if (
-            self.base_dir.lstat()
-            and self.base_dir.isdir()
-            and self.base_dir.listdir()
-            and not self.data_dir.lstat()
-        ):
-            if self.values["force"]:
-                log.Log(
-                    "Target path '{tp}' does not look like a rdiff-backup "
-                    "repository but will be force overwritten".format(tp=self.base_dir),
-                    log.WARNING,
-                )
-            else:
-                log.Log(
-                    "Target path '{tp}' does not look like a rdiff-backup "
-                    "repository, call with '--force' to overwrite".format(
-                        tp=self.base_dir
-                    ),
-                    log.ERROR,
-                )
-                return False
-        return True
-
-    def _create(self):
-        # create the underlying location/directory
-        if not super()._create():
-            return False
-
-        if self._is_failed_initial_backup():
-            # poor man's locking mechanism to protect starting backup
-            # independently from the API version
-            self.lockfile.setdata()
-            if self.lockfile.lstat():
-                if self.values["force"]:
-                    log.Log(
-                        "An initial backup in a strange state with "
-                        "lockfile {lf}. Enforcing continuation, "
-                        "hopefully you know what you're doing".format(lf=self.lockfile),
-                        log.WARNING,
-                    )
-                else:
-                    log.Log(
-                        "An initial backup in a strange state with "
-                        "lockfile {lf}. Either it's just an initial backup "
-                        "running, wait a bit and try again later, or "
-                        "something is really wrong. --force will remove "
-                        "the complete repo, at your own risk".format(lf=self.lockfile),
-                        log.ERROR,
-                    )
-                    return False
-            log.Log(
-                "Found interrupted initial backup in data directory {dd}. "
-                "Removing...".format(dd=self.data_dir),
-                log.NOTE,
-            )
-            self._clean_failed_initial_backup()
-
-        # define a few essential subdirectories
-        if not self.data_dir.lstat():
-            try:
-                self.data_dir.mkdir()
-            except OSError as exc:
-                log.Log(
-                    "Could not create 'rdiff-backup-data' sub-directory "
-                    "in base directory '{bd}' due to exception '{ex}'. "
-                    "Please fix the access rights and retry.".format(
-                        bd=self.base_dir, ex=exc
-                    ),
-                    log.ERROR,
-                )
-                return False
-        if not self.incs_dir.lstat():
-            try:
-                self.incs_dir.mkdir()
-            except OSError as exc:
-                log.Log(
-                    "Could not create 'increments' sub-directory "
-                    "in data directory '{dd}' due to exception '{ex}'. "
-                    "Please fix the access rights and retry.".format(
-                        dd=self.data_dir, ex=exc
-                    ),
-                    log.ERROR,
-                )
-                return False
-
-        return True
-
-    def _is_failed_initial_backup(self):
-        """
-        Returns True if it looks like the rdiff-backup-data directory contains
-        a failed initial backup, else False.
-        """
-        if self.data_dir.lstat():
-            rbdir_files = self.data_dir.listdir()
-            mirror_markers = [x for x in rbdir_files if x.startswith(b"current_mirror")]
-            error_logs = [x for x in rbdir_files if x.startswith(b"error_log")]
-            metadata_mirrors = [
-                x for x in rbdir_files if x.startswith(b"mirror_metadata")
-            ]
-            # If we have no current_mirror marker, and one or less error logs
-            # and metadata files, we most likely have a failed backup.
-            return (
-                not mirror_markers
-                and len(error_logs) <= 1
-                and len(metadata_mirrors) <= 1
-            )
-        return False
-
-    def _clean_failed_initial_backup(self):
-        """
-        Clear the given rdiff-backup-data if possible, it's faster than
-        trying to do a regression, which would probably anyway fail.
-        """
-        self.data_dir.delete()  # setdata is implicit
-        self.incs_dir.setdata()
 
     def _open_logfile(self, base_name, must_be_writable):
         """

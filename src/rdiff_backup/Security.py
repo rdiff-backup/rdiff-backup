@@ -75,6 +75,9 @@ _file_requests = {
     "rpath.make_file_dict": 0,
     "rpath.delete_dir_no_files": 0,
     "shutil.rmtree": 0,
+    "_repo_shadow.RepoShadow.init": 0,
+    "_dir_shadow.ReadDirShadow.init": 0,
+    "_dir_shadow.WriteDirShadow.init": 0,
 }
 
 # functions to set global values
@@ -226,11 +229,11 @@ def _set_allowed_requests(sec_class, sec_level):
         # "gzip.GzipFile",  # ??? perhaps covered by VirtualFile
         # "open",  # ??? perhaps covered by VirtualFile
         "sys.stdout.write",
-        # API >= 201
-        "_repo_shadow.RepoShadow.is_locked",
-        "_repo_shadow.RepoShadow.lock",
-        "_repo_shadow.RepoShadow.setup_paths",
-        "_repo_shadow.RepoShadow.unlock",
+        # API >=300
+        "_repo_shadow.RepoShadow.init",
+        "_repo_shadow.RepoShadow.check",
+        "_repo_shadow.RepoShadow.setup",
+        "_repo_shadow.RepoShadow.exit",
     }
     if (
         sec_level == "read-only"
@@ -251,6 +254,8 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_repo_shadow.RepoShadow.get_config",
                 "_repo_shadow.RepoShadow.get_mirror_time",
                 "_repo_shadow.RepoShadow.needs_regress",
+                # API >= 300
+                "_repo_shadow.RepoShadow.get_fs_abilities",
             ]
         )
     if sec_level == "read-only" or sec_level == "read-write":
@@ -264,7 +269,6 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.ReadDirShadow.get_fs_abilities",
                 "_dir_shadow.ReadDirShadow.get_select",
                 "_dir_shadow.ReadDirShadow.set_select",
-                "_repo_shadow.RepoShadow.get_fs_abilities_readonly",
                 "_repo_shadow.RepoShadow.init_loop",
                 "_repo_shadow.RepoShadow.get_increment_times",
                 "_repo_shadow.RepoShadow.set_select",
@@ -274,6 +278,10 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_repo_shadow.RepoShadow.list_files_at_time",
                 "_repo_shadow.RepoShadow.init_and_get_loop",
                 "_repo_shadow.RepoShadow.verify",
+                # API >= 300
+                "_dir_shadow.ReadDirShadow.init",
+                "_dir_shadow.ReadDirShadow.check",
+                "_dir_shadow.ReadDirShadow.setup",
             ]
         )
     if sec_level == "update-only" or sec_level == "read-write":
@@ -289,7 +297,6 @@ def _set_allowed_requests(sec_class, sec_level):
                 "statistics.record_error",
                 # API >= 201
                 "_repo_shadow.RepoShadow.close_statistics",
-                "_repo_shadow.RepoShadow.get_fs_abilities_readwrite",
                 "_repo_shadow.RepoShadow.get_sigs",
                 "_repo_shadow.RepoShadow.apply",
                 "_repo_shadow.RepoShadow.remove_current_mirror",
@@ -328,6 +335,10 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.WriteDirShadow.get_sigs_select",
                 "_dir_shadow.WriteDirShadow.apply",
                 "_dir_shadow.WriteDirShadow.set_select",
+                # API >= 300
+                "_dir_shadow.WriteDirShadow.init",
+                "_dir_shadow.WriteDirShadow.check",
+                "_dir_shadow.WriteDirShadow.setup",
             ]
         )
     if sec_class == "server":

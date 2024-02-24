@@ -30,22 +30,20 @@ from rdiffbackup.locations import fs_abilities
 from rdiff_backup import Globals, log
 
 
-class Dir:
-    pass
+class ReadDir(locations.Location):
 
-
-class ReadDir(Dir, locations.ReadLocation):
-
-    def __init__(self, base_dir, values):
-        super().__init__(base_dir, values)
-
-        if self.base_dir.conn is Globals.local_connection:
+    def __init__(self, orig_path, values):
+        super().__init__(orig_path, values)
+        if orig_path.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 
             self._shadow = _dir_shadow.ReadDirShadow
         else:
-            self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
+            self._shadow = orig_path.conn._dir_shadow.ReadDirShadow
+        self.base_dir = self._shadow.init(
+            orig_path, values, must_be_writable=False, must_exist=True
+        )
 
     def setup(self):
         ret_code = super().setup()
@@ -90,12 +88,6 @@ class ReadDir(Dir, locations.ReadLocation):
             self.base_dir, select_opts, *list(map(io.BytesIO, select_data))
         )
 
-    def get_fs_abilities(self):
-        """
-        Shadow function for ReadDirShadow.get_fs_abilities
-        """
-        return self._shadow.get_fs_abilities(self.base_dir)
-
     def get_select(self):
         """
         Shadow function for ReadDirShadow.get_source_select
@@ -127,23 +119,26 @@ class ReadDir(Dir, locations.ReadLocation):
         return self._shadow.compare_full(self.base_dir, repo_iter)
 
 
-class WriteDir(Dir, locations.WriteLocation):
+class WriteDir(locations.Location):
 
-    def __init__(self, base_dir, values):
-        super().__init__(base_dir, values)
-
-        if self.base_dir.conn is Globals.local_connection:
+    def __init__(self, orig_path, values):
+        super().__init__(orig_path, values)
+        if orig_path.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 
             self._shadow = _dir_shadow.WriteDirShadow
         else:
-            self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
+            self._shadow = orig_path.conn._dir_shadow.WriteDirShadow
+        self.base_dir = self._shadow.init(
+            orig_path, values, must_be_writable=True, must_exist=False
+        )
 
     def setup(self, src_repo):
-        ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
-            return ret_code
+        ret_code = Globals.RET_CODE_OK
+
+        if not self._create():
+            return Globals.RET_CODE_ERR
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
@@ -155,7 +150,6 @@ class WriteDir(Dir, locations.WriteLocation):
                 log.INFO,
             )
         ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
-
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
@@ -166,28 +160,6 @@ class WriteDir(Dir, locations.WriteLocation):
         )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
-
-        return ret_code
-
-    def check(self):
-        ret_code = super().check()
-
-        # if the target is a non-empty existing directory
-        if self.base_dir.lstat() and self.base_dir.isdir() and self.base_dir.listdir():
-            if self.values["force"]:
-                log.Log(
-                    "Target path {tp} exists and isn't empty, content "
-                    "might be force overwritten by restore".format(tp=self.base_dir),
-                    log.WARNING,
-                )
-                ret_code |= Globals.RET_CODE_WARN
-            else:
-                log.Log(
-                    "Target path {tp} exists and isn't empty, "
-                    "call with '--force' to overwrite".format(tp=self.base_dir),
-                    log.ERROR,
-                )
-                ret_code |= Globals.RET_CODE_ERR
 
         return ret_code
 

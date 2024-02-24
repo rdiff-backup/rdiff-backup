@@ -346,14 +346,14 @@ class ErrorLog:
 
     @classmethod
     # @API(ErrorLog.open, 200)
-    def open(cls, time_string, compress=1):
+    def open(cls, data_dir, time_string, compress=True):
         """Open the error log, prepare for writing"""
-        if not Globals.isbackup_writer:
-            return Globals.backup_writer.log.ErrorLog.open(time_string, compress)
+        # FIXME we need a complete solution regarding logfiles
+        # if not Globals.isbackup_writer:
+        #    return Globals.backup_writer.log.ErrorLog.open(time_string, compress)
         assert not cls._log_fileobj, "Log already open, can't be reopened"
 
-        # Globals.rbdir compat201
-        base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
+        base_rp = data_dir.append("error_log.%s.data" % time_string)
         if compress:  # FIXME extract MaybeGzip from rpath and make it utils?
             from rdiff_backup import rpath
 

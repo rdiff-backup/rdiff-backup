@@ -57,6 +57,16 @@ _counter_filename = b"next_free"
 _restore_inc_cache = None
 
 
+def setup(data_dir):
+    """
+    Function to setup the long names mapping
+    """
+    global _long_name_rootrp
+    _long_name_rootrp = data_dir.append(_long_name_dir)
+    if not _long_name_rootrp.lstat():
+        _long_name_rootrp.mkdir()
+
+
 # ------------------------------------------------------------------
 # The following section is for backup
 # ------------------------------------------------------------------
@@ -246,11 +256,6 @@ def _get_long_rp(base=None):
     """
     Return an rpath in long name directory with given base
     """
-    global _long_name_rootrp
-    if not _long_name_rootrp:
-        _long_name_rootrp = Globals.rbdir.append(_long_name_dir)
-        if not _long_name_rootrp.lstat():
-            _long_name_rootrp.mkdir()
     if base:
         return _long_name_rootrp.append(base)
     else:
