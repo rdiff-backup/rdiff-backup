@@ -135,10 +135,9 @@ class WriteDir(locations.Location):
         )
 
     def setup(self, src_repo):
-        ret_code = Globals.RET_CODE_OK
-
-        if not self._create():
-            return Globals.RET_CODE_ERR
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:

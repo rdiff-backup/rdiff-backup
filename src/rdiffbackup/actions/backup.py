@@ -90,7 +90,7 @@ class BackupAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code = self.repo.setup(self.dir, action_name=self.name)
+        ret_code = self.repo.setup(self.dir)
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 

@@ -142,8 +142,9 @@ class RepoShadow(locations.LocationShadow):
         cls._restore_time = None
         cls._regress_time = None
         cls._unsuccessful_backup_time = None
+        cls._logging_to_file = None
 
-        return cls._base_dir
+        return (cls._base_dir, cls._ref_index, cls._ref_type)
 
     # @API(RepoShadow.check, 300)  # inherited
 
@@ -154,6 +155,7 @@ class RepoShadow(locations.LocationShadow):
             return Globals.RET_CODE_ERR
         Security.reset_restrict_path(cls._base_dir)
         lock_result = cls._lock()
+        ret_code = Globals.RET_CODE_OK
         if lock_result is False:
             if cls._values["force"]:
                 log.Log(
@@ -180,17 +182,23 @@ class RepoShadow(locations.LocationShadow):
             )
         map_longnames.setup(cls._data_dir)
         if cls._must_be_writable:
+            if log.Log.file_verbosity > 0:
+                ret_code |= cls._open_logfile()
+                if ret_code & Globals.RET_CODE_ERR:
+                    return ret_code
             log.ErrorLog.open(
                 data_dir=cls._data_dir,
                 time_string=Time.getcurtimestr(),
                 compress=cls._values["compression"],
             )
-        return Globals.RET_CODE_OK
+        return ret_code
 
     # @API(RepoShadow.exit, 300)
     @classmethod
     def exit(cls):
         cls._unlock()
+        if cls._logging_to_file:
+            log.Log.close_logfile()
 
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
@@ -1086,6 +1094,26 @@ class RepoShadow(locations.LocationShadow):
         else:
             log.Log("All files verified successfully", log.NOTE)
         return ret_code
+
+    @classmethod
+    def _open_logfile(cls):
+        """
+        Open logfile with base name in the repository
+        """
+        try:  # the target repository must be writable
+            logfile = cls._data_dir.append(cls._values["action"] + ".log")
+            log.Log.open_logfile(logfile)
+        except (log.LoggerError, Security.Violation) as exc:
+            log.Log(
+                "Unable to open logfile '{lf}' due to '{ex}'".format(
+                    lf=logfile, ex=exc
+                ),
+                log.ERROR,
+            )
+            return Globals.RET_CODE_ERR
+        else:
+            cls._logging_to_file = True
+            return Globals.RET_CODE_OK
 
     @classmethod
     def _log_success(cls, src_rorp, mir_rorp=None):

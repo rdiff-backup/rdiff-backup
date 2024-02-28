@@ -37,9 +37,6 @@ class Repo(locations.Location):
     Represent a Backup Repository as created by rdiff-backup
     """
 
-    # is there an open logfile to close?
-    logging_to_file = False
-
     def __init__(
         self,
         orig_path,
@@ -63,15 +60,13 @@ class Repo(locations.Location):
             self._shadow = _repo_shadow.RepoShadow
         else:
             self._shadow = orig_path.conn._repo_shadow.RepoShadow
-        self.base_dir = self._shadow.init(
+        (self.base_dir, self.ref_index, self.ref_type) = self._shadow.init(
             orig_path, values, must_be_writable, must_exist, can_be_sub_path
         )
+        self.must_be_writable = must_be_writable
+        self.must_exist = must_exist
 
-    def setup(
-        self,
-        src_dir=None,
-        action_name=None,
-    ):
+    def setup(self, src_dir=None):
         ret_code = self._shadow.setup()
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
@@ -118,11 +113,6 @@ class Repo(locations.Location):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if log.Log.file_verbosity > 0 and action_name:
-            ret_code |= self._open_logfile(action_name, self.must_be_writable)
-            if ret_code & Globals.RET_CODE_ERR:
-                return ret_code
-
         return ret_code
 
     def exit(self):
@@ -134,8 +124,6 @@ class Repo(locations.Location):
         Globals.set_all("backup_writer", None)
         self.base_dir.conn.Globals.set_local("isbackup_writer", False)
         self._shadow.exit()
-        if self.logging_to_file:
-            log.Log.close_logfile()
 
     def get_mirror_time(self, must_exist=False, refresh=False):
         """
@@ -480,34 +468,6 @@ class Repo(locations.Location):
         Shadow function for RepoShadow.set_config for special_escapes
         """
         return self._shadow.set_config("special_escapes", special_escapes)
-
-    def _open_logfile(self, base_name, must_be_writable):
-        """
-        Open logfile with base name in the repository
-        """
-        try:  # the target repository must be writable
-            logfile = self.data_dir.append(base_name + ".log")
-            log.Log.open_logfile(logfile)
-        except (log.LoggerError, Security.Violation) as exc:
-            if must_be_writable:
-                log.Log(
-                    "Unable to open logfile '{lf}' due to '{ex}'".format(
-                        lf=logfile, ex=exc
-                    ),
-                    log.ERROR,
-                )
-                return Globals.RET_CODE_ERR
-            else:
-                log.Log(
-                    "Unable to open logfile '{lf}' due to '{ex}'".format(
-                        lf=logfile, ex=exc
-                    ),
-                    log.WARNING,
-                )
-                return Globals.RET_CODE_WARN
-        else:
-            self.logging_to_file = True
-        return Globals.RET_CODE_OK
 
     @classmethod
     def _get_inc_type(cls, inc):
