@@ -187,9 +187,7 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.needs_regress
         """
-        return self._shadow.needs_regress(
-            self.base_dir, self.data_dir, self.incs_dir, self.values["force"]
-        )
+        return self._shadow.needs_regress()
 
     def force_regress(self):
         """
@@ -259,29 +257,25 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.get_sigs
         """
-        return self._shadow.get_sigs(
-            self.base_dir, source_iter, use_increment, self.remote_transfer
-        )
+        return self._shadow.get_sigs(source_iter, use_increment, self.remote_transfer)
 
     def apply(self, source_diffiter, previous_time):
         """
         Shadow function for RepoShadow.apply
         """
-        return self._shadow.apply(
-            self.base_dir, source_diffiter, self.incs_dir, previous_time
-        )
+        return self._shadow.apply(source_diffiter, previous_time)
 
     def touch_current_mirror(self, current_time_str):
         """
         Shadow function for RepoShadow.touch_current_mirror
         """
-        return self._shadow.touch_current_mirror(self.data_dir, current_time_str)
+        return self._shadow.touch_current_mirror(current_time_str)
 
     def remove_current_mirror(self):
         """
         Shadow function for RepoShadow.remove_current_mirror
         """
-        return self._shadow.remove_current_mirror(self.data_dir)
+        return self._shadow.remove_current_mirror()
 
     def close_statistics(self, end_time):
         """
@@ -293,9 +287,7 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.init_loop
         """
-        return self._shadow.init_loop(
-            self.data_dir, self.ref_path, self.ref_inc, restore_time
-        )
+        return self._shadow.init_loop(restore_time)
 
     def finish_loop(self):
         """
@@ -313,23 +305,19 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.remove_increments_older_than
         """
-        return self._shadow.remove_increments_older_than(self.data_dir, reftime)
+        return self._shadow.remove_increments_older_than(reftime)
 
     def list_files_changed_since(self, reftime):
         """
         Shadow function for RepoShadow.list_files_changed_since
         """
-        return self._shadow.list_files_changed_since(
-            self.base_dir, self.incs_dir, self.data_dir, reftime
-        )
+        return self._shadow.list_files_changed_since(reftime)
 
     def list_files_at_time(self, reftime):
         """
         Shadow function for RepoShadow.list_files_at_time
         """
-        return self._shadow.list_files_at_time(
-            self.base_dir, self.incs_dir, self.data_dir, reftime
-        )
+        return self._shadow.list_files_at_time(reftime)
 
     def get_parsed_time(self, timestr):
         """
@@ -461,43 +449,37 @@ class Repo(locations.Location):
         """
         Shadow function for RepoShadow.init_and_get_loop
         """
-        return self._shadow.init_and_get_loop(
-            self.data_dir, self.ref_path, self.ref_inc, compare_time, src_iter
-        )
+        return self._shadow.init_and_get_loop(compare_time, src_iter)
 
     def verify(self, verify_time):
         """
         Shadow function for RepoShadow.verify
         """
-        return self._shadow.verify(
-            self.data_dir, self.ref_path, self.ref_inc, verify_time
-        )
+        return self._shadow.verify(verify_time)
 
     def get_chars_to_quote(self):
         """
         Shadow function for RepoShadow.get_config for chars_to_quote
         """
-        return self._shadow.get_config(self.data_dir, "chars_to_quote")
+        return self._shadow.get_config("chars_to_quote")
 
     def set_chars_to_quote(self, chars_to_quote):
         """
         Shadow function for RepoShadow.set_config for chars_to_quote
         """
-        return self._shadow.set_config(self.data_dir, "chars_to_quote", chars_to_quote)
+        return self._shadow.set_config("chars_to_quote", chars_to_quote)
 
     def get_special_escapes(self):
         """
         Shadow function for RepoShadow.get_config for special_escapes
         """
-        return self._shadow.get_config(self.data_dir, "special_escapes")
+        return self._shadow.get_config("special_escapes")
 
     def set_special_escapes(self, special_escapes):
         """
         Shadow function for RepoShadow.set_config for special_escapes
         """
-        return self._shadow.set_config(
-            self.data_dir, "special_escapes", special_escapes
-        )
+        return self._shadow.set_config("special_escapes", special_escapes)
 
     def _open_logfile(self, base_name, must_be_writable):
         """

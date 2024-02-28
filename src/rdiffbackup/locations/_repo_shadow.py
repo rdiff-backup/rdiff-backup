@@ -194,36 +194,38 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
-    def get_sigs(cls, baserp, source_iter, previous_time, is_remote):
+    def get_sigs(cls, source_iter, previous_time, is_remote):
         """
         Setup cache and return a signatures iterator
         """
-        cls._set_rorp_cache(baserp, source_iter, previous_time)
-        return cls._sigs_iterator(baserp, is_remote)
+        cls._set_rorp_cache(cls._base_dir, source_iter, previous_time)
+        return cls._sigs_iterator(cls._base_dir, is_remote)
 
     # @API(RepoShadow.apply, 201)
     @classmethod
-    def apply(cls, dest_rpath, source_diffiter, inc_rpath=None, previous_time=None):
+    def apply(cls, source_diffiter, inc_rpath=None, previous_time=None):
         """
-        Patch dest_rpath with rorpiter of diffs and optionally write increments
+        Patch the current repo with rorpiter of diffs and optionally write
+        increments.
 
         This function is used for first and follow-up backups
         within a repository.
         """
         if previous_time:
             ITR = rorpiter.IterTreeReducer(
-                _RepoIncrementITRB, [dest_rpath, inc_rpath, cls.CCPP, previous_time]
+                _RepoIncrementITRB,
+                [cls._base_dir, cls._incs_dir, cls.CCPP, previous_time],
             )
             log_msg = "Processing changed file {cf}"
         else:
-            ITR = rorpiter.IterTreeReducer(_RepoPatchITRB, [dest_rpath, cls.CCPP])
+            ITR = rorpiter.IterTreeReducer(_RepoPatchITRB, [cls._base_dir, cls.CCPP])
             log_msg = "Processing file {cf}"
-        for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
+        for diff in rorpiter.FillInIter(source_diffiter, cls._base_dir):
             log.Log(log_msg.format(cf=diff), log.INFO)
             ITR(diff.index, diff)
         ITR.finish_processing()
         cls.CCPP.close()
-        dest_rpath.setdata()
+        cls._base_dir.setdata()
 
     @classmethod
     def _is_existing(cls):
@@ -578,7 +580,7 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.touch_current_mirror, 201)
     @classmethod
-    def touch_current_mirror(cls, data_dir, current_time_str):
+    def touch_current_mirror(cls, current_time_str):
         """
         Make a file like current_mirror.<datetime>.data to record time
 
@@ -590,7 +592,7 @@ class RepoShadow(locations.LocationShadow):
         When doing the initial full backup, the file can be created after
         everything else is in place.
         """
-        mirrorrp = data_dir.append(
+        mirrorrp = cls._data_dir.append(
             b".".join((b"current_mirror", os.fsencode(current_time_str), b"data"))
         )
         log.Log("Writing mirror marker {mm}".format(mm=mirrorrp), log.INFO)
@@ -603,13 +605,13 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.remove_current_mirror, 201)
     @classmethod
-    def remove_current_mirror(cls, data_dir):
+    def remove_current_mirror(cls):
         """
         Remove the older of the current_mirror files.
 
         Use at end of session
         """
-        curmir_incs = data_dir.append(b"current_mirror").get_incfiles_list()
+        curmir_incs = cls._data_dir.append(b"current_mirror").get_incfiles_list()
         assert (
             len(curmir_incs) == 2
         ), "There must be two current mirrors not '{ilen}'.".format(
@@ -644,12 +646,12 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.init_loop, 201)
     @classmethod
-    def init_loop(cls, data_dir, mirror_base, inc_base, restore_to_time):
+    def init_loop(cls, restore_to_time):
         """
         Initialize repository for looping through the increments
         """
-        cls._initialize_restore(data_dir, restore_to_time)
-        cls._initialize_rf_cache(mirror_base, inc_base)
+        cls._initialize_restore(cls._data_dir, restore_to_time)
+        cls._initialize_rf_cache(cls._ref_path, cls._ref_inc)
 
     # @API(RepoShadow.finish_loop, 201)
     @classmethod
@@ -889,17 +891,17 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.list_files_changed_since, 201)
     @classmethod
-    def list_files_changed_since(cls, mirror_rp, inc_rp, data_dir, restore_to_time):
+    def list_files_changed_since(cls, restore_to_time):
         """
-        List the changed files under mirror_rp since rest time
+        List the changed files under the repository since rest time
 
         Notice the output is an iterator of RORPs.  We do this because we
         want to give the remote connection the data in buffered
         increments, and this is done automatically for rorp iterators.
         Encode the lines in the first element of the rorp's index.
         """
-        assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.init_loop(data_dir, mirror_rp, inc_rp, restore_to_time)
+        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        cls.init_loop(restore_to_time)
 
         old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
         cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(must_exist=True), True)
@@ -919,15 +921,15 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.list_files_at_time, 201)
     @classmethod
-    def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, reftime):
+    def list_files_at_time(cls, reftime):
         """
         List the files in archive at the given time
 
         Output is a RORP Iterator with info in index.
         See list_files_changed_since for details.
         """
-        assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.init_loop(data_dir, mirror_rp, inc_rp, reftime)
+        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        cls.init_loop(reftime)
         old_iter = cls._get_mirror_rorp_iter()
         for rorp in old_iter:
             yield rorp
@@ -937,14 +939,14 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.remove_increments_older_than, 201)
     @classmethod
-    def remove_increments_older_than(cls, baserp, reftime):
+    def remove_increments_older_than(cls, reftime):
         """
         Remove increments older than the given time
         """
         assert (
-            baserp.conn is Globals.local_connection
+            cls._data_dir.conn is Globals.local_connection
         ), "Function should be called only locally " "and not over '{co}'.".format(
-            co=baserp.conn
+            co=cls._data_dir.conn
         )
 
         def yield_files(rp):
@@ -954,7 +956,7 @@ class RepoShadow(locations.LocationShadow):
                         yield sub_rp
             yield rp
 
-        for rp in yield_files(baserp):
+        for rp in yield_files(cls._data_dir):
             if (rp.isincfile() and rp.getinctime() < reftime) or (
                 rp.isdir() and not rp.listdir()
             ):
@@ -966,7 +968,7 @@ class RepoShadow(locations.LocationShadow):
     # @API(RepoShadow.init_and_get_loop, 201)
     @classmethod
     def init_and_get_loop(
-        cls, data_dir, mirror_rp, inc_rp, compare_time, src_iter=None
+        cls, compare_time, src_iter=None
     ):
         """
         Return rorp iter at given compare time
@@ -975,21 +977,17 @@ class RepoShadow(locations.LocationShadow):
 
         cls.finish_loop must be called to finish the loop once initialized
         """
-        cls.init_loop(data_dir, mirror_rp, inc_rp, compare_time)
+        cls.init_loop(compare_time)
         repo_iter = cls._subtract_indices(
             cls.mirror_base.index, cls._get_mirror_rorp_iter()
         )
         if src_iter is None:
             return repo_iter
         else:
-            return cls._attach_files(
-                data_dir, mirror_rp, inc_rp, compare_time, src_iter, repo_iter
-            )
+            return cls._attach_files(compare_time, src_iter, repo_iter)
 
     @classmethod
-    def _attach_files(
-        cls, data_dir, mirror_rp, inc_rp, compare_time, src_iter, repo_iter
-    ):
+    def _attach_files(cls, compare_time, src_iter, repo_iter):
         """
         Attach data to all the files that need checking
 
@@ -1020,16 +1018,16 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.verify, 201)
     @classmethod
-    def verify(cls, data_dir, mirror_rp, inc_rp, verify_time):
+    def verify(cls, verify_time):
         """
         Compute SHA1 sums of repository files and check against metadata
         """
         assert (
-            mirror_rp.conn is Globals.local_connection
+            cls._ref_path.conn is Globals.local_connection
         ), "Only verify mirror locally, not remotely over '{conn}'.".format(
-            conn=mirror_rp.conn
+            conn=cls._ref_path.conn
         )
-        repo_iter = cls.init_and_get_loop(data_dir, mirror_rp, inc_rp, verify_time)
+        repo_iter = cls.init_and_get_loop(verify_time)
         base_index = cls.mirror_base.index
 
         bad_files = 0
@@ -1102,7 +1100,7 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.needs_regress, 201)
     @classmethod
-    def needs_regress(cls, base_dir, data_dir, incs_dir, force):
+    def needs_regress(cls):
         """
         Checks if the repository contains a previously failed backup and needs
         to be regressed
@@ -1115,10 +1113,10 @@ class RepoShadow(locations.LocationShadow):
         """
         # detect an initial repository which doesn't need a regression
         if not (
-            base_dir.isdir()
-            and data_dir.isdir()
-            and incs_dir.isdir()
-            and incs_dir.listdir()
+            cls._base_dir.isdir()
+            and cls._data_dir.isdir()
+            and cls._incs_dir.isdir()
+            and cls._incs_dir.listdir()
         ):
             return None
         curmirroot = data_dir.append(b"current_mirror")
@@ -1145,7 +1143,7 @@ information in it.
         elif len(curmir_incs) == 1:
             return False
         else:
-            if not force:
+            if not cls._values["force"]:
                 try:
                     cls._check_pids(curmir_incs)
                 except OSError as exc:
@@ -1428,7 +1426,7 @@ information in it.
 
     # @API(RepoShadow.get_config, 201)
     @classmethod
-    def get_config(cls, data_dir, key):
+    def get_config(cls, key):
         """
         Returns the configuration value(s) for the given key,
         or None if the configuration doesn't exist.
@@ -1437,7 +1435,7 @@ information in it.
         # chars_to_quote or special_escapes
         if key not in cls._configs:
             raise ValueError("Config key '{ck}' isn't valid")
-        rp = data_dir.append(key)
+        rp = cls._data_dir.append(key)
         if not rp.lstat():
             return None
         else:
@@ -1448,7 +1446,7 @@ information in it.
 
     # @API(RepoShadow.set_config, 201)
     @classmethod
-    def set_config(cls, data_dir, key, value):
+    def set_config(cls, key, value):
         """
         Sets the key configuration to the given value.
 
@@ -1457,10 +1455,10 @@ information in it.
         Returns False if there was nothing to change, None if there was no
         old value, and True if the value changed
         """
-        old_value = cls.get_config(data_dir, key)
+        old_value = cls.get_config(key)
         if old_value == value:
             return False
-        rp = data_dir.append(key)
+        rp = cls._data_dir.append(key)
         if rp.lstat():
             rp.delete()
         if cls._configs[key]["type"] is set:
