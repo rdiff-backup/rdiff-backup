@@ -116,7 +116,7 @@ class ReadDir(locations.Location):
         """
         Shadow function for ReadDirShadow.compare_full
         """
-        return self._shadow.compare_full(self.base_dir, repo_iter)
+        return self._shadow.compare_full(repo_iter)
 
 
 class WriteDir(locations.Location):
@@ -178,23 +178,17 @@ class WriteDir(locations.Location):
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
             self._shadow.set_select(
-                self.base_dir, select_opts, *list(map(io.BytesIO, select_data))
+                select_opts, *list(map(io.BytesIO, select_data))
             )
-
-    def get_fs_abilities(self):
-        """
-        Shadow function for WriteDirShadow.get_fs_abilities
-        """
-        return self._shadow.get_fs_abilities(self.base_dir)
 
     def get_sigs_select(self):
         """
         Shadow function for WriteDirShadow.get_sigs_select
         """
-        return self._shadow.get_sigs_select(self.base_dir)
+        return self._shadow.get_sigs_select()
 
     def apply(self, source_diff_iter):
         """
         Shadow function for WriteDirShadow.apply
         """
-        return self._shadow.apply(self.base_dir, source_diff_iter)
+        return self._shadow.apply(source_diff_iter)

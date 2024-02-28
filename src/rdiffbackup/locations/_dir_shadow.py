@@ -193,7 +193,7 @@ class ReadDirShadow(locations.LocationShadow):
 
     # @API(ReadDirShadow.compare_full, 201)
     @classmethod
-    def compare_full(cls, src_root, repo_iter):
+    def compare_full(cls, repo_iter):
         """Given repo iter with full data attached, return report iter"""
 
         def error_handler(exc, src_rp, repo_rorp):
@@ -209,7 +209,7 @@ class ReadDirShadow(locations.LocationShadow):
             )
 
         for repo_rorp in repo_iter:
-            src_rp = src_root.new_index(repo_rorp.index)
+            src_rp = cls._base_dir.new_index(repo_rorp.index)
             report = cls._get_basic_report(src_rp, repo_rorp, data_changed)
             if report:
                 yield report
@@ -319,41 +319,43 @@ class WriteDirShadow(locations.LocationShadow):
 
     # @API(WriteDirShadow.set_select, 201)
     @classmethod
-    def set_select(cls, target, select_opts, *filelists):
-        """Return a selection object iterating the rorpaths in target"""
+    def set_select(cls, select_opts, *filelists):
+        """
+        Return a selection object iterating the rorpaths in the directory
+        """
         if not select_opts:
             return  # nothing to do...
-        cls._select = selection.Select(target)
+        cls._select = selection.Select(cls._base_dir)
         cls._select.parse_selection_args(select_opts, filelists)
 
     # @API(WriteDirShadow.get_sigs_select, 201)
     @classmethod
-    def get_sigs_select(cls, target):
+    def get_sigs_select(cls):
         """
         Return selector previously set with set_select
         """
         if cls._select:
             return cls._select.get_select_iter()
         else:
-            return selection.Select(target).get_select_iter()
+            return selection.Select(cls._base_dir).get_select_iter()
 
     # @API(WriteDirShadow.apply, 201)
     @classmethod
-    def apply(cls, target, diff_iter):
+    def apply(cls, diff_iter):
         """
-        Patch target with the diffs from the mirror side
+        Patch directory with the diffs from the mirror side
 
         This function and the associated ITRB is similar to the
         apply code for a repository, but they have different error
         correction requirements, so it seemed easier to just repeat it
         all in this module.
         """
-        ITR = rorpiter.IterTreeReducer(_DirPatchITRB, [target])
-        for diff in rorpiter.FillInIter(diff_iter, target):
+        ITR = rorpiter.IterTreeReducer(_DirPatchITRB, [cls._base_dir])
+        for diff in rorpiter.FillInIter(diff_iter, cls._base_dir):
             log.Log("Processing changed file {cf}".format(cf=diff), log.INFO)
             ITR(diff.index, diff)
         ITR.finish_processing()
-        target.setdata()
+        cls._base_dir.setdata()
 
     # @API(WriteDirShadow.get_fs_abilities, 201)  # inherited
 
