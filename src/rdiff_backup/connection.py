@@ -33,6 +33,8 @@ import types  # noqa: F401
 import time
 import subprocess
 
+from rdiff_backup import Globals
+
 
 class ConnectionError(Exception):
     pass
@@ -51,14 +53,40 @@ class ConnectionQuit(Exception):
 
 
 class Connection:
-    """Connection class - represent remote execution
+    """
+    Connection class - represent remote execution
 
     The idea is that, if c is an instance of this class, c.foo will
     return the object on the remote side.  For functions, c.foo will
     return a function that, when called, executes foo on the remote
     side, sending over the arguments and sending back the result.
-
     """
+    def __init__(self):
+        """
+        Import all modules necessary to be able to evaluate across the
+        connection.
+        This has to be put in a function to avoid circularities.
+        """
+        # the last import is our canary to know that the import has been done!
+        if "map_filenames" in globals():
+            return
+        from rdiff_backup import (
+            increment,
+            iterfile,
+            librsync,
+            log,
+            Rdiff,
+            robust,
+            rorpiter,
+            rpath,
+            SetConnections,
+            selection,
+            statistics,
+            Security,
+            Time,
+        )
+        from rdiffbackup.locations import _dir_shadow, _repo_shadow
+        from rdiffbackup.locations.map import filenames as map_filenames
 
     def __repr__(self):
         return self.__str__()
@@ -681,28 +709,6 @@ def RedirectedRun(conn_number, func, *args):
         fnc=func.__name__
     )
     return conn.reval(func, *args)
-
-
-# everything has to be available here for remote connection's use, but
-# put at bottom to reduce circularities.
-from rdiff_backup import (  # noqa: E402,F401
-    Globals,
-    increment,
-    iterfile,
-    librsync,
-    log,
-    Rdiff,
-    robust,
-    rorpiter,
-    rpath,
-    SetConnections,
-    selection,
-    statistics,
-    Security,
-    Time,
-)
-from rdiffbackup.locations import _dir_shadow, _repo_shadow  # noqa: E402,F401
-from rdiffbackup.locations.map import filenames as map_filenames  # noqa: E402,F401
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)
