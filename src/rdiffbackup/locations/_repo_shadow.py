@@ -120,7 +120,7 @@ class RepoShadow(locations.LocationShadow):
         if can_be_sub_path:
             if cls._ref_type is None:
                 # nothing to save, the user must first give a correct path
-                log.FatalError(
+                log.Log.FatalError(
                     "Something was wrong with the given path '{gp}'".format(
                         gp=orig_path
                     )
@@ -383,7 +383,6 @@ class RepoShadow(locations.LocationShadow):
         """
         cls._data_dir.delete()  # setdata is implicit
         cls._incs_dir.setdata()
-
 
     @classmethod
     def _get_repository_dirs(cls, orig_path):
@@ -709,6 +708,28 @@ class RepoShadow(locations.LocationShadow):
                 cls._mirror_time = cur_mirror_incs[0].getinctime()
         return cls._mirror_time
 
+    # @API(RepoShadow.get_parsed_time, 300)
+    @classmethod
+    def get_parsed_time(cls, timestr):
+        """
+        Parse time string, potentially using the reference increment as anchor
+
+        Returns None if the time string couldn't be parsed, else the time in
+        seconds.
+        The reference increment is used when the time string consists in a
+        number of past backups.
+        """
+        try:
+            sessions = cls.get_increment_times(cls._ref_inc)
+            return Time.genstrtotime(timestr, session_times=sessions)
+        except Time.TimeException as exc:
+            log.Log(
+                "Time string '{ts}' couldn't be parsed "
+                "due to '{ex}'".format(ts=timestr, ex=exc),
+                log.ERROR,
+            )
+            return None
+
     # @API(RepoShadow.get_increment_times, 201)
     @classmethod
     def get_increment_times(cls, rp=None):
@@ -975,9 +996,7 @@ class RepoShadow(locations.LocationShadow):
 
     # @API(RepoShadow.init_and_get_loop, 201)
     @classmethod
-    def init_and_get_loop(
-        cls, compare_time, src_iter=None
-    ):
+    def init_and_get_loop(cls, compare_time, src_iter=None):
         """
         Return rorp iter at given compare time
 
@@ -1147,7 +1166,7 @@ class RepoShadow(locations.LocationShadow):
             and cls._incs_dir.listdir()
         ):
             return None
-        curmirroot = data_dir.append(b"current_mirror")
+        curmirroot = cls._data_dir.append(b"current_mirror")
         curmir_incs = curmirroot.get_incfiles_list()
         if not curmir_incs:
             log.Log.FatalError(
@@ -1165,7 +1184,7 @@ the rdiff-backup-data directory because there is no important
 information in it.
 
 """.format(
-                    dd=data_dir
+                    dd=cls._data_dir
                 )
             )
         elif len(curmir_incs) == 1:
@@ -1181,7 +1200,9 @@ information in it.
                     )
             assert (
                 len(curmir_incs) == 2
-            ), "Found more than 2 current_mirror incs in '{ci}'.".format(ci=data_dir)
+            ), "Found more than 2 current_mirror incs in '{ci}'.".format(
+                ci=cls._data_dir
+            )
             return True
 
     @classmethod
@@ -1519,7 +1540,9 @@ information in it.
         cls._lockfile.setdata()
         if not cls._lockfile.lstat():
             return False  # if the file doesn't exist, it can't be locked
-        with open(cls._lockfile, cls.LOCK_MODE[cls._must_be_writable]["open"]) as lockfd:
+        with open(
+            cls._lockfile, cls.LOCK_MODE[cls._must_be_writable]["open"]
+        ) as lockfd:
             try:
                 locking.lock(lockfd, cls.LOCK_MODE[cls._must_be_writable]["lock"])
                 return False

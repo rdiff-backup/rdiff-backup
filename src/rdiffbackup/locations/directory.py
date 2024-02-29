@@ -176,9 +176,7 @@ class WriteDir(locations.Location):
 
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
-            self._shadow.set_select(
-                select_opts, *list(map(io.BytesIO, select_data))
-            )
+            self._shadow.set_select(select_opts, *list(map(io.BytesIO, select_data)))
 
     def get_sigs_select(self):
         """

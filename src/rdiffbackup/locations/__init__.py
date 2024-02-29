@@ -25,6 +25,7 @@ All those classes should be considered abstract and not instantiated directly.
 
 import os
 from rdiff_backup import Globals, log
+from rdiffbackup.locations import fs_abilities
 
 
 class Location:

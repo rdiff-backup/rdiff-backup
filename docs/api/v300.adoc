@@ -82,6 +82,7 @@ toc::[]
 ** `.get_fs_abilities`  **new**
 ** `.get_increment_times`
 ** `.get_mirror_time`
+** `.get_parsed_time`  **new**
 ** `.get_sigs`
 ** `.init`  **new**
 ** `.init_and_get_iter`

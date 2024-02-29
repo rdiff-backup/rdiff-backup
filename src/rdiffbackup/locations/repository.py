@@ -307,26 +307,6 @@ class Repo(locations.Location):
         """
         return self._shadow.list_files_at_time(reftime)
 
-    def get_parsed_time(self, timestr):
-        """
-        Parse time string, potentially using the reference increment as anchor
-
-        Returns None if the time string couldn't be parsed, else the time in
-        seconds.
-        The reference increment is used when the time string consists in a
-        number of past backups.
-        """
-        try:
-            sessions = self.get_increment_times(self.ref_inc)
-            return Time.genstrtotime(timestr, session_times=sessions)
-        except Time.TimeException as exc:
-            log.Log(
-                "Time string '{ts}' couldn't be parsed "
-                "due to '{ex}'".format(ts=timestr, ex=exc),
-                log.ERROR,
-            )
-            return None
-
     def get_increments(self):
         """
         Return a list of increments (without size) with their time, type
@@ -426,6 +406,12 @@ class Repo(locations.Location):
         triples = get_summary_triples(mirror_total, time_dict)
 
         return sorted(triples, key=lambda x: x["time"])
+
+    def get_parsed_time(self, timestr):
+        """
+        Shadow function for RepoShadow.get_parsed_time
+        """
+        return self._shadow.get_parsed_time(timestr)
 
     def get_increment_times(self, rp=None):
         """

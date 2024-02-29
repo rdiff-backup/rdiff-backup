@@ -38,7 +38,7 @@ it later.
 """
 
 import errno
-from rdiff_backup import Globals, log
+from rdiff_backup import log
 from rdiffbackup.utils import safestr
 
 _long_name_dir = b"long_filename_data"

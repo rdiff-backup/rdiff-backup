@@ -428,6 +428,8 @@ def get_meta_manager(data_dir=None, recreate=False):
     """
     # we attach the manager to an element of the function to make it permanent
     if not hasattr(get_meta_manager, "manager") or recreate:
-        assert data_dir is not None, "When created, the meta manager needs a data data directory"
+        assert (
+            data_dir is not None
+        ), "When created, the meta manager needs a data directory"
         get_meta_manager.manager = PatchDiffMan(data_dir)
     return get_meta_manager.manager

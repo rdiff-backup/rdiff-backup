@@ -36,7 +36,6 @@ from rdiff_backup import (
     selection,
 )
 from rdiffbackup import locations
-from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import owners as map_owners
 
