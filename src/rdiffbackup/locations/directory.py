@@ -25,12 +25,11 @@ usable for a back-up.
 """
 
 import io
-from rdiffbackup import locations
-from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations import fs_abilities, location
 from rdiff_backup import Globals, log
 
 
-class ReadDir(locations.Location):
+class ReadDir(location.Location):
 
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)
@@ -119,7 +118,7 @@ class ReadDir(locations.Location):
         return self._shadow.compare_full(repo_iter)
 
 
-class WriteDir(locations.Location):
+class WriteDir(location.Location):
 
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)

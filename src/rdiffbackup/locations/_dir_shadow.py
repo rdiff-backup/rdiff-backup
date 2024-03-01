@@ -35,7 +35,7 @@ from rdiff_backup import (
     rpath,
     selection,
 )
-from rdiffbackup import locations
+from rdiffbackup.locations import location
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import owners as map_owners
 
@@ -43,7 +43,7 @@ from rdiffbackup.locations.map import owners as map_owners
 
 
 # @API(ReadDirShadow, 201)
-class ReadDirShadow(locations.LocationShadow):
+class ReadDirShadow(location.LocationShadow):
     """
     Shadow read directory for the local directory representation
     """
@@ -285,7 +285,7 @@ class _CompareReport:
 
 
 # @API(WriteDirShadow, 201)
-class WriteDirShadow(locations.LocationShadow):
+class WriteDirShadow(location.LocationShadow):
     """Hold functions to be run on the target side when restoring"""
 
     _select = None

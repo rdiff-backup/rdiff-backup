@@ -25,14 +25,13 @@ import io
 import os
 import re
 
-from rdiffbackup import locations
-from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations import fs_abilities, location
 from rdiffbackup.locations.map import filenames as map_filenames
 
 from rdiff_backup import Globals, log, selection, Security, Time
 
 
-class Repo(locations.Location):
+class Repo(location.Location):
     """
     Represent a Backup Repository as created by rdiff-backup
     """

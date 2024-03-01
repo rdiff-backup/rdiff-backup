@@ -47,8 +47,8 @@ from rdiff_backup import (
     statistics,
     Time,
 )
-from rdiffbackup import locations, meta_mgr
-from rdiffbackup.locations import fs_abilities
+from rdiffbackup import meta_mgr
+from rdiffbackup.locations import fs_abilities, location
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.locations.map import owners as map_owners
@@ -58,7 +58,7 @@ from rdiffbackup.utils import locking, simpleps
 
 
 # @API(RepoShadow, 201)
-class RepoShadow(locations.LocationShadow):
+class RepoShadow(location.LocationShadow):
     """
     Shadow repository for the local repository representation
     """
