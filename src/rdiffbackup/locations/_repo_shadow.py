@@ -1096,9 +1096,9 @@ class RepoShadow(location.LocationShadow):
 
     # ### COPIED FROM MANAGE ####
 
-    # @API(RepoShadow.remove_increments_older_than, 201)
+    # @API(RepoShadow.remove_increments, 300)
     @classmethod
-    def remove_increments_older_than(cls, reftime):
+    def remove_increments_older_than(cls, time_string=None, show_sizes=None):
         """
         Remove increments older than the given time
         """
@@ -1115,12 +1115,96 @@ class RepoShadow(location.LocationShadow):
                         yield sub_rp
             yield rp
 
+        if time_string is None:
+            time_string = cls._values.get("older_than")
+        if show_sizes is None:
+            show_sizes = cls._values.get("size")
+        removal_time = cls._get_removal_time(time_string, show_sizes)
+
+        if removal_time < 0:  # no increment is old enough
+            log.Log(
+                "No increment is older than '{ot}'".format(ot=time_string),
+                log.WARNING,
+            )
+            return Globals.RET_CODE_WARN
+
         for rp in yield_files(cls._data_dir):
-            if (rp.isincfile() and rp.getinctime() < reftime) or (
+            if (rp.isincfile() and rp.getinctime() < removal_time) or (
                 rp.isdir() and not rp.listdir()
             ):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
+        return Globals.RET_CODE_OK
+
+    @classmethod
+    def _get_removal_time(cls, time_string, show_sizes):
+        """
+        Check remove older than time_string, return time in seconds
+
+        Return None if the time string can't be interpreted as such, or
+        if more than one increment would be removed, without the force option;
+        or -1 if no increment would be removed.
+        """
+        action_time = cls.get_parsed_time(time_string)
+        if action_time is None:
+            return None
+
+        if show_sizes:
+            triples = cls.get_increments_sizes()[:-1]
+            times_in_secs = [triple["time"] for triple in triples]
+        else:
+            times_in_secs = [
+                inc.getinctime() for inc in cls._incs_dir.get_incfiles_list()
+            ]
+        times_in_secs = [t for t in times_in_secs if t < action_time]
+        if not times_in_secs:
+            log.Log(
+                "No increments older than {at} found, exiting.".format(
+                    at=Time.timetopretty(action_time)
+                ),
+                log.NOTE,
+            )
+            return -1
+
+        times_in_secs.sort()
+        if show_sizes:
+            sizes = [
+                triple["size"] for triple in triples if triple["time"] in times_in_secs
+            ]
+            stat_obj = statistics.StatsObj()  # used for byte summary string
+
+            def format_time_and_size(time, size):
+                return "{: <24} {: >17}".format(
+                    Time.timetopretty(time), stat_obj.get_byte_summary_string(size)
+                )
+
+            pretty_times_map = map(format_time_and_size, times_in_secs, sizes)
+            pretty_times = "\n".join(pretty_times_map)
+        else:
+            pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
+        if len(times_in_secs) > 1:
+            if not cls._values["force"]:
+                log.Log(
+                    "Found {ri} relevant increments, dates/times:\n{dt}\n"
+                    "If you want to delete multiple increments in this way, "
+                    "use the --force option.".format(
+                        ri=len(times_in_secs), dt=pretty_times
+                    ),
+                    log.ERROR,
+                )
+                return None
+            else:
+                log.Log(
+                    "Deleting increments at dates/times:\n{dt}".format(dt=pretty_times),
+                    log.NOTE,
+                )
+        else:
+            log.Log(
+                "Deleting increment at date/time: {dt}".format(dt=pretty_times),
+                log.NOTE,
+            )
+        # make sure we don't delete current increment
+        return times_in_secs[-1] + 1
 
     # ### COPIED FROM COMPARE ####
 

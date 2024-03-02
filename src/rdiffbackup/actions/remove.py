@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import Globals, log, statistics, Time
+from rdiff_backup import Globals, log
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
@@ -106,12 +106,6 @@ class RemoveAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        self.action_time = self._get_removal_time(
-            self.values["older_than"], self.values["size"]
-        )
-        if self.action_time is None:
-            return ret_code | Globals.RET_CODE_ERR
-
         return ret_code
 
     def run(self):
@@ -122,87 +116,9 @@ class RemoveAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        if self.action_time < 0:  # no increment is old enough
-            log.Log(
-                "No increment is older than '{ot}'".format(
-                    ot=self.values["older_than"]
-                ),
-                log.WARNING,
-            )
-            return ret_code | Globals.RET_CODE_WARN
-
-        self.repo.remove_increments_older_than(self.action_time)
+        ret_code |= self.repo.remove_increments_older_than()
 
         return ret_code
-
-    def _get_removal_time(self, time_string, show_increment_sizes):
-        """
-        Check remove older than time_string, return time in seconds
-
-        Return None if the time string can't be interpreted as such, or
-        if more than one increment would be removed, without the force option;
-        or -1 if no increment would be removed.
-        """
-        action_time = self.repo.get_parsed_time(time_string)
-        if action_time is None:
-            return None
-
-        if self.values["size"]:
-            triples = self.repo.get_increments_sizes()[:-1]
-            times_in_secs = [triple["time"] for triple in triples]
-        else:
-            times_in_secs = [
-                inc.getinctime() for inc in self.repo.incs_dir.get_incfiles_list()
-            ]
-        times_in_secs = [t for t in times_in_secs if t < action_time]
-        if not times_in_secs:
-            log.Log(
-                "No increments older than {at} found, exiting.".format(
-                    at=Time.timetopretty(action_time)
-                ),
-                log.NOTE,
-            )
-            return -1
-
-        times_in_secs.sort()
-        if self.values["size"]:
-            sizes = [
-                triple["size"] for triple in triples if triple["time"] in times_in_secs
-            ]
-            stat_obj = statistics.StatsObj()  # used for byte summary string
-
-            def format_time_and_size(time, size):
-                return "{: <24} {: >17}".format(
-                    Time.timetopretty(time), stat_obj.get_byte_summary_string(size)
-                )
-
-            pretty_times_map = map(format_time_and_size, times_in_secs, sizes)
-            pretty_times = "\n".join(pretty_times_map)
-        else:
-            pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
-        if len(times_in_secs) > 1:
-            if not self.values["force"]:
-                log.Log(
-                    "Found {ri} relevant increments, dates/times:\n{dt}\n"
-                    "If you want to delete multiple increments in this way, "
-                    "use the --force option.".format(
-                        ri=len(times_in_secs), dt=pretty_times
-                    ),
-                    log.ERROR,
-                )
-                return None
-            else:
-                log.Log(
-                    "Deleting increments at dates/times:\n{dt}".format(dt=pretty_times),
-                    log.NOTE,
-                )
-        else:
-            log.Log(
-                "Deleting increment at date/time: {dt}".format(dt=pretty_times),
-                log.NOTE,
-            )
-        # make sure we don't delete current increment
-        return times_in_secs[-1] + 1
 
 
 def get_plugin_class():

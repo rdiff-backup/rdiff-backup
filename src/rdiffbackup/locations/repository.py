@@ -240,11 +240,11 @@ class Repo(location.Location):
         """
         return self._shadow.get_diffs(target_iter)
 
-    def remove_increments_older_than(self, reftime):
+    def remove_increments_older_than(self, time_string=None, show_sizes=None):
         """
         Shadow function for RepoShadow.remove_increments_older_than
         """
-        return self._shadow.remove_increments_older_than(reftime)
+        return self._shadow.remove_increments_older_than(time_string, show_sizes)
 
     def list_files_changed_since(self, reftime):
         """
