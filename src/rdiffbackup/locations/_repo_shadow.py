@@ -228,12 +228,12 @@ class RepoShadow(location.LocationShadow):
 
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
-    def get_sigs(cls, source_iter, previous_time, is_remote):
+    def get_sigs(cls, source_iter, previous_time, is_local):
         """
         Setup cache and return a signatures iterator
         """
         cls._set_rorp_cache(cls._base_dir, source_iter, previous_time)
-        return cls._sigs_iterator(cls._base_dir, is_remote)
+        return cls._sigs_iterator(cls._base_dir, is_local)
 
     # @API(RepoShadow.apply, 201)
     @classmethod
@@ -525,7 +525,7 @@ class RepoShadow(location.LocationShadow):
         # pipeline len adds some leeway over just*3 (to and from and back)
 
     @classmethod
-    def _sigs_iterator(cls, baserp, is_remote):
+    def _sigs_iterator(cls, baserp, is_local):
         """
         Yield signatures of any changed destination files
         """
@@ -534,7 +534,7 @@ class RepoShadow(location.LocationShadow):
         for src_rorp, dest_rorp in cls.CCPP:
             # If we are backing up across a pipe, we must flush the pipeline
             # every so often so it doesn't get congested on destination end.
-            if is_remote:
+            if not is_local:
                 num_rorps_seen += 1
                 if num_rorps_seen > flush_threshold:
                     num_rorps_seen = 0

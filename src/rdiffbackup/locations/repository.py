@@ -65,6 +65,12 @@ class Repo(location.Location):
         self.must_exist = must_exist
 
     def setup(self, src_dir=None):
+        # we have a local transfer is there is no src_dir _or_
+        # if both dir and repo have the same connection
+        self.local_transfer = (
+            (not src_dir) or (src_dir.base_dir.conn is self.base_dir.conn)
+        )
+
         ret_code = self._shadow.setup()
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
@@ -80,7 +86,6 @@ class Repo(location.Location):
             )
 
         if src_dir is None:
-            self.remote_transfer = None  # just in case
             ret_code |= fs_abilities.SingleRepoSetGlobals(self)()
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
@@ -90,7 +95,6 @@ class Repo(location.Location):
             Globals.set_all("backup_writer", self.base_dir.conn)
             self.base_dir.conn.Globals.set_local("isbackup_writer", True)
             # this is the new way, more dedicated but not sufficient yet
-            self.remote_transfer = src_dir.base_dir.conn is not self.base_dir.conn
             ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
