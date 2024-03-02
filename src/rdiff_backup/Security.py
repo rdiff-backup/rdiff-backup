@@ -20,7 +20,7 @@
 
 import os
 import tempfile
-from rdiff_backup import Globals, log, rpath
+from rdiff_backup import Globals, rpath
 
 
 class Violation(Exception):
@@ -226,6 +226,7 @@ def _set_allowed_requests(sec_class, sec_level):
         "_repo_shadow.RepoShadow.init",
         "_repo_shadow.RepoShadow.check",
         "_repo_shadow.RepoShadow.setup",
+        "_repo_shadow.RepoShadow.setup_quoting",
         "_repo_shadow.RepoShadow.exit",
     }
     if (
@@ -277,13 +278,13 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.ReadDirShadow.setup",
                 "_repo_shadow.RepoShadow.get_increments",
                 "_repo_shadow.RepoShadow.get_increments_sizes",
+                "_repo_shadow.RepoShadow.get_parsed_time",
             ]
         )
     if sec_level == "update-only" or sec_level == "read-write":
         requests.update(
             [
                 "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
-                "log.ErrorLog.close",
                 "log.ErrorLog.isopen",
                 "log.ErrorLog.open",
                 "log.ErrorLog.write_if_open",

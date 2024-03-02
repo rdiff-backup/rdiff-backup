@@ -26,9 +26,8 @@ import os
 import re
 
 from rdiffbackup.locations import fs_abilities, location
-from rdiffbackup.locations.map import filenames as map_filenames
 
-from rdiff_backup import Globals, log, selection, Security, Time
+from rdiff_backup import Globals, log
 
 
 class Repo(location.Location):
@@ -95,7 +94,7 @@ class Repo(location.Location):
             ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
-        self.setup_quoting()
+        self.base_dir = self.setup_quoting()
 
         if self.values.get("not_compressed_regexp") is not None:
             ret_code |= self.setup_not_compressed_regexp(
@@ -132,23 +131,9 @@ class Repo(location.Location):
 
     def setup_quoting(self):
         """
-        Set QuotedRPath versions of important RPaths if chars_to_quote is set.
-
-        Return True if quoting needed to be done, False else.
+        Shadow function for RepoShadow.setup_quoting
         """
-        # FIXME the problem is that the chars_to_quote can come from the command
-        # line but can also be a value coming from the repository itself,
-        # set globally by the fs_abilities.xxx_set_globals functions.
-        if not Globals.chars_to_quote:
-            return False
-        self.base_dir = map_filenames.get_quotedrpath(self.base_dir)
-        self.data_dir = map_filenames.get_quotedrpath(self.data_dir)
-        self.incs_dir = map_filenames.get_quotedrpath(self.incs_dir)
-        if self.ref_type:
-            self.ref_path = map_filenames.get_quotedrpath(self.ref_path)
-            self.ref_inc = map_filenames.get_quotedrpath(self.ref_inc)
-
-        return True
+        return self._shadow.setup_quoting()
 
     @classmethod  # so that we can easily use in tests
     def setup_not_compressed_regexp(cls, not_compressed_regexp=None):

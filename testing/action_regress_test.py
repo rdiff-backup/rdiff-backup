@@ -127,12 +127,14 @@ class ActionRegressTest(unittest.TestCase):
             Globals.RET_CODE_OK,
         )
         # we again simulate a crash
-        _repo_shadow.RepoShadow.touch_current_mirror(
-            rpath.RPath(
-                Globals.local_connection, self.bak_path, ("rdiff-backup-data",)
-            ),
-            Time.timetostring(20000),
+        _repo_shadow.RepoShadow.init(
+            rpath.RPath(Globals.local_connection, self.bak_path),
+            {},
+            True,
+            True,
         )
+        _repo_shadow.RepoShadow.touch_current_mirror(Time.timetostring(20000))
+
         # the current process (the test) is still running, hence it fails
         self.assertNotEqual(
             comtst.rdiff_backup_action(
@@ -174,12 +176,7 @@ class ActionRegressTest(unittest.TestCase):
         )
         self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
         # we again simulate a crash
-        _repo_shadow.RepoShadow.touch_current_mirror(
-            rpath.RPath(
-                Globals.local_connection, self.bak_path, ("rdiff-backup-data",)
-            ),
-            Time.timetostring(10000),
-        )
+        _repo_shadow.RepoShadow.touch_current_mirror(Time.timetostring(10000))
         # and then try to backup, which fails because without force
         self.assertNotEqual(
             comtst.rdiff_backup_action(

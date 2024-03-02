@@ -49,6 +49,7 @@ from rdiff_backup import (
 )
 from rdiffbackup import meta_mgr
 from rdiffbackup.locations import fs_abilities, location
+from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.locations.map import owners as map_owners
@@ -186,17 +187,42 @@ class RepoShadow(location.LocationShadow):
                 ret_code |= cls._open_logfile()
                 if ret_code & Globals.RET_CODE_ERR:
                     return ret_code
-            log.ErrorLog.open(
-                data_dir=cls._data_dir,
-                time_string=Time.getcurtimestr(),
-                compress=cls._values["compression"],
-            )
+            # FIXME the logic shouldn't be dependent on the action's name
+            if cls._values["action"] == "backup":
+                log.ErrorLog.open(
+                    data_dir=cls._data_dir,
+                    time_string=Time.getcurtimestr(),
+                    compress=cls._values["compression"],
+                )
         return ret_code
+
+    # @API(RepoShadow.setup_quoting, 300)
+    @classmethod
+    def setup_quoting(cls):
+        """
+        Set QuotedRPath versions of important RPaths if chars_to_quote is set.
+
+        Returns the potentially quoted base directory
+        """
+        # FIXME the problem is that the chars_to_quote can come from the command
+        # line but can also be a value coming from the repository itself,
+        # set globally by the fs_abilities.xxx_set_globals functions.
+        if not Globals.chars_to_quote:
+            return cls._base_dir
+        cls._base_dir = map_filenames.get_quotedrpath(cls._base_dir)
+        cls._data_dir = map_filenames.get_quotedrpath(cls._data_dir)
+        cls._incs_dir = map_filenames.get_quotedrpath(cls._incs_dir)
+        if cls._ref_type:
+            cls._ref_path = map_filenames.get_quotedrpath(cls._ref_path)
+            cls._ref_inc = map_filenames.get_quotedrpath(cls._ref_inc)
+
+        return cls._base_dir
 
     # @API(RepoShadow.exit, 300)
     @classmethod
     def exit(cls):
         cls._unlock()
+        log.ErrorLog.close()
         if cls._logging_to_file:
             log.Log.close_logfile()
 
@@ -1067,7 +1093,6 @@ class RepoShadow(location.LocationShadow):
         triples = get_summary_triples(mirror_total, time_dict)
 
         return sorted(triples, key=lambda x: x["time"])
-
 
     # ### COPIED FROM MANAGE ####
 

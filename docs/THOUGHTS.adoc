@@ -16,3 +16,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - transform all values of type io.IOBase into text from the beginning
 - allow keyword type parameters across the connection keyword=value
 - go through all the functions and make sure their names are more consistent
+- merge somehow the ErrorLog and Log functionalities to have one single interface

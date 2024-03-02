@@ -28,10 +28,9 @@ toc::[]
 * `Globals.get`
 * `Globals.set_api_version`
 * `Globals.set_local`
-* `log.ErrorLog.close`
-* `log.ErrorLog.isopen`
-* `log.ErrorLog.open`
-* `log.ErrorLog.write_if_open`
+* `log.ErrorLog`
+** `.isopen`
+** `.write_if_open`
 * `log.Log.close_logfile_allconn`
 * `log.Log.close_logfile_local`
 * `log.Log.log_to_file`
@@ -99,7 +98,8 @@ toc::[]
 ** `.remove_increments_older_than`
 ** `.set_config`
 ** `.set_select`
-** `.setup_paths`
+** `.setup`  **new**
+** `.setup_quoting`  **new**
 ** `.touch_current_mirror`
 ** `.verify`
 
