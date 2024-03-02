@@ -186,17 +186,10 @@ def _set_security_level(security_class, security_level, restrict_path, cmdpairs)
             sec_level = "minimal"
             rdir = tempfile.gettempdirb()
         elif islocal(cp1):
+            # this is only a temporary value because the restore repository
+            # path could be underneath the base_dir we actually need
             sec_level = "read-only"
-            rp1 = rpath.RPath(Globals.local_connection, getpath(cp1))
-            (base_dir, ref_index, ref_type) = rp1.get_repository_dirs()
-            if ref_type is None:
-                # the error will be catched later more cleanly, so that the
-                # connections can be properly closed
-                log.Log(
-                    "Invalid restore directory '{rd}'".format(rd=getpath(cp1)),
-                    log.ERROR,
-                )
-            rdir = base_dir.path
+            rdir = getpath(cp1)
         else:  # cp2 is local but not cp1
             sec_level = "read-write"
             rdir = getpath(cp2)
@@ -282,6 +275,8 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.ReadDirShadow.init",
                 "_dir_shadow.ReadDirShadow.check",
                 "_dir_shadow.ReadDirShadow.setup",
+                "_repo_shadow.RepoShadow.get_increments",
+                "_repo_shadow.RepoShadow.get_increments_sizes",
             ]
         )
     if sec_level == "update-only" or sec_level == "read-write":
@@ -339,6 +334,7 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.WriteDirShadow.init",
                 "_dir_shadow.WriteDirShadow.check",
                 "_dir_shadow.WriteDirShadow.setup",
+                "_repo_shadow.RepoShadow.force_regress",
             ]
         )
     if sec_class == "server":

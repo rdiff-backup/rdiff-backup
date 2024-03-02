@@ -40,9 +40,8 @@ class ReadDir(location.Location):
             self._shadow = _dir_shadow.ReadDirShadow
         else:
             self._shadow = orig_path.conn._dir_shadow.ReadDirShadow
-        self.base_dir = self._shadow.init(
-            orig_path, values, must_be_writable=False, must_exist=True
-        )
+        # initiate an existing directory, only for reading
+        self.base_dir = self._shadow.init(orig_path, values, False, True)
 
     def setup(self):
         ret_code = super().setup()
@@ -129,9 +128,8 @@ class WriteDir(location.Location):
             self._shadow = _dir_shadow.WriteDirShadow
         else:
             self._shadow = orig_path.conn._dir_shadow.WriteDirShadow
-        self.base_dir = self._shadow.init(
-            orig_path, values, must_be_writable=True, must_exist=False
-        )
+        # initiate a writable potentially non-existing directory
+        self.base_dir = self._shadow.init(orig_path, values, True, False)
 
     def setup(self, src_repo):
         ret_code = super().setup()

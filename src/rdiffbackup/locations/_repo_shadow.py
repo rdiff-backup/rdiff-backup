@@ -211,7 +211,7 @@ class RepoShadow(location.LocationShadow):
 
     # @API(RepoShadow.apply, 201)
     @classmethod
-    def apply(cls, source_diffiter, inc_rpath=None, previous_time=None):
+    def apply(cls, source_diffiter, previous_time=None):
         """
         Patch the current repo with rorpiter of diffs and optionally write
         increments.
@@ -964,6 +964,111 @@ class RepoShadow(location.LocationShadow):
             yield rorp
         cls.finish_loop()
 
+    # @API(RepoShadow.get_increments, 300)
+    @classmethod
+    def get_increments(cls):
+        """
+        Return a list of increments (without size) with their time, type
+        and basename.
+
+        The list is sorted by increasing time stamp, meaning that the mirror
+        is last in the list
+        """
+        incs_list = cls._ref_inc.get_incfiles_list()
+        incs = [
+            {
+                "time": inc.getinctime(),
+                "type": cls._get_inc_type(inc),
+                "base": inc.dirsplit()[1].decode(errors="replace"),
+            }
+            for inc in incs_list
+        ]
+
+        # append the mirror itself
+        mirror_time = cls.get_mirror_time(must_exist=True)
+        incs.append(
+            {
+                "time": mirror_time,
+                "type": cls._get_file_type(cls._ref_path),
+                "base": cls._ref_path.dirsplit()[1].decode(errors="replace"),
+            }
+        )
+
+        return sorted(incs, key=lambda x: x["time"])
+
+    # @API(RepoShadow.get_increments_sizes, 300)
+    @classmethod
+    def get_increments_sizes(cls):
+        """
+        Return list of triples summarizing the size of all the increments
+
+        The list contains tuples of the form (time, size, cumulative size)
+        """
+
+        def get_total(rp_iter):
+            """Return the total size of everything in rp_iter"""
+            total = 0
+            for rp in rp_iter:
+                total += rp.getsize()
+            return total
+
+        def get_time_dict(inc_iter):
+            """Return dictionary pairing times to total size of incs"""
+            time_dict = {}
+            for inc in inc_iter:
+                if not inc.isincfile():
+                    continue
+                t = inc.getinctime()
+                if t not in time_dict:
+                    time_dict[t] = 0
+                time_dict[t] += inc.getsize()
+            return time_dict
+
+        def get_mirror_select():
+            """Return iterator of mirror rpaths"""
+            mirror_select = selection.Select(cls._ref_path)
+            if not cls._ref_index:  # must exclude rdiff-backup-directory
+                mirror_select.parse_rbdir_exclude()
+            return mirror_select.get_select_iter()
+
+        def get_inc_select():
+            """Return iterator of increment rpaths"""
+            for base_inc in cls._ref_inc.get_incfiles_list():
+                yield base_inc
+            if cls._ref_inc.isdir():
+                inc_select = selection.Select(cls._ref_inc).get_select_iter()
+                for inc in inc_select:
+                    yield inc
+
+        def get_summary_triples(mirror_total, time_dict):
+            """Return list of triples (time, size, cumulative size)"""
+            triples = []
+
+            cur_mir_base = cls._data_dir.append(b"current_mirror")
+            mirror_time = (cur_mir_base.get_incfiles_list())[0].getinctime()
+            triples.append(
+                {"time": mirror_time, "size": mirror_total, "total_size": mirror_total}
+            )
+
+            inc_times = list(time_dict.keys())
+            inc_times.sort()
+            inc_times.reverse()
+            cumulative_size = mirror_total
+            for inc_time in inc_times:
+                size = time_dict[inc_time]
+                cumulative_size += size
+                triples.append(
+                    {"time": inc_time, "size": size, "total_size": cumulative_size}
+                )
+            return triples
+
+        mirror_total = get_total(get_mirror_select())
+        time_dict = get_time_dict(get_inc_select())
+        triples = get_summary_triples(mirror_total, time_dict)
+
+        return sorted(triples, key=lambda x: x["time"])
+
+
     # ### COPIED FROM MANAGE ####
 
     # @API(RepoShadow.remove_increments_older_than, 201)
@@ -1205,6 +1310,68 @@ information in it.
             )
             return True
 
+    # @API(RepoShadow.regress, 201)
+    @classmethod
+    def regress(cls):
+        """
+        Bring mirror and inc directory back to regress_to_time
+
+        Regress should only work one step at a time (i.e. don't "regress"
+        through two separate backup sets.  This function should be run
+        locally to the rdiff-backup-data directory.
+        """
+        assert (
+            cls._base_dir.index == () and cls._incs_dir.index == ()
+        ), "Mirror and increment paths must have an empty index"
+        assert (
+            cls._base_dir.isdir() and cls._incs_dir.isdir()
+        ), "Mirror and increments paths must be directories"
+        assert (
+            cls._base_dir.conn is cls._incs_dir.conn is Globals.local_connection
+        ), "Regress must happen locally."
+        meta_manager, former_current_mirror_rp = cls._set_regress_time()
+        cls._set_restore_times()
+        _RegressFile.initialize(cls._restore_time, cls._mirror_time)
+        cls._regress_rbdir(meta_manager)
+        ITR = rorpiter.IterTreeReducer(_RepoRegressITRB, [])
+        for rf in cls._iterate_meta_rfs(cls._base_dir, cls._incs_dir):
+            ITR(rf.index, rf)
+        ITR.finish_processing()
+        if former_current_mirror_rp:
+            if Globals.do_fsync:
+                # Sync first, since we are marking dest dir as good now
+                C.sync()
+            former_current_mirror_rp.delete()
+        return Globals.RET_CODE_OK
+
+    # @API(RepoShadow.force_regress, 300)
+    @classmethod
+    def force_regress(cls):
+        """
+        Try to fake a failed backup to force a regress
+
+        Return True if the fake was succesful, else False, e.g. if the
+        repository contains only the mirror and no increment.
+        """
+        inc_times = cls.get_increment_times()
+        if len(inc_times) < 2:
+            log.Log(
+                "Repository with only a mirror can't be forced to regress, "
+                "just remove it and start from scratch",
+                log.WARNING,
+            )
+            return False
+        mirror_time = cls.get_mirror_time()
+        if inc_times[-1] != mirror_time:
+            log.Log(
+                "Repository's increment times are inconsistent, "
+                "it's too dangerous to force a regress",
+                log.WARNING,
+            )
+            return False
+        cls.touch_current_mirror(Time.timetostring(inc_times[-2]))
+        return True
+
     @classmethod
     def _check_pids(cls, curmir_incs):
         """Check PIDs in curmir markers to make sure rdiff-backup not running"""
@@ -1284,39 +1451,6 @@ information in it.
                         pi=pid
                     )
                 )
-
-    # @API(RepoShadow.regress, 201)
-    @classmethod
-    def regress(cls, base_rp, incs_rp):
-        """
-        Bring mirror and inc directory back to regress_to_time
-
-        Regress should only work one step at a time (i.e. don't "regress"
-        through two separate backup sets.  This function should be run
-        locally to the rdiff-backup-data directory.
-        """
-        assert (
-            base_rp.index == () and incs_rp.index == ()
-        ), "Mirror and increment paths must have an empty index"
-        assert (
-            base_rp.isdir() and incs_rp.isdir()
-        ), "Mirror and increments paths must be directories"
-        assert (
-            base_rp.conn is incs_rp.conn is Globals.local_connection
-        ), "Regress must happen locally."
-        meta_manager, former_current_mirror_rp = cls._set_regress_time()
-        cls._set_restore_times()
-        _RegressFile.initialize(cls._restore_time, cls._mirror_time)
-        cls._regress_rbdir(meta_manager)
-        ITR = rorpiter.IterTreeReducer(_RepoRegressITRB, [])
-        for rf in cls._iterate_meta_rfs(base_rp, incs_rp):
-            ITR(rf.index, rf)
-        ITR.finish_processing()
-        if former_current_mirror_rp:
-            if Globals.do_fsync:
-                # Sync first, since we are marking dest dir as good now
-                C.sync()
-            former_current_mirror_rp.delete()
 
     @classmethod
     def _set_regress_time(cls):
@@ -1610,6 +1744,36 @@ information in it.
             locking.unlock(cls._lockfd)
             cls._lockfd.close()
             cls._lockfd = None
+
+    @classmethod
+    def _get_inc_type(cls, inc):
+        """Return file type increment represents"""
+        assert inc.isincfile(), "File '{inc!s}' must be an increment.".format(inc=inc)
+        inc_type = inc.getinctype()
+        if inc_type == b"dir":
+            return "directory"
+        elif inc_type == b"diff":
+            return "regular"
+        elif inc_type == b"missing":
+            return "missing"
+        elif inc_type == b"snapshot":
+            return cls._get_file_type(inc)
+        else:
+            log.Log.FatalError(
+                "Unknown type '{ut}' of increment '{ic}'".format(ut=inc_type, ic=inc)
+            )
+
+    @classmethod
+    def _get_file_type(cls, rp):
+        """Returns one of "regular", "directory", "missing", or "special"."""
+        if not rp.lstat():
+            return "missing"
+        elif rp.isdir():
+            return "directory"
+        elif rp.isreg():
+            return "regular"
+        else:
+            return "special"
 
 
 class _CacheCollatedPostProcess:

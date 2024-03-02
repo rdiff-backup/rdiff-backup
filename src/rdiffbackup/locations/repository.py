@@ -176,50 +176,17 @@ class Repo(location.Location):
         """
         return self._shadow.needs_regress()
 
-    def force_regress(self):
-        """
-        Try to fake a failed backup to force a regress
-
-        Return True if the fake was succesful, else False, e.g. if the
-        repository contains only the mirror and no increment.
-        """
-        inc_times = self.get_increment_times()
-        if len(inc_times) < 2:
-            log.Log(
-                "Repository with only a mirror can't be forced to regress, "
-                "just remove it and start from scratch",
-                log.WARNING,
-            )
-            return False
-        mirror_time = self.get_mirror_time()
-        if inc_times[-1] != mirror_time:
-            log.Log(
-                "Repository's increment times are inconsistent, "
-                "it's too dangerous to force a regress",
-                log.WARNING,
-            )
-            return False
-        self.touch_current_mirror(Time.timetostring(inc_times[-2]))
-        return True
-
     def regress(self):
         """
-        Regress the backup repository in case the last backup failed
-
-        This can/should be run before any action on the repository to start
-        with a clean state.
+        Shadow function for RepoShadow.regress
         """
-        try:
-            self._shadow.regress(self.base_dir, self.incs_dir)
-            return Globals.RET_CODE_OK
-        except Security.Violation:
-            log.Log(
-                "Security violation while attempting to regress destination, "
-                "perhaps due to --restrict-read-only or "
-                "--restrict-update-only",
-                log.ERROR,
-            )
-            return Globals.RET_CODE_ERR
+        return self._shadow.regress()
+
+    def force_regress(self):
+        """
+        Shadow function for RepoShadow.force_regress
+        """
+        return self._shadow.force_regress()
 
     def set_select(self, select_opts, select_data, target_rp):
         """
@@ -308,103 +275,15 @@ class Repo(location.Location):
 
     def get_increments(self):
         """
-        Return a list of increments (without size) with their time, type
-        and basename.
-
-        The list is sorted by increasing time stamp, meaning that the mirror
-        is last in the list
+        Shadow function for RepoShadow.get_increments
         """
-        incs_list = self.ref_inc.get_incfiles_list()
-        incs = [
-            {
-                "time": inc.getinctime(),
-                "type": self._get_inc_type(inc),
-                "base": inc.dirsplit()[1].decode(errors="replace"),
-            }
-            for inc in incs_list
-        ]
-
-        # append the mirror itself
-        mirror_time = self.get_mirror_time(must_exist=True)
-        incs.append(
-            {
-                "time": mirror_time,
-                "type": self._get_file_type(self.ref_path),
-                "base": self.ref_path.dirsplit()[1].decode(errors="replace"),
-            }
-        )
-
-        return sorted(incs, key=lambda x: x["time"])
+        return self._shadow.get_increments()
 
     def get_increments_sizes(self):
         """
-        Return list of triples summarizing the size of all the increments
-
-        The list contains tuples of the form (time, size, cumulative size)
+        Shadow function for RepoShadow.get_increments_sizes
         """
-
-        def get_total(rp_iter):
-            """Return the total size of everything in rp_iter"""
-            total = 0
-            for rp in rp_iter:
-                total += rp.getsize()
-            return total
-
-        def get_time_dict(inc_iter):
-            """Return dictionary pairing times to total size of incs"""
-            time_dict = {}
-            for inc in inc_iter:
-                if not inc.isincfile():
-                    continue
-                t = inc.getinctime()
-                if t not in time_dict:
-                    time_dict[t] = 0
-                time_dict[t] += inc.getsize()
-            return time_dict
-
-        def get_mirror_select():
-            """Return iterator of mirror rpaths"""
-            mirror_select = selection.Select(self.ref_path)
-            if not self.ref_index:  # must exclude rdiff-backup-directory
-                mirror_select.parse_rbdir_exclude()
-            return mirror_select.get_select_iter()
-
-        def get_inc_select():
-            """Return iterator of increment rpaths"""
-            for base_inc in self.ref_inc.get_incfiles_list():
-                yield base_inc
-            if self.ref_inc.isdir():
-                inc_select = selection.Select(self.ref_inc).get_select_iter()
-                for inc in inc_select:
-                    yield inc
-
-        def get_summary_triples(mirror_total, time_dict):
-            """Return list of triples (time, size, cumulative size)"""
-            triples = []
-
-            cur_mir_base = self.data_dir.append(b"current_mirror")
-            mirror_time = (cur_mir_base.get_incfiles_list())[0].getinctime()
-            triples.append(
-                {"time": mirror_time, "size": mirror_total, "total_size": mirror_total}
-            )
-
-            inc_times = list(time_dict.keys())
-            inc_times.sort()
-            inc_times.reverse()
-            cumulative_size = mirror_total
-            for inc_time in inc_times:
-                size = time_dict[inc_time]
-                cumulative_size += size
-                triples.append(
-                    {"time": inc_time, "size": size, "total_size": cumulative_size}
-                )
-            return triples
-
-        mirror_total = get_total(get_mirror_select())
-        time_dict = get_time_dict(get_inc_select())
-        triples = get_summary_triples(mirror_total, time_dict)
-
-        return sorted(triples, key=lambda x: x["time"])
+        return self._shadow.get_increments_sizes()
 
     def get_parsed_time(self, timestr):
         """
@@ -453,33 +332,3 @@ class Repo(location.Location):
         Shadow function for RepoShadow.set_config for special_escapes
         """
         return self._shadow.set_config("special_escapes", special_escapes)
-
-    @classmethod
-    def _get_inc_type(cls, inc):
-        """Return file type increment represents"""
-        assert inc.isincfile(), "File '{inc!s}' must be an increment.".format(inc=inc)
-        inc_type = inc.getinctype()
-        if inc_type == b"dir":
-            return "directory"
-        elif inc_type == b"diff":
-            return "regular"
-        elif inc_type == b"missing":
-            return "missing"
-        elif inc_type == b"snapshot":
-            return cls._get_file_type(inc)
-        else:
-            log.Log.FatalError(
-                "Unknown type '{ut}' of increment '{ic}'".format(ut=inc_type, ic=inc)
-            )
-
-    @classmethod
-    def _get_file_type(cls, rp):
-        """Returns one of "regular", "directory", "missing", or "special"."""
-        if not rp.lstat():
-            return "missing"
-        elif rp.isdir():
-            return "directory"
-        elif rp.isreg():
-            return "regular"
-        else:
-            return "special"
