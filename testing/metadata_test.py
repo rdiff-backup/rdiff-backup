@@ -248,8 +248,7 @@ class MetadataTest(unittest.TestCase):
         diff1 = [rp1, rp4]
         diff2 = [rp1new, rp2, zero]
 
-        Globals.rbdir = self.out_rp
-        output = meta_mgr.PatchDiffMan()._iterate_patched_attr(
+        output = meta_mgr.PatchDiffMan(self.out_rp)._iterate_patched_attr(
             [iter(current), iter(diff1), iter(diff2)]
         )
         out1 = next(output)
@@ -288,8 +287,7 @@ class MetadataTest(unittest.TestCase):
             )
 
         comtst.re_init_rpath_dir(self.out_rp)
-        Globals.rbdir = self.out_rp
-        man = meta_mgr.PatchDiffMan()
+        man = meta_mgr.PatchDiffMan(self.out_rp)
         inc1 = rpath.RPath(
             Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment1")
         )
@@ -307,17 +305,17 @@ class MetadataTest(unittest.TestCase):
         write_dir_to_meta(man, inc2, 20000)
         compare(man, inc2, 20000)
         man.convert_meta_main_to_diff()
-        man = meta_mgr.PatchDiffMan()
+        man = meta_mgr.PatchDiffMan(self.out_rp)
         write_dir_to_meta(man, inc3, 30000)
         compare(man, inc3, 30000)
         man.convert_meta_main_to_diff()
-        man = meta_mgr.PatchDiffMan()
+        man = meta_mgr.PatchDiffMan(self.out_rp)
         man.max_diff_chain = 3
         write_dir_to_meta(man, inc4, 40000)
         compare(man, inc4, 40000)
         man.convert_meta_main_to_diff()
 
-        man = meta_mgr.PatchDiffMan()
+        man = meta_mgr.PatchDiffMan(self.out_rp)
         rplist = man.sorted_prefix_inclist(b"mirror_metadata")
         self.assertEqual(rplist[0].getinctype(), b"snapshot")
         self.assertEqual(rplist[0].getinctime(), 40000)

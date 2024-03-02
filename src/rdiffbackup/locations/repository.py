@@ -67,8 +67,8 @@ class Repo(location.Location):
     def setup(self, src_dir=None):
         # we have a local transfer is there is no src_dir _or_
         # if both dir and repo have the same connection
-        self.local_transfer = (
-            (not src_dir) or (src_dir.base_dir.conn is self.base_dir.conn)
+        self.local_transfer = (not src_dir) or (
+            src_dir.base_dir.conn is self.base_dir.conn
         )
 
         ret_code = self._shadow.setup()
@@ -99,6 +99,11 @@ class Repo(location.Location):
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
         self.base_dir = self.setup_quoting()
+        # logging needs to be setup after quoting because logfile names might
+        # also get quoted
+        ret_code |= self.setup_logging()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
 
         if self.values.get("not_compressed_regexp") is not None:
             ret_code |= self.setup_not_compressed_regexp(
@@ -127,17 +132,23 @@ class Repo(location.Location):
         self.base_dir.conn.Globals.set_local("isbackup_writer", False)
         self._shadow.exit()
 
-    def get_mirror_time(self, must_exist=False, refresh=False):
-        """
-        Shadow function for RepoShadow.get_mirror_time
-        """
-        return self._shadow.get_mirror_time(must_exist, refresh)
-
     def setup_quoting(self):
         """
         Shadow function for RepoShadow.setup_quoting
         """
         return self._shadow.setup_quoting()
+
+    def setup_logging(self):
+        """
+        Shadow function for RepoShadow.setup_logging
+        """
+        return self._shadow.setup_logging()
+
+    def get_mirror_time(self, must_exist=False, refresh=False):
+        """
+        Shadow function for RepoShadow.get_mirror_time
+        """
+        return self._shadow.get_mirror_time(must_exist, refresh)
 
     @classmethod  # so that we can easily use in tests
     def setup_not_compressed_regexp(cls, not_compressed_regexp=None):
@@ -200,7 +211,7 @@ class Repo(location.Location):
         """
         Shadow function for RepoShadow.get_sigs
         """
-        return self._shadow.get_sigs(source_iter, use_increment, self.remote_transfer)
+        return self._shadow.get_sigs(source_iter, use_increment, self.local_transfer)
 
     def apply(self, source_diffiter, previous_time):
         """

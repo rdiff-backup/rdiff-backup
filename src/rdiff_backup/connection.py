@@ -114,6 +114,7 @@ class Connection:
         for name, module in modules.items():
             cls.globals[name] = importlib.import_module(module)
         local_elements = {
+            "LocalConnection": LocalConnection,  # for test purposes
             "RedirectedRun": RedirectedRun,
             "VirtualFile": VirtualFile,
         }

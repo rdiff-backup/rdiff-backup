@@ -182,18 +182,6 @@ class RepoShadow(location.LocationShadow):
                 log.NOTE,
             )
         map_longnames.setup(cls._data_dir)
-        if cls._must_be_writable:
-            if log.Log.file_verbosity > 0:
-                ret_code |= cls._open_logfile()
-                if ret_code & Globals.RET_CODE_ERR:
-                    return ret_code
-            # FIXME the logic shouldn't be dependent on the action's name
-            if cls._values["action"] == "backup":
-                log.ErrorLog.open(
-                    data_dir=cls._data_dir,
-                    time_string=Time.getcurtimestr(),
-                    compress=cls._values["compression"],
-                )
         return ret_code
 
     # @API(RepoShadow.setup_quoting, 300)
@@ -217,6 +205,27 @@ class RepoShadow(location.LocationShadow):
             cls._ref_inc = map_filenames.get_quotedrpath(cls._ref_inc)
 
         return cls._base_dir
+
+    # @API(RepoShadow.setup_logging, 300)
+    @classmethod
+    def setup_logging(cls):
+        """
+        Setup logging, opening the relevant files locally
+        """
+        ret_code = Globals.RET_CODE_OK
+        if cls._must_be_writable:
+            if log.Log.file_verbosity > 0:
+                ret_code |= cls._open_logfile()
+                if ret_code & Globals.RET_CODE_ERR:
+                    return ret_code
+            # FIXME the logic shouldn't be dependent on the action's name
+            if cls._values["action"] == "backup":
+                log.ErrorLog.open(
+                    data_dir=cls._data_dir,
+                    time_string=Time.getcurtimestr(),
+                    compress=cls._values["compression"],
+                )
+        return ret_code
 
     # @API(RepoShadow.exit, 300)
     @classmethod
@@ -1772,36 +1781,48 @@ information in it.
     # ### LOCKING ####
 
     @classmethod
-    def _is_locked(cls):
+    def _is_locked(cls, lockfile=None, exclusive=None):
         """
         Validate if the repository is locked or not by the file
         'rdiff-backup-data/lock.yml'
 
+        The parameters lockfile and exclusive should only be used for tests.
+
         Returns True if the file exists and is locked, else returns False
         """
+        # we set the defaults from class attributes if not explicitly set
+        if lockfile is None:
+            lockfile = cls._lockfile
+        if exclusive is None:
+            exclusive = cls._must_be_writable
         # we need to make sure we have the last state of the lock
-        cls._lockfile.setdata()
-        if not cls._lockfile.lstat():
+        lockfile.setdata()
+        if not lockfile.lstat():
             return False  # if the file doesn't exist, it can't be locked
-        with open(
-            cls._lockfile, cls.LOCK_MODE[cls._must_be_writable]["open"]
-        ) as lockfd:
+        with open(lockfile, cls.LOCK_MODE[exclusive]["open"]) as lockfd:
             try:
-                locking.lock(lockfd, cls.LOCK_MODE[cls._must_be_writable]["lock"])
+                locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
                 return False
             except BlockingIOError:
                 return True
 
     @classmethod
-    def _lock(cls):
+    def _lock(cls, lockfile=None, exclusive=None):
         """
         Write a specific file 'rdiff-backup-data/lock.yml' to grab the lock,
         and verify that no other process took the lock by comparing its
         content.
 
+        The parameters lockfile and exclusive should only be used for tests.
+
         Return True if the lock could be taken, False else.
         Return None if the lock file doesn't exist in non-exclusive mode
         """
+        # we set the defaults from class attributes if not explicitly set
+        if lockfile is None:
+            lockfile = cls._lockfile
+        if exclusive is None:
+            exclusive = cls._must_be_writable
         if cls._lockfd:  # we already opened the lockfile
             return False
         pid = os.getpid()
@@ -1812,19 +1833,19 @@ information in it.
             "hostname": socket.gethostname(),
         }
         id_yaml = yaml.safe_dump(identifier)
-        cls._lockfile.setdata()
-        if not cls._lockfile.lstat():
-            if cls._must_be_writable:
-                open_mode = cls.LOCK_MODE[cls._must_be_writable]["truncate"]
+        lockfile.setdata()
+        if not lockfile.lstat():
+            if exclusive:
+                open_mode = cls.LOCK_MODE[exclusive]["truncate"]
             else:
                 # we can't take the lock if the file doesn't exist
                 return None
         else:
-            open_mode = cls.LOCK_MODE[cls._must_be_writable]["open"]
+            open_mode = cls.LOCK_MODE[exclusive]["open"]
         try:
-            lockfd = open(cls._lockfile, open_mode)
-            locking.lock(lockfd, cls.LOCK_MODE[cls._must_be_writable]["lock"])
-            if cls._must_be_writable:  # let's keep a trace of who's writing
+            lockfd = open(lockfile, open_mode)
+            locking.lock(lockfd, cls.LOCK_MODE[exclusive]["lock"])
+            if exclusive:  # let's keep a trace of who's writing
                 lockfd.seek(0)
                 lockfd.truncate()
                 lockfd.write(id_yaml)
@@ -1837,15 +1858,22 @@ information in it.
             return False
 
     @classmethod
-    def _unlock(cls):
+    def _unlock(cls, lockfile=None, exclusive=None):
         """
         Remove any lock existing.
+
+        The parameters lockfile and exclusive should only be used for tests.
 
         We don't check for any content because we have the lock and should be
         the only process running on this repository.
         """
+        # we set the defaults from class attributes if not explicitly set
+        if lockfile is None:
+            lockfile = cls._lockfile
+        if exclusive is None:
+            exclusive = cls._must_be_writable
         if cls._lockfd:
-            if cls._must_be_writable:  # empty the file without removing it
+            if exclusive:  # empty the file without removing it
                 cls._lockfd.seek(0)
                 cls._lockfd.truncate()
             # Unlocking isn't absolutely necessary as we close the file just

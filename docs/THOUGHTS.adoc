@@ -18,3 +18,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - go through all the functions and make sure their names are more consistent
 - merge somehow the ErrorLog and Log functionalities to have one single interface
 - check all tests and make sure that they don't generate uncaptured exceptions in rdiff-backup, capture them and make messages user friendly/ier
+- add unnecessary keyword parameters to simplify unit testing of shadow classes (as done for the locking functions)

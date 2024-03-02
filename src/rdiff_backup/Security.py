@@ -227,6 +227,7 @@ def _set_allowed_requests(sec_class, sec_level):
         "_repo_shadow.RepoShadow.check",
         "_repo_shadow.RepoShadow.setup",
         "_repo_shadow.RepoShadow.setup_quoting",
+        "_repo_shadow.RepoShadow.setup_logging",
         "_repo_shadow.RepoShadow.exit",
     }
     if (

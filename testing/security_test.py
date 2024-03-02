@@ -199,9 +199,8 @@ class SecurityTest(unittest.TestCase):
             0,
             b"--restrict-path %b " b"--restrict-mode read-only" % self.out_dir,
             extra_args=(b"restore", b"--at", b"now"),
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=Globals.RET_CODE_OK,
         )
-        # there is a warning because log can't be opened in read-only mode
 
     def test_restrict_readonly_negative(self):
         """Test that --restrict-mode read-only doesn't allow too much"""
@@ -248,7 +247,7 @@ class SecurityTest(unittest.TestCase):
             self.various_files_dir,
             self.out_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode update-only" % self.out_dir,
+            b"--restrict-path %b --restrict-mode update-only" % self.out_dir,
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
