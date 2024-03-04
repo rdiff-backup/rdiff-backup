@@ -21,3 +21,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - add unnecessary keyword parameters to simplify unit testing of shadow classes (as done for the locking functions)
 - write security concept paper
 - re-write security module to fit better new concepts around remote dir/repo, especially update-only doesn't block backup to a new directory anymore. Possibly split _Repo_Shadow into Read and Write variants.
+- rewrite QuotedRPath to be an RPath variant specific to repositories, to encapsulate the increment aspects & co (taking them out of the standard RPath class)

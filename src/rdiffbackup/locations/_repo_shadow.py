@@ -181,43 +181,52 @@ class RepoShadow(location.LocationShadow):
                 "API >= 201, ignoring".format(lf=cls._lockfile),
                 log.NOTE,
             )
-        map_longnames.setup(cls._data_dir)
         return ret_code
 
-    # @API(RepoShadow.setup_quoting, 300)
+    # @API(RepoShadow.setup_finish, 300)
     @classmethod
-    def setup_quoting(cls):
+    def setup_finish(cls):
+        """
+        Finish the repository setup, because the quoting must be done before
+        files are created, and because quoting depends on the file system
+        abilities also from the directory (?)
+
+        Returns the potentially quoted base directory
+        """
+        cls._setup_quoting()
+        map_longnames.setup(cls._data_dir)
+        cls._setup_logging()
+        return cls._base_dir
+
+    @classmethod
+    def _setup_quoting(cls):
         """
         Set QuotedRPath versions of important RPaths if chars_to_quote is set.
 
-        Returns the potentially quoted base directory
+        Returns True if quoting has been done, False if not necessary
         """
         # FIXME the problem is that the chars_to_quote can come from the command
         # line but can also be a value coming from the repository itself,
         # set globally by the fs_abilities.xxx_set_globals functions.
         if not Globals.chars_to_quote:
-            return cls._base_dir
+            return False
+
         cls._base_dir = map_filenames.get_quotedrpath(cls._base_dir)
         cls._data_dir = map_filenames.get_quotedrpath(cls._data_dir)
         cls._incs_dir = map_filenames.get_quotedrpath(cls._incs_dir)
         if cls._ref_type:
             cls._ref_path = map_filenames.get_quotedrpath(cls._ref_path)
             cls._ref_inc = map_filenames.get_quotedrpath(cls._ref_inc)
+        return True
 
-        return cls._base_dir
-
-    # @API(RepoShadow.setup_logging, 300)
     @classmethod
-    def setup_logging(cls):
+    def _setup_logging(cls):
         """
         Setup logging, opening the relevant files locally
         """
-        ret_code = Globals.RET_CODE_OK
         if cls._must_be_writable:
             if log.Log.file_verbosity > 0:
-                ret_code |= cls._open_logfile()
-                if ret_code & Globals.RET_CODE_ERR:
-                    return ret_code
+                cls._open_logfile()
             # FIXME the logic shouldn't be dependent on the action's name
             if cls._values["action"] == "backup":
                 log.ErrorLog.open(
@@ -225,7 +234,6 @@ class RepoShadow(location.LocationShadow):
                     time_string=Time.getcurtimestr(),
                     compress=cls._values["compression"],
                 )
-        return ret_code
 
     # @API(RepoShadow.exit, 300)
     @classmethod

@@ -99,7 +99,7 @@ toc::[]
 ** `.set_config`
 ** `.set_select`
 ** `.setup`  **new**
-** `.setup_quoting`  **new**
+** `.setup_finish`  **new**
 ** `.touch_current_mirror`
 ** `.verify`
 

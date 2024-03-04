@@ -98,12 +98,7 @@ class Repo(location.Location):
             ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
-        self.base_dir = self.setup_quoting()
-        # logging needs to be setup after quoting because logfile names might
-        # also get quoted
-        ret_code |= self.setup_logging()
-        if ret_code & Globals.RET_CODE_ERR:
-            return ret_code
+        self.base_dir = self.setup_finish()
 
         if self.values.get("not_compressed_regexp") is not None:
             ret_code |= self.setup_not_compressed_regexp(
@@ -132,17 +127,11 @@ class Repo(location.Location):
         self.base_dir.conn.Globals.set_local("isbackup_writer", False)
         self._shadow.exit()
 
-    def setup_quoting(self):
+    def setup_finish(self):
         """
-        Shadow function for RepoShadow.setup_quoting
+        Shadow function for RepoShadow.setup_finish
         """
-        return self._shadow.setup_quoting()
-
-    def setup_logging(self):
-        """
-        Shadow function for RepoShadow.setup_logging
-        """
-        return self._shadow.setup_logging()
+        return self._shadow.setup_finish()
 
     def get_mirror_time(self, must_exist=False, refresh=False):
         """
