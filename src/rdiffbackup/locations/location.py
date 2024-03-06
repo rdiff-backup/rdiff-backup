@@ -26,6 +26,7 @@ All those classes should be considered abstract and not instantiated directly.
 import os
 from rdiff_backup import Globals, log
 from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations.map import owners as map_owners
 
 
 class Location:
@@ -50,22 +51,6 @@ class Location:
 
     def get_fs_abilities(self):
         return self._shadow.get_fs_abilities()
-
-    def init_owners_mapping(
-        self, users_map=None, groups_map=None, preserve_num_ids=False
-    ):
-        """
-        initialize mapping of users and groups (aka owners)
-
-        Shadow function for _repo_shadow.RepoShadow/_dir_shadow.DirShadow
-
-        users_map and groups_map are file descriptors opened in text mode
-        """
-        if users_map is not None:
-            users_map = users_map.read()
-        if groups_map is not None:
-            groups_map = groups_map.read()
-        return self._shadow.init_owners_mapping(users_map, groups_map, preserve_num_ids)
 
     def exit(self):
         """
@@ -204,3 +189,17 @@ class LocationShadow:
             return False
 
         return True  # all is good
+
+    @classmethod
+    def _init_owners_mapping(
+        cls, users_map=None, groups_map=None, preserve_num_ids=None
+    ):
+        if users_map is None:
+            users_map = cls._values.get("user_mapping_file")
+        if groups_map is None:
+            groups_map = cls._values.get("group_mapping_file")
+        if preserve_num_ids is None:
+            preserve_num_ids = cls._values.get("preserve_num_ids", False)
+        map_owners.init_users_mapping(users_map, preserve_num_ids)
+        map_owners.init_groups_mapping(groups_map, preserve_num_ids)
+        return Globals.RET_CODE_OK

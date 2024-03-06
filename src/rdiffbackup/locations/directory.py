@@ -30,7 +30,6 @@ from rdiff_backup import Globals, log
 
 
 class ReadDir(location.Location):
-
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)
         if orig_path.conn is Globals.local_connection:
@@ -118,7 +117,6 @@ class ReadDir(location.Location):
 
 
 class WriteDir(location.Location):
-
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)
         if orig_path.conn is Globals.local_connection:
@@ -149,11 +147,6 @@ class WriteDir(location.Location):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self.init_owners_mapping(
-            users_map=self.values.get("user_mapping_file"),
-            groups_map=self.values.get("group_mapping_file"),
-            preserve_num_ids=self.values.get("preserve_numerical_ids", False),
-        )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 

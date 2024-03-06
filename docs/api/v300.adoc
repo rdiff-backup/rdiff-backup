@@ -68,7 +68,6 @@ toc::[]
 ** `.get_fs_abilities`
 ** `.get_sigs_select`
 ** `.init`  **new**
-** `.init_owners_mapping`
 ** `.set_select`
 * `locations._repo_shadow.RepoShadow`
 ** `.apply`
@@ -88,7 +87,6 @@ toc::[]
 ** `.get_sigs`
 ** `.init`  **new**
 ** `.init_and_get_iter`
-** `.init_owners_mapping`
 ** `.init_loop`
 ** `.list_files_at_time`
 ** `.list_files_changed_since`

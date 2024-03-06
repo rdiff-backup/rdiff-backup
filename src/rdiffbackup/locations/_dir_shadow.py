@@ -37,7 +37,6 @@ from rdiff_backup import (
 )
 from rdiffbackup.locations import location
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
-from rdiffbackup.locations.map import owners as map_owners
 
 # ### COPIED FROM BACKUP ####
 
@@ -52,6 +51,7 @@ class ReadDirShadow(location.LocationShadow):
 
     # @API(ReadDirShadow.init, 300)  # inherited
     # @API(ReadDirShadow.check, 300)  # inherited
+    # @API(ReadDirShadow.setup, 300)  # inherited
 
     # @API(ReadDirShadow.set_select, 201)
     @classmethod
@@ -316,6 +316,15 @@ class WriteDirShadow(location.LocationShadow):
 
         return ret_code
 
+    # @API(WriteDirShadow.setup, 300)
+    @classmethod
+    def setup(cls):
+        ret_code = super().setup()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+        ret_code |= cls._init_owners_mapping()
+        return ret_code
+
     # @API(WriteDirShadow.set_select, 201)
     @classmethod
     def set_select(cls, select_opts, *filelists):
@@ -357,13 +366,6 @@ class WriteDirShadow(location.LocationShadow):
         cls._base_dir.setdata()
 
     # @API(WriteDirShadow.get_fs_abilities, 201)  # inherited
-
-    # @API(WriteDirShadow.init_owners_mapping, 201)
-    @classmethod
-    def init_owners_mapping(cls, users_map, groups_map, preserve_num_ids):
-        map_owners.init_users_mapping(users_map, preserve_num_ids)
-        map_owners.init_groups_mapping(groups_map, preserve_num_ids)
-        return Globals.RET_CODE_OK
 
 
 class _DirPatchITRB(rorpiter.ITRBranch):

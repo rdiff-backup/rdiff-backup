@@ -107,11 +107,6 @@ class Repo(location.Location):
             if ret_code & Globals.RET_CODE_ERR:
                 return ret_code
 
-        ret_code |= self.init_owners_mapping(
-            users_map=self.values.get("user_mapping_file"),
-            groups_map=self.values.get("group_mapping_file"),
-            preserve_num_ids=self.values.get("preserve_numerical_ids", False),
-        )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
