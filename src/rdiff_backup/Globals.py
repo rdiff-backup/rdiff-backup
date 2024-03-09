@@ -161,9 +161,6 @@ isdest = None
 # list.
 changed_settings = []
 
-# The RPath or QuotedRPath of the rdiff-backup-data directory.
-rbdir = None  # compat201
-
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be set if certain characters in filenames on the source side
 # should be escaped (see locations.map.filenames for more info).

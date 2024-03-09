@@ -82,6 +82,10 @@ class RestoreAction(actions.BaseAction):
         # result
         ret_code = super().check()
 
+        # we verify that source directory and target repository are correct
+        ret_code |= self.repo.check()
+        ret_code |= self.dir.check()
+
         # we validate that the discovered restore type and the given options
         # fit together
         if self.repo.ref_type == "inc":
@@ -139,10 +143,6 @@ class RestoreAction(actions.BaseAction):
                 )
                 ret_code |= Globals.RET_CODE_ERR
 
-        # we verify that source directory and target repository are correct
-        ret_code |= self.repo.check()
-        ret_code |= self.dir.check()
-
         return ret_code
 
     def setup(self):
@@ -152,7 +152,7 @@ class RestoreAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self.repo.setup(action_name=self.name)
+        ret_code |= self.repo.setup()
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 

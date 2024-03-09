@@ -81,7 +81,7 @@ class RegressAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code = self.repo.setup(action_name=self.name)
+        ret_code = self.repo.setup()
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 

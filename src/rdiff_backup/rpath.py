@@ -1043,77 +1043,6 @@ class RPath(RORPath):
         else:
             return self.__class__(self.conn, b"/")
 
-    def get_repository_dirs(self):
-        """
-        Determine the base_dir of a repo based on a given path.
-
-        The rpath can be either the repository itself, a sub-directory
-        (in the mirror) or a dated increment file.
-        Return a tuple made of (the identified base directory, a path index,
-        the recovery type). The path index is the split relative path of the
-        sub-directory to restore (or of the path corresponding to the
-        increment). The type is either 'base', 'subpath', 'inc' or None if the
-        given rpath couldn't be properly analyzed.
-
-        Note that the current path can be relative but must still
-        contain the name of the repository (it can't be just within it).
-        """
-        # get the path as a list of directories/file
-        path_list = self._get_path_as_list()
-        if self.isincfile():
-            if b"rdiff-backup-data" not in path_list:
-                log.Log(
-                    "Path '{pa}' looks like an increment but doesn't "
-                    "have 'rdiff-backup-data' in its path".format(pa=self),
-                    log.ERROR,
-                )
-                return (self, (), None)
-            else:
-                data_idx = path_list.index(b"rdiff-backup-data")
-                if b"increments" in path_list:
-                    inc_idx = path_list.index(b"increments")
-                    # base_index is the path within the increments directory,
-                    # replacing the name of the increment with the name of the
-                    # file it represents
-                    base_index = path_list[inc_idx + 1 : -1]
-                    base_index.append(self.inc_basestr.split(b"/")[-1])
-                elif path_list[-1].startswith(b"increments."):
-                    inc_idx = len(path_list) - 1
-                    base_index = []
-                else:
-                    inc_idx = -1
-                if inc_idx != data_idx + 1:
-                    log.Log(
-                        "Path '{pa}' looks like an increment but "
-                        "doesn't have 'rdiff-backup-data/increments' "
-                        "in its path.".format(pa=self),
-                        log.ERROR,
-                    )
-                    return (self, (), None)
-                # base_dir is the directory above the data directory
-                base_dir = RPath(self.conn, b"/".join(path_list[:data_idx]))
-                return (base_dir, tuple(base_index), "inc")
-        else:
-            # rpath is either the base directory itself or a sub-dir of it
-            if self.lstat() and self.isdir() and b"rdiff-backup-data" in self.listdir():
-                # it's a base directory, simple case...
-                return (self, (), "base")
-            parent_rp = self
-            for element in range(1, len(path_list)):
-                parent_rp = parent_rp.get_parent_rp()
-                if (
-                    parent_rp.lstat()
-                    and parent_rp.isdir()
-                    and b"rdiff-backup-data" in parent_rp.listdir()
-                ):
-                    return (parent_rp, tuple(path_list[-element:]), "subpath")
-            log.Log(
-                "Path '{pa}' couldn't be identified as being within "
-                "an existing backup repository".format(pa=self),
-                log.ERROR,
-            )
-            return (self, (), None)
-
     def get_incfiles_list(self):
         """
         Returns list of increments whose name starts like the current file
@@ -1489,6 +1418,12 @@ class RPath(RORPath):
         acl_win.write_meta(self, acl_meta)
         self.data["win_acl"] = acl_meta
 
+    def get_path_as_list(self):
+        """
+        Return the complete path (base and index) as list of file names.
+        """
+        return self.path.split(b"/")
+
     @classmethod
     def _get_next_tempfile_name(cls):
         """
@@ -1516,12 +1451,6 @@ class RPath(RORPath):
                     rp=self, otype=temptype, ntype=self.data["type"]
                 )
             )
-
-    def _get_path_as_list(self):
-        """
-        Return the complete path (base and index) as list of file names.
-        """
-        return self.path.split(b"/")
 
 
 class MaybeGzip:

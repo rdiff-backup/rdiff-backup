@@ -52,16 +52,13 @@ class Manager:
     Read/Combine/Write metadata files by time
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir):
         """
         Set listing of rdiff-backup-data dir
         """
         self.rplist = []
         self.timerpmap, self.prefixmap = {}, {}
-        if data_dir is None:  # Globals.rbdir compat201
-            self.data_dir = Globals.rbdir
-        else:
-            self.data_dir = data_dir
+        self.data_dir = data_dir
         for filename in self.data_dir.listdir():
             rp = self.data_dir.append(filename)
             if rp.isincfile():
@@ -421,7 +418,7 @@ def get_meta_list():
     return get_meta_list.plugins
 
 
-def get_meta_manager(recreate=False):
+def get_meta_manager(data_dir=None, recreate=False):
     """
     return current metadata manager or new one if doesn't exist yet
 
@@ -431,5 +428,8 @@ def get_meta_manager(recreate=False):
     """
     # we attach the manager to an element of the function to make it permanent
     if not hasattr(get_meta_manager, "manager") or recreate:
-        get_meta_manager.manager = PatchDiffMan()
+        assert (
+            data_dir is not None
+        ), "When created, the meta manager needs a data directory"
+        get_meta_manager.manager = PatchDiffMan(data_dir)
     return get_meta_manager.manager

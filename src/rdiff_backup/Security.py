@@ -20,7 +20,7 @@
 
 import os
 import tempfile
-from rdiff_backup import Globals, log, rpath
+from rdiff_backup import Globals, rpath
 
 
 class Violation(Exception):
@@ -75,6 +75,9 @@ _file_requests = {
     "rpath.make_file_dict": 0,
     "rpath.delete_dir_no_files": 0,
     "shutil.rmtree": 0,
+    "_repo_shadow.RepoShadow.init": 0,
+    "_dir_shadow.ReadDirShadow.init": 0,
+    "_dir_shadow.WriteDirShadow.init": 0,
 }
 
 # functions to set global values
@@ -183,17 +186,10 @@ def _set_security_level(security_class, security_level, restrict_path, cmdpairs)
             sec_level = "minimal"
             rdir = tempfile.gettempdirb()
         elif islocal(cp1):
+            # this is only a temporary value because the restore repository
+            # path could be underneath the base_dir we actually need
             sec_level = "read-only"
-            rp1 = rpath.RPath(Globals.local_connection, getpath(cp1))
-            (base_dir, ref_index, ref_type) = rp1.get_repository_dirs()
-            if ref_type is None:
-                # the error will be catched later more cleanly, so that the
-                # connections can be properly closed
-                log.Log(
-                    "Invalid restore directory '{rd}'".format(rd=getpath(cp1)),
-                    log.ERROR,
-                )
-            rdir = base_dir.path
+            rdir = getpath(cp1)
         else:  # cp2 is local but not cp1
             sec_level = "read-write"
             rdir = getpath(cp2)
@@ -226,11 +222,12 @@ def _set_allowed_requests(sec_class, sec_level):
         # "gzip.GzipFile",  # ??? perhaps covered by VirtualFile
         # "open",  # ??? perhaps covered by VirtualFile
         "sys.stdout.write",
-        # API >= 201
-        "_repo_shadow.RepoShadow.is_locked",
-        "_repo_shadow.RepoShadow.lock",
-        "_repo_shadow.RepoShadow.setup_paths",
-        "_repo_shadow.RepoShadow.unlock",
+        # API >=300
+        "_repo_shadow.RepoShadow.init",
+        "_repo_shadow.RepoShadow.check",
+        "_repo_shadow.RepoShadow.setup",
+        "_repo_shadow.RepoShadow.setup_finish",
+        "_repo_shadow.RepoShadow.exit",
     }
     if (
         sec_level == "read-only"
@@ -251,6 +248,8 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_repo_shadow.RepoShadow.get_config",
                 "_repo_shadow.RepoShadow.get_mirror_time",
                 "_repo_shadow.RepoShadow.needs_regress",
+                # API >= 300
+                "_repo_shadow.RepoShadow.get_fs_abilities",
             ]
         )
     if sec_level == "read-only" or sec_level == "read-write":
@@ -264,7 +263,6 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.ReadDirShadow.get_fs_abilities",
                 "_dir_shadow.ReadDirShadow.get_select",
                 "_dir_shadow.ReadDirShadow.set_select",
-                "_repo_shadow.RepoShadow.get_fs_abilities_readonly",
                 "_repo_shadow.RepoShadow.init_loop",
                 "_repo_shadow.RepoShadow.get_increment_times",
                 "_repo_shadow.RepoShadow.set_select",
@@ -274,13 +272,19 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_repo_shadow.RepoShadow.list_files_at_time",
                 "_repo_shadow.RepoShadow.init_and_get_loop",
                 "_repo_shadow.RepoShadow.verify",
+                # API >= 300
+                "_dir_shadow.ReadDirShadow.init",
+                "_dir_shadow.ReadDirShadow.check",
+                "_dir_shadow.ReadDirShadow.setup",
+                "_repo_shadow.RepoShadow.get_increments",
+                "_repo_shadow.RepoShadow.get_increments_sizes",
+                "_repo_shadow.RepoShadow.get_parsed_time",
             ]
         )
     if sec_level == "update-only" or sec_level == "read-write":
         requests.update(
             [
                 "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
-                "log.ErrorLog.close",
                 "log.ErrorLog.isopen",
                 "log.ErrorLog.open",
                 "log.ErrorLog.write_if_open",
@@ -289,7 +293,6 @@ def _set_allowed_requests(sec_class, sec_level):
                 "statistics.record_error",
                 # API >= 201
                 "_repo_shadow.RepoShadow.close_statistics",
-                "_repo_shadow.RepoShadow.get_fs_abilities_readwrite",
                 "_repo_shadow.RepoShadow.get_sigs",
                 "_repo_shadow.RepoShadow.apply",
                 "_repo_shadow.RepoShadow.remove_current_mirror",
@@ -328,6 +331,11 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.WriteDirShadow.get_sigs_select",
                 "_dir_shadow.WriteDirShadow.apply",
                 "_dir_shadow.WriteDirShadow.set_select",
+                # API >= 300
+                "_dir_shadow.WriteDirShadow.init",
+                "_dir_shadow.WriteDirShadow.check",
+                "_dir_shadow.WriteDirShadow.setup",
+                "_repo_shadow.RepoShadow.force_regress",
             ]
         )
     if sec_class == "server":
@@ -335,8 +343,6 @@ def _set_allowed_requests(sec_class, sec_level):
             [
                 "SetConnections.init_connection_remote",
                 # API >= 201
-                "_repo_shadow.RepoShadow.init_owners_mapping",
-                "_dir_shadow.WriteDirShadow.init_owners_mapping",
                 "Globals.set_api_version",
                 # API >= 300
                 "log.Log.set_verbosity",  # FIXME can we pipe this through?

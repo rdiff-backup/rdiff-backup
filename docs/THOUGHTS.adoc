@@ -13,4 +13,12 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - set api version to 300
 - make check and setup functions mostly remote to encapsulate repo structure
 - use shadow object instead of shadow class, at least locally, to have more repeatable runs within same context?
-- transform all values of type io.IOBase into text from the beginning
+- allow keyword type parameters across the connection keyword=value
+- go through all the functions and make sure their names are more consistent
+- merge somehow the ErrorLog and Log functionalities to have one single interface
+- check all tests and make sure that they don't generate uncaptured exceptions in rdiff-backup, capture them and make messages user friendly/ier
+- add unnecessary keyword parameters to simplify unit testing of shadow classes (as done for the locking functions)
+- write security concept paper
+- re-write security module to fit better new concepts around remote dir/repo, especially update-only doesn't block backup to a new directory anymore. Possibly split _Repo_Shadow into Read and Write variants.
+- rewrite QuotedRPath to be an RPath variant specific to repositories, to encapsulate the increment aspects & co (taking them out of the standard RPath class)
+- rewrite selection functions to directly use bytes loaded instead of files

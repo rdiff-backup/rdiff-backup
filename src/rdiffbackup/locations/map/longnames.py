@@ -38,7 +38,7 @@ it later.
 """
 
 import errno
-from rdiff_backup import Globals, log
+from rdiff_backup import log
 from rdiffbackup.utils import safestr
 
 _long_name_dir = b"long_filename_data"
@@ -55,6 +55,16 @@ _counter_filename = b"next_free"
 # bases like '1' or '23', and the values are lists containing the
 # associated increments.
 _restore_inc_cache = None
+
+
+def setup(data_dir):
+    """
+    Function to setup the long names mapping
+    """
+    global _long_name_rootrp
+    _long_name_rootrp = data_dir.append(_long_name_dir)
+    if not _long_name_rootrp.lstat():
+        _long_name_rootrp.mkdir()
 
 
 # ------------------------------------------------------------------
@@ -246,11 +256,6 @@ def _get_long_rp(base=None):
     """
     Return an rpath in long name directory with given base
     """
-    global _long_name_rootrp
-    if not _long_name_rootrp:
-        _long_name_rootrp = Globals.rbdir.append(_long_name_dir)
-        if not _long_name_rootrp.lstat():
-            _long_name_rootrp.mkdir()
     if base:
         return _long_name_rootrp.append(base)
     else:

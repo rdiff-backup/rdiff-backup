@@ -28,10 +28,9 @@ toc::[]
 * `Globals.get`
 * `Globals.set_api_version`
 * `Globals.set_local`
-* `log.ErrorLog.close`
-* `log.ErrorLog.isopen`
-* `log.ErrorLog.open`
-* `log.ErrorLog.write_if_open`
+* `log.ErrorLog`
+** `.isopen`
+** `.write_if_open`
 * `log.Log.close_logfile_allconn`
 * `log.Log.close_logfile_local`
 * `log.Log.log_to_file`
@@ -54,46 +53,52 @@ toc::[]
 ==== rdiffbackup
 
 * `locations._dir_shadow.ReadDirShadow`
+** `.check`  **new**
 ** `.compare_full`
 ** `.compare_hash`
 ** `.compare_meta`
 ** `.get_diffs`
 ** `.get_fs_abilities`
 ** `.get_select`
+** `.init`  **new**
 ** `.set_select`
 * `locations._dir_shadow.WriteDirShadow`
 ** `.apply`
+** `.check`  **new**
 ** `.get_fs_abilities`
 ** `.get_sigs_select`
-** `.init_owners_mapping`
+** `.init`  **new**
 ** `.set_select`
 * `locations._repo_shadow.RepoShadow`
 ** `.apply`
+** `.check`  **new**
 ** `.close_statistics`
+** `.exit`  **new**
 ** `.finish_loop`
+** `.force_regress` **new**
 ** `.get_config`
 ** `.get_diffs`
-** `.get_fs_abilities_readonly`
-** `.get_fs_abilities_readwrite`
+** `.get_fs_abilities`  **new**
 ** `.get_increment_times`
+** `.get_increments`  **new**
+** `.get_increments_sizes`  **new**
 ** `.get_mirror_time`
+** `.get_parsed_time`  **new**
 ** `.get_sigs`
+** `.init`  **new**
 ** `.init_and_get_iter`
-** `.init_owners_mapping`
 ** `.init_loop`
-** `.is_locked`
 ** `.list_files_at_time`
 ** `.list_files_changed_since`
-** `.lock`
 ** `.needs_regress`
 ** `.regress`
 ** `.remove_current_mirror`
 ** `.remove_increments_older_than`
 ** `.set_config`
 ** `.set_select`
-** `.setup_paths`
+** `.setup`  **new**
+** `.setup_finish`  **new**
 ** `.touch_current_mirror`
-** `.unlock`
 ** `.verify`
 
 === External

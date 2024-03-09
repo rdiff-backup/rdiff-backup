@@ -28,6 +28,7 @@ to use it.
 """
 
 import argparse
+import io
 import sys
 
 # === WORKAROUND ===
@@ -60,12 +61,16 @@ def parse(args, version_string, generic_parsers, actions_dict=None):
     the generic_parsers is a list of argument parsers common to all actions,
     actions_dict is a dictionary of the form `{"action_name": ActionClass}`.
 
-    Returns a dictionary containing the parsed parameters.
+    Returns a dictionary containing the parsed parameters,
+    readable files having been read as string or bytes.
     """
     parser = get_parser(version_string, generic_parsers, actions_dict)
     parsed_args = parse_args(parser, args)
-
-    return vars(parsed_args)  # make a dictionary out of a Namespace
+    parsed_values = vars(parsed_args)  # make a dictionary out of a Namespace
+    for key, value in parsed_values.items():
+        if isinstance(value, io.IOBase) and value.readable():
+            parsed_values[key] = value.read()
+    return parsed_values
 
 
 def get_parser(version_string, parent_parsers, actions_dict):

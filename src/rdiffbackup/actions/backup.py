@@ -90,7 +90,7 @@ class BackupAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code = self.repo.setup(self.dir, action_name=self.name)
+        ret_code = self.repo.setup(self.dir)
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
@@ -98,8 +98,6 @@ class BackupAction(actions.BaseAction):
         if previous_time >= Time.getcurtime():
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return ret_code | Globals.RET_CODE_ERR
-
-        log.ErrorLog.open(Time.getcurtimestr(), compress=self.values["compression"])
 
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values["selections"]

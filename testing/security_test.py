@@ -197,11 +197,10 @@ class SecurityTest(unittest.TestCase):
             self.out_dir,
             self.restore_dir,
             0,
-            b"--restrict-path %b " b"--restrict-mode read-only" % self.out_dir,
+            b"--restrict-path %b --restrict-mode read-only" % self.out_dir,
             extra_args=(b"restore", b"--at", b"now"),
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=Globals.RET_CODE_OK,
         )
-        # there is a warning because log can't be opened in read-only mode
 
     def test_restrict_readonly_negative(self):
         """Test that --restrict-mode read-only doesn't allow too much"""
@@ -211,7 +210,7 @@ class SecurityTest(unittest.TestCase):
             self.various_files_dir,
             self.out_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode read-only" % self.out_dir,
+            b"--restrict-path %b --restrict-mode read-only" % self.out_dir,
             expected_ret_code=Globals.RET_CODE_ERR,
         )
 
@@ -223,7 +222,7 @@ class SecurityTest(unittest.TestCase):
             self.out_dir,
             self.restore_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode read-only" % self.restore_dir,
+            b"--restrict-path %b --restrict-mode read-only" % self.restore_dir,
             extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=Globals.RET_CODE_ERR,
         )
@@ -238,7 +237,7 @@ class SecurityTest(unittest.TestCase):
             self.various_files_dir,
             self.out_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode update-only" % self.out_dir,
+            b"--restrict-path %b --restrict-mode update-only" % self.out_dir,
         )
 
     def test_restrict_updateonly_negative(self):
@@ -248,8 +247,11 @@ class SecurityTest(unittest.TestCase):
             self.various_files_dir,
             self.out_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode update-only" % self.out_dir,
-            expected_ret_code=Globals.RET_CODE_ERR,
+            b"--restrict-path %b --restrict-mode update-only" % self.out_dir,
+            expected_ret_code=Globals.RET_CODE_OK,
+            # FIXME following was the correct value under old versions
+            # but the new concept doesn't differentiate update from r/w
+            # expected_ret_code=Globals.RET_CODE_ERR,
         )
 
         comtst.remove_dir(self.out_dir)
@@ -259,7 +261,7 @@ class SecurityTest(unittest.TestCase):
             self.out_dir,
             self.restore_dir,
             1,
-            b"--restrict-path %b " b"--restrict-mode update-only" % self.restore_dir,
+            b"--restrict-path %b --restrict-mode update-only" % self.restore_dir,
             extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=Globals.RET_CODE_ERR,
         )

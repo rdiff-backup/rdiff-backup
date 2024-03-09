@@ -42,22 +42,23 @@ from rdiff_backup import (
     robust,
     rorpiter,
     rpath,
+    Security,
     selection,
     statistics,
     Time,
 )
 from rdiffbackup import meta_mgr
-from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations import fs_abilities, location
+from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
-from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.utils import locking, simpleps
 
 # ### COPIED FROM BACKUP ####
 
 
 # @API(RepoShadow, 201)
-class RepoShadow:
+class RepoShadow(location.LocationShadow):
     """
     Shadow repository for the local repository representation
     """
@@ -91,55 +92,416 @@ class RepoShadow:
         False: {"open": "r", "lock": locking.LOCK_SH | locking.LOCK_NB},
     }
 
-    # @API(RepoShadow.setup_paths, 201)
+    # @API(RepoShadow.init, 300)
     @classmethod
-    def setup_paths(cls, base_dir, data_dir, incs_dir):
-        """
-        Setup the base, data and increments directories for further use
-        """
-        cls._base_dir = base_dir
-        cls._data_dir = data_dir
-        cls._incs_dir = incs_dir
-
-        # FIXME this should belong in a more generic setup function
+    def init(
+        cls,
+        orig_path,
+        values,
+        must_be_writable,
+        must_exist,
+        can_be_sub_path=False,
+    ):
+        # if the base_dir can be a sub-file, we need to identify the actual
+        # base directory of the repository
+        cls._orig_path = orig_path
+        if can_be_sub_path:
+            (base_dir, ref_index, ref_type) = cls._get_repository_dirs(orig_path)
+            cls._base_dir = base_dir
+            cls._ref_index = ref_index
+            cls._ref_type = ref_type
+        else:
+            cls._base_dir = orig_path
+            cls._ref_index = ()
+            cls._ref_type = None
+        cls._data_dir = cls._base_dir.append_path(b"rdiff-backup-data")
+        cls._incs_dir = cls._data_dir.append_path(b"increments")
+        cls._lockfile = cls._data_dir.append(b"lock.yml")
+        if can_be_sub_path:
+            if cls._ref_type is None:
+                # nothing to save, the user must first give a correct path
+                log.Log.FatalError(
+                    "Something was wrong with the given path '{gp}'".format(
+                        gp=orig_path
+                    )
+                )
+            else:
+                cls._ref_path = cls._base_dir.new_index(cls._ref_index)
+                cls._ref_inc = cls._data_dir.append_path(b"increments", cls._ref_index)
+        else:
+            cls._ref_path = cls._base_dir
+            cls._ref_inc = cls._data_dir.append_path(b"increments", cls._ref_index)
+            log.Log("Using repository '{re}'".format(re=cls._base_dir), log.INFO)
+        cls._values = values
+        cls._must_be_writable = must_be_writable
+        cls._must_exist = must_exist
+        cls._can_be_sub_path = can_be_sub_path
+        cls._has_been_locked = False
         # we need this to be able to use multiple times the class
         cls._mirror_time = None
         cls._restore_time = None
         cls._regress_time = None
         cls._unsuccessful_backup_time = None
+        cls._logging_to_file = None
+
+        return (cls._base_dir, cls._ref_index, cls._ref_type)
+
+    # @API(RepoShadow.check, 300)  # inherited
+
+    # @API(RepoShadow.setup, 300)
+    @classmethod
+    def setup(cls):
+        if cls._must_be_writable and not cls._create():
+            return Globals.RET_CODE_ERR
+        Security.reset_restrict_path(cls._base_dir)
+        lock_result = cls._lock()
+        ret_code = Globals.RET_CODE_OK
+        if lock_result is False:
+            if cls._values["force"]:
+                log.Log(
+                    "Repository is locked by file {lf}, another "
+                    "action is probably on-going. Enforcing anyway "
+                    "at your own risk".format(lf=cls._lockfile),
+                    log.WARNING,
+                )
+            else:
+                log.Log(
+                    "Repository is locked by file {lf}, another "
+                    "is probably on-going, or something went "
+                    "wrong. Either wait, remove the lock "
+                    "or use the --force option".format(lf=cls._lockfile),
+                    log.ERROR,
+                )
+                return Globals.RET_CODE_ERR
+        elif lock_result is None:
+            log.Log(
+                "Repository couldn't be locked by file {lf}, probably "
+                "because the repository was never written with "
+                "API >= 201, ignoring".format(lf=cls._lockfile),
+                log.NOTE,
+            )
+        ret_code |= cls._init_owners_mapping()
+        return ret_code
+
+    # @API(RepoShadow.setup_finish, 300)
+    @classmethod
+    def setup_finish(cls):
+        """
+        Finish the repository setup, because the quoting must be done before
+        files are created, and because quoting depends on the file system
+        abilities also from the directory (?)
+
+        Returns the potentially quoted base directory
+        """
+        cls._setup_quoting()
+        map_longnames.setup(cls._data_dir)
+        cls._setup_logging()
+        return cls._base_dir
+
+    @classmethod
+    def _setup_quoting(cls):
+        """
+        Set QuotedRPath versions of important RPaths if chars_to_quote is set.
+
+        Returns True if quoting has been done, False if not necessary
+        """
+        # FIXME the problem is that the chars_to_quote can come from the command
+        # line but can also be a value coming from the repository itself,
+        # set globally by the fs_abilities.xxx_set_globals functions.
+        if not Globals.chars_to_quote:
+            return False
+
+        cls._base_dir = map_filenames.get_quotedrpath(cls._base_dir)
+        cls._data_dir = map_filenames.get_quotedrpath(cls._data_dir)
+        cls._incs_dir = map_filenames.get_quotedrpath(cls._incs_dir)
+        if cls._ref_type:
+            cls._ref_path = map_filenames.get_quotedrpath(cls._ref_path)
+            cls._ref_inc = map_filenames.get_quotedrpath(cls._ref_inc)
+        return True
+
+    @classmethod
+    def _setup_logging(cls):
+        """
+        Setup logging, opening the relevant files locally
+        """
+        if cls._must_be_writable:
+            if log.Log.file_verbosity > 0:
+                cls._open_logfile()
+            # FIXME the logic shouldn't be dependent on the action's name
+            if cls._values["action"] == "backup":
+                log.ErrorLog.open(
+                    data_dir=cls._data_dir,
+                    time_string=Time.getcurtimestr(),
+                    compress=cls._values["compression"],
+                )
+
+    # @API(RepoShadow.exit, 300)
+    @classmethod
+    def exit(cls):
+        cls._unlock()
+        log.ErrorLog.close()
+        if cls._logging_to_file:
+            log.Log.close_logfile()
 
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
-    def get_sigs(cls, baserp, source_iter, previous_time, is_remote):
+    def get_sigs(cls, source_iter, previous_time, is_local):
         """
         Setup cache and return a signatures iterator
         """
-        cls._set_rorp_cache(baserp, source_iter, previous_time)
-        return cls._sigs_iterator(baserp, is_remote)
+        cls._set_rorp_cache(cls._base_dir, source_iter, previous_time)
+        return cls._sigs_iterator(cls._base_dir, is_local)
 
     # @API(RepoShadow.apply, 201)
     @classmethod
-    def apply(cls, dest_rpath, source_diffiter, inc_rpath=None, previous_time=None):
+    def apply(cls, source_diffiter, previous_time=None):
         """
-        Patch dest_rpath with rorpiter of diffs and optionally write increments
+        Patch the current repo with rorpiter of diffs and optionally write
+        increments.
 
         This function is used for first and follow-up backups
         within a repository.
         """
         if previous_time:
             ITR = rorpiter.IterTreeReducer(
-                _RepoIncrementITRB, [dest_rpath, inc_rpath, cls.CCPP, previous_time]
+                _RepoIncrementITRB,
+                [cls._base_dir, cls._incs_dir, cls.CCPP, previous_time],
             )
             log_msg = "Processing changed file {cf}"
         else:
-            ITR = rorpiter.IterTreeReducer(_RepoPatchITRB, [dest_rpath, cls.CCPP])
+            ITR = rorpiter.IterTreeReducer(_RepoPatchITRB, [cls._base_dir, cls.CCPP])
             log_msg = "Processing file {cf}"
-        for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
+        for diff in rorpiter.FillInIter(source_diffiter, cls._base_dir):
             log.Log(log_msg.format(cf=diff), log.INFO)
             ITR(diff.index, diff)
         ITR.finish_processing()
         cls.CCPP.close()
-        dest_rpath.setdata()
+        cls._base_dir.setdata()
+
+    @classmethod
+    def _is_existing(cls):
+        # check first that the directory itself exists
+        if not super()._is_existing():
+            return False
+
+        if not cls._data_dir.isdir():
+            log.Log(
+                "Source directory '{sd}' doesn't have a sub-directory "
+                "'rdiff-backup-data'".format(sd=cls._base_dir),
+                log.ERROR,
+            )
+            return False
+        elif not cls._incs_dir.isdir():
+            log.Log(
+                "Data directory '{dd}' doesn't have an 'increments' "
+                "sub-directory".format(dd=cls._data_dir),
+                log.WARNING,
+            )  # used to be normal  # compat200repo
+            # return False # compat200repo
+        return True
+
+    @classmethod
+    def _is_writable(cls):
+        # check first that the directory itself is writable
+        # (or doesn't yet exist)
+        if not super()._is_writable():
+            return False
+        # if the target is a non-empty existing directory
+        # without rdiff-backup-data sub-directory
+        if (
+            cls._base_dir.lstat()
+            and cls._base_dir.isdir()
+            and cls._base_dir.listdir()
+            and not cls._data_dir.lstat()
+        ):
+            if cls._values["force"]:
+                log.Log(
+                    "Target path '{tp}' does not look like a rdiff-backup "
+                    "repository but will be force overwritten".format(tp=cls._base_dir),
+                    log.WARNING,
+                )
+            else:
+                log.Log(
+                    "Target path '{tp}' does not look like a rdiff-backup "
+                    "repository, call with '--force' to overwrite".format(
+                        tp=cls._base_dir
+                    ),
+                    log.ERROR,
+                )
+                return False
+        return True
+
+    @classmethod
+    def _create(cls):
+        # create the underlying location/directory
+        if not super()._create():
+            return False
+
+        if cls._is_failed_initial_backup():
+            # poor man's locking mechanism to protect starting backup
+            # independently from the API version
+            cls._lockfile.setdata()
+            if cls._lockfile.lstat():
+                if cls._values["force"]:
+                    log.Log(
+                        "An initial backup in a strange state with "
+                        "lockfile {lf}. Enforcing continuation, "
+                        "hopefully you know what you're doing".format(lf=cls._lockfile),
+                        log.WARNING,
+                    )
+                else:
+                    log.Log(
+                        "An initial backup in a strange state with "
+                        "lockfile {lf}. Either it's just an initial backup "
+                        "running, wait a bit and try again later, or "
+                        "something is really wrong. --force will remove "
+                        "the complete repo, at your own risk".format(lf=cls._lockfile),
+                        log.ERROR,
+                    )
+                    return False
+            log.Log(
+                "Found interrupted initial backup in data directory {dd}. "
+                "Removing...".format(dd=cls._data_dir),
+                log.NOTE,
+            )
+            cls._clean_failed_initial_backup()
+
+        # define a few essential subdirectories
+        if not cls._data_dir.lstat():
+            try:
+                cls._data_dir.mkdir()
+            except OSError as exc:
+                log.Log(
+                    "Could not create 'rdiff-backup-data' sub-directory "
+                    "in base directory '{bd}' due to exception '{ex}'. "
+                    "Please fix the access rights and retry.".format(
+                        bd=cls._base_dir, ex=exc
+                    ),
+                    log.ERROR,
+                )
+                return False
+        if not cls._incs_dir.lstat():
+            try:
+                cls._incs_dir.mkdir()
+            except OSError as exc:
+                log.Log(
+                    "Could not create 'increments' sub-directory "
+                    "in data directory '{dd}' due to exception '{ex}'. "
+                    "Please fix the access rights and retry.".format(
+                        dd=cls._data_dir, ex=exc
+                    ),
+                    log.ERROR,
+                )
+                return False
+
+        return True
+
+    @classmethod
+    def _is_failed_initial_backup(cls):
+        """
+        Returns True if it looks like the rdiff-backup-data directory contains
+        a failed initial backup, else False.
+        """
+        if cls._data_dir.lstat():
+            rbdir_files = cls._data_dir.listdir()
+            mirror_markers = [x for x in rbdir_files if x.startswith(b"current_mirror")]
+            error_logs = [x for x in rbdir_files if x.startswith(b"error_log")]
+            metadata_mirrors = [
+                x for x in rbdir_files if x.startswith(b"mirror_metadata")
+            ]
+            # If we have no current_mirror marker, and one or less error logs
+            # and metadata files, we most likely have a failed backup.
+            return (
+                not mirror_markers
+                and len(error_logs) <= 1
+                and len(metadata_mirrors) <= 1
+            )
+        return False
+
+    @classmethod
+    def _clean_failed_initial_backup(cls):
+        """
+        Clear the given rdiff-backup-data if possible, it's faster than
+        trying to do a regression, which would probably anyway fail.
+        """
+        cls._data_dir.delete()  # setdata is implicit
+        cls._incs_dir.setdata()
+
+    @classmethod
+    def _get_repository_dirs(cls, orig_path):
+        """
+        Determine the base_dir of a repo based on a given path.
+
+        The rpath can be either the repository itself, a sub-directory
+        (in the mirror) or a dated increment file.
+        Return a tuple made of (the identified base directory, a path index,
+        the recovery type). The path index is the split relative path of the
+        sub-directory to restore (or of the path corresponding to the
+        increment). The type is either 'base', 'subpath', 'inc' or None if the
+        given rpath couldn't be properly analyzed.
+
+        Note that the current path can be relative but must still
+        contain the name of the repository (it can't be just within it).
+        """
+        # get the path as a list of directories/file
+        path_list = orig_path.get_path_as_list()
+        if orig_path.isincfile():
+            if b"rdiff-backup-data" not in path_list:
+                log.Log(
+                    "Path '{pa}' looks like an increment but doesn't "
+                    "have 'rdiff-backup-data' in its path".format(pa=orig_path),
+                    log.ERROR,
+                )
+                return (orig_path, (), None)
+            else:
+                data_idx = path_list.index(b"rdiff-backup-data")
+                if b"increments" in path_list:
+                    inc_idx = path_list.index(b"increments")
+                    # base_index is the path within the increments directory,
+                    # replacing the name of the increment with the name of the
+                    # file it represents
+                    base_index = path_list[inc_idx + 1 : -1]
+                    base_index.append(orig_path.inc_basestr.split(b"/")[-1])
+                elif path_list[-1].startswith(b"increments."):
+                    inc_idx = len(path_list) - 1
+                    base_index = []
+                else:
+                    inc_idx = -1
+                if inc_idx != data_idx + 1:
+                    log.Log(
+                        "Path '{pa}' looks like an increment but "
+                        "doesn't have 'rdiff-backup-data/increments' "
+                        "in its path.".format(pa=orig_path),
+                        log.ERROR,
+                    )
+                    return (orig_path, (), None)
+                # base_dir is the directory above the data directory
+                base_dir = rpath.RPath(orig_path.conn, b"/".join(path_list[:data_idx]))
+                return (base_dir, tuple(base_index), "inc")
+        else:
+            # rpath is either the base directory itself or a sub-dir of it
+            if (
+                orig_path.lstat()
+                and orig_path.isdir()
+                and b"rdiff-backup-data" in orig_path.listdir()
+            ):
+                # it's a base directory, simple case...
+                return (orig_path, (), "base")
+            parent_rp = orig_path
+            for element in range(1, len(path_list)):
+                parent_rp = parent_rp.get_parent_rp()
+                if (
+                    parent_rp.lstat()
+                    and parent_rp.isdir()
+                    and b"rdiff-backup-data" in parent_rp.listdir()
+                ):
+                    return (parent_rp, tuple(path_list[-element:]), "subpath")
+            log.Log(
+                "Path '{pa}' couldn't be identified as being within "
+                "an existing backup repository".format(pa=orig_path),
+                log.ERROR,
+            )
+            return (orig_path, (), None)
 
     @classmethod
     def _get_dest_select(cls, rpath, previous_time):
@@ -156,7 +518,7 @@ class RepoShadow:
             sel.parse_rbdir_exclude()
             return sel.get_select_iter()
 
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         if previous_time:  # it's an increment, not the first mirror
             rorp_iter = meta_manager.get_metas_at_time(previous_time)
             if rorp_iter:
@@ -175,12 +537,12 @@ class RepoShadow:
         dest_iter = cls._get_dest_select(baserp, previous_time)
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
         cls.CCPP = _CacheCollatedPostProcess(
-            collated, Globals.pipeline_max_length * 4, baserp
+            collated, Globals.pipeline_max_length * 4, baserp, cls._data_dir
         )
         # pipeline len adds some leeway over just*3 (to and from and back)
 
     @classmethod
-    def _sigs_iterator(cls, baserp, is_remote):
+    def _sigs_iterator(cls, baserp, is_local):
         """
         Yield signatures of any changed destination files
         """
@@ -189,7 +551,7 @@ class RepoShadow:
         for src_rorp, dest_rorp in cls.CCPP:
             # If we are backing up across a pipe, we must flush the pipeline
             # every so often so it doesn't get congested on destination end.
-            if is_remote:
+            if not is_local:
                 num_rorps_seen += 1
                 if num_rorps_seen > flush_threshold:
                     num_rorps_seen = 0
@@ -268,7 +630,7 @@ class RepoShadow:
 
     # @API(RepoShadow.touch_current_mirror, 201)
     @classmethod
-    def touch_current_mirror(cls, data_dir, current_time_str):
+    def touch_current_mirror(cls, current_time_str):
         """
         Make a file like current_mirror.<datetime>.data to record time
 
@@ -280,7 +642,7 @@ class RepoShadow:
         When doing the initial full backup, the file can be created after
         everything else is in place.
         """
-        mirrorrp = data_dir.append(
+        mirrorrp = cls._data_dir.append(
             b".".join((b"current_mirror", os.fsencode(current_time_str), b"data"))
         )
         log.Log("Writing mirror marker {mm}".format(mm=mirrorrp), log.INFO)
@@ -293,13 +655,13 @@ class RepoShadow:
 
     # @API(RepoShadow.remove_current_mirror, 201)
     @classmethod
-    def remove_current_mirror(cls, data_dir):
+    def remove_current_mirror(cls):
         """
         Remove the older of the current_mirror files.
 
         Use at end of session
         """
-        curmir_incs = data_dir.append(b"current_mirror").get_incfiles_list()
+        curmir_incs = cls._data_dir.append(b"current_mirror").get_incfiles_list()
         assert (
             len(curmir_incs) == 2
         ), "There must be two current mirrors not '{ilen}'.".format(
@@ -328,18 +690,18 @@ class RepoShadow:
             statistics.print_active_stats(end_time)
         if Globals.file_statistics:
             statistics.FileStats.close()
-        statistics.write_active_statfileobj(end_time)
+        statistics.write_active_statfileobj(cls._data_dir, end_time)
 
     # ### COPIED FROM RESTORE ####
 
     # @API(RepoShadow.init_loop, 201)
     @classmethod
-    def init_loop(cls, data_dir, mirror_base, inc_base, restore_to_time):
+    def init_loop(cls, restore_to_time):
         """
         Initialize repository for looping through the increments
         """
-        cls._initialize_restore(data_dir, restore_to_time)
-        cls._initialize_rf_cache(mirror_base, inc_base)
+        cls._initialize_restore(cls._data_dir, restore_to_time)
+        cls._initialize_rf_cache(cls._ref_path, cls._ref_inc)
 
     # @API(RepoShadow.finish_loop, 201)
     @classmethod
@@ -388,6 +750,28 @@ class RepoShadow:
             else:
                 cls._mirror_time = cur_mirror_incs[0].getinctime()
         return cls._mirror_time
+
+    # @API(RepoShadow.get_parsed_time, 300)
+    @classmethod
+    def get_parsed_time(cls, timestr):
+        """
+        Parse time string, potentially using the reference increment as anchor
+
+        Returns None if the time string couldn't be parsed, else the time in
+        seconds.
+        The reference increment is used when the time string consists in a
+        number of past backups.
+        """
+        try:
+            sessions = cls.get_increment_times(cls._ref_inc)
+            return Time.genstrtotime(timestr, session_times=sessions)
+        except Time.TimeException as exc:
+            log.Log(
+                "Time string '{ts}' couldn't be parsed "
+                "due to '{ex}'".format(ts=timestr, ex=exc),
+                log.ERROR,
+            )
+            return None
 
     # @API(RepoShadow.get_increment_times, 201)
     @classmethod
@@ -444,7 +828,7 @@ class RepoShadow:
         if rest_time is None:
             rest_time = cls._restore_time
 
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         rorp_iter = meta_manager.get_metas_at_time(rest_time, cls.mirror_base.index)
         if not rorp_iter:
             if require_metadata:
@@ -579,17 +963,17 @@ class RepoShadow:
 
     # @API(RepoShadow.list_files_changed_since, 201)
     @classmethod
-    def list_files_changed_since(cls, mirror_rp, inc_rp, data_dir, restore_to_time):
+    def list_files_changed_since(cls, restore_to_time):
         """
-        List the changed files under mirror_rp since rest time
+        List the changed files under the repository since rest time
 
         Notice the output is an iterator of RORPs.  We do this because we
         want to give the remote connection the data in buffered
         increments, and this is done automatically for rorp iterators.
         Encode the lines in the first element of the rorp's index.
         """
-        assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.init_loop(data_dir, mirror_rp, inc_rp, restore_to_time)
+        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        cls.init_loop(restore_to_time)
 
         old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
         cur_iter = cls._get_mirror_rorp_iter(cls.get_mirror_time(must_exist=True), True)
@@ -609,32 +993,136 @@ class RepoShadow:
 
     # @API(RepoShadow.list_files_at_time, 201)
     @classmethod
-    def list_files_at_time(cls, mirror_rp, inc_rp, data_dir, reftime):
+    def list_files_at_time(cls, reftime):
         """
         List the files in archive at the given time
 
         Output is a RORP Iterator with info in index.
         See list_files_changed_since for details.
         """
-        assert mirror_rp.conn is Globals.local_connection, "Run locally only"
-        cls.init_loop(data_dir, mirror_rp, inc_rp, reftime)
+        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        cls.init_loop(reftime)
         old_iter = cls._get_mirror_rorp_iter()
         for rorp in old_iter:
             yield rorp
         cls.finish_loop()
 
+    # @API(RepoShadow.get_increments, 300)
+    @classmethod
+    def get_increments(cls):
+        """
+        Return a list of increments (without size) with their time, type
+        and basename.
+
+        The list is sorted by increasing time stamp, meaning that the mirror
+        is last in the list
+        """
+        incs_list = cls._ref_inc.get_incfiles_list()
+        incs = [
+            {
+                "time": inc.getinctime(),
+                "type": cls._get_inc_type(inc),
+                "base": inc.dirsplit()[1].decode(errors="replace"),
+            }
+            for inc in incs_list
+        ]
+
+        # append the mirror itself
+        mirror_time = cls.get_mirror_time(must_exist=True)
+        incs.append(
+            {
+                "time": mirror_time,
+                "type": cls._get_file_type(cls._ref_path),
+                "base": cls._ref_path.dirsplit()[1].decode(errors="replace"),
+            }
+        )
+
+        return sorted(incs, key=lambda x: x["time"])
+
+    # @API(RepoShadow.get_increments_sizes, 300)
+    @classmethod
+    def get_increments_sizes(cls):
+        """
+        Return list of triples summarizing the size of all the increments
+
+        The list contains tuples of the form (time, size, cumulative size)
+        """
+
+        def get_total(rp_iter):
+            """Return the total size of everything in rp_iter"""
+            total = 0
+            for rp in rp_iter:
+                total += rp.getsize()
+            return total
+
+        def get_time_dict(inc_iter):
+            """Return dictionary pairing times to total size of incs"""
+            time_dict = {}
+            for inc in inc_iter:
+                if not inc.isincfile():
+                    continue
+                t = inc.getinctime()
+                if t not in time_dict:
+                    time_dict[t] = 0
+                time_dict[t] += inc.getsize()
+            return time_dict
+
+        def get_mirror_select():
+            """Return iterator of mirror rpaths"""
+            mirror_select = selection.Select(cls._ref_path)
+            if not cls._ref_index:  # must exclude rdiff-backup-directory
+                mirror_select.parse_rbdir_exclude()
+            return mirror_select.get_select_iter()
+
+        def get_inc_select():
+            """Return iterator of increment rpaths"""
+            for base_inc in cls._ref_inc.get_incfiles_list():
+                yield base_inc
+            if cls._ref_inc.isdir():
+                inc_select = selection.Select(cls._ref_inc).get_select_iter()
+                for inc in inc_select:
+                    yield inc
+
+        def get_summary_triples(mirror_total, time_dict):
+            """Return list of triples (time, size, cumulative size)"""
+            triples = []
+
+            cur_mir_base = cls._data_dir.append(b"current_mirror")
+            mirror_time = (cur_mir_base.get_incfiles_list())[0].getinctime()
+            triples.append(
+                {"time": mirror_time, "size": mirror_total, "total_size": mirror_total}
+            )
+
+            inc_times = list(time_dict.keys())
+            inc_times.sort()
+            inc_times.reverse()
+            cumulative_size = mirror_total
+            for inc_time in inc_times:
+                size = time_dict[inc_time]
+                cumulative_size += size
+                triples.append(
+                    {"time": inc_time, "size": size, "total_size": cumulative_size}
+                )
+            return triples
+
+        mirror_total = get_total(get_mirror_select())
+        time_dict = get_time_dict(get_inc_select())
+        triples = get_summary_triples(mirror_total, time_dict)
+
+        return sorted(triples, key=lambda x: x["time"])
+
     # ### COPIED FROM MANAGE ####
 
-    # @API(RepoShadow.remove_increments_older_than, 201)
+    # @API(RepoShadow.remove_increments, 300)
     @classmethod
-    def remove_increments_older_than(cls, baserp, reftime):
+    def remove_increments_older_than(cls, time_string=None, show_sizes=None):
         """
         Remove increments older than the given time
         """
         assert (
-            baserp.conn is Globals.local_connection
+            cls._data_dir.conn is Globals.local_connection
         ), "Function should be called only locally " "and not over '{co}'.".format(
-            co=baserp.conn
+            co=cls._data_dir.conn
         )
 
         def yield_files(rp):
@@ -644,20 +1132,102 @@ class RepoShadow:
                         yield sub_rp
             yield rp
 
-        for rp in yield_files(baserp):
-            if (rp.isincfile() and rp.getinctime() < reftime) or (
+        if time_string is None:
+            time_string = cls._values.get("older_than")
+        if show_sizes is None:
+            show_sizes = cls._values.get("size")
+        removal_time = cls._get_removal_time(time_string, show_sizes)
+
+        if removal_time < 0:  # no increment is old enough
+            log.Log(
+                "No increment is older than '{ot}'".format(ot=time_string),
+                log.WARNING,
+            )
+            return Globals.RET_CODE_WARN
+
+        for rp in yield_files(cls._data_dir):
+            if (rp.isincfile() and rp.getinctime() < removal_time) or (
                 rp.isdir() and not rp.listdir()
             ):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
+        return Globals.RET_CODE_OK
+
+    @classmethod
+    def _get_removal_time(cls, time_string, show_sizes):
+        """
+        Check remove older than time_string, return time in seconds
+
+        Return None if the time string can't be interpreted as such, or
+        if more than one increment would be removed, without the force option;
+        or -1 if no increment would be removed.
+        """
+        action_time = cls.get_parsed_time(time_string)
+        if action_time is None:
+            return None
+
+        if show_sizes:
+            triples = cls.get_increments_sizes()[:-1]
+            times_in_secs = [triple["time"] for triple in triples]
+        else:
+            times_in_secs = [
+                inc.getinctime() for inc in cls._incs_dir.get_incfiles_list()
+            ]
+        times_in_secs = [t for t in times_in_secs if t < action_time]
+        if not times_in_secs:
+            log.Log(
+                "No increments older than {at} found, exiting.".format(
+                    at=Time.timetopretty(action_time)
+                ),
+                log.NOTE,
+            )
+            return -1
+
+        times_in_secs.sort()
+        if show_sizes:
+            sizes = [
+                triple["size"] for triple in triples if triple["time"] in times_in_secs
+            ]
+            stat_obj = statistics.StatsObj()  # used for byte summary string
+
+            def format_time_and_size(time, size):
+                return "{: <24} {: >17}".format(
+                    Time.timetopretty(time), stat_obj.get_byte_summary_string(size)
+                )
+
+            pretty_times_map = map(format_time_and_size, times_in_secs, sizes)
+            pretty_times = "\n".join(pretty_times_map)
+        else:
+            pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
+        if len(times_in_secs) > 1:
+            if not cls._values["force"]:
+                log.Log(
+                    "Found {ri} relevant increments, dates/times:\n{dt}\n"
+                    "If you want to delete multiple increments in this way, "
+                    "use the --force option.".format(
+                        ri=len(times_in_secs), dt=pretty_times
+                    ),
+                    log.ERROR,
+                )
+                return None
+            else:
+                log.Log(
+                    "Deleting increments at dates/times:\n{dt}".format(dt=pretty_times),
+                    log.NOTE,
+                )
+        else:
+            log.Log(
+                "Deleting increment at date/time: {dt}".format(dt=pretty_times),
+                log.NOTE,
+            )
+        # make sure we don't delete current increment
+        return times_in_secs[-1] + 1
 
     # ### COPIED FROM COMPARE ####
 
     # @API(RepoShadow.init_and_get_loop, 201)
     @classmethod
-    def init_and_get_loop(
-        cls, data_dir, mirror_rp, inc_rp, compare_time, src_iter=None
-    ):
+    def init_and_get_loop(cls, compare_time, src_iter=None):
         """
         Return rorp iter at given compare time
 
@@ -665,21 +1235,17 @@ class RepoShadow:
 
         cls.finish_loop must be called to finish the loop once initialized
         """
-        cls.init_loop(data_dir, mirror_rp, inc_rp, compare_time)
+        cls.init_loop(compare_time)
         repo_iter = cls._subtract_indices(
             cls.mirror_base.index, cls._get_mirror_rorp_iter()
         )
         if src_iter is None:
             return repo_iter
         else:
-            return cls._attach_files(
-                data_dir, mirror_rp, inc_rp, compare_time, src_iter, repo_iter
-            )
+            return cls._attach_files(compare_time, src_iter, repo_iter)
 
     @classmethod
-    def _attach_files(
-        cls, data_dir, mirror_rp, inc_rp, compare_time, src_iter, repo_iter
-    ):
+    def _attach_files(cls, compare_time, src_iter, repo_iter):
         """
         Attach data to all the files that need checking
 
@@ -710,16 +1276,16 @@ class RepoShadow:
 
     # @API(RepoShadow.verify, 201)
     @classmethod
-    def verify(cls, data_dir, mirror_rp, inc_rp, verify_time):
+    def verify(cls, verify_time):
         """
         Compute SHA1 sums of repository files and check against metadata
         """
         assert (
-            mirror_rp.conn is Globals.local_connection
+            cls._ref_path.conn is Globals.local_connection
         ), "Only verify mirror locally, not remotely over '{conn}'.".format(
-            conn=mirror_rp.conn
+            conn=cls._ref_path.conn
         )
-        repo_iter = cls.init_and_get_loop(data_dir, mirror_rp, inc_rp, verify_time)
+        repo_iter = cls.init_and_get_loop(verify_time)
         base_index = cls.mirror_base.index
 
         bad_files = 0
@@ -780,6 +1346,26 @@ class RepoShadow:
         return ret_code
 
     @classmethod
+    def _open_logfile(cls):
+        """
+        Open logfile with base name in the repository
+        """
+        try:  # the target repository must be writable
+            logfile = cls._data_dir.append(cls._values["action"] + ".log")
+            log.Log.open_logfile(logfile)
+        except (log.LoggerError, Security.Violation) as exc:
+            log.Log(
+                "Unable to open logfile '{lf}' due to '{ex}'".format(
+                    lf=logfile, ex=exc
+                ),
+                log.ERROR,
+            )
+            return Globals.RET_CODE_ERR
+        else:
+            cls._logging_to_file = True
+            return Globals.RET_CODE_OK
+
+    @classmethod
     def _log_success(cls, src_rorp, mir_rorp=None):
         """
         Log that src_rorp and mir_rorp compare successfully
@@ -792,7 +1378,7 @@ class RepoShadow:
 
     # @API(RepoShadow.needs_regress, 201)
     @classmethod
-    def needs_regress(cls, base_dir, data_dir, incs_dir, force):
+    def needs_regress(cls):
         """
         Checks if the repository contains a previously failed backup and needs
         to be regressed
@@ -805,13 +1391,13 @@ class RepoShadow:
         """
         # detect an initial repository which doesn't need a regression
         if not (
-            base_dir.isdir()
-            and data_dir.isdir()
-            and incs_dir.isdir()
-            and incs_dir.listdir()
+            cls._base_dir.isdir()
+            and cls._data_dir.isdir()
+            and cls._incs_dir.isdir()
+            and cls._incs_dir.listdir()
         ):
             return None
-        curmirroot = data_dir.append(b"current_mirror")
+        curmirroot = cls._data_dir.append(b"current_mirror")
         curmir_incs = curmirroot.get_incfiles_list()
         if not curmir_incs:
             log.Log.FatalError(
@@ -829,13 +1415,13 @@ the rdiff-backup-data directory because there is no important
 information in it.
 
 """.format(
-                    dd=data_dir
+                    dd=cls._data_dir
                 )
             )
         elif len(curmir_incs) == 1:
             return False
         else:
-            if not force:
+            if not cls._values["force"]:
                 try:
                     cls._check_pids(curmir_incs)
                 except OSError as exc:
@@ -845,8 +1431,72 @@ information in it.
                     )
             assert (
                 len(curmir_incs) == 2
-            ), "Found more than 2 current_mirror incs in '{ci}'.".format(ci=data_dir)
+            ), "Found more than 2 current_mirror incs in '{ci}'.".format(
+                ci=cls._data_dir
+            )
             return True
+
+    # @API(RepoShadow.regress, 201)
+    @classmethod
+    def regress(cls):
+        """
+        Bring mirror and inc directory back to regress_to_time
+
+        Regress should only work one step at a time (i.e. don't "regress"
+        through two separate backup sets.  This function should be run
+        locally to the rdiff-backup-data directory.
+        """
+        assert (
+            cls._base_dir.index == () and cls._incs_dir.index == ()
+        ), "Mirror and increment paths must have an empty index"
+        assert (
+            cls._base_dir.isdir() and cls._incs_dir.isdir()
+        ), "Mirror and increments paths must be directories"
+        assert (
+            cls._base_dir.conn is cls._incs_dir.conn is Globals.local_connection
+        ), "Regress must happen locally."
+        meta_manager, former_current_mirror_rp = cls._set_regress_time()
+        cls._set_restore_times()
+        _RegressFile.initialize(cls._restore_time, cls._mirror_time)
+        cls._regress_rbdir(meta_manager)
+        ITR = rorpiter.IterTreeReducer(_RepoRegressITRB, [])
+        for rf in cls._iterate_meta_rfs(cls._base_dir, cls._incs_dir):
+            ITR(rf.index, rf)
+        ITR.finish_processing()
+        if former_current_mirror_rp:
+            if Globals.do_fsync:
+                # Sync first, since we are marking dest dir as good now
+                C.sync()
+            former_current_mirror_rp.delete()
+        return Globals.RET_CODE_OK
+
+    # @API(RepoShadow.force_regress, 300)
+    @classmethod
+    def force_regress(cls):
+        """
+        Try to fake a failed backup to force a regress
+
+        Return True if the fake was succesful, else False, e.g. if the
+        repository contains only the mirror and no increment.
+        """
+        inc_times = cls.get_increment_times()
+        if len(inc_times) < 2:
+            log.Log(
+                "Repository with only a mirror can't be forced to regress, "
+                "just remove it and start from scratch",
+                log.WARNING,
+            )
+            return False
+        mirror_time = cls.get_mirror_time()
+        if inc_times[-1] != mirror_time:
+            log.Log(
+                "Repository's increment times are inconsistent, "
+                "it's too dangerous to force a regress",
+                log.WARNING,
+            )
+            return False
+        cls.touch_current_mirror(Time.timetostring(inc_times[-2]))
+        return True
 
     @classmethod
     def _check_pids(cls, curmir_incs):
@@ -928,39 +1578,6 @@ information in it.
                     )
                 )
 
-    # @API(RepoShadow.regress, 201)
-    @classmethod
-    def regress(cls, base_rp, incs_rp):
-        """
-        Bring mirror and inc directory back to regress_to_time
-
-        Regress should only work one step at a time (i.e. don't "regress"
-        through two separate backup sets.  This function should be run
-        locally to the rdiff-backup-data directory.
-        """
-        assert (
-            base_rp.index == () and incs_rp.index == ()
-        ), "Mirror and increment paths must have an empty index"
-        assert (
-            base_rp.isdir() and incs_rp.isdir()
-        ), "Mirror and increments paths must be directories"
-        assert (
-            base_rp.conn is incs_rp.conn is Globals.local_connection
-        ), "Regress must happen locally."
-        meta_manager, former_current_mirror_rp = cls._set_regress_time()
-        cls._set_restore_times()
-        _RegressFile.initialize(cls._restore_time, cls._mirror_time)
-        cls._regress_rbdir(meta_manager)
-        ITR = rorpiter.IterTreeReducer(_RepoRegressITRB, [])
-        for rf in cls._iterate_meta_rfs(base_rp, incs_rp):
-            ITR(rf.index, rf)
-        ITR.finish_processing()
-        if former_current_mirror_rp:
-            if Globals.do_fsync:
-                # Sync first, since we are marking dest dir as good now
-                C.sync()
-            former_current_mirror_rp.delete()
-
     @classmethod
     def _set_regress_time(cls):
         """
@@ -969,7 +1586,7 @@ information in it.
         If there are two current_mirror increments, then the last one
         corresponds to a backup session that failed.
         """
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         curmir_incs = meta_manager.sorted_prefix_inclist(b"current_mirror")
         assert (
             len(curmir_incs) == 2
@@ -1093,7 +1710,7 @@ information in it.
         """
         Iterate rorps from metadata file, if any are available
         """
-        meta_manager = meta_mgr.get_meta_manager(True)
+        meta_manager = meta_mgr.get_meta_manager(cls._data_dir, True)
         metadata_iter = meta_manager.get_metas_at_time(cls._regress_time)
         if metadata_iter:
             return metadata_iter
@@ -1105,19 +1722,20 @@ information in it.
 
     # ### COPIED FROM FS_ABILITIES ####
 
-    # @API(RepoShadow.get_fs_abilities_readonly, 201)
+    # @API(RepoShadow.get_fs_abilities, 300)
     @classmethod
-    def get_fs_abilities_readonly(cls, base_dir):
-        return fs_abilities.FSAbilities(base_dir, writable=False)
-
-    # @API(RepoShadow.get_fs_abilities_readwrite, 201)
-    @classmethod
-    def get_fs_abilities_readwrite(cls, base_dir):
-        return fs_abilities.FSAbilities(base_dir, writable=True)
+    def get_fs_abilities(cls):
+        if cls._must_be_writable:
+            # base dir can be _potentially_ writable but actually read-only
+            # to map the actual rights of the root directory, whereas the
+            # data dir is alway writable
+            return fs_abilities.FSAbilities(cls._data_dir, writable=True)
+        else:
+            return fs_abilities.FSAbilities(cls._base_dir, writable=False)
 
     # @API(RepoShadow.get_config, 201)
     @classmethod
-    def get_config(cls, data_dir, key):
+    def get_config(cls, key):
         """
         Returns the configuration value(s) for the given key,
         or None if the configuration doesn't exist.
@@ -1126,7 +1744,7 @@ information in it.
         # chars_to_quote or special_escapes
         if key not in cls._configs:
             raise ValueError("Config key '{ck}' isn't valid")
-        rp = data_dir.append(key)
+        rp = cls._data_dir.append(key)
         if not rp.lstat():
             return None
         else:
@@ -1137,7 +1755,7 @@ information in it.
 
     # @API(RepoShadow.set_config, 201)
     @classmethod
-    def set_config(cls, data_dir, key, value):
+    def set_config(cls, key, value):
         """
         Sets the key configuration to the given value.
 
@@ -1146,10 +1764,10 @@ information in it.
         Returns False if there was nothing to change, None if there was no
         old value, and True if the value changed
         """
-        old_value = cls.get_config(data_dir, key)
+        old_value = cls.get_config(key)
         if old_value == value:
             return False
-        rp = data_dir.append(key)
+        rp = cls._data_dir.append(key)
         if rp.lstat():
             rp.delete()
         if cls._configs[key]["type"] is set:
@@ -1161,24 +1779,23 @@ information in it.
         else:
             return True
 
-    # @API(RepoShadow.init_owners_mapping, 201)
-    @classmethod
-    def init_owners_mapping(cls, users_map, groups_map, preserve_num_ids):
-        map_owners.init_users_mapping(users_map, preserve_num_ids)
-        map_owners.init_groups_mapping(groups_map, preserve_num_ids)
-        return Globals.RET_CODE_OK
-
     # ### LOCKING ####
 
-    # @API(RepoShadow.is_locked, 201)
     @classmethod
-    def is_locked(cls, lockfile, exclusive):
+    def _is_locked(cls, lockfile=None, exclusive=None):
         """
         Validate if the repository is locked or not by the file
         'rdiff-backup-data/lock.yml'
 
+        The parameters lockfile and exclusive should only be used for tests.
+
         Returns True if the file exists and is locked, else returns False
         """
+        # we set the defaults from class attributes if not explicitly set
+        if lockfile is None:
+            lockfile = cls._lockfile
+        if exclusive is None:
+            exclusive = cls._must_be_writable
         # we need to make sure we have the last state of the lock
         lockfile.setdata()
         if not lockfile.lstat():
@@ -1190,17 +1807,23 @@ information in it.
             except BlockingIOError:
                 return True
 
-    # @API(RepoShadow.lock, 201)
     @classmethod
-    def lock(cls, lockfile, exclusive, force=False):
+    def _lock(cls, lockfile=None, exclusive=None):
         """
         Write a specific file 'rdiff-backup-data/lock.yml' to grab the lock,
         and verify that no other process took the lock by comparing its
         content.
 
+        The parameters lockfile and exclusive should only be used for tests.
+
         Return True if the lock could be taken, False else.
         Return None if the lock file doesn't exist in non-exclusive mode
         """
+        # we set the defaults from class attributes if not explicitly set
+        if lockfile is None:
+            lockfile = cls._lockfile
+        if exclusive is None:
+            exclusive = cls._must_be_writable
         if cls._lockfd:  # we already opened the lockfile
             return False
         pid = os.getpid()
@@ -1235,15 +1858,21 @@ information in it.
                 lockfd.close()
             return False
 
-    # @API(RepoShadow.unlock, 201)
     @classmethod
-    def unlock(cls, lockfile, exclusive):
+    def _unlock(cls, lockfile=None, exclusive=None):
         """
         Remove any lock existing.
+
+        The parameters lockfile and exclusive should only be used for tests.
 
         We don't check for any content because we have the lock and should be
         the only process running on this repository.
         """
+        # we set the defaults from class attributes if not explicitly set
+        if lockfile is None:
+            lockfile = cls._lockfile
+        if exclusive is None:
+            exclusive = cls._must_be_writable
         if cls._lockfd:
             if exclusive:  # empty the file without removing it
                 cls._lockfd.seek(0)
@@ -1253,6 +1882,36 @@ information in it.
             locking.unlock(cls._lockfd)
             cls._lockfd.close()
             cls._lockfd = None
+
+    @classmethod
+    def _get_inc_type(cls, inc):
+        """Return file type increment represents"""
+        assert inc.isincfile(), "File '{inc!s}' must be an increment.".format(inc=inc)
+        inc_type = inc.getinctype()
+        if inc_type == b"dir":
+            return "directory"
+        elif inc_type == b"diff":
+            return "regular"
+        elif inc_type == b"missing":
+            return "missing"
+        elif inc_type == b"snapshot":
+            return cls._get_file_type(inc)
+        else:
+            log.Log.FatalError(
+                "Unknown type '{ut}' of increment '{ic}'".format(ut=inc_type, ic=inc)
+            )
+
+    @classmethod
+    def _get_file_type(cls, rp):
+        """Returns one of "regular", "directory", "missing", or "special"."""
+        if not rp.lstat():
+            return "missing"
+        elif rp.isdir():
+            return "directory"
+        elif rp.isreg():
+            return "regular"
+        else:
+            return "special"
 
 
 class _CacheCollatedPostProcess:
@@ -1287,15 +1946,16 @@ class _CacheCollatedPostProcess:
     metadata for it.
     """
 
-    def __init__(self, collated_iter, cache_size, dest_root_rp):
+    def __init__(self, collated_iter, cache_size, dest_root_rp, data_rp):
         """Initialize new CCWP."""
         self.iter = collated_iter  # generates (source_rorp, dest_rorp) pairs
         self.cache_size = cache_size
         self.dest_root_rp = dest_root_rp
+        self.data_rp = data_rp
 
         self.statfileobj = statistics.init_statfileobj()
         if Globals.file_statistics:
-            statistics.FileStats.init()
+            statistics.FileStats.init(self.data_rp)
         self.metawriter = meta_mgr.get_meta_manager().get_writer()
 
         # the following should map indices to lists

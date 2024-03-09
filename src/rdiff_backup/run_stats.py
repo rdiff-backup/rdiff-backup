@@ -34,6 +34,7 @@ from rdiff_backup import (
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.utils import safestr
 
+data_dir = None  # directory where statistics are written
 begin_time = None  # Parse statistics at or after this time...
 end_time = None  # ... and at or before this time (epoch seconds)
 min_ratio = 0.05  # report only files/directories over this number
@@ -42,7 +43,7 @@ quiet = False  # Suppress the "Processing statistics from session ..." lines
 
 
 def parse_args():
-    global begin_time, end_time, min_ratio, separator, quiet
+    global data_dir, begin_time, end_time, min_ratio, separator, quiet
     try:
         optlist, args = getopt.getopt(
             sys.argv[1:],
@@ -81,12 +82,12 @@ def parse_args():
     if len(args) != 1:
         usage(1)
 
-    Globals.rbdir = rpath.RPath(
+    data_dir = rpath.RPath(
         Globals.local_connection,
         os.path.join(os.fsencode(args[0]), b"rdiff-backup-data"),
     )
-    if not Globals.rbdir.isdir():
-        sys.exit("Directory {rp} not found".format(rp=Globals.rbdir))
+    if not data_dir.isdir():
+        sys.exit("Directory {rp} not found".format(rp=data_dir))
 
 
 def usage(rc):
@@ -559,7 +560,8 @@ def sum_fst(rp_pairs):
 
 
 def set_chars_to_quote():
-    ctq_rp = Globals.rbdir.append("chars_to_quote")
+    global data_dir
+    ctq_rp = data_dir.append("chars_to_quote")
     if ctq_rp.lstat():
         Globals.chars_to_quote = ctq_rp.get_bytes()
     if Globals.chars_to_quote:
@@ -570,14 +572,14 @@ def set_chars_to_quote():
         Globals.set_all("chars_to_quote_regexp", regexp)
         Globals.set_all("chars_to_quote_unregexp", unregexp)
 
-        Globals.rbdir = map_filenames.get_quotedrpath(Globals.rbdir)
+        data_dir = map_filenames.get_quotedrpath(data_dir)
 
 
 def main_run():
     Time.set_current_time()
     parse_args()
     set_chars_to_quote()
-    srp = StatisticsRPaths(Globals.rbdir)
+    srp = StatisticsRPaths(data_dir)
     if not srp.combined_pairs:
         sys.exit("No matching sessions found")
     if len(srp.combined_pairs) == 1:

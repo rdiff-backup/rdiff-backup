@@ -25,27 +25,22 @@ usable for a back-up.
 """
 
 import io
-from rdiffbackup import locations
-from rdiffbackup.locations import fs_abilities
+from rdiffbackup.locations import fs_abilities, location
 from rdiff_backup import Globals, log
 
 
-class Dir:
-    pass
-
-
-class ReadDir(Dir, locations.ReadLocation):
-
-    def __init__(self, base_dir, values):
-        super().__init__(base_dir, values)
-
-        if self.base_dir.conn is Globals.local_connection:
+class ReadDir(location.Location):
+    def __init__(self, orig_path, values):
+        super().__init__(orig_path, values)
+        if orig_path.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 
             self._shadow = _dir_shadow.ReadDirShadow
         else:
-            self._shadow = self.base_dir.conn._dir_shadow.ReadDirShadow
+            self._shadow = orig_path.conn._dir_shadow.ReadDirShadow
+        # initiate an existing directory, only for reading
+        self.base_dir = self._shadow.init(orig_path, values, False, True)
 
     def setup(self):
         ret_code = super().setup()
@@ -90,12 +85,6 @@ class ReadDir(Dir, locations.ReadLocation):
             self.base_dir, select_opts, *list(map(io.BytesIO, select_data))
         )
 
-    def get_fs_abilities(self):
-        """
-        Shadow function for ReadDirShadow.get_fs_abilities
-        """
-        return self._shadow.get_fs_abilities(self.base_dir)
-
     def get_select(self):
         """
         Shadow function for ReadDirShadow.get_source_select
@@ -124,21 +113,21 @@ class ReadDir(Dir, locations.ReadLocation):
         """
         Shadow function for ReadDirShadow.compare_full
         """
-        return self._shadow.compare_full(self.base_dir, repo_iter)
+        return self._shadow.compare_full(repo_iter)
 
 
-class WriteDir(Dir, locations.WriteLocation):
-
-    def __init__(self, base_dir, values):
-        super().__init__(base_dir, values)
-
-        if self.base_dir.conn is Globals.local_connection:
+class WriteDir(location.Location):
+    def __init__(self, orig_path, values):
+        super().__init__(orig_path, values)
+        if orig_path.conn is Globals.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 
             self._shadow = _dir_shadow.WriteDirShadow
         else:
-            self._shadow = self.base_dir.conn._dir_shadow.WriteDirShadow
+            self._shadow = orig_path.conn._dir_shadow.WriteDirShadow
+        # initiate a writable potentially non-existing directory
+        self.base_dir = self._shadow.init(orig_path, values, True, False)
 
     def setup(self, src_repo):
         ret_code = super().setup()
@@ -155,39 +144,11 @@ class WriteDir(Dir, locations.WriteLocation):
                 log.INFO,
             )
         ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
-
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self.init_owners_mapping(
-            users_map=self.values.get("user_mapping_file"),
-            groups_map=self.values.get("group_mapping_file"),
-            preserve_num_ids=self.values.get("preserve_numerical_ids", False),
-        )
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
-
-        return ret_code
-
-    def check(self):
-        ret_code = super().check()
-
-        # if the target is a non-empty existing directory
-        if self.base_dir.lstat() and self.base_dir.isdir() and self.base_dir.listdir():
-            if self.values["force"]:
-                log.Log(
-                    "Target path {tp} exists and isn't empty, content "
-                    "might be force overwritten by restore".format(tp=self.base_dir),
-                    log.WARNING,
-                )
-                ret_code |= Globals.RET_CODE_WARN
-            else:
-                log.Log(
-                    "Target path {tp} exists and isn't empty, "
-                    "call with '--force' to overwrite".format(tp=self.base_dir),
-                    log.ERROR,
-                )
-                ret_code |= Globals.RET_CODE_ERR
 
         return ret_code
 
@@ -205,24 +166,16 @@ class WriteDir(Dir, locations.WriteLocation):
 
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
-            self._shadow.set_select(
-                self.base_dir, select_opts, *list(map(io.BytesIO, select_data))
-            )
-
-    def get_fs_abilities(self):
-        """
-        Shadow function for WriteDirShadow.get_fs_abilities
-        """
-        return self._shadow.get_fs_abilities(self.base_dir)
+            self._shadow.set_select(select_opts, *list(map(io.BytesIO, select_data)))
 
     def get_sigs_select(self):
         """
         Shadow function for WriteDirShadow.get_sigs_select
         """
-        return self._shadow.get_sigs_select(self.base_dir)
+        return self._shadow.get_sigs_select()
 
     def apply(self, source_diff_iter):
         """
         Shadow function for WriteDirShadow.apply
         """
-        return self._shadow.apply(self.base_dir, source_diff_iter)
+        return self._shadow.apply(source_diff_iter)

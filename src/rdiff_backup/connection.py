@@ -18,20 +18,22 @@
 # 02110-1301, USA
 """Support code for remote execution and data transfer"""
 
+import importlib
 import pickle
+import subprocess
 import sys
+import time
 import traceback
 
-# we need those imports because they are used through the connection
-import gzip  # noqa: F401
-import os  # noqa: F401
-import platform  # noqa: F401
-import shutil  # noqa: F401
-import socket  # noqa: F401
-import tempfile  # noqa: F401
-import types  # noqa: F401
-import time
-import subprocess
+from rdiff_backup import (
+    Globals,
+    iterfile,
+    log,
+    robust,
+    rpath,
+    Security,
+)
+from rdiffbackup.locations.map import filenames as map_filenames
 
 
 class ConnectionError(Exception):
@@ -51,14 +53,19 @@ class ConnectionQuit(Exception):
 
 
 class Connection:
-    """Connection class - represent remote execution
+    """
+    Connection class - represent remote execution
 
     The idea is that, if c is an instance of this class, c.foo will
     return the object on the remote side.  For functions, c.foo will
     return a function that, when called, executes foo on the remote
     side, sending over the arguments and sending back the result.
-
     """
+
+    globals = {}
+
+    def __init__(self):
+        self.import_modules()
 
     def __repr__(self):
         return self.__str__()
@@ -69,8 +76,53 @@ class Connection:
     def __bool__(self):
         return True
 
-    @staticmethod
-    def _eval(funcstring):
+    @classmethod
+    def import_modules(cls):
+        """
+        Import all modules necessary to be able to evaluate across the
+        connection.
+        This has to be put in a function to avoid circularities.
+        """
+        if "map_filenames" in cls.globals:
+            return  # import has already happened
+        modules = {
+            # "gzip": "gzip",  # ???
+            "os": "os",
+            "platform": "platform",
+            "shutil": "shutil",
+            # "socket": "socket",
+            # "tempfile": "tempfile",
+            # "types": "types",
+            "Globals": "rdiff_backup.Globals",
+            # "increment": "rdiff_backup.increment",
+            # "iterfile": "rdiff_backup.iterfile",
+            # "librsync": "rdiff_backup.librsync",
+            "log": "rdiff_backup.log",
+            # "Rdiff": "rdiff_backup.Rdiff",
+            "robust": "rdiff_backup.robust",
+            # "rorpiter": "rdiff_backup.rorpiter",
+            "rpath": "rdiff_backup.rpath",
+            "SetConnections": "rdiff_backup.SetConnections",
+            # "selection": "rdiff_backup.selection",
+            "statistics": "rdiff_backup.statistics",
+            # "Security": "rdiff_backup.Security",
+            # "Time": "rdiff_backup.Time",
+            "_dir_shadow": "rdiffbackup.locations._dir_shadow",
+            "_repo_shadow": "rdiffbackup.locations._repo_shadow",
+            "map_filenames": "rdiffbackup.locations.map.filenames",
+        }
+        for name, module in modules.items():
+            cls.globals[name] = importlib.import_module(module)
+        local_elements = {
+            "LocalConnection": LocalConnection,  # for test purposes
+            "RedirectedRun": RedirectedRun,
+            "VirtualFile": VirtualFile,
+        }
+        for name, element in local_elements.items():
+            cls.globals[name] = element
+
+    @classmethod
+    def _eval(cls, funcstring):
         """
         Function to safely evaluate a function string into an actual function
         """
@@ -84,7 +136,7 @@ class Connection:
             return getattr(__builtins__, firstelem)
         # else we try within the modules, including the current one
         try:
-            func = globals()[firstelem]
+            func = cls.globals[firstelem]
             for elem in funclist:
                 func = getattr(func, elem)
         except (KeyError, AttributeError):
@@ -93,11 +145,11 @@ class Connection:
 
 
 class LocalConnection(Connection):
-    """Local connection
+    """
+    Local connection
 
     This is a dummy connection class, so that LC.foo just evaluates to
     foo using global scope.
-
     """
 
     def __init__(self):
@@ -107,21 +159,22 @@ class LocalConnection(Connection):
         ), "Local connection has already been initialized with {conn}.".format(
             conn=Globals.local_connection
         )
+        super().__init__()
         self.conn_number = 0  # changed by SetConnections for server
 
     def __getattr__(self, name):
-        if name in globals():
-            return globals()[name]
+        if name in self.globals:
+            return self.globals[name]
         elif isinstance(__builtins__, dict):
             return __builtins__[name]
         else:
             return __builtins__.__dict__[name]
 
     def __setattr__(self, name, value):
-        globals()[name] = value
+        self.globals[name] = value
 
     def __delattr__(self, name):
-        del globals()[name]
+        del self.globals[name]
 
     def __str__(self):
         return "LocalConnection"
@@ -171,6 +224,7 @@ class LowLevelPipeConnection(Connection):
 
     def __init__(self, inpipe, outpipe):
         """inpipe is a file-type open for reading, outpipe for writing"""
+        super().__init__()
         self.inpipe = inpipe
         self.outpipe = outpipe
 
@@ -560,6 +614,7 @@ class RedirectedConnection(Connection):
         default shouldn't have to be changed.
 
         """
+        super().__init__()
         self.conn_number = conn_number
         self.routing_number = routing_number
         self.routing_conn = Globals.connection_dict[routing_number]
@@ -682,27 +737,6 @@ def RedirectedRun(conn_number, func, *args):
     )
     return conn.reval(func, *args)
 
-
-# everything has to be available here for remote connection's use, but
-# put at bottom to reduce circularities.
-from rdiff_backup import (  # noqa: E402,F401
-    Globals,
-    increment,
-    iterfile,
-    librsync,
-    log,
-    Rdiff,
-    robust,
-    rorpiter,
-    rpath,
-    SetConnections,
-    selection,
-    statistics,
-    Security,
-    Time,
-)
-from rdiffbackup.locations import _dir_shadow, _repo_shadow  # noqa: E402,F401
-from rdiffbackup.locations.map import filenames as map_filenames  # noqa: E402,F401
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)
