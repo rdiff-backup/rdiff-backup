@@ -22,7 +22,7 @@ import os
 from rdiff_backup import Globals, log, Rdiff, robust, rpath, statistics, Time
 
 
-def Increment(new, mirror, incpref, inc_time=None):
+def make_increment(new, mirror, incpref, inc_time=None):
     """
     Main file incrementing function, returns inc file created
 
@@ -49,7 +49,7 @@ def Increment(new, mirror, incpref, inc_time=None):
     return incrp
 
 
-def get_inc(rp, typestr, inc_time):
+def get_increment(rp, typestr, inc_time):
     """
     Return increment like rp but with time and typestr suffixes
 
@@ -80,7 +80,7 @@ def get_inc(rp, typestr, inc_time):
 
 def _make_missing_increment(incpref, inc_time):
     """Signify that mirror file was missing"""
-    incrp = get_inc(incpref, "missing", inc_time)
+    incrp = get_increment(incpref, "missing", inc_time)
     incrp.touch()
     return incrp
 
@@ -97,9 +97,9 @@ def _make_snapshot_increment(mirror, incpref, inc_time):
     """Copy mirror to incfile, since new is quite different"""
     compress = _is_compressed(mirror)
     if compress and mirror.isreg():
-        snapshotrp = get_inc(incpref, b"snapshot.gz", inc_time)
+        snapshotrp = get_increment(incpref, b"snapshot.gz", inc_time)
     else:
-        snapshotrp = get_inc(incpref, b"snapshot", inc_time)
+        snapshotrp = get_increment(incpref, b"snapshot", inc_time)
 
     if mirror.isspecial():  # check for errors when creating special increments
         eh = robust.get_error_handler("SpecialFileError")
@@ -122,9 +122,9 @@ def _make_diff_increment(new, mirror, incpref, inc_time):
     """Make incfile which is a diff new -> mirror"""
     compress = _is_compressed(mirror)
     if compress:
-        diff = get_inc(incpref, b"diff.gz", inc_time)
+        diff = get_increment(incpref, b"diff.gz", inc_time)
     else:
-        diff = get_inc(incpref, b"diff", inc_time)
+        diff = get_increment(incpref, b"diff", inc_time)
 
     old_new_perms, old_mirror_perms = (None, None)
 
@@ -150,7 +150,7 @@ def _make_diff_increment(new, mirror, incpref, inc_time):
 
 def _make_dir_increment(mirrordir, incpref, inc_time):
     """Make file indicating directory mirrordir has changed"""
-    dirsign = get_inc(incpref, "dir", inc_time)
+    dirsign = get_increment(incpref, "dir", inc_time)
     dirsign.touch()
     rpath.copy_attribs_inc(mirrordir, dirsign)
     return dirsign
