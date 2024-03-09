@@ -7,9 +7,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath, increment, Time, Rdiff
+from rdiff_backup import Globals, rpath, Time, Rdiff
 from rdiffbackup import actions
-from rdiffbackup.locations import repository
+from rdiffbackup.locations import increment, repository
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -67,7 +67,7 @@ class inctest(unittest.TestCase):
         if rpd.lstat():
             rpd.delete()
 
-        diffrp = increment.Increment(rf, exec1, target, prevtime)
+        diffrp = increment.make_increment(rf, exec1, target, prevtime)
         self.assertTrue(diffrp.isreg())
         self.assertTrue(diffrp._equal_verbose(exec1, check_index=0, compare_size=0))
         self.check_time(diffrp)
@@ -76,7 +76,7 @@ class inctest(unittest.TestCase):
 
     def testmissing(self):
         """Test creation of missing files"""
-        missing_rp = increment.Increment(rf, nothing, target, prevtime)
+        missing_rp = increment.make_increment(rf, nothing, target, prevtime)
         self.check_time(missing_rp)
         self.assertEqual(missing_rp.getinctype(), b"missing")
         missing_rp.delete()
@@ -85,13 +85,13 @@ class inctest(unittest.TestCase):
     def testsnapshot(self):
         """Test making of a snapshot"""
         Globals.compression = None
-        snap_rp = increment.Increment(rf, sym, target, prevtime)
+        snap_rp = increment.make_increment(rf, sym, target, prevtime)
         self.check_time(snap_rp)
         self.assertTrue(rpath._cmp_file_attribs(snap_rp, sym))
         self.assertTrue(rpath.cmp(snap_rp, sym))
         snap_rp.delete()
 
-        snap_rp2 = increment.Increment(sym, rf, target, prevtime)
+        snap_rp2 = increment.make_increment(sym, rf, target, prevtime)
         self.check_time(snap_rp2)
         self.assertTrue(snap_rp2._equal_verbose(rf, check_index=0))
         self.assertTrue(rpath.cmp(snap_rp2, rf))
@@ -101,13 +101,13 @@ class inctest(unittest.TestCase):
     def testGzipsnapshot(self):
         """Test making a compressed snapshot"""
         Globals.compression = 1
-        rp = increment.Increment(rf, sym, target, prevtime)
+        rp = increment.make_increment(rf, sym, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(sym, check_index=0, compare_size=0))
         self.assertTrue(rpath.cmp(rp, sym))
         rp.delete()
 
-        rp = increment.Increment(sym, rf, target, prevtime)
+        rp = increment.make_increment(sym, rf, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(rf, check_index=0, compare_size=0))
         with rp.open("rb", 1) as rp_fd, rf.open("rb") as rf_fd:
@@ -118,7 +118,7 @@ class inctest(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testdir(self):
         """Test increment on base_dir"""
-        rp = increment.Increment(sym, base_dir, target, prevtime)
+        rp = increment.make_increment(sym, base_dir, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp.lstat())
         self.assertTrue(target.isdir())
@@ -132,7 +132,7 @@ class inctest(unittest.TestCase):
     def testDiff(self):
         """Test making diffs"""
         Globals.compression = None
-        rp = increment.Increment(rf, rf2, target, prevtime)
+        rp = increment.make_increment(rf, rf2, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(rf2, check_index=0, compare_size=0))
         Rdiff.patch_local(rf, rp, out2)
@@ -143,7 +143,7 @@ class inctest(unittest.TestCase):
     def testGzipDiff(self):
         """Test making gzipped diffs"""
         Globals.compression = 1
-        rp = increment.Increment(rf, rf2, target, prevtime)
+        rp = increment.make_increment(rf, rf2, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(rf2, check_index=0, compare_size=0))
         Rdiff.patch_local(rf, rp, out2, delta_compressed=1)
@@ -157,7 +157,7 @@ class inctest(unittest.TestCase):
         rpath.copy(rf, out_gz)
         self.assertTrue(out_gz.lstat())
 
-        rp = increment.Increment(rf, out_gz, target, prevtime)
+        rp = increment.make_increment(rf, out_gz, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(out_gz, check_index=0, compare_size=0))
         Rdiff.patch_local(rf, rp, out2)

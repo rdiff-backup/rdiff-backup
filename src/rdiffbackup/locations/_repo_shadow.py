@@ -35,7 +35,6 @@ from rdiff_backup import (
     C,
     Globals,
     hash,
-    increment,
     iterfile,
     log,
     Rdiff,
@@ -48,7 +47,7 @@ from rdiff_backup import (
     Time,
 )
 from rdiffbackup import meta_mgr
-from rdiffbackup.locations import fs_abilities, location
+from rdiffbackup.locations import fs_abilities, increment, location
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
@@ -2505,7 +2504,7 @@ class _RepoIncrementITRB(_RepoPatchITRB):
         elif result:
             inc = robust.check_common_error(
                 self.error_handler,
-                increment.Increment,
+                increment.make_increment,
                 (tf, mirror_rp, inc_prefix, self.previous_time),
             )
             if inc is not None and not isinstance(inc, int):
@@ -2540,7 +2539,7 @@ class _RepoIncrementITRB(_RepoPatchITRB):
             ipath=diff_rorp, bpath=self.base_rp
         )
         if diff_rorp.isdir():
-            inc = increment.Increment(
+            inc = increment.make_increment(
                 diff_rorp, self.base_rp, inc_prefix, self.previous_time
             )
             if inc and inc.isreg():
@@ -2548,7 +2547,7 @@ class _RepoIncrementITRB(_RepoPatchITRB):
             self.base_rp.setdata()  # in case written by increment above
             self._prepare_dir(diff_rorp, self.base_rp)
         elif self._set_dir_replacement(diff_rorp, self.base_rp):
-            inc = increment.Increment(
+            inc = increment.make_increment(
                 self.dir_replacement, self.base_rp, inc_prefix, self.previous_time
             )
             if inc:
