@@ -19,7 +19,31 @@
 """Provides functions and *ITR classes, for writing increment files"""
 
 import os
+import re
 from rdiff_backup import Globals, log, Rdiff, robust, rpath, statistics, Time
+
+compression = True
+not_compressed_regexp = None
+
+
+def init(compression_value=True, not_compressed_regexp_str=None):
+    global compression, not_compressed_regexp
+    compression = compression_value
+    if not_compressed_regexp_str is None:
+        not_compressed_regexp = None
+        return Globals.RET_CODE_OK
+    # else we need to compile the regexp
+    not_compressed_regexp_bytes = os.fsencode(not_compressed_regexp_str)
+    try:
+        not_compressed_regexp = re.compile(not_compressed_regexp_bytes)
+    except re.error:
+        log.Log(
+            "No compression regular expression '{ex}' doesn't "
+            "compile".format(ex=not_compressed_regexp_str),
+            log.ERROR,
+        )
+        return Globals.RET_CODE_ERR
+    return Globals.RET_CODE_OK
 
 
 def make_increment(new, mirror, incpref, inc_time=None):
@@ -86,10 +110,11 @@ def _make_missing_increment(incpref, inc_time):
 
 
 def _is_compressed(mirror):
-    """Return true if mirror's increments should be compressed"""
-    return Globals.compression and (
-        Globals.not_compressed_regexp is None
-        or not Globals.not_compressed_regexp.match(mirror.path)
+    """
+    Return true if mirror's increments should be compressed
+    """
+    return compression and (
+        not_compressed_regexp is None or not not_compressed_regexp.match(mirror.path)
     )
 
 

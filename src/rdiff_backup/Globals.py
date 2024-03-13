@@ -198,13 +198,6 @@ preserve_hardlinks = 1
 # increments.  Default is to compress based on regexp below.
 compression = 1
 
-# Increments based on files whose names match this
-# case-insensitive regular expression won't be compressed (applies
-# to .snapshots and .diffs).
-# The regexp is the compiled version of the argument provided by
-# --not-compressed-regexp (or its default value)
-not_compressed_regexp = None
-
 # If true, filelists and directory statistics will be split on
 # nulls instead of newlines.
 null_separator = None

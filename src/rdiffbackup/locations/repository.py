@@ -22,8 +22,6 @@ A location module to define repository classes as created by rdiff-backup
 """
 
 import io
-import os
-import re
 
 from rdiffbackup.locations import fs_abilities, location
 
@@ -100,13 +98,6 @@ class Repo(location.Location):
                 return ret_code
         self.base_dir = self.setup_finish()
 
-        if self.values.get("not_compressed_regexp") is not None:
-            ret_code |= self.setup_not_compressed_regexp(
-                self.values["not_compressed_regexp"]
-            )
-            if ret_code & Globals.RET_CODE_ERR:
-                return ret_code
-
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
@@ -133,26 +124,6 @@ class Repo(location.Location):
         Shadow function for RepoShadow.get_mirror_time
         """
         return self._shadow.get_mirror_time(must_exist, refresh)
-
-    @classmethod  # so that we can easily use in tests
-    def setup_not_compressed_regexp(cls, not_compressed_regexp=None):
-        """
-        Sets the not_compressed_regexp setting globally
-        """
-        not_compressed_regexp = os.fsencode(not_compressed_regexp)
-        try:
-            not_compressed_regexp = re.compile(not_compressed_regexp)
-        except re.error:
-            log.Log(
-                "No compression regular expression '{ex}' doesn't "
-                "compile".format(ex=not_compressed_regexp),
-                log.ERROR,
-            )
-            return Globals.RET_CODE_ERR
-
-        Globals.set_all("not_compressed_regexp", not_compressed_regexp)
-
-        return Globals.RET_CODE_OK
 
     def needs_regress(self):
         """
