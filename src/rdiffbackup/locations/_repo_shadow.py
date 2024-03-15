@@ -180,6 +180,14 @@ class RepoShadow(location.LocationShadow):
                 log.NOTE,
             )
         ret_code |= cls._init_owners_mapping()
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
+        ret_code |= increment.init(
+            cls._values.get("compression"),
+            cls._values.get("not_compressed_regexp"),
+        )
+        if ret_code & Globals.RET_CODE_ERR:
+            return ret_code
         return ret_code
 
     # @API(RepoShadow.setup_finish, 300)

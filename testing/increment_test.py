@@ -9,7 +9,7 @@ import commontest as comtst
 
 from rdiff_backup import Globals, rpath, Time, Rdiff
 from rdiffbackup import actions
-from rdiffbackup.locations import increment, repository
+from rdiffbackup.locations import increment
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -42,8 +42,6 @@ else:
     prevtimestr = b"2001-09-02T02:48:33-07:00"
 t_diff = os.path.join(TEST_BASE_DIR, b"out.%s.diff" % prevtimestr)
 
-repository.Repo.setup_not_compressed_regexp(actions.DEFAULT_NOT_COMPRESSED_REGEXP)
-
 
 class inctest(unittest.TestCase):
     """Test the incrementRP function"""
@@ -59,7 +57,7 @@ class inctest(unittest.TestCase):
 
     def testreg(self):
         """Test increment of regular files"""
-        Globals.compression = None
+        increment.init(False, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
         target.setdata()
         if target.lstat():
             target.delete()
@@ -84,7 +82,7 @@ class inctest(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testsnapshot(self):
         """Test making of a snapshot"""
-        Globals.compression = None
+        increment.init(False, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
         snap_rp = increment.make_increment(rf, sym, target, prevtime)
         self.check_time(snap_rp)
         self.assertTrue(rpath._cmp_file_attribs(snap_rp, sym))
@@ -100,7 +98,7 @@ class inctest(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
     def testGzipsnapshot(self):
         """Test making a compressed snapshot"""
-        Globals.compression = 1
+        increment.init(True, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
         rp = increment.make_increment(rf, sym, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(sym, check_index=0, compare_size=0))
@@ -131,7 +129,7 @@ class inctest(unittest.TestCase):
 
     def testDiff(self):
         """Test making diffs"""
-        Globals.compression = None
+        increment.init(False, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
         rp = increment.make_increment(rf, rf2, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(rf2, check_index=0, compare_size=0))
@@ -142,7 +140,7 @@ class inctest(unittest.TestCase):
 
     def testGzipDiff(self):
         """Test making gzipped diffs"""
-        Globals.compression = 1
+        increment.init(True, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
         rp = increment.make_increment(rf, rf2, target, prevtime)
         self.check_time(rp)
         self.assertTrue(rp._equal_verbose(rf2, check_index=0, compare_size=0))
@@ -153,7 +151,7 @@ class inctest(unittest.TestCase):
 
     def testGzipRegexp(self):
         """Here a .gz file shouldn't be compressed"""
-        Globals.compression = 1
+        increment.init(True, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
         rpath.copy(rf, out_gz)
         self.assertTrue(out_gz.lstat())
 

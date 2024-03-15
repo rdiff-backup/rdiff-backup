@@ -22,5 +22,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - re-write security module to fit better new concepts around remote dir/repo, especially update-only doesn't block backup to a new directory anymore. Possibly split _Repo_Shadow into Read and Write variants.
 - rewrite QuotedRPath to be an RPath variant specific to repositories, to encapsulate the increment aspects & co (taking them out of the standard RPath class)
 - rewrite selection functions to directly use bytes loaded instead of files
-- does statistics really need direct access to the get_increment function?
-- remove the global not_compressed_regexp variable as it's actually local to locations.increment
+- does statistics really need direct access to the get_increment function? Or could it use the (shadow) repo as back-end like thought for logs?
