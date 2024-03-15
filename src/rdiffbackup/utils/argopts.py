@@ -26,6 +26,7 @@ Other custom argparse actions are listed below.
 """
 
 import argparse
+import sys
 
 try:
     from argparse import BooleanOptionalAction
@@ -172,6 +173,20 @@ class SelectAction(argparse.Action):
         # the parameter isn't previously defined
         if old_list is None:
             old_list = []
+        if "filelist" in option_string:  # we read the values from the file
+            try:
+                if option_string.endswith("-stdin"):
+                    fp = sys.stdin.buffer
+                else:
+                    fp = open(values, "rb")
+                lines = fp.readlines()  # we get an array of bytes
+                fp.close()
+            except OSError as exc:
+                raise argparse.ArgumentError(self, exc)
+            else:
+                if option_string.endswith("-stdin"):
+                    option_string = option_string[:-6]
+                values = lines
         # append the option string and values to the selections list
         if values == [] and self.default is not None:
             values = self.default
