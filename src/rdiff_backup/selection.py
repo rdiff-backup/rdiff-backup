@@ -127,18 +127,13 @@ class Select:
                 scanned = 2
         return 1
 
-    #TODO continue here, removing filelists
-    def parse_selection_args(self, argtuples, filelists):
+    def parse_selection_args(self, argtuples):
         """
         Create selection functions based on list of tuples
 
         The tuples have the form (option string, additional argument)
         and are created when the initial commandline arguments are
-        read.  The reason for the extra level of processing is that
-        the filelists may only be openable by the main connection, but
-        the selection functions need to be on the backup reader or
-        writer side.  When the initial arguments are parsed the right
-        information is sent over the link.
+        read.
         """
         filelists_index = 0
         try:
@@ -152,9 +147,9 @@ class Select:
                 elif opt in self._sel_filelist_mapping:
                     self._add_selection_func(
                         self._filelist_get_sf(
-                            filelists[filelists_index],
+                            arg["content"],
                             self._sel_filelist_mapping[opt],
-                            arg,
+                            arg["filename"],
                         )
                     )
                     filelists_index += 1
@@ -163,9 +158,9 @@ class Select:
                         map(
                             self._add_selection_func,
                             self._filelist_globbing_get_sfs(
-                                filelists[filelists_index],
+                                arg["content"],
                                 self._sel_globfilelist_mapping[opt],
-                                arg,
+                                arg["filename"],
                             ),
                         )
                     )
@@ -174,10 +169,6 @@ class Select:
                     raise RuntimeError("Bad selection option {opt}.".format(opt=opt))
         except SelectError as e:
             self._parse_catch_error(e)
-        assert filelists_index == len(filelists), (
-            "There must be as many selection options with arguments than "
-            "lists of files."
-        )
 
         self._parse_last_excludes()
         self.parse_rbdir_exclude()
@@ -340,21 +331,21 @@ probably isn't what you meant""".format(
         else:
             self.selection_functions.append(sel_func)
 
-    def _filelist_get_sf(self, filelist_fp, inc_default, filelist_name):
-        """Return selection function by reading list of files
+    def _filelist_get_sf(self, list_content, inc_default, list_name):
+        """
+        Return selection function by reading list of files
 
         The format of the filelist is documented in the man page.
-        filelist_fp should be an (open) file object.
+        list_content are bytes containing a list of files
         inc_default should be true if this is an include list,
         false for an exclude list.
-        filelist_name is just a string used for logging.
-
+        list_name is just a string used for logging.
         """
-        log.Log("Reading filelist {fl}".format(fl=filelist_name), log.INFO)
+        log.Log("Reading filelist {fl}".format(fl=list_name), log.INFO)
         tuple_list, something_excluded = self._filelist_read(
-            filelist_fp, inc_default, filelist_name
+            list_content, inc_default, list_name
         )
-        log.Log("Sorting filelist {fl}".format(fl=filelist_name), log.INFO)
+        log.Log("Sorting filelist {fl}".format(fl=list_name), log.INFO)
         tuple_list.sort()
         i = [0]  # We have to put index in list because of stupid scoping rules
 
@@ -370,10 +361,10 @@ probably isn't what you meant""".format(
                 return include
 
         selection_function.exclude = something_excluded or inc_default == Select.EXCLUDE
-        selection_function.name = "Filelist: " + filelist_name
+        selection_function.name = "Filelist: " + list_name
         return selection_function
 
-    def _filelist_read(self, filelist_fp, include, filelist_name):
+    def _filelist_read(self, list_content, include, list_name):
         """Read filelist from fp, return (tuplelist, something_excluded)"""
         prefix_warnings = [0]
 
@@ -384,7 +375,7 @@ probably isn't what you meant""".format(
                 log.Log(
                     "File specification '{fs}' in filelist {fl} "
                     "doesn't start with correct prefix {cp}. Ignoring.".format(
-                        fs=exc, fl=filelist_name, cp=self.prefix
+                        fs=exc, fl=list_name, cp=self.prefix
                     ),
                     log.WARNING,
                 )
@@ -393,7 +384,7 @@ probably isn't what you meant""".format(
 
         something_excluded, tuple_list = None, []
         separator = Globals.null_separator and b"\0" or b"\n"
-        for line in filelist_fp.read().split(separator):
+        for line in list_content.split(separator):
             line = line.rstrip(b"\r")  # for Windows/DOS endings
             if not line:
                 continue  # skip blanks
@@ -405,10 +396,6 @@ probably isn't what you meant""".format(
             tuple_list.append(tuple)
             if not tuple[1]:
                 something_excluded = 1
-        if filelist_fp.close():
-            log.Log(
-                "Failed closing filelist {fl}".format(fl=filelist_name), log.WARNING
-            )
         return (tuple_list, something_excluded)
 
     def _filelist_parse_line(self, line, include):
@@ -463,10 +450,10 @@ probably isn't what you meant""".format(
                 "Include is {ival}, should be 0 or 1.".format(ival=include)
             )
 
-    def _filelist_globbing_get_sfs(self, filelist_fp, inc_default, list_name):
+    def _filelist_globbing_get_sfs(self, list_content, inc_default, list_name):
         """Return list of selection functions by reading fileobj
 
-        filelist_fp should be an open file object
+        file_content are bytes containing a list of globs
         inc_default is true iff this is an include list
         list_name is just the name of the list, used for logging
         See the man page on --[include/exclude]-globbing-filelist
@@ -474,7 +461,7 @@ probably isn't what you meant""".format(
         """
         log.Log("Reading globbing filelist {gf}".format(gf=list_name), log.INFO)
         separator = Globals.null_separator and b"\0" or b"\n"
-        for line in filelist_fp.read().split(separator):
+        for line in list_content.split(separator):
             line = line.rstrip(b"\r")  # for Windows/DOS endings
             if not line:
                 continue  # skip blanks

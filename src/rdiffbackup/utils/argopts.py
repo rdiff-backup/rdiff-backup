@@ -176,17 +176,19 @@ class SelectAction(argparse.Action):
         if "filelist" in option_string:  # we read the values from the file
             try:
                 if option_string.endswith("-stdin"):
+                    filename = "standard input"
                     fp = sys.stdin.buffer
                 else:
-                    fp = open(values, "rb")
-                lines = fp.readlines()  # we get an array of bytes
+                    filename = values
+                    fp = open(filename, "rb")
+                content = fp.read()
                 fp.close()
             except OSError as exc:
                 raise argparse.ArgumentError(self, exc)
             else:
                 if option_string.endswith("-stdin"):
                     option_string = option_string[:-6]
-                values = lines
+                values = {"filename": filename, "content": content}
         # append the option string and values to the selections list
         if values == [] and self.default is not None:
             values = self.default
