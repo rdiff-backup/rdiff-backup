@@ -72,9 +72,7 @@ class ReadDirShadow(location.LocationShadow):
         if base_rp is None:
             base_rp = cls._base_dir
         if select_opts is None:
-            select_opts = cls._values.get("selections")
-            if not select_opts:
-                return
+            select_opts = cls._values.get("selections") or []
         is_windows = os.name == "nt"
 
         # FIXME not sure we couldn't support symbolic links nowadays on Windows

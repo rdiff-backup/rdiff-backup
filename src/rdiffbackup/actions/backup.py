@@ -99,7 +99,7 @@ class BackupAction(actions.BaseAction):
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return ret_code | Globals.RET_CODE_ERR
 
-        self.dir.set_select(self.values["selections"])
+        self.dir.set_select()
         ret_code |= self._warn_if_infinite_recursion(
             self.dir.base_dir, self.repo.base_dir
         )

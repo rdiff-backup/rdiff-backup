@@ -133,7 +133,7 @@ class Select:
 
         The tuples have the form (option string, additional argument)
         and are created when the initial commandline arguments are
-        read.
+        read. The option string is without double dash (--).
         """
         filelists_index = 0
         try:

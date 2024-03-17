@@ -103,7 +103,7 @@ class CompareAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        self.dir.set_select(self.values["selections"])
+        self.dir.set_select()
 
         self.action_time = self.repo.get_parsed_time(self.values["at"])
         if self.action_time is None:

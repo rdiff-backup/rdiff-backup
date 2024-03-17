@@ -2,7 +2,6 @@
 Test selection aspects of rdiff-backup
 """
 
-import io
 import os
 import subprocess
 import sys
@@ -127,14 +126,12 @@ class MatchingTest(unittest.TestCase):
 
     def testFilelistInclude(self):
         """Test included filelist"""
-        fp = io.BytesIO(
-            b"""
+        filelist = b"""
 rdiff-backup_testfiles/select/1/2
 rdiff-backup_testfiles/select/1
 rdiff-backup_testfiles/select/1/2/3
 rdiff-backup_testfiles/select/3/3/2"""
-        )
-        sf = self.Select._filelist_get_sf(fp, 1, "test")
+        sf = self.Select._filelist_get_sf(filelist, 1, "test")
         self.assertEqual(sf(self.root), 1)
         self.assertEqual(sf(self.makeext("1")), 1)
         self.assertIsNone(sf(self.makeext("1/1")))
@@ -146,13 +143,11 @@ rdiff-backup_testfiles/select/3/3/2"""
 
     def testFilelistWhitespaceInclude(self):
         """Test included filelist, with some whitespace"""
-        fp = io.BytesIO(
-            b"""
+        filelist = b"""
 + rdiff-backup_testfiles/select/1  
 - rdiff-backup_testfiles/select/2  
 rdiff-backup_testfiles/select/3\t"""  # noqa: W291 trailing whitespaces
-        )
-        sf = self.Select._filelist_get_sf(fp, 1, "test")
+        sf = self.Select._filelist_get_sf(filelist, 1, "test")
         self.assertEqual(sf(self.root), 1)
         self.assertEqual(sf(self.makeext("1  ")), 1)
         self.assertEqual(sf(self.makeext("2  ")), 0)
@@ -162,11 +157,9 @@ rdiff-backup_testfiles/select/3\t"""  # noqa: W291 trailing whitespaces
 
     def testFilelistIncludeNullSep(self):
         """Test included filelist but with null_separator set"""
-        fp = io.BytesIO(
-            b"""\0rdiff-backup_testfiles/select/1/2\0rdiff-backup_testfiles/select/1\0rdiff-backup_testfiles/select/1/2/3\0rdiff-backup_testfiles/select/3/3/2\0rdiff-backup_testfiles/select/hello\nthere\0"""
-        )
+        filelist = b"""\0rdiff-backup_testfiles/select/1/2\0rdiff-backup_testfiles/select/1\0rdiff-backup_testfiles/select/1/2/3\0rdiff-backup_testfiles/select/3/3/2\0rdiff-backup_testfiles/select/hello\nthere\0"""
         Globals.null_separator = 1
-        sf = self.Select._filelist_get_sf(fp, 1, "test")
+        sf = self.Select._filelist_get_sf(filelist, 1, "test")
         self.assertEqual(sf(self.root), 1)
         self.assertEqual(sf(self.makeext("1")), 1)
         self.assertIsNone(sf(self.makeext("1/1")))
@@ -181,16 +174,14 @@ rdiff-backup_testfiles/select/3\t"""  # noqa: W291 trailing whitespaces
 
     def testFilelistExclude(self):
         """Test included filelist"""
-        fp = io.BytesIO(
-            b"""
+        filelist = b"""
 rdiff-backup_testfiles/select/1/2
 rdiff-backup_testfiles/select/1
 this is a badly formed line which should be ignored
 
 rdiff-backup_testfiles/select/1/2/3
 rdiff-backup_testfiles/select/3/3/2"""
-        )
-        sf = self.Select._filelist_get_sf(fp, 0, "test")
+        sf = self.Select._filelist_get_sf(filelist, 0, "test")
         self.assertIsNone(sf(self.root))
         self.assertEqual(sf(self.makeext("1")), 0)
         self.assertEqual(sf(self.makeext("1/1")), 0)
@@ -202,14 +193,12 @@ rdiff-backup_testfiles/select/3/3/2"""
 
     def testFilelistInclude2(self):
         """testFilelistInclude2 - with modifiers"""
-        fp = io.BytesIO(
-            b"""
+        filelist = b"""
 rdiff-backup_testfiles/select/1/1
 - rdiff-backup_testfiles/select/1/2
 + rdiff-backup_testfiles/select/1/3
 - rdiff-backup_testfiles/select/3"""
-        )
-        sf = self.Select._filelist_get_sf(fp, 1, "test1")
+        sf = self.Select._filelist_get_sf(filelist, 1, "test1")
         self.assertEqual(sf(self.makeext("1")), 1)
         self.assertEqual(sf(self.makeext("1/1")), 1)
         self.assertIsNone(sf(self.makeext("1/1/2")))
@@ -221,14 +210,12 @@ rdiff-backup_testfiles/select/1/1
 
     def testFilelistExclude2(self):
         """testFilelistExclude2 - with modifiers"""
-        fp = io.BytesIO(
-            b"""
+        filelist = b"""
 rdiff-backup_testfiles/select/1/1
 - rdiff-backup_testfiles/select/1/2
 + rdiff-backup_testfiles/select/1/3
 - rdiff-backup_testfiles/select/3"""
-        )
-        sf = self.Select._filelist_get_sf(fp, 0, "test1")
+        sf = self.Select._filelist_get_sf(filelist, 0, "test1")
         sf_val1 = sf(self.root)
         self.assertTrue(sf_val1 == 1 or sf_val1 is None)
         sf_val2 = sf(self.makeext("1"))
@@ -365,14 +352,10 @@ rdiff-backup_testfiles/select/1/1
         self.assertEqual(select._glob_get_sf("**", 0)(root), 0)
         self.assertIsNone(select._glob_get_sf("/foo/*", 0)(root))
 
-        self.assertEqual(select._filelist_get_sf(io.BytesIO(b"/"), 1, "test")(root), 1)
-        self.assertEqual(
-            select._filelist_get_sf(io.BytesIO(b"/foo/bar"), 1, "test")(root), 1
-        )
-        self.assertEqual(select._filelist_get_sf(io.BytesIO(b"/"), 0, "test")(root), 0)
-        self.assertIsNone(
-            select._filelist_get_sf(io.BytesIO(b"/foo/bar"), 0, "test")(root)
-        )
+        self.assertEqual(select._filelist_get_sf(b"/", 1, "test")(root), 1)
+        self.assertEqual(select._filelist_get_sf(b"/foo/bar", 1, "test")(root), 1)
+        self.assertEqual(select._filelist_get_sf(b"/", 0, "test")(root), 0)
+        self.assertIsNone(select._filelist_get_sf(b"/foo/bar", 0, "test")(root))
 
     @unittest.skipIf(sys.platform.startswith("win"), "can't work with Windows")
     def testOtherFilesystems(self):
@@ -406,7 +389,7 @@ class ParseSelectionArgsTest(unittest.TestCase):
 
     root = None
 
-    def ParseTest(self, tuplelist, indices, filelists=[]):
+    def ParseTest(self, tuplelist, indices):
         """No error if running select on tuple goes over indices"""
 
         def tuple_fsencode(filetuple):
@@ -417,7 +400,7 @@ class ParseSelectionArgsTest(unittest.TestCase):
                 Globals.local_connection, "rdiff-backup_testfiles/select"
             )
         self.Select = selection.Select(self.root)
-        self.Select.parse_selection_args(tuplelist, self.remake_filelists(filelists))
+        self.Select.parse_selection_args(tuplelist)
         self.assertTrue(
             comtst.iter_equal(
                 comtst.iter_map(lambda dsrp: dsrp.index, self.Select.get_select_iter()),
@@ -426,20 +409,10 @@ class ParseSelectionArgsTest(unittest.TestCase):
             )
         )
 
-    def remake_filelists(self, filelist):
-        """Turn strings in filelist into fileobjs"""
-        new_filelists = []
-        for f in filelist:
-            if isinstance(f, str) or isinstance(f, bytes):
-                new_filelists.append(io.BytesIO(os.fsencode(f)))
-            else:
-                new_filelists.append(f)
-        return new_filelists
-
     def testParse(self):
         """Test just one include, all exclude"""
         self.ParseTest(
-            [("--include", "rdiff-backup_testfiles/select/1/1"), ("--exclude", "**")],
+            [("include", b"rdiff-backup_testfiles/select/1/1"), ("exclude", b"**")],
             [(), ("1",), ("1", "1"), ("1", "1", "1"), ("1", "1", "2"), ("1", "1", "3")],
         )
 
@@ -447,10 +420,10 @@ class ParseSelectionArgsTest(unittest.TestCase):
         """Test three level include/exclude"""
         self.ParseTest(
             [
-                ("--exclude", "rdiff-backup_testfiles/select/1/1/1"),
-                ("--include", "rdiff-backup_testfiles/select/1/1"),
-                ("--exclude", "rdiff-backup_testfiles/select/1"),
-                ("--exclude", "**"),
+                ("exclude", b"rdiff-backup_testfiles/select/1/1/1"),
+                ("include", b"rdiff-backup_testfiles/select/1/1"),
+                ("exclude", b"rdiff-backup_testfiles/select/1"),
+                ("exclude", b"**"),
             ],
             [(), ("1",), ("1", "1"), ("1", "1", "2"), ("1", "1", "3")],
         )
@@ -458,41 +431,51 @@ class ParseSelectionArgsTest(unittest.TestCase):
     def test_globbing_filelist(self):
         """Filelist glob test similar to above testParse2"""
         self.ParseTest(
-            [("--include-globbing-filelist", "file")],
-            [(), ("1",), ("1", "1"), ("1", "1", "2"), ("1", "1", "3")],
             [
-                """
+                (
+                    "include-globbing-filelist",
+                    {
+                        "filename": "file",
+                        "content": b"""
 - rdiff-backup_testfiles/select/1/1/1
 rdiff-backup_testfiles/select/1/1
 - rdiff-backup_testfiles/select/1
 - **
-"""
+""",
+                    },
+                )
             ],
+            [(), ("1",), ("1", "1"), ("1", "1", "2"), ("1", "1", "3")],
         )
 
     def test_globbing_filelist_winending(self):
         """Filelist glob test with Windows/DOS endings"""
         # the \r's are used to test Windows/DOS endings
         self.ParseTest(
-            [("--include-globbing-filelist", "file")],
-            [(), ("1",), ("1", "1"), ("1", "1", "2"), ("1", "1", "3")],
             [
-                """
+                (
+                    "include-globbing-filelist",
+                    {
+                        "filename": "file",
+                        "content": b"""
 - rdiff-backup_testfiles/select/1/1/1\r
 rdiff-backup_testfiles/select/1/1\r
 - rdiff-backup_testfiles/select/1\r
 - **\r
-"""
+""",
+                    },
+                )
             ],
+            [(), ("1",), ("1", "1"), ("1", "1", "2"), ("1", "1", "3")],
         )
 
     def testGlob(self):
         """Test globbing expression"""
         self.ParseTest(
             [
-                ("--exclude", "**[3-5]"),
-                ("--include", "rdiff-backup_testfiles/select/1"),
-                ("--exclude", "**"),
+                ("exclude", b"**[3-5]"),
+                ("include", b"rdiff-backup_testfiles/select/1"),
+                ("exclude", b"**"),
             ],
             [
                 (),
@@ -506,7 +489,7 @@ rdiff-backup_testfiles/select/1/1\r
             ],
         )
         self.ParseTest(
-            [("--include", "rdiff-backup_testfiles/select**/2"), ("--exclude", "**")],
+            [("include", b"rdiff-backup_testfiles/select**/2"), ("exclude", b"**")],
             [
                 (),
                 ("1",),
@@ -546,7 +529,19 @@ rdiff-backup_testfiles/select/1/1\r
     def test_globbing_filelist2(self):
         """Filelist glob test similar to above testGlob"""
         self.ParseTest(
-            [("--exclude-globbing-filelist", "asoeuth")],
+            [
+                (
+                    "exclude-globbing-filelist",
+                    {
+                        "filename": "asoeuth",
+                        "content": b"""
+**[3-5]
++ rdiff-backup_testfiles/select/1
+**
+""",
+                    },
+                )
+            ],
             [
                 (),
                 ("1",),
@@ -557,16 +552,20 @@ rdiff-backup_testfiles/select/1/1\r
                 ("1", "2", "1"),
                 ("1", "2", "2"),
             ],
-            [
-                """
-**[3-5]
-+ rdiff-backup_testfiles/select/1
-**
-"""
-            ],
         )
         self.ParseTest(
-            [("--include-globbing-filelist", "file")],
+            [
+                (
+                    "include-globbing-filelist",
+                    {
+                        "filename": "file",
+                        "content": b"""
+rdiff-backup_testfiles/select**/2
+- **
+""",
+                    },
+                )
+            ],
             [
                 (),
                 ("1",),
@@ -601,30 +600,24 @@ rdiff-backup_testfiles/select/1/1\r
                 ("3", "3"),
                 ("3", "3", "2"),
             ],
-            [
-                """
-rdiff-backup_testfiles/select**/2
-- **
-"""
-            ],
         )
 
     def testGlob2(self):
         """Test more globbing functions"""
         self.ParseTest(
             [
-                ("--include", "rdiff-backup_testfiles/select/*foo*/p*"),
-                ("--exclude", "**"),
+                ("include", b"rdiff-backup_testfiles/select/*foo*/p*"),
+                ("exclude", b"**"),
             ],
             [(), ("efools",), ("efools", "ping"), ("foobar",), ("foobar", "pong")],
         )
         self.ParseTest(
             [
-                ("--exclude", "rdiff-backup_testfiles/select/1/1/*"),
-                ("--exclude", "rdiff-backup_testfiles/select/1/2/**"),
-                ("--exclude", "rdiff-backup_testfiles/select/1/3**"),
-                ("--include", "rdiff-backup_testfiles/select/1"),
-                ("--exclude", "**"),
+                ("exclude", b"rdiff-backup_testfiles/select/1/1/*"),
+                ("exclude", b"rdiff-backup_testfiles/select/1/2/**"),
+                ("exclude", b"rdiff-backup_testfiles/select/1/3**"),
+                ("include", b"rdiff-backup_testfiles/select/1"),
+                ("exclude", b"**"),
             ],
             [(), ("1",), ("1", "1"), ("1", "2")],
         )
@@ -633,10 +626,10 @@ rdiff-backup_testfiles/select**/2
         """Test for bug when **is in front"""
         self.ParseTest(
             [
-                ("--include", "**NOTEXIST"),
-                ("--exclude", "**NOTEXISTEITHER"),
-                ("--include", "rdiff-backup_testfiles/select/efools"),
-                ("--exclude", "**"),
+                ("include", b"**NOTEXIST"),
+                ("exclude", b"**NOTEXISTEITHER"),
+                ("include", b"rdiff-backup_testfiles/select/efools"),
+                ("exclude", b"**"),
             ],
             [(), ("efools",), ("efools", "ping")],
         )
@@ -647,7 +640,7 @@ rdiff-backup_testfiles/select**/2
             Globals.local_connection, "rdiff-backup_testfiles/select/1"
         )
         self.ParseTest(
-            [("--exclude", "rdiff-backup_testfiles/select/1/[23]")],
+            [("exclude", b"rdiff-backup_testfiles/select/1/[23]")],
             [(), ("1",), ("1", "1"), ("1", "2"), ("1", "3")],
         )
 
@@ -655,16 +648,16 @@ rdiff-backup_testfiles/select**/2
             self.root = rpath.RPath(Globals.local_connection, "C:/")
             self.ParseTest(
                 [
-                    ("--exclude", "C:/Users/*"),
-                    ("--include", "C:/Users"),
-                    ("--exclude", "C:/"),
+                    ("exclude", b"C:/Users/*"),
+                    ("include", b"C:/Users"),
+                    ("exclude", b"C:/"),
                 ],
                 [(), ("Users",)],
             )
         else:
             self.root = rpath.RPath(Globals.local_connection, "/")
             self.ParseTest(
-                [("--exclude", "/home/*"), ("--include", "/home"), ("--exclude", "/")],
+                [("exclude", b"/home/*"), ("include", b"/home"), ("exclude", b"/")],
                 [(), ("home",)],
             )
 
@@ -739,7 +732,7 @@ class SelectionIfPresentTest(unittest.TestCase):
                 True,
                 self.from1_path,
                 self.bak_path,
-                ("--api-version", "201"),
+                ("--api-version", "201", "--current-time", "10000"),
                 b"backup",
                 ("--include-if-present", "check_for_me", "--exclude", "**"),
             ),
@@ -761,7 +754,7 @@ class SelectionIfPresentTest(unittest.TestCase):
                 True,
                 self.from1_path,
                 self.bak_path,
-                ("--api-version", "201"),
+                ("--api-version", "201", "--current-time", "20000"),
                 b"backup",
                 ("--include-if-present", "check_for_me"),
             ),
