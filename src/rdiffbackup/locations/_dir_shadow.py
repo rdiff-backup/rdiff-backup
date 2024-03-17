@@ -24,6 +24,8 @@ it has no real life of itself, i.e. it has only class methods and can't
 be instantiated.
 """
 
+import os
+
 from rdiff_backup import (
     Globals,
     hash,
@@ -55,7 +57,7 @@ class ReadDirShadow(location.LocationShadow):
 
     # @API(ReadDirShadow.set_select, 201)
     @classmethod
-    def set_select(cls, rp, tuplelist, *filelists):
+    def set_select(cls, base_rp=None, select_opts=None):
         """
         Initialize select object using tuplelist
 
@@ -67,8 +69,25 @@ class ReadDirShadow(location.LocationShadow):
         Also, cls._select needs to be cached so get_diffs below
         can retrieve the necessary rps.
         """
-        sel = selection.Select(rp)
-        sel.parse_selection_args(tuplelist, filelists)
+        if base_rp is None:
+            base_rp = cls._base_dir
+        if select_opts is None:
+            select_opts = cls._values.get("selections")
+            if not select_opts:
+                return
+        is_windows = os.name == "nt"
+
+        # FIXME not sure we couldn't support symbolic links nowadays on Windows
+        # knowing that it would require specific handling when reading the link:
+        #   File "rdiff_backup\rpath.py", line 771, in symlink
+        #   TypeError: symlink: src should be string, bytes or os.PathLike,
+        #                       not NoneType
+        # I suspect that not all users can read symlinks with os.readlink
+        if is_windows and ("exclude-symbolic-links", None) not in select_opts:
+            log.Log("Symbolic links excluded on Windows", log.NOTE)
+            select_opts.insert(0, ("exclude-symbolic-links", None))
+        sel = selection.Select(base_rp)
+        sel.parse_selection_args(select_opts)
         sel_iter = sel.get_select_iter()
         cache_size = Globals.pipeline_max_length * 3  # to and from+leeway
         cls._select = rorpiter.CacheIndexable(sel_iter, cache_size)
@@ -327,14 +346,18 @@ class WriteDirShadow(location.LocationShadow):
 
     # @API(WriteDirShadow.set_select, 201)
     @classmethod
-    def set_select(cls, select_opts, *filelists):
+    def set_select(cls, base_rp=None, select_opts=None):
         """
         Return a selection object iterating the rorpaths in the directory
         """
-        if not select_opts:
-            return  # nothing to do...
-        cls._select = selection.Select(cls._base_dir)
-        cls._select.parse_selection_args(select_opts, filelists)
+        if base_rp is None:
+            base_rp = cls._base_dir
+        if select_opts is None:
+            select_opts = cls._values.get("selections")
+            if not select_opts:
+                return  # nothing to do...
+        cls._select = selection.Select(base_rp)
+        cls._select.parse_selection_args(select_opts)
 
     # @API(WriteDirShadow.get_sigs_select, 201)
     @classmethod

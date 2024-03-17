@@ -25,7 +25,6 @@ documentation on what this code does can be found on the man page.
 
 import os
 import re
-import sys
 from rdiff_backup import Globals, log, robust, rorpiter, rpath
 from rdiffbackup.utils import safestr
 
@@ -128,6 +127,7 @@ class Select:
                 scanned = 2
         return 1
 
+    #TODO continue here, removing filelists
     def parse_selection_args(self, argtuples, filelists):
         """
         Create selection functions based on list of tuples
@@ -193,35 +193,35 @@ class Select:
         """
 
         self._sel_noargs_mapping = {
-            "--exclude-special-files": (self._special_get_sf, Select.EXCLUDE),
-            "--exclude-symbolic-links": (self._symlinks_get_sf, Select.EXCLUDE),
-            "--exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
-            "--exclude-sockets": (self._sockets_get_sf, Select.EXCLUDE),
-            "--exclude-fifos": (self._fifos_get_sf, Select.EXCLUDE),
-            "--exclude-other-filesystems": (
+            "exclude-special-files": (self._special_get_sf, Select.EXCLUDE),
+            "exclude-symbolic-links": (self._symlinks_get_sf, Select.EXCLUDE),
+            "exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
+            "exclude-sockets": (self._sockets_get_sf, Select.EXCLUDE),
+            "exclude-fifos": (self._fifos_get_sf, Select.EXCLUDE),
+            "exclude-other-filesystems": (
                 self._other_filesystems_get_sf,
                 Select.EXCLUDE,
             ),
-            "--include-special-files": (self._special_get_sf, Select.INCLUDE),
-            "--include-symbolic-links": (self._symlinks_get_sf, Select.INCLUDE),
+            "include-special-files": (self._special_get_sf, Select.INCLUDE),
+            "include-symbolic-links": (self._symlinks_get_sf, Select.INCLUDE),
         }
         self._sel_onearg_mapping = {
-            "--exclude": (self._glob_get_sf, Select.EXCLUDE),
-            "--exclude-regexp": (self._regexp_get_sf, Select.EXCLUDE),
-            "--exclude-if-present": (self._presence_get_sf, Select.EXCLUDE),
-            "--include": (self._glob_get_sf, Select.INCLUDE),
-            "--include-regexp": (self._regexp_get_sf, Select.INCLUDE),
-            "--include-if-present": (self._presence_get_sf, Select.INCLUDE),
-            "--min-file-size": (self._size_get_sf, Select.MIN),
-            "--max-file-size": (self._size_get_sf, Select.MAX),
+            "exclude": (self._glob_get_sf, Select.EXCLUDE),
+            "exclude-regexp": (self._regexp_get_sf, Select.EXCLUDE),
+            "exclude-if-present": (self._presence_get_sf, Select.EXCLUDE),
+            "include": (self._glob_get_sf, Select.INCLUDE),
+            "include-regexp": (self._regexp_get_sf, Select.INCLUDE),
+            "include-if-present": (self._presence_get_sf, Select.INCLUDE),
+            "min-file-size": (self._size_get_sf, Select.MIN),
+            "max-file-size": (self._size_get_sf, Select.MAX),
         }
         self._sel_filelist_mapping = {
-            "--exclude-filelist": Select.EXCLUDE,
-            "--include-filelist": Select.INCLUDE,
+            "exclude-filelist": Select.EXCLUDE,
+            "include-filelist": Select.INCLUDE,
         }
         self._sel_globfilelist_mapping = {
-            "--exclude-globbing-filelist": Select.EXCLUDE,
-            "--include-globbing-filelist": Select.INCLUDE,
+            "exclude-globbing-filelist": Select.EXCLUDE,
+            "include-globbing-filelist": Select.INCLUDE,
         }
 
     def _iterate_rpath(self, rpath, sel_func):
@@ -891,51 +891,3 @@ class _FilterIterITRB(rorpiter.ITRBranch):
             self.base_queue = next_rorp
         else:
             raise ValueError("Unexpected select value {sel}.".format(sel=s))
-
-
-def get_prepared_selections(selections):
-    """
-    Accepts a list of selection tuple made of (selection method, parameter)
-
-    Return a tuple of two lists, the first one being the modified selection
-    list (for compatibility reasons), the 2nd one being a list containing the
-    content of the selection files given on the command line.
-    """
-
-    # TODO this function returns the content as bytes, whereas the functions
-    # above expect them as file pointer, this doesn't make much sense and
-    # should be optimized, perhaps returning directly as list of file lines.
-    # TODO the two lists returned could also be merged into one, the content
-    # of the file just replacing the file name.
-    select_opts = []
-    select_data = []
-
-    def sel_fl(filename):
-        """
-        Helper function for including/excluding filelists below
-        """
-        # TODO we should do this in pre_check so that we can earlier handle
-        # any IO error, at the same time where we get rid of select_data
-        if filename is True:  # we really mean the boolean True
-            fp = sys.stdin.buffer
-        else:
-            fp = open(filename, "rb")  # files match paths hence bytes/bin
-        buf = fp.read()
-        fp.close()
-        return buf
-
-    if selections:
-        # the following loop is a compatibility measure # compat201
-        for selection in selections:
-            if "filelist" in selection[0]:
-                if selection[0].endswith("-stdin"):
-                    select_opts.append(
-                        ("--" + selection[0][:-6], "standard input")  # remove '-stdin'
-                    )
-                else:
-                    select_opts.append(("--" + selection[0], selection[1]))
-                select_data.append(sel_fl(selection[1]))
-            else:
-                select_opts.append(("--" + selection[0], selection[1]))
-
-    return (select_opts, select_data)
