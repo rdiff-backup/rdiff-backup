@@ -199,7 +199,7 @@ class MetadataTest(unittest.TestCase):
         )
         # the following 3 lines make sure that we ignore incorrect files
         sel = selection.Select(rootrp)
-        sel.parse_selection_args((), ())
+        sel.parse_selection_args()
         rps = list(sel.get_select_iter())
 
         self.assertFalse(temprp.lstat())
@@ -268,18 +268,14 @@ class MetadataTest(unittest.TestCase):
                 b"snapshot", time, stdattr.get_plugin_class()
             )
             sel = selection.Select(rp)
-            sel.parse_selection_args(
-                (), ()
-            )  # make sure incorrect files are filtered out
+            sel.parse_selection_args()
             for rorp in sel.get_select_iter():
                 metawriter.write_object(rorp)
             metawriter.close()
 
         def compare(man, rootrp, time):
             sel = selection.Select(rootrp)
-            sel.parse_selection_args(
-                (), ()
-            )  # make sure incorrect files are filtered out
+            sel.parse_selection_args()
             self.assertTrue(
                 comtst.iter_equal(
                     sel.get_select_iter(), man._get_meta_main_at_time(time, None)

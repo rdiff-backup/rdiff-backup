@@ -127,7 +127,7 @@ class Select:
                 scanned = 2
         return 1
 
-    def parse_selection_args(self, argtuples):
+    def parse_selection_args(self, argtuples=()):
         """
         Create selection functions based on list of tuples
 
