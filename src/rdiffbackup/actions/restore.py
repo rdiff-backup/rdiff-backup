@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import Globals, log, selection
+from rdiff_backup import Globals, log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
 
@@ -176,14 +176,11 @@ class RestoreAction(actions.BaseAction):
                 log.ERROR,
             )
             return ret_code | Globals.RET_CODE_ERR
-        (select_opts, select_data) = selection.get_prepared_selections(
-            self.values["selections"]
-        )
         # We must set both sides because restore filtering is different from
         # select filtering.  For instance, if a file is excluded it should
         # not be deleted from the target directory.
-        self.repo.set_select(select_opts, select_data, self.dir.base_dir)
-        self.dir.set_select(select_opts, select_data)
+        self.repo.set_select(self.dir.base_dir)
+        self.dir.set_select()
 
         return ret_code
 

@@ -10,7 +10,7 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - split logging mechanism between front-end and back-end (writing to file, which is specific to the repository format)
 - replace own Logger implementation with standard one (in the background)
 - extend runtime info to also check locations and output file system information
-- set api version to 300
+- set api version to 300 (or 290-299 to start with)
 - make check and setup functions mostly remote to encapsulate repo structure
 - use shadow object instead of shadow class, at least locally, to have more repeatable runs within same context?
 - allow keyword type parameters across the connection keyword=value
@@ -21,5 +21,9 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - write security concept paper
 - re-write security module to fit better new concepts around remote dir/repo, especially update-only doesn't block backup to a new directory anymore. Possibly split _Repo_Shadow into Read and Write variants.
 - rewrite QuotedRPath to be an RPath variant specific to repositories, to encapsulate the increment aspects & co (taking them out of the standard RPath class)
-- rewrite selection functions to directly use bytes loaded instead of files
 - does statistics really need direct access to the get_increment function? Or could it use the (shadow) repo as back-end like thought for logs?
+- add https://docs.python.org/3/library/argparse.html#argument-groups to arguments coming from actions
+- pass null_separator to selection functions
+- just make the current time the default value for --current-time
+- for backup action, the check for last backup in the past happens too late
+- get rid of usage of selection module in fs_abilities

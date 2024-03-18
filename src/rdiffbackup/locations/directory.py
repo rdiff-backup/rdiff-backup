@@ -24,7 +24,6 @@ This plug-in tests that all remote locations are properly reachable and
 usable for a back-up.
 """
 
-import io
 from rdiffbackup.locations import fs_abilities, location
 from rdiff_backup import Globals, log
 
@@ -59,31 +58,11 @@ class ReadDir(location.Location):
 
         return ret_code
 
-    def set_select(self, select_opts, select_data):
+    def set_select(self):
         """
-        Set the selection and selection data on the directory
-
-        Accepts a tuple of two lists:
-        * one of selection tuple made of (selection method, parameter)
-        * and one of the content of the selection files
-
-        Saves the selections list and makes it ready for usage on the source
-        side over its connection.
+        Shadow function for ReadDirShadow.set_select
         """
-
-        is_windows = self.base_dir.conn.platform.system() == "Windows"
-
-        # FIXME not sure we couldn't support symbolic links nowadays on Windows
-        # knowing that it would require specific handling when reading the link:
-        #   File "rdiff_backup\rpath.py", line 771, in symlink
-        #   TypeError: symlink: src should be string, bytes or os.PathLike, not NoneType
-        # I suspect that not all users can read symlinks with os.readlink
-        if is_windows and ("--exclude-symbolic-links", None) not in select_opts:
-            log.Log("Symbolic links excluded on Windows", log.NOTE)
-            select_opts.insert(0, ("--exclude-symbolic-links", None))
-        self._shadow.set_select(
-            self.base_dir, select_opts, *list(map(io.BytesIO, select_data))
-        )
+        self._shadow.set_select()
 
     def get_select(self):
         """
@@ -152,21 +131,11 @@ class WriteDir(location.Location):
 
         return ret_code
 
-    def set_select(self, select_opts, select_data):
+    def set_select(self):
         """
-        Set the selection and selection data on the directory
-
-        Accepts a tuple of two lists:
-        * one of selection tuple made of (selection method, parameter)
-        * and one of the content of the selection files
-
-        Saves the selections list and makes it ready for usage on the source
-        side over its connection.
+        Shadow function for WriteDirShadow.set_select
         """
-
-        # FIXME we're retransforming bytes into a file pointer
-        if select_opts:
-            self._shadow.set_select(select_opts, *list(map(io.BytesIO, select_data)))
+        return self._shadow.set_select()
 
     def get_sigs_select(self):
         """

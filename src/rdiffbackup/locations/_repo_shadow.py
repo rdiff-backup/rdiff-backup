@@ -849,12 +849,18 @@ class RepoShadow(location.LocationShadow):
 
     # @API(RepoShadow.set_select, 201)
     @classmethod
-    def set_select(cls, target_rp, select_opts, *filelists):
-        """Initialize the mirror selection object"""
-        if not select_opts:
-            return  # nothing to do...
+    def set_select(cls, target_rp, select_opts=None):
+        """
+        Initialize the mirror selection object based on the target directory
+
+        This will probably be used only for restoring
+        """
+        if select_opts is None:
+            select_opts = cls._values.get("selections")
+            if not select_opts:
+                return  # nothing to do...
         cls._select = selection.Select(target_rp)
-        cls._select.parse_selection_args(select_opts, filelists)
+        cls._select.parse_selection_args(select_opts)
 
     @classmethod
     def _subtract_indices(cls, index, rorp_iter):

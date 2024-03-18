@@ -24,7 +24,7 @@ Comparaison can be done using metadata, file content or hashes.
 """
 
 import yaml
-from rdiff_backup import Globals, log, selection
+from rdiff_backup import Globals, log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
 
@@ -103,10 +103,7 @@ class CompareAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        (select_opts, select_data) = selection.get_prepared_selections(
-            self.values["selections"]
-        )
-        self.dir.set_select(select_opts, select_data)
+        self.dir.set_select()
 
         self.action_time = self.repo.get_parsed_time(self.values["at"])
         if self.action_time is None:

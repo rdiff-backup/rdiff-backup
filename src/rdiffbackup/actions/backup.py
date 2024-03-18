@@ -23,7 +23,7 @@ A built-in rdiff-backup action plug-in to backup a source to a target directory.
 
 import time
 
-from rdiff_backup import Globals, log, selection, Time
+from rdiff_backup import Globals, log, Time
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
 
@@ -99,10 +99,7 @@ class BackupAction(actions.BaseAction):
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return ret_code | Globals.RET_CODE_ERR
 
-        (select_opts, select_data) = selection.get_prepared_selections(
-            self.values["selections"]
-        )
-        self.dir.set_select(select_opts, select_data)
+        self.dir.set_select()
         ret_code |= self._warn_if_infinite_recursion(
             self.dir.base_dir, self.repo.base_dir
         )

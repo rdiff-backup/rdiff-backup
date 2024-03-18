@@ -21,8 +21,6 @@
 A location module to define repository classes as created by rdiff-backup
 """
 
-import io
-
 from rdiffbackup.locations import fs_abilities, location
 
 from rdiff_backup import Globals, log
@@ -143,24 +141,11 @@ class Repo(location.Location):
         """
         return self._shadow.force_regress()
 
-    def set_select(self, select_opts, select_data, target_rp):
+    def set_select(self, target_rp):
         """
-        Set the selection and selection data on the repository
-
-        Accepts a tuple of two lists:
-        * one of selection tuple made of (selection method, parameter)
-        * and one of the content of the selection files
-        And an rpath of the target directory to map the selection criteria.
-
-        Saves the selections list and makes it ready for usage on the source
-        side over its connection.
+        Shadow function for RepoShadow.set_select
         """
-
-        # compat201 we're retransforming bytes into a file pointer
-        if select_opts:
-            self._shadow.set_select(
-                target_rp, select_opts, *list(map(io.BytesIO, select_data))
-            )
+        self._shadow.set_select(target_rp)
 
     def get_sigs(self, source_iter, use_increment):
         """
