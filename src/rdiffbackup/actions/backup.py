@@ -64,6 +64,7 @@ class BackupAction(actions.BaseAction):
                 self.values,
                 must_be_writable=True,
                 must_exist=False,
+                check_time=True,
             )
         return conn_value
 
@@ -94,12 +95,8 @@ class BackupAction(actions.BaseAction):
         if ret_code & Globals.RET_CODE_ERR:
             return ret_code
 
-        previous_time = self.repo.get_mirror_time()
-        if previous_time >= Time.getcurtime():
-            log.Log("The last backup is not in the past. Aborting.", log.ERROR)
-            return ret_code | Globals.RET_CODE_ERR
-
         self.dir.set_select()
+
         ret_code |= self._warn_if_infinite_recursion(
             self.dir.base_dir, self.repo.base_dir
         )

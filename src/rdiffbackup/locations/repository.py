@@ -38,6 +38,7 @@ class Repo(location.Location):
         must_be_writable,
         must_exist,
         can_be_sub_path=False,
+        check_time=False,
     ):
         """
         Initialize the repository class
@@ -55,7 +56,12 @@ class Repo(location.Location):
         else:
             self._shadow = orig_path.conn._repo_shadow.RepoShadow
         (self.base_dir, self.ref_index, self.ref_type) = self._shadow.init(
-            orig_path, values, must_be_writable, must_exist, can_be_sub_path
+            orig_path,
+            values,
+            must_be_writable,
+            must_exist,
+            can_be_sub_path,
+            check_time,
         )
         self.must_be_writable = must_be_writable
         self.must_exist = must_exist

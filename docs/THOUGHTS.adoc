@@ -24,6 +24,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - does statistics really need direct access to the get_increment function? Or could it use the (shadow) repo as back-end like thought for logs?
 - add https://docs.python.org/3/library/argparse.html#argument-groups to arguments coming from actions
 - pass null_separator to selection functions
-- just make the current time the default value for --current-time
-- for backup action, the check for last backup in the past happens too late
 - get rid of usage of selection module in fs_abilities

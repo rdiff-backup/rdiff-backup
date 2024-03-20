@@ -100,6 +100,7 @@ class RepoShadow(location.LocationShadow):
         must_be_writable,
         must_exist,
         can_be_sub_path=False,
+        check_time=False,
     ):
         # if the base_dir can be a sub-file, we need to identify the actual
         # base directory of the repository
@@ -135,6 +136,7 @@ class RepoShadow(location.LocationShadow):
         cls._must_be_writable = must_be_writable
         cls._must_exist = must_exist
         cls._can_be_sub_path = can_be_sub_path
+        cls._check_time = check_time
         cls._has_been_locked = False
         # we need this to be able to use multiple times the class
         cls._mirror_time = None
@@ -150,7 +152,11 @@ class RepoShadow(location.LocationShadow):
     # @API(RepoShadow.setup, 300)
     @classmethod
     def setup(cls):
-        if cls._must_be_writable and not cls._create():
+        if cls._must_be_writable:
+            if not cls._create():
+                return Globals.RET_CODE_ERR
+        if cls._check_time and Globals.current_time <= cls.get_mirror_time():
+            log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return Globals.RET_CODE_ERR
         Security.reset_restrict_path(cls._base_dir)
         lock_result = cls._lock()

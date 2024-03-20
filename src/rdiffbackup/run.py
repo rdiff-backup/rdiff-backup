@@ -190,8 +190,6 @@ def _system_setup(arglist):
     Globals.set("null_separator", arglist.get("null_separator"))
     Globals.set("use_compatible_timestamps", arglist.get("use_compatible_timestamps"))
     Globals.set("do_fsync", arglist.get("fsync"))
-    if arglist.get("current_time") is not None:
-        Globals.set_integer("current_time", arglist.get("current_time"))
     if arglist.get("chars_to_quote") is not None:
         Globals.set("chars_to_quote", os.fsencode(arglist.get("chars_to_quote")))
     return ret_val
