@@ -35,7 +35,7 @@ Verbosity: typing.TypeAlias = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 InputVerbosity: typing.TypeAlias = int | str
 
 # we need to define constants
-NONE: Verbosity = 0
+NONE: Verbosity = 0  # are always output as-is on stdout
 ERROR: Verbosity = 1
 WARNING: Verbosity = 2
 NOTE: Verbosity = 3
@@ -45,11 +45,12 @@ TIMESTAMP: Verbosity = 9  # for adding the timestamp
 
 # mapping from severity to prefix (must be less than 9 characters)
 _LOG_PREFIX: dict[Verbosity, str] = {
-    1: "ERROR:",
-    2: "WARNING:",
-    3: "NOTE:",
-    5: "*",
-    8: "DEBUG:",
+    NONE: "",
+    ERROR: "ERROR:",
+    WARNING: "WARNING:",
+    NOTE: "NOTE:",
+    INFO: "*",
+    DEBUG: "DEBUG:",
 }
 
 
@@ -99,7 +100,7 @@ class Logger:
 
     def log_to_term(self, message, verbosity):
         """Write message to stdout/stderr"""
-        if verbosity <= 2 or Globals.server:
+        if verbosity in {ERROR, WARNING} or Globals.server:
             termfp = sys.stderr
         else:
             termfp = sys.stdout
@@ -277,7 +278,7 @@ class Logger:
         """Format the message, possibly adding date information"""
         if verbosity <= DEBUG:
             # pre-formatted informative messages are returned as such
-            if msg_verbosity == INFO and "\n" in message[:-1]:
+            if msg_verbosity in {NONE, INFO} and "\n" in message[:-1]:
                 return "{msg}\n".format(msg=message)
             else:
                 return "{pre:<9}{msg}\n".format(

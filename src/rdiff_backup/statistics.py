@@ -486,5 +486,4 @@ def print_active_stats(end_time=None):
     assert _active_statfileobj, "Stats object must be set before printing."
     _active_statfileobj.finish(end_time)
     statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
-    log.Log.log_to_file(statmsg)
-    Globals.client_conn.sys.stdout.write(statmsg)
+    log.Log(statmsg, log.NONE)
