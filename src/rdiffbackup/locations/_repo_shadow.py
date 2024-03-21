@@ -550,7 +550,11 @@ class RepoShadow(location.LocationShadow):
         dest_iter = cls._get_dest_select(baserp, previous_time)
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
         cls.CCPP = _CacheCollatedPostProcess(
-            collated, Globals.pipeline_max_length * 4, baserp, cls._data_dir
+            collated,
+            Globals.pipeline_max_length * 4,
+            baserp,
+            cls._data_dir,
+            cls._values.get("file_statistics"),
         )
         # pipeline len adds some leeway over just*3 (to and from and back)
 
@@ -699,9 +703,9 @@ class RepoShadow(location.LocationShadow):
         rdiff-backup is run is used (set by passing in time.time() from that
         system). Use at end of session.
         """
-        if Globals.print_statistics:
+        if cls._values.get("print_statistics"):
             statistics.print_active_stats(end_time)
-        if Globals.file_statistics:
+        if cls._values.get("file_statistics"):
             statistics.FileStats.close()
         statistics.write_active_statfileobj(cls._data_dir, end_time)
 
@@ -1965,15 +1969,18 @@ class _CacheCollatedPostProcess:
     metadata for it.
     """
 
-    def __init__(self, collated_iter, cache_size, dest_root_rp, data_rp):
+    def __init__(
+        self, collated_iter, cache_size, dest_root_rp, data_rp, file_statistics
+    ):
         """Initialize new CCWP."""
         self.iter = collated_iter  # generates (source_rorp, dest_rorp) pairs
         self.cache_size = cache_size
         self.dest_root_rp = dest_root_rp
         self.data_rp = data_rp
+        self.file_statistics = file_statistics
 
         self.statfileobj = statistics.init_statfileobj()
-        if Globals.file_statistics:
+        if self.file_statistics:
             statistics.FileStats.init(self.data_rp)
         self.metawriter = meta_mgr.get_meta_manager().get_writer()
 
@@ -2217,7 +2224,7 @@ class _CacheCollatedPostProcess:
 
         if metadata_rorp and metadata_rorp.lstat():
             self.metawriter.write_object(metadata_rorp)
-        if Globals.file_statistics:
+        if self.file_statistics:
             statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
     def _reset_dir_perms(self, current_index):

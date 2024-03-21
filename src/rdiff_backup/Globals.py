@@ -146,9 +146,6 @@ isbackup_writer = None  # compat201
 # Connection of the backup writer
 backup_writer = None  # compat201
 
-# Connection of the client
-client_conn = None
-
 # When backing up, issource should be true on the reader and isdest on
 # the writer.  When restoring, issource should be true on the mirror
 # and isdest should be true on the target.
@@ -201,13 +198,6 @@ compression = 1
 # If true, filelists and directory statistics will be split on
 # nulls instead of newlines.
 null_separator = None
-
-# If true, print statistics after successful backup
-print_statistics = None
-
-# Controls whether file_statistics file is written in
-# rdiff-backup-data dir.  These can sometimes take up a lot of space.
-file_statistics = 1
 
 # On the backup writer connection, holds the root incrementing branch
 # object.  Access is provided to increment error counts.
