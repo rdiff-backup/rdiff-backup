@@ -62,15 +62,12 @@ class FSAbilities:
         """
         FSAbilities initializer.
         """
-        assert (
-            root_rp.conn is Globals.local_connection
-        ), "Action only foreseen locally and not over {conn}.".format(conn=root_rp.conn)
         self.root_rp = root_rp
         self.writable = writable
         if self.writable:
-            self._init_readwrite()
+            self._detect_readwrite()
         else:
-            self._init_readonly()
+            self._detect_readonly()
 
     def __str__(self):
         """
@@ -125,7 +122,7 @@ class FSAbilities:
         s.append(s[0])
         return "\n".join(s)
 
-    def _init_readonly(self):
+    def _detect_readonly(self):
         """
         Set variables using fs tested at RPath root_rp.
 
@@ -133,6 +130,18 @@ class FSAbilities:
         should be run on the file system when the file system will
         only need to be read.
         """
+        if not self.root_rp.lstat():
+            raise FileNotFoundError(
+                errno.ENOENT,
+                "Path must exist and be a directory to test it read-only.",
+                os.fspath(self.root_rp),
+            )
+        elif not self.root_rp.isdir():
+            raise NotADirectoryError(
+                errno.ENOTDIR,
+                "Path must be a directory to test it read-only.",
+                os.fspath(self.root_rp),
+            )
         self._detect_eas(self.root_rp, self.writable)
         self._detect_acls(self.root_rp)
         self._detect_win_acls(self.root_rp, self.writable)
@@ -142,7 +151,7 @@ class FSAbilities:
         self._detect_escape_dos_devices(self.root_rp)
         self._detect_escape_trailing_spaces_readonly(self.root_rp)
 
-    def _init_readwrite(self):
+    def _detect_readwrite(self):
         """
         Set variables using fs tested at rp_base.  Run locally.
 
@@ -150,12 +159,14 @@ class FSAbilities:
         it in order to test various features.  Use on a file system
         that will be written to.
         """
-        if not self.root_rp.isdir():
-            assert not self.root_rp.lstat(), (
-                "Root path '{rp}' can't be writable, exist and not be "
-                "a directory.".format(rp=self.root_rp)
-            )
+        if not self.root_rp.lstat():
             self.root_rp.mkdir()
+        elif not self.root_rp.isdir():
+            raise NotADirectoryError(
+                errno.ENOTDIR,
+                "Path must be a directory to test it read-write.",
+                os.fspath(self.root_rp),
+            )
         subdir = self.root_rp.get_temp_rpath()
         subdir.mkdir()
 
@@ -200,14 +211,6 @@ class FSAbilities:
         """
         if os.name == "nt":
             log.Log("Hardlinks disabled on Windows", log.INFO)
-            self.hardlinks = None
-            return
-        elif not Globals.preserve_hardlinks:
-            log.Log(
-                "Hard linking test skipped as rdiff-backup was started "
-                "with --no-hard-links option",
-                log.INFO,
-            )
             self.hardlinks = None
             return
         hl_source = testdir.append("hardlinked_file1")
@@ -318,15 +321,6 @@ class FSAbilities:
 
         Does not write. Needs to be local
         """
-        if not Globals.acls_active:
-            log.Log(
-                "POSIX ACLs test skipped as rdiff-backup was started "
-                "with --no-acls option",
-                log.INFO,
-            )
-            self.acls = None
-            return
-
         try:
             import posix1e
         except ImportError:
@@ -336,7 +330,7 @@ class FSAbilities:
                 "path {pa}".format(pa=rp),
                 log.INFO,
             )
-            self.acls = False
+            self.acls = None
             return
 
         try:
@@ -433,18 +427,6 @@ class FSAbilities:
         """
         Set extended attributes from rp. Tests writing if write is true.
         """
-        assert (
-            rp.conn is Globals.local_connection
-        ), "Action only foreseen locally and not over {conn}.".format(conn=rp.conn)
-        assert rp.lstat(), "Path '{rp}' must exist to test EAs.".format(rp=rp)
-        if not Globals.eas_active:
-            log.Log(
-                "Extended attributes test skipped as rdiff-backup was "
-                "started with --no-eas option",
-                log.INFO,
-            )
-            self.eas = None
-            return
         try:
             import xattr.pyxattr_compat as xattr
         except ImportError:
@@ -456,7 +438,7 @@ class FSAbilities:
                     "not supported on filesystem at path {pa}".format(pa=rp),
                     log.INFO,
                 )
-                self.eas = False
+                self.eas = None
                 return
 
         test_ea = b"test val"
@@ -491,19 +473,6 @@ class FSAbilities:
         """
         Test if windows access control lists are supported
         """
-        assert (
-            dir_rp.conn is Globals.local_connection
-        ), "Action only foreseen locally and not over {conn}.".format(conn=dir_rp.conn)
-        assert dir_rp.lstat(), "Path '{rp}' must exist to test ACLs.".format(rp=dir_rp)
-        if not Globals.win_acls_active:
-            log.Log(
-                "Windows ACLs test skipped as rdiff-backup was started "
-                "with --no-acls option",
-                log.INFO,
-            )
-            self.win_acls = None
-            return
-
         try:
             import win32security
             import pywintypes
@@ -513,7 +482,7 @@ class FSAbilities:
                 "supported by filesystem at path {pa}".format(pa=dir_rp),
                 log.INFO,
             )
-            self.win_acls = False
+            self.win_acls = None
             return
         try:
             sd = win32security.GetNamedSecurityInfo(
@@ -586,7 +555,7 @@ class FSAbilities:
         try:
             import Carbon.File
         except (ImportError, AttributeError):
-            self.carbonfile = False
+            self.carbonfile = None
             return
 
         try:
@@ -601,9 +570,6 @@ class FSAbilities:
         """
         Test for resource forks by writing to regular_file/..namedfork/rsrc
         """
-        assert (
-            dir_rp.conn is Globals.local_connection
-        ), "Action only foreseen locally and not over {conn}.".format(conn=dir_rp.conn)
         reg_rp = dir_rp.append("regfile")
         reg_rp.touch()
 
@@ -793,6 +759,25 @@ class FSAbilities:
             log.INFO,
         )
         self.escape_trailing_spaces = False
+
+
+def detect_fs_abilities(root_rp, writable=True):
+    """
+    Detect file system abilities of the given directory, either in read-only
+    or write mode.
+    Returns an FSAbilities object if detection goes well, else a 
+    """
+    assert (
+        root_rp.conn is Globals.local_connection
+    ), "Action only foreseen locally and not over {conn}.".format(conn=root_rp.conn)
+    try:
+        return FSAbilities(root_rp, writable=writable)
+    except OSError as exc:
+        log.Log(
+            "Failed to detect file system abilities due to '{ex}'".format(ex=exc),
+            log.ERROR,
+        )
+        return None
 
 
 class SetGlobals:

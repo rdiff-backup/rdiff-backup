@@ -1752,9 +1752,9 @@ information in it.
             # base dir can be _potentially_ writable but actually read-only
             # to map the actual rights of the root directory, whereas the
             # data dir is alway writable
-            return fs_abilities.FSAbilities(cls._data_dir, writable=True)
+            return fs_abilities.detect_fs_abilities(cls._data_dir, writable=True)
         else:
-            return fs_abilities.FSAbilities(cls._base_dir, writable=False)
+            return fs_abilities.detect_fs_abilities(cls._base_dir, writable=False)
 
     # @API(RepoShadow.get_config, 201)
     @classmethod
