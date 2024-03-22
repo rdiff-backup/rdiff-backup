@@ -15,13 +15,13 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class FSAbilitiesTest(unittest.TestCase):
-    """Test testing of file system abilities
+    """
+    Test testing of file system abilities
 
     Some of these tests assume that the actual file system tested has
     the given abilities.  If the file system this is run on differs
     from the original test system, this test may/should fail. Change
     the expected values below.
-
     """
 
     # Describes standard linux file system without acls/eas
@@ -63,7 +63,7 @@ class FSAbilitiesTest(unittest.TestCase):
     def testReadOnly(self):
         """Test basic querying read only"""
         base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
-        fsa = fs_abilities.FSAbilities(base_dir, writable=False)
+        fsa = fs_abilities.detect_fs_abilities(base_dir, writable=False)
         print(fsa)
         self.assertFalse(fsa.writable)
         self.assertEqual(fsa.eas, self.eas)
@@ -81,7 +81,7 @@ class FSAbilitiesTest(unittest.TestCase):
         new_dir.setdata()
         new_dir.mkdir()
         t = time.time()
-        fsa = fs_abilities.FSAbilities(new_dir)
+        fsa = fs_abilities.detect_fs_abilities(new_dir)
         print("Time elapsed = ", time.time() - t)
         print(fsa)
         self.assertTrue(fsa.writable)
@@ -105,7 +105,7 @@ class FSAbilitiesTest(unittest.TestCase):
     def test_case_sensitive(self):
         """Test a read-only case-INsensitive directory"""
         rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)
-        fsa = fs_abilities.FSAbilities(rp, writable=False)
+        fsa = fs_abilities.detect_fs_abilities(rp, writable=False)
         fsa._detect_case_sensitive_readonly(rp)
         self.assertEqual(fsa.case_sensitive, 0)
 
