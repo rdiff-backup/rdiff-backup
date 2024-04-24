@@ -765,7 +765,7 @@ def detect_fs_abilities(root_rp, writable=True):
     """
     Detect file system abilities of the given directory, either in read-only
     or write mode.
-    Returns an FSAbilities object if detection goes well, else a 
+    Returns an FSAbilities object if detection goes well, else None if it fails
     """
     assert (
         root_rp.conn is Globals.local_connection
