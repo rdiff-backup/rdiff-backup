@@ -29,7 +29,7 @@ fi
 LIBRSYNC_DIR=${HOME}/librsync${bits}
 export LIBRSYNC_DIR
 
-RDIFF_BACKUP_VERSION=rdiff-backup-$(./tools/get_project_metadata.py Version)-${bits}
+RDIFF_BACKUP_VERSION=rdiff-backup-$(${PYEXE} ./tools/get_project_metadata.py Version)-${bits}
 export RDIFF_BACKUP_VERSION
 
 ${TOXEXE} -c tox_win.ini -e buildexe

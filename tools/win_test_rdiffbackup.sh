@@ -27,7 +27,7 @@ fi
 LIBRSYNC_DIR=${HOME}/librsync${bits}
 export LIBRSYNC_DIR
 
-ver_name=rdiff-backup-$(./tools/get_project_metadata.py Version)
+ver_name=rdiff-backup-$(${PYEXE} ./tools/get_project_metadata.py Version)
 py_ver_brief=${PYTHON_VERSION%.[0-9]}
 
 # Extract the test files one directory higher
