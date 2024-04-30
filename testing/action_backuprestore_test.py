@@ -19,8 +19,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
 
     def setUp(self):
         self.base_dir = os.path.join(TEST_BASE_DIR, b"action_backup_restore")
-        # Windows can't handle too long filenames
-        long_multi = 10 if os.name == "nt" else 25
+        # Windows can't handle too long filenames, FIXME issue #782
+        long_multi = 5 if os.name == "nt" else 25
         self.from1_struct = {
             "from1": {
                 "contents": {
