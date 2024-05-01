@@ -1,6 +1,7 @@
 ---
 collections:
-- ansible.windows
-- chocolatey.chocolatey
-- community.windows
-- ansible.posix
+  - name: ansible.windows
+    version: ">=1.11.0"
+  - chocolatey.chocolatey
+  - community.windows
+  - ansible.posix
