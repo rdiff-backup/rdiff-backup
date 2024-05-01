@@ -16,14 +16,14 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
-"""Determine the capabilities of given file system
+"""
+Determine the capabilities of given file system
 
 rdiff-backup needs to read and write to file systems with varying
 abilities.  For instance, some file systems and not others have ACLs,
 are case-sensitive, or can store ownership information.  The code in
 this module tests the file system for various features, and returns an
 FSAbilities object describing it.
-
 """
 
 import errno

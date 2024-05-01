@@ -47,6 +47,11 @@ try:
 except (ImportError, AttributeError):
     carbon_type = type(None)
 
+if os.name == "nt":  # because we ignore hardlinks under Windows
+    hardlinks_type = type(None)
+else:
+    hardlinks_type = bool
+
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -102,7 +107,7 @@ class FSAbilitiesTest(unittest.TestCase):
         print(fsa)
         self.assertTrue(fsa.writable)
         self.assertIsInstance(fsa.ownership, bool)
-        self.assertIsInstance(fsa.hardlinks, bool)
+        self.assertIsInstance(fsa.hardlinks, hardlinks_type)
         self.assertIsInstance(fsa.fsync_dirs, bool)
         self.assertIsInstance(fsa.dir_inc_perms, bool)
         self.assertIsInstance(fsa.high_perms, bool)
