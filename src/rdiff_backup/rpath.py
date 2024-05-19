@@ -1415,7 +1415,7 @@ class RPath(RORPath):
 
     def write_win_acl(self, acl_meta):
         """Change access control list of rp"""
-        acl_win.write_meta(self, acl_meta)
+        acl_meta.write_to_rp(self)
         self.data["win_acl"] = acl_meta
 
     def get_path_as_list(self):

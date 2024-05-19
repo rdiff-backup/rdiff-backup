@@ -68,6 +68,18 @@ class ACL:
         self.__acl = b""
         self.index = index
 
+    def __eq__(self, other):
+        """Equal if Windows ACLs are equal"""
+        assert isinstance(
+            other, ACL
+        ), "You can only compare with Windows ACLs not with {otype}.".format(
+            otype=type(other)
+        )
+        return other.__acl == self.__acl
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __bytes__(self):
         return b"# file: %b\n%b\n" % (C.acl_quote(self.get_indexpath()), self.__acl)
 
@@ -77,7 +89,7 @@ class ACL:
     def get_indexpath(self):
         return self.index and b"/".join(self.index) or b"."
 
-    def load_from_rp(self, rp, skip_inherit_only=True):
+    def read_from_rp(self, rp, skip_inherit_only=True):
         self.index = rp.index
 
         # Sometimes, we are asked to load from an rpath when ACL's
@@ -295,7 +307,7 @@ class WinAccessControlListFile(meta.FlatFile):
             assert rorp, "Missing rorp for index {idx}.".format(idx=wacl.index)
             if not wacl:
                 wacl = get_meta_object(rorp.index)
-            rorp.set_win_acl(bytes(wacl))
+            rorp.set_win_acl(wacl)
             yield rorp
 
     def write_object(self, rorp):
@@ -361,23 +373,14 @@ def get_meta(rp):
     assert (
         rp.conn is Globals.local_connection
     ), "Function works locally not over '{co}'.".format(co=rp.conn)
-    acl = get_meta_object()
-    acl.load_from_rp(rp)
-    return bytes(acl)
+    acl = get_meta_object(rp.index)
+    acl.read_from_rp(rp)
+    return acl
 
 
 def get_blank_meta(index):
     acl = get_meta_object(index)
-    return bytes(acl)
-
-
-def write_meta(rp, acl_str):
-    assert (
-        rp.conn is Globals.local_connection
-    ), "Function works locally not over '{co}'.".format(co=rp.conn)
-    acl = get_meta_object()
-    acl.from_string(acl_str)
-    acl.write_to_rp(rp)
+    return acl
 
 
 def get_meta_object(*params):
