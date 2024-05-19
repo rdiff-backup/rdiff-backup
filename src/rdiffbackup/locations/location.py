@@ -116,7 +116,7 @@ class LocationShadow:
 
     @classmethod
     def get_fs_abilities(cls):
-        return fs_abilities.FSAbilities(cls._base_dir, cls._must_be_writable)
+        return fs_abilities.detect_fs_abilities(cls._base_dir, cls._must_be_writable)
 
     @classmethod
     def _is_existing(cls):
