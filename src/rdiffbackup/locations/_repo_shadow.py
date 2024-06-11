@@ -717,7 +717,7 @@ class RepoShadow(location.LocationShadow):
         """
         Initialize repository for looping through the increments
         """
-        cls._initialize_restore(cls._data_dir, restore_to_time)
+        cls._initialize_restore(restore_to_time)
         cls._initialize_rf_cache(cls._ref_path, cls._ref_inc)
 
     # @API(RepoShadow.finish_loop, 201)
@@ -812,11 +812,10 @@ class RepoShadow(location.LocationShadow):
         return return_list
 
     @classmethod
-    def _initialize_restore(cls, data_dir, restore_to_time):
+    def _initialize_restore(cls, restore_to_time):
         """
         Set class variable _restore_time on mirror conn
         """
-        cls._data_dir = data_dir
         cls._set_restore_time(restore_to_time)
         # it's a bit ugly to set the values to another class, but less than
         # the other way around as it used to be
