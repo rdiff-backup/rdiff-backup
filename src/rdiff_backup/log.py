@@ -31,8 +31,8 @@ from rdiff_backup import Globals
 LOGFILE_ENCODING = "utf-8"
 
 # type definitions
-Verbosity: typing.TypeAlias = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-InputVerbosity: typing.TypeAlias = int | str
+Verbosity = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # : typing.TypeAlias
+InputVerbosity = typing.Union[int, str]  # : typing.TypeAlias
 
 # we need to define constants
 NONE: Verbosity = 0  # are always output as-is on stdout
@@ -185,7 +185,7 @@ class Logger:
     def set_verbosity(
         self,
         file_verbosity: InputVerbosity,
-        term_verbosity: InputVerbosity | None = None,
+        term_verbosity: typing.Union[InputVerbosity, None] = None,
     ) -> int:
         """
         Set verbosity levels, logfile and terminal.  Takes numbers or strings.

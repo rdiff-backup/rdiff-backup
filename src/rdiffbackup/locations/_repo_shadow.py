@@ -647,7 +647,7 @@ class RepoShadow(location.LocationShadow):
 
     # @API(RepoShadow.touch_current_mirror, 201)
     @classmethod
-    def touch_current_mirror(cls, current_time_str):
+    def touch_current_mirror(cls, current_time):
         """
         Make a file like current_mirror.<datetime>.data to record time
 
@@ -659,8 +659,9 @@ class RepoShadow(location.LocationShadow):
         When doing the initial full backup, the file can be created after
         everything else is in place.
         """
+        current_time_bytes = Time.timetobytes(current_time)
         mirrorrp = cls._data_dir.append(
-            b".".join((b"current_mirror", os.fsencode(current_time_str), b"data"))
+            b".".join((b"current_mirror", current_time_bytes, b"data"))
         )
         log.Log("Writing mirror marker {mm}".format(mm=mirrorrp), log.INFO)
         try:
@@ -1517,7 +1518,7 @@ information in it.
                 log.WARNING,
             )
             return False
-        cls.touch_current_mirror(Time.timetostring(inc_times[-2]))
+        cls.touch_current_mirror(inc_times[-2])
         return True
 
     @classmethod

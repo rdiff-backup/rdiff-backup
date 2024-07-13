@@ -137,7 +137,7 @@ class BackupAction(actions.BaseAction):
         )
 
         if previous_time:
-            self.repo.touch_current_mirror(Time.getcurtimestr())
+            self.repo.touch_current_mirror(Time.getcurtime())
 
         source_rpiter = self.dir.get_select()
         dest_sigiter = self.repo.get_sigs(source_rpiter, previous_time)
@@ -147,7 +147,7 @@ class BackupAction(actions.BaseAction):
         if previous_time:
             self.repo.remove_current_mirror()
         else:
-            self.repo.touch_current_mirror(Time.getcurtimestr())
+            self.repo.touch_current_mirror(Time.getcurtime())
 
         self.repo.close_statistics(time.time())
 

@@ -8,7 +8,7 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath, Time
+from rdiff_backup import Globals, rpath
 from rdiffbackup.locations import _repo_shadow
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
@@ -133,7 +133,7 @@ class ActionRegressTest(unittest.TestCase):
             True,
             True,
         )
-        _repo_shadow.RepoShadow.touch_current_mirror(Time.timetostring(20000))
+        _repo_shadow.RepoShadow.touch_current_mirror(20000)
 
         # the current process (the test) is still running, hence it fails
         self.assertNotEqual(
@@ -176,7 +176,7 @@ class ActionRegressTest(unittest.TestCase):
         )
         self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
         # we again simulate a crash
-        _repo_shadow.RepoShadow.touch_current_mirror(Time.timetostring(10000))
+        _repo_shadow.RepoShadow.touch_current_mirror(10000)
         # and then try to backup, which fails because without force
         self.assertNotEqual(
             comtst.rdiff_backup_action(

@@ -165,11 +165,11 @@ class Repo(location.Location):
         """
         return self._shadow.apply(source_diffiter, previous_time)
 
-    def touch_current_mirror(self, current_time_str):
+    def touch_current_mirror(self, current_time):
         """
         Shadow function for RepoShadow.touch_current_mirror
         """
-        return self._shadow.touch_current_mirror(current_time_str)
+        return self._shadow.touch_current_mirror(current_time)
 
     def remove_current_mirror(self):
         """
