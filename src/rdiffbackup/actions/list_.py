@@ -26,9 +26,10 @@ builtin 'list' class.
 """
 
 import yaml
-from rdiff_backup import Globals, statistics, Time
+from rdiff_backup import statistics, Time
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
+from rdiffbackup.singletons import consts
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
@@ -104,11 +105,11 @@ class ListAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.repo.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         if self.values["entity"] == "files":
@@ -116,13 +117,13 @@ class ListAction(actions.BaseAction):
                 self.values["changed_since"] or self.values["at"]
             )
             if self.action_time is None:
-                return ret_code | Globals.RET_CODE_ERR
+                return ret_code | consts.RET_CODE_ERR
 
         return ret_code
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         if self.values["entity"] == "increments":
@@ -167,7 +168,7 @@ class ListAction(actions.BaseAction):
                     stat_obj.get_byte_summary_string(triples[-1]["total_size"]),
                 )
             )
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def _list_increments(self):
         """
@@ -187,21 +188,21 @@ class ListAction(actions.BaseAction):
             print(
                 "Current mirror: {ti}".format(ti=Time.timetopretty(incs[-1]["time"]))
             )  # time of the mirror
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def _list_files_changed_since(self):
         """List all the files under rp that have changed since restoretime"""
         rorp_iter = self.repo.list_files_changed_since(self.action_time)
         for rorp in rorp_iter:
             print(str(rorp))  # this is a hack to transfer information
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
         rorp_iter = self.repo.list_files_at_time(self.action_time)
         for rorp in rorp_iter:
             print(str(rorp))  # this is a hack to transfer information
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
 
 def get_plugin_class():

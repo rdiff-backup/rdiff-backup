@@ -20,7 +20,8 @@
 
 import pickle
 import array
-from rdiff_backup import Globals, robust, rpath
+from rdiff_backup import robust, rpath
+from rdiffbackup.singletons import consts
 
 
 class IterFileException(Exception):
@@ -202,7 +203,7 @@ class FileWrappingIter:
     The actual file is a sequence of marshaled objects, each preceded
     by 8 bytes which identifies the following the type of object, and
     specifies its length.  File objects are not marshalled, but the
-    data is written in chunks of Globals.blocksize, and the following
+    data is written in chunks of consts.BLOCKSIZE, and the following
     blocks can identify themselves as continuations.
 
     """
@@ -246,7 +247,7 @@ class FileWrappingIter:
                 self.currently_in_file = currentobj
                 self._add_from_file(b"f")
             else:
-                pickled_data = pickle.dumps(currentobj, Globals.PICKLE_PROTOCOL)
+                pickled_data = pickle.dumps(currentobj, consts.PICKLE_PROTOCOL)
                 self.array_buf.frombytes(b"o")
                 self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
                 self.array_buf.frombytes(pickled_data)
@@ -261,17 +262,17 @@ class FileWrappingIter:
 
         """
         buf = robust.check_common_error(
-            self._read_error_handler, self.currently_in_file.read, [Globals.blocksize]
+            self._read_error_handler, self.currently_in_file.read, [consts.BLOCKSIZE]
         )
         if buf is None:  # error occurred above, encode exception
             self.currently_in_file = None
-            excstr = pickle.dumps(self.last_exception, Globals.PICKLE_PROTOCOL)
+            excstr = pickle.dumps(self.last_exception, consts.PICKLE_PROTOCOL)
             total = b"".join((b"e", self._i2b(len(excstr), 7), excstr))
         else:
             total = b"".join((prefix_letter, self._i2b(len(buf), 7), buf))
             if buf == b"":  # end of file
                 cstr = pickle.dumps(
-                    self.currently_in_file.close(), Globals.PICKLE_PROTOCOL
+                    self.currently_in_file.close(), consts.PICKLE_PROTOCOL
                 )
                 self.currently_in_file = None
                 total += b"".join((b"h", self._i2b(len(cstr), 7), cstr))
@@ -330,8 +331,8 @@ class MiscIterToFile(FileWrappingIter):
         max_buffer_rps is the maximum size of the buffer in rorps.
 
         """
-        self.max_buffer_bytes = max_buffer_bytes or Globals.conn_bufsize
-        self.max_buffer_rps = max_buffer_rps or Globals.pipeline_max_length
+        self.max_buffer_bytes = max_buffer_bytes or consts.CONN_BUFSIZE
+        self.max_buffer_rps = max_buffer_rps or consts.PIPELINE_MAX_LENGTH
         self.rorps_in_buffer = 0
         self.next_in_line = None
         FileWrappingIter.__init__(self, rpiter)
@@ -398,7 +399,7 @@ class MiscIterToFile(FileWrappingIter):
 
     def _add_misc_object(self, obj):
         """Add an arbitrary pickleable object to the buffer"""
-        pickled_data = pickle.dumps(obj, Globals.PICKLE_PROTOCOL)
+        pickled_data = pickle.dumps(obj, consts.PICKLE_PROTOCOL)
         self.array_buf.frombytes(b"o")
         self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
         self.array_buf.frombytes(pickled_data)
@@ -407,12 +408,12 @@ class MiscIterToFile(FileWrappingIter):
         """Add a rorp to the buffer"""
         if rorp.file:
             pickled_data = pickle.dumps(
-                (rorp.index, rorp.data, 1), Globals.PICKLE_PROTOCOL
+                (rorp.index, rorp.data, 1), consts.PICKLE_PROTOCOL
             )
             self.next_in_line = rorp.file
         else:
             pickled_data = pickle.dumps(
-                (rorp.index, rorp.data, 0), Globals.PICKLE_PROTOCOL
+                (rorp.index, rorp.data, 0), consts.PICKLE_PROTOCOL
             )
             self.rorps_in_buffer += 1
         self.array_buf.frombytes(b"r")

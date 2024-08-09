@@ -24,8 +24,9 @@ This plug-in tests that all remote locations are properly reachable and
 usable for a back-up.
 """
 
-from rdiffbackup.locations import fs_abilities, location
 from rdiff_backup import Globals, log
+from rdiffbackup.locations import fs_abilities, location
+from rdiffbackup.singletons import consts
 
 
 class ReadDir(location.Location):
@@ -43,12 +44,12 @@ class ReadDir(location.Location):
 
     def setup(self):
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
-            return ret_code | Globals.RET_CODE_ERR
+            return ret_code | consts.RET_CODE_ERR
         else:
             log.Log(
                 "--- Read directory file system capabilities ---\n"
@@ -110,12 +111,12 @@ class WriteDir(location.Location):
 
     def setup(self, src_repo):
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
-            return ret_code | Globals.RET_CODE_ERR
+            return ret_code | consts.RET_CODE_ERR
         else:
             log.Log(
                 "--- Write directory file system capabilities ---\n"
@@ -123,10 +124,10 @@ class WriteDir(location.Location):
                 log.INFO,
             )
         ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         return ret_code

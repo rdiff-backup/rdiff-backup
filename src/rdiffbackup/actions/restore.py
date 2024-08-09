@@ -22,9 +22,10 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import Globals, log
+from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
+from rdiffbackup.singletons import consts
 
 
 class RestoreAction(actions.BaseAction):
@@ -95,7 +96,7 @@ class RestoreAction(actions.BaseAction):
                     "restore at the same time.",
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_ERR
+                ret_code |= consts.RET_CODE_ERR
             elif not self.values["increment"]:
                 self.values["increment"] = True
         elif self.repo.ref_type in ("base", "subpath"):
@@ -105,7 +106,7 @@ class RestoreAction(actions.BaseAction):
                     "give an increment file",
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_ERR
+                ret_code |= consts.RET_CODE_ERR
             elif not self.values["at"]:
                 self.values["at"] = "now"
 
@@ -141,7 +142,7 @@ class RestoreAction(actions.BaseAction):
                     "could lead to data loss",
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_ERR
+                ret_code |= consts.RET_CODE_ERR
 
         return ret_code
 
@@ -149,15 +150,15 @@ class RestoreAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code |= self.repo.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code |= self.dir.setup(self.repo)
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         # TODO validate how much of the following lines and methods
@@ -166,7 +167,7 @@ class RestoreAction(actions.BaseAction):
         if self.values["at"]:
             self.action_time = self.repo.get_parsed_time(self.values["at"])
             if self.action_time is None:
-                return ret_code | Globals.RET_CODE_ERR
+                return ret_code | consts.RET_CODE_ERR
         elif self.values["increment"]:
             self.action_time = self.repo.orig_path.getinctime()
         else:  # this should have been catched in the check method
@@ -175,7 +176,7 @@ class RestoreAction(actions.BaseAction):
                 "an increment have been identified so far",
                 log.ERROR,
             )
-            return ret_code | Globals.RET_CODE_ERR
+            return ret_code | consts.RET_CODE_ERR
         # We must set both sides because restore filtering is different from
         # select filtering.  For instance, if a file is excluded it should
         # not be deleted from the target directory.
@@ -186,13 +187,13 @@ class RestoreAction(actions.BaseAction):
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         # This is more a check than a part of run, but because backup does
         # the regress in the run section, we also do the check here...
         ret_code |= self._operate_regress(try_regress=False)
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             # source could be read-only, so we don't try to regress it
             log.Log(
                 "Previous backup to {rp} seems to have failed. "
@@ -208,9 +209,9 @@ class RestoreAction(actions.BaseAction):
                 "Could not complete restore due to exception '{ex}'".format(ex=exc),
                 log.ERROR,
             )
-            return ret_code | Globals.RET_CODE_ERR
+            return ret_code | consts.RET_CODE_ERR
         else:
-            if ret_code & Globals.RET_CODE_ERR:
+            if ret_code & consts.RET_CODE_ERR:
                 log.Log("Restore somehow failed", log.ERROR)
             else:
                 log.Log("Restore successfully finished", log.INFO)
@@ -232,7 +233,7 @@ class RestoreAction(actions.BaseAction):
         self.dir.apply(src_diff_iter)
         self.repo.finish_loop()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
 
 def get_plugin_class():

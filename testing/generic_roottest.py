@@ -12,6 +12,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import Globals, rpath
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -33,7 +34,7 @@ class BaseRootTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
     restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
 
-    def _run_cmd(self, cmd, expect_rc=Globals.RET_CODE_OK):
+    def _run_cmd(self, cmd, expect_rc=consts.RET_CODE_OK):
         print("Running: ", cmd)
         rc = comtst.os_system(cmd)
         self.assertEqual(
@@ -384,7 +385,7 @@ class HalfRoot(BaseRootTest):
             b"%s regress %s" % (comtst.RBBin, outrp.path),
             user.encode(),
         )
-        self._run_cmd(cmd5, Globals.RET_CODE_WARN)
+        self._run_cmd(cmd5, consts.RET_CODE_WARN)
 
 
 class NonRoot(BaseRootTest):

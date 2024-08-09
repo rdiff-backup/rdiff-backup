@@ -10,6 +10,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import Globals, rpath, Time
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -95,7 +96,7 @@ class RegressTest(unittest.TestCase):
             self.out_dir,
             None,
             extra_options=b"regress",
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
 
     def test_local(self):
@@ -121,7 +122,7 @@ class RegressTest(unittest.TestCase):
 
         cmd = (b"rdiff-backup", b"regress", self.out_dir)
         print("Executing:", cmd)
-        self.assertEqual(comtst.os_system(cmd), Globals.RET_CODE_WARN)
+        self.assertEqual(comtst.os_system(cmd), consts.RET_CODE_WARN)
 
     def make_unreadable(self):
         """Make unreadable input directory

@@ -27,6 +27,7 @@ import textwrap
 import typing
 import traceback
 from rdiff_backup import Globals
+from rdiffbackup.singletons import consts
 
 LOGFILE_ENCODING = "utf-8"
 
@@ -203,10 +204,10 @@ class Logger:
             else:
                 self.term_verbosity = self.validate_verbosity(term_verbosity)
         except ValueError:
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         else:
             self.file_verbosity = tmp_verbosity
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
 
     def open_logfile(self, log_rp):
         """Inform all connections of an open logfile.
