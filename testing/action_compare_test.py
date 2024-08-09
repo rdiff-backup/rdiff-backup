@@ -8,7 +8,7 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -89,7 +89,7 @@ class ActionCompareTest(unittest.TestCase):
                 b"compare",
                 ("--method", "meta"),
             ),
-            Globals.RET_CODE_FILE_WARN,
+            consts.RET_CODE_FILE_WARN,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
@@ -129,7 +129,7 @@ class ActionCompareTest(unittest.TestCase):
                 b"compare",
                 ("--at", "15000"),
             ),
-            Globals.RET_CODE_FILE_WARN,
+            consts.RET_CODE_FILE_WARN,
         )
 
         # then try to compare with hashes
@@ -143,7 +143,7 @@ class ActionCompareTest(unittest.TestCase):
                 b"compare",
                 ("--method", "hash"),
             ),
-            Globals.RET_CODE_FILE_WARN,
+            consts.RET_CODE_FILE_WARN,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
@@ -188,7 +188,7 @@ class ActionCompareTest(unittest.TestCase):
                 b"compare",
                 ("--method", "full"),
             ),
-            Globals.RET_CODE_FILE_WARN,
+            consts.RET_CODE_FILE_WARN,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(

@@ -34,6 +34,7 @@ from rdiff_backup import (
     Security,
 )
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import consts
 
 
 class ConnectionError(Exception):
@@ -260,7 +261,7 @@ class LowLevelPipeConnection(Connection):
 
     def _putobj(self, obj, req_num):
         """Send a generic python obj down the outpipe"""
-        self._write("o", pickle.dumps(obj, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("o", pickle.dumps(obj, consts.PICKLE_PROTOCOL), req_num)
 
     def _putbuf(self, buf, req_num):
         """Send buffer buf down the outpipe"""
@@ -284,12 +285,12 @@ class LowLevelPipeConnection(Connection):
 
         """
         rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index, rpath.data)
-        self._write("R", pickle.dumps(rpath_repr, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("R", pickle.dumps(rpath_repr, consts.PICKLE_PROTOCOL), req_num)
 
     def _putqrpath(self, qrpath, req_num):
         """Put a quoted rpath into the pipe (similar to _putrpath above)"""
         qrpath_repr = (qrpath.conn.conn_number, qrpath.base, qrpath.index, qrpath.data)
-        self._write("Q", pickle.dumps(qrpath_repr, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("Q", pickle.dumps(qrpath_repr, consts.PICKLE_PROTOCOL), req_num)
 
     def _putrorpath(self, rorpath, req_num):
         """Put an rorpath into the pipe
@@ -299,7 +300,7 @@ class LowLevelPipeConnection(Connection):
 
         """
         rorpath_repr = (rorpath.index, rorpath.data)
-        self._write("r", pickle.dumps(rorpath_repr, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("r", pickle.dumps(rorpath_repr, consts.PICKLE_PROTOCOL), req_num)
 
     def _putconn(self, pipeconn, req_num):
         """Put a connection into the pipe
@@ -468,7 +469,7 @@ class PipeConnection(LowLevelPipeConnection):
         Globals.connections.append(self)
         log.Log("Starting server", log.INFO)
         self._get_response(-1)
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def reval(self, function_string, *args):
         """

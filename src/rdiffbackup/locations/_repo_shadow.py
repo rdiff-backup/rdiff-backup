@@ -51,6 +51,7 @@ from rdiffbackup.locations import fs_abilities, increment, location
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
+from rdiffbackup.singletons import consts
 from rdiffbackup.utils import locking, simpleps
 
 # ### COPIED FROM BACKUP ####
@@ -154,13 +155,13 @@ class RepoShadow(location.LocationShadow):
     def setup(cls):
         if cls._must_be_writable:
             if not cls._create():
-                return Globals.RET_CODE_ERR
+                return consts.RET_CODE_ERR
         if cls._check_time and Globals.current_time <= cls.get_mirror_time():
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         Security.reset_restrict_path(cls._base_dir)
         lock_result = cls._lock()
-        ret_code = Globals.RET_CODE_OK
+        ret_code = consts.RET_CODE_OK
         if lock_result is False:
             if cls._values["force"]:
                 log.Log(
@@ -177,7 +178,7 @@ class RepoShadow(location.LocationShadow):
                     "or use the --force option".format(lf=cls._lockfile),
                     log.ERROR,
                 )
-                return Globals.RET_CODE_ERR
+                return consts.RET_CODE_ERR
         elif lock_result is None:
             log.Log(
                 "Repository couldn't be locked by file {lf}, probably "
@@ -186,13 +187,13 @@ class RepoShadow(location.LocationShadow):
                 log.NOTE,
             )
         ret_code |= cls._init_owners_mapping()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
         ret_code |= increment.init(
             cls._values.get("compression"),
             cls._values.get("not_compressed_regexp"),
         )
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
         return ret_code
 
@@ -551,7 +552,7 @@ class RepoShadow(location.LocationShadow):
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
         cls.CCPP = _CacheCollatedPostProcess(
             collated,
-            Globals.pipeline_max_length * 4,
+            consts.PIPELINE_MAX_LENGTH * 4,
             baserp,
             cls._data_dir,
             cls._values.get("file_statistics"),
@@ -563,7 +564,7 @@ class RepoShadow(location.LocationShadow):
         """
         Yield signatures of any changed destination files
         """
-        flush_threshold = Globals.pipeline_max_length - 2
+        flush_threshold = consts.PIPELINE_MAX_LENGTH - 2
         num_rorps_seen = 0
         for src_rorp, dest_rorp in cls.CCPP:
             # If we are backing up across a pipe, we must flush the pipeline
@@ -1166,7 +1167,7 @@ class RepoShadow(location.LocationShadow):
                 "No increment is older than '{ot}'".format(ot=time_string),
                 log.WARNING,
             )
-            return Globals.RET_CODE_WARN
+            return consts.RET_CODE_WARN
 
         for rp in yield_files(cls._data_dir):
             if (rp.isincfile() and rp.getinctime() < removal_time) or (
@@ -1174,7 +1175,7 @@ class RepoShadow(location.LocationShadow):
             ):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     @classmethod
     def _get_removal_time(cls, time_string, show_sizes):
@@ -1313,7 +1314,7 @@ class RepoShadow(location.LocationShadow):
 
         bad_files = 0
         no_hash = 0
-        ret_code = Globals.RET_CODE_OK
+        ret_code = consts.RET_CODE_OK
         for repo_rorp in repo_iter:
             if not repo_rorp.isreg():
                 continue
@@ -1325,7 +1326,7 @@ class RepoShadow(location.LocationShadow):
                     log.WARNING,
                 )
                 no_hash += 1
-                ret_code |= Globals.RET_CODE_FILE_WARN
+                ret_code |= consts.RET_CODE_FILE_WARN
                 continue
             fp = cls.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
             computed_hash = hash.compute_sha1_fp(fp)
@@ -1343,7 +1344,7 @@ class RepoShadow(location.LocationShadow):
                     ),
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_FILE_ERR
+                ret_code |= consts.RET_CODE_FILE_ERR
         cls.finish_loop()
         if bad_files:
             log.Log(
@@ -1383,10 +1384,10 @@ class RepoShadow(location.LocationShadow):
                 ),
                 log.ERROR,
             )
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         else:
             cls._logging_to_file = True
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
 
     @classmethod
     def _log_success(cls, src_rorp, mir_rorp=None):
@@ -1491,7 +1492,7 @@ information in it.
                 # Sync first, since we are marking dest dir as good now
                 C.sync()
             former_current_mirror_rp.delete()
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     # @API(RepoShadow.force_regress, 300)
     @classmethod

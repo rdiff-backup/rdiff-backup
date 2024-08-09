@@ -31,6 +31,7 @@ import os
 from rdiff_backup import Globals, log, robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import consts
 
 
 class FSAbilities:
@@ -888,7 +889,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def set_special_escapes(self, repo):
         """
@@ -1089,7 +1090,7 @@ class Repo2DirSetGlobals(SetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def set_special_escapes(self, repo):
         """
@@ -1199,7 +1200,7 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def set_eas(self):
         self._update_triple(self.dest_fsa.eas, ("eas_active", "eas_write", "eas_conn"))

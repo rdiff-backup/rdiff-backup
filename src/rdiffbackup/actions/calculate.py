@@ -22,8 +22,9 @@ A built-in rdiff-backup action plug-in to calculate average across multiple
 statistics files.
 """
 
-from rdiff_backup import Globals, statistics
+from rdiff_backup import statistics
 from rdiffbackup import actions
+from rdiffbackup.singletons import consts
 
 
 class CalculateAction(actions.BaseAction):
@@ -57,7 +58,7 @@ class CalculateAction(actions.BaseAction):
         to calculation method.
         """
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         statobjs = [

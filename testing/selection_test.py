@@ -11,6 +11,7 @@ import commontest as comtst
 import fileset
 
 from rdiff_backup import Globals, rpath, selection
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -828,7 +829,7 @@ class CommandTest(unittest.TestCase):
             testrp.path,
             backuprp.path,
             extra_options=(b"backup", b"--exclude", backuprp.path),
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
 
         self.assertTrue(
