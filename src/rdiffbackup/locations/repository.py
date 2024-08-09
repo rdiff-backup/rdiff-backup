@@ -21,9 +21,9 @@
 A location module to define repository classes as created by rdiff-backup
 """
 
-from rdiffbackup.locations import fs_abilities, location
-
 from rdiff_backup import Globals, log
+from rdiffbackup.locations import fs_abilities, location
+from rdiffbackup.singletons import consts
 
 
 class Repo(location.Location):
@@ -74,12 +74,12 @@ class Repo(location.Location):
         )
 
         ret_code = self._shadow.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         else:
             log.Log(
                 "--- Repository file system capabilities ---\n"
@@ -89,7 +89,7 @@ class Repo(location.Location):
 
         if src_dir is None:
             ret_code |= fs_abilities.SingleRepoSetGlobals(self)()
-            if ret_code & Globals.RET_CODE_ERR:
+            if ret_code & consts.RET_CODE_ERR:
                 return ret_code
         else:
             # FIXME this shouldn't be necessary, and the setting of variable
@@ -98,11 +98,11 @@ class Repo(location.Location):
             self.base_dir.conn.Globals.set_local("isbackup_writer", True)
             # this is the new way, more dedicated but not sufficient yet
             ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
-            if ret_code & Globals.RET_CODE_ERR:
+            if ret_code & consts.RET_CODE_ERR:
                 return ret_code
         self.base_dir = self.setup_finish()
 
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         return ret_code

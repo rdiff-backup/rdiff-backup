@@ -39,6 +39,7 @@ from rdiff_backup import (
 )
 from rdiffbackup.locations import location
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
+from rdiffbackup.singletons import consts
 
 # ### COPIED FROM BACKUP ####
 
@@ -87,7 +88,7 @@ class ReadDirShadow(location.LocationShadow):
         sel = selection.Select(base_rp)
         sel.parse_selection_args(select_opts)
         sel_iter = sel.get_select_iter()
-        cache_size = Globals.pipeline_max_length * 3  # to and from+leeway
+        cache_size = consts.PIPELINE_MAX_LENGTH * 3  # to and from+leeway
         cls._select = rorpiter.CacheIndexable(sel_iter, cache_size)
         # FIXME do we really need the cache? It can be removed if we remove
         # cls._select.get
@@ -322,14 +323,14 @@ class WriteDirShadow(location.LocationShadow):
                     "might be force overwritten by restore".format(tp=cls._base_dir),
                     log.WARNING,
                 )
-                ret_code |= Globals.RET_CODE_WARN
+                ret_code |= consts.RET_CODE_WARN
             else:
                 log.Log(
                     "Target path {tp} exists and isn't empty, "
                     "call with '--force' to overwrite".format(tp=cls._base_dir),
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_ERR
+                ret_code |= consts.RET_CODE_ERR
 
         return ret_code
 
@@ -337,7 +338,7 @@ class WriteDirShadow(location.LocationShadow):
     @classmethod
     def setup(cls):
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
         ret_code |= cls._init_owners_mapping()
         return ret_code

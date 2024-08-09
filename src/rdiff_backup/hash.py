@@ -20,6 +20,7 @@
 
 import hashlib
 from rdiff_backup import Globals
+from rdiffbackup.singletons import consts
 
 
 class FileWrapper:
@@ -81,8 +82,7 @@ def compute_sha1(rp, compressed=0):
 
 def compute_sha1_fp(fp, compressed=0):
     """Return hex sha1 hash of given file-like object"""
-    blocksize = Globals.blocksize
     fw = FileWrapper(fp)
-    while fw.read(blocksize):
+    while fw.read(consts.BLOCKSIZE):
         pass  # we rely on FileWrapper to calculate the checksum
     return fw.close().sha1_digest

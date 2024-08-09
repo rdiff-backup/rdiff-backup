@@ -24,9 +24,9 @@ This plug-in verifies that files in a repository at a given time
 have the correct hash.
 """
 
-from rdiff_backup import Globals
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
+from rdiffbackup.singletons import consts
 
 
 class VerifyAction(actions.BaseAction):
@@ -82,22 +82,22 @@ class VerifyAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.repo.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.action_time = self.repo.get_parsed_time(self.values["at"])
         if self.action_time is None:
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code |= self.repo.verify(self.action_time)

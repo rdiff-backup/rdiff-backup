@@ -27,6 +27,7 @@ import yaml
 from rdiff_backup import Globals, log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
+from rdiffbackup.singletons import consts
 
 
 class CompareAction(actions.BaseAction):
@@ -92,28 +93,28 @@ class CompareAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.dir.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.repo.setup(self.dir)
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.dir.set_select()
 
         self.action_time = self.repo.get_parsed_time(self.values["at"])
         if self.action_time is None:
-            return ret_code & Globals.RET_CODE_ERR
+            return ret_code & consts.RET_CODE_ERR
 
         return ret_code
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         compare_funcs = {
@@ -185,7 +186,7 @@ class CompareAction(actions.BaseAction):
             )
         if not changed_files_found:
             log.Log("No changes found. Directory matches backup data", log.NOTE)
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
         else:
             log.Log(
                 "Directory has {fd} file differences to backup".format(
@@ -193,7 +194,7 @@ class CompareAction(actions.BaseAction):
                 ),
                 log.WARNING,
             )
-            return Globals.RET_CODE_FILE_WARN
+            return consts.RET_CODE_FILE_WARN
 
 
 def get_plugin_class():

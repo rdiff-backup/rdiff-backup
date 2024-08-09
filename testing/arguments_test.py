@@ -7,8 +7,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals
 from rdiffbackup import arguments, actions_mgr
+from rdiffbackup.singletons import consts
 
 
 class ArgumentsTest(unittest.TestCase):
@@ -26,7 +26,7 @@ class ArgumentsTest(unittest.TestCase):
 
         output = subprocess.run([comtst.RBBin, b"info", b"--help"], capture_output=True)
         self.assertIn(b"Output information", output.stdout)
-        self.assertEqual(Globals.RET_CODE_OK, output.returncode)
+        self.assertEqual(consts.RET_CODE_OK, output.returncode)
 
     def test_error_return_code(self):
         """
@@ -36,7 +36,7 @@ class ArgumentsTest(unittest.TestCase):
             [comtst.RBBin, b"--thisdoesntexist"], capture_output=True
         )
         self.assertIn(b"the following arguments are required:", output.stderr)
-        self.assertEqual(Globals.RET_CODE_ERR, output.returncode)
+        self.assertEqual(consts.RET_CODE_ERR, output.returncode)
 
     def test_parse_function(self):
         """

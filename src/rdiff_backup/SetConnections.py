@@ -29,6 +29,7 @@ import re
 import sys
 import subprocess
 from rdiff_backup import connection, Globals, log, rpath
+from rdiffbackup.singletons import consts
 from rdiffbackup.utils import safestr
 
 # This is a list of remote commands used to start the connections.
@@ -154,22 +155,22 @@ def test_connections(rpaths):
     conn_len = len(Globals.connections)
     if conn_len == 1:
         log.Log("No remote connections specified, only local one available", log.ERROR)
-        return Globals.RET_CODE_FILE_ERR
+        return consts.RET_CODE_FILE_ERR
     elif conn_len != len(rpaths) + 1:
         print(
             "All {pa} parameters must be remote of the form "
             "'server::path'".format(pa=len(rpaths)),
             log.ERROR,
         )
-        return Globals.RET_CODE_FILE_ERR
+        return consts.RET_CODE_FILE_ERR
 
     # we create a list of all test results, skipping the connection 0, which
     # is the local one.
     results = map(lambda i: _test_connection(i, rpaths[i - 1]), range(1, conn_len))
     if all(results):
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
     else:
-        return Globals.RET_CODE_ERR
+        return consts.RET_CODE_ERR
 
 
 def parse_location(file_desc):

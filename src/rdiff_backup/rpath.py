@@ -43,9 +43,10 @@ import stat
 import tempfile
 import time
 from rdiff_backup import Globals, Time, log, C
-from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
+from rdiffbackup.singletons import consts
+from rdiffbackup.utils import usrgrp
 
 try:
     import win32api
@@ -467,7 +468,7 @@ class RORPath:
     def close_if_necessary(self):
         """If file is present, discard data and close"""
         if self.file:
-            while self.file.read(Globals.blocksize):
+            while self.file.read(consts.BLOCKSIZE):
                 pass
             self.file.close()
             self._file_already_open = False
@@ -1537,7 +1538,6 @@ class _RPathFileHook:
 
 def copyfileobj(inputfp, outputfp):
     """Copies file inputfp to outputfp in blocksize intervals"""
-    blocksize = Globals.blocksize
 
     sparse = False
     """Negative seeks are not supported by GzipFile"""
@@ -1546,7 +1546,7 @@ def copyfileobj(inputfp, outputfp):
         compressed = True
 
     while 1:
-        inbuf = inputfp.read(blocksize)
+        inbuf = inputfp.read(consts.BLOCKSIZE)
         if not inbuf:
             break
 
@@ -2082,10 +2082,9 @@ def _cmp_file_attribs(rp1, rp2):
 
 def _cmp_file_obj(fp1, fp2):
     """True if file objects fp1 and fp2 contain same data, used for testing"""
-    blocksize = Globals.blocksize
     while 1:
-        buf1 = fp1.read(blocksize)
-        buf2 = fp2.read(blocksize)
+        buf1 = fp1.read(consts.BLOCKSIZE)
+        buf2 = fp2.read(consts.BLOCKSIZE)
         if buf1 != buf2:
             return None
         elif not buf1:

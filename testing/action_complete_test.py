@@ -7,7 +7,7 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -25,7 +25,7 @@ class ActionCompleteTest(unittest.TestCase):
             comtst.rdiff_backup_action(
                 True, True, None, None, ("--api-version", "201"), b"complete", ()
             ),
-            Globals.RET_CODE_ERR,
+            consts.RET_CODE_ERR,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
@@ -37,7 +37,7 @@ class ActionCompleteTest(unittest.TestCase):
                 b"complete",
                 ("--cword", "1", "--", "rdiff-backup"),
             ),
-            Globals.RET_CODE_ERR,
+            consts.RET_CODE_ERR,
         )
 
         # then try different combinations of verbosity

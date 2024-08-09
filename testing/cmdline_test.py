@@ -13,6 +13,7 @@ import fileset
 
 from rdiff_backup import Globals, log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -618,7 +619,7 @@ class FinalMisc(PathSetter):
             Local.vftrp.path,
             Local.rpout.path,
             extra_options=(b"--tempdir", b"DoesSurelyNotExist", b"backup"),
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
 
@@ -783,7 +784,7 @@ class FinalSelection(PathSetter):
             Local.rpout.path,
             Local.rpout1.path,
             extra_options=(b"--force", b"restore", b"--at", b"now") + excludes,
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
         for rp in (file1_target, file2_target, existing_file):
             rp.setdata()
@@ -910,7 +911,7 @@ class FinalBugs(PathSetter):
             None,
             current_time=30000,
             extra_options=b"regress",
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
 
         # Check to see if file still there

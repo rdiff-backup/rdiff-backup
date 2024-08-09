@@ -22,6 +22,7 @@ import os
 import sys
 from rdiff_backup import Globals, log
 from rdiffbackup import arguments, actions_mgr
+from rdiffbackup.singletons import consts
 
 if os.name == "nt":
     import msvcrt
@@ -60,7 +61,7 @@ def main_run(arglist, security_override=False):
 
     # setup the system settings globally
     ret_val = _system_setup(parsed_args)
-    if ret_val & Globals.RET_CODE_ERR:
+    if ret_val & consts.RET_CODE_ERR:
         return ret_val
 
     # instantiate the action object from the dictionary, handing over the
@@ -76,7 +77,7 @@ def main_run(arglist, security_override=False):
 
     # validate that everything looks good before really starting
     ret_val |= action.pre_check()
-    if ret_val & Globals.RET_CODE_ERR:
+    if ret_val & consts.RET_CODE_ERR:
         log.Log(
             "Action {ac} failed on step {st}".format(
                 ac=parsed_args["action"], st="pre_check"
@@ -104,7 +105,7 @@ def main_run(arglist, security_override=False):
             Security._security_level = "override"
 
         ret_val |= conn_act.check()
-        if ret_val & Globals.RET_CODE_ERR:
+        if ret_val & consts.RET_CODE_ERR:
             log.Log(
                 "Action {ac} failed on step {st}".format(
                     ac=parsed_args["action"], st="check"
@@ -114,7 +115,7 @@ def main_run(arglist, security_override=False):
             return ret_val
 
         ret_val |= conn_act.setup()
-        if ret_val & Globals.RET_CODE_ERR:
+        if ret_val & consts.RET_CODE_ERR:
             log.Log(
                 "Action {ac} failed on step {st}".format(
                     ac=parsed_args["action"], st="setup"
@@ -124,7 +125,7 @@ def main_run(arglist, security_override=False):
             return ret_val
 
         ret_val |= conn_act.run()
-        if ret_val & Globals.RET_CODE_ERR:
+        if ret_val & consts.RET_CODE_ERR:
             log.Log(
                 "Action {ac} failed on step {st}".format(
                     ac=parsed_args["action"], st="run"
@@ -134,19 +135,19 @@ def main_run(arglist, security_override=False):
             return ret_val
 
     # Give a final summary of what might have happened to the user
-    if ret_val & Globals.RET_CODE_WARN:
+    if ret_val & consts.RET_CODE_WARN:
         log.Log(
             "Action {ac} emitted warnings, "
             "see previous messages for details".format(ac=parsed_args["action"]),
             log.WARNING,
         )
-    if ret_val & Globals.RET_CODE_FILE_ERR:
+    if ret_val & consts.RET_CODE_FILE_ERR:
         log.Log(
             "Action {ac} failed on one or more files, "
             "see previous messages for details".format(ac=parsed_args["action"]),
             log.WARNING,
         )
-    if ret_val & Globals.RET_CODE_FILE_WARN:
+    if ret_val & consts.RET_CODE_FILE_WARN:
         log.Log(
             "Action {ac} emitted a warning on one or more files, "
             "see previous messages for details".format(ac=parsed_args["action"]),
@@ -165,7 +166,7 @@ def _system_setup(arglist):
     ret_val = log.Log.set_verbosity(
         arglist.get("verbosity"), arglist.get("terminal_verbosity")
     )
-    if ret_val & Globals.RET_CODE_ERR:
+    if ret_val & consts.RET_CODE_ERR:
         return ret_val
     if arglist.get("api_version") is not None:  # FIXME catch also env variable?
         Globals.set_api_version(arglist.get("api_version"))

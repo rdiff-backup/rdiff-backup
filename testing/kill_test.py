@@ -13,6 +13,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import Globals, rpath, Time
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -250,7 +251,7 @@ class KillTest(ProcessFuncs):
             result = self.mark_incomplete(curtime, Local.rpout)
             self.assertEqual(
                 self.exec_rb(None, 1, "regress", Local.rpout.path),
-                Globals.RET_CODE_WARN,
+                consts.RET_CODE_WARN,
             )
             self.assertTrue(
                 comtst.compare_recursive(old_rp, Local.rpout, compare_hardlinks=0)
