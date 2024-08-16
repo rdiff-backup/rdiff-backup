@@ -30,7 +30,7 @@ import sys
 import tempfile
 import yaml
 from rdiff_backup import Globals, log, Security, SetConnections, Time
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
 # The default regexp for not compressing those files
@@ -701,8 +701,8 @@ class BaseAction:
         """
         return {
             "exec": {
-                "version": Globals.version,
-                "api_version": Globals.api_version,
+                "version": specifics.version,
+                "api_version": specifics.api_version,
                 "argv": sys.argv,
                 "parsed": parsed,
             },

@@ -29,7 +29,7 @@ import re
 import sys
 import subprocess
 from rdiff_backup import connection, Globals, log, rpath
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils import safestr
 
 # This is a list of remote commands used to start the connections.
@@ -294,7 +294,7 @@ def _fill_schema(host_info, cmd_schema):
         ) or b"{h}" not in cmd_schema:
             raise KeyError
         else:
-            ver_split = Globals.version.split(".")
+            ver_split = specifics.version.split(".")
             # bytes doesn't have a format method, hence the conversions
             return os.fsencode(
                 os.fsdecode(cmd_schema).format(
@@ -362,7 +362,7 @@ def _validate_connection_version(conn, remote_cmd):
     be found, else returns True (also in warning case)."""
 
     try:
-        remote_version = conn.Globals.get("version")
+        remote_version = conn.specifics.get("version")
     except connection.ConnectionError as exception:
         log.Log(
             """Couldn't start up the remote connection by executing '{rc}'
@@ -373,7 +373,7 @@ installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version ({lv})
 """.format(
-                ex=exception, rc=safestr.to_str(remote_cmd), lv=Globals.version
+                ex=exception, rc=safestr.to_str(remote_cmd), lv=specifics.version
             ),
             log.ERROR,
         )
@@ -395,15 +395,15 @@ which should only print out the text: rdiff-backup <version>""".format(
         return False
 
     try:
-        remote_api_version = conn.Globals.get("api_version")
+        remote_api_version = conn.specifics.get("api_version")
     except KeyError:  # the remote side doesn't know yet about api_version
         # Only version 2.0 could _not_ understand api_version but still be
         # compatible with version 200 of the API
         if (
             remote_version.startswith("2.0.")
-            and (Globals.api_version["actual"] or Globals.api_version["min"]) == 200
+            and (specifics.api_version["actual"] or specifics.api_version["min"]) == 200
         ):
-            Globals.api_version["actual"] == 200
+            specifics.api_version["actual"] == 200
             log.Log(
                 "Remote version {rv} doesn't know about API "
                 "versions but should be compatible with 200".format(rv=remote_version),
@@ -415,7 +415,7 @@ which should only print out the text: rdiff-backup <version>""".format(
                 "Remote version {rv} isn't compatible with local "
                 "API version {av}".format(
                     rv=remote_version,
-                    av=(Globals.api_version["actual"] or Globals.api_version["min"]),
+                    av=(specifics.api_version["actual"] or specifics.api_version["min"]),
                 ),
                 log.ERROR,
             )
@@ -428,8 +428,8 @@ which should only print out the text: rdiff-backup <version>""".format(
     # Now compare the remote and local API versions and agree actual version
 
     # if client and server have no common API version
-    if min(remote_api_version["max"], Globals.api_version["max"]) < max(
-        remote_api_version["min"], Globals.api_version["min"]
+    if min(remote_api_version["max"], specifics.api_version["max"]) < max(
+        remote_api_version["min"], specifics.api_version["min"]
     ):
         log.Log(
             """Local and remote rdiff-backup have no common API version:
@@ -439,24 +439,24 @@ Please make sure you have compatible versions of rdiff-backup""".format(
                 rv=remote_version,
                 ri=remote_api_version["min"],
                 ra=remote_api_version["max"],
-                lv=Globals.version,
-                li=Globals.api_version["min"],
-                la=Globals.api_version["max"],
+                lv=specifics.version,
+                li=specifics.api_version["min"],
+                la=specifics.api_version["max"],
             ),
             log.ERROR,
         )
         return False
     # is there an actual API version and does it fit the other side?
-    if Globals.api_version["actual"]:
+    if specifics.api_version["actual"]:
         if (
-            Globals.api_version["actual"] >= remote_api_version["min"]
-            and Globals.api_version["actual"] <= remote_api_version["max"]
+            specifics.api_version["actual"] >= remote_api_version["min"]
+            and specifics.api_version["actual"] <= remote_api_version["max"]
         ):
-            conn.Globals.set_api_version(Globals.api_version["actual"])
+            conn.specifics.set_api_version(specifics.api_version["actual"])
             log.Log(
                 "API version agreed to be actual {av} "
                 "with command {co}".format(
-                    av=Globals.api_version["actual"], co=remote_cmd
+                    av=specifics.api_version["actual"], co=remote_cmd
                 ),
                 log.INFO,
             )
@@ -467,7 +467,7 @@ Please make sure you have compatible versions of rdiff-backup""".format(
                 "explicitly set locally to {av}. "
                 "It should be between min {ri} and max {ra}. "
                 "Use '--api-version' to set another API version".format(
-                    av=Globals.api_version["actual"],
+                    av=specifics.api_version["actual"],
                     ri=remote_api_version["min"],
                     ra=remote_api_version["max"],
                 ),
@@ -479,10 +479,10 @@ Please make sure you have compatible versions of rdiff-backup""".format(
         # and max on the remote side, while using the highest acceptable value:
         actual_api_version = max(
             remote_api_version["min"],
-            min(remote_api_version["max"], Globals.api_version["default"]),
+            min(remote_api_version["max"], specifics.api_version["default"]),
         )
-        Globals.api_version["actual"] = actual_api_version
-        conn.Globals.set_api_version(actual_api_version)
+        specifics.api_version["actual"] = actual_api_version
+        conn.specifics.set_api_version(actual_api_version)
         log.Log(
             "API version agreed to be {av} with command {co}".format(
                 av=actual_api_version, co=remote_cmd

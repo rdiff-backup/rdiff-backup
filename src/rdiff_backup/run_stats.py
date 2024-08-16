@@ -32,6 +32,7 @@ from rdiff_backup import (
     Time,
 )
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import specifics
 from rdiffbackup.utils import safestr
 
 data_dir = None  # directory where statistics are written
@@ -108,7 +109,7 @@ See the rdiff-backup-statistics man page for more information.
 
 
 def version(rc):
-    print("{cmd} {ver}".format(cmd=sys.argv[0], ver=Globals.version))
+    print("{cmd} {ver}".format(cmd=sys.argv[0], ver=specifics.version))
     sys.exit(rc)
 
 

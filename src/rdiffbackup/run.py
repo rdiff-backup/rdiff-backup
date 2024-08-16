@@ -22,7 +22,7 @@ import os
 import sys
 from rdiff_backup import Globals, log
 from rdiffbackup import arguments, actions_mgr
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 if os.name == "nt":
     import msvcrt
@@ -54,7 +54,7 @@ def main_run(arglist, security_override=False):
     # parse accordingly the arguments
     parsed_args = arguments.parse(
         arglist,
-        "rdiff-backup {ver}".format(ver=Globals.version),
+        "rdiff-backup {ver}".format(ver=specifics.version),
         actions_mgr.get_generic_parsers(),
         discovered_actions,
     )
@@ -169,7 +169,7 @@ def _system_setup(arglist):
     if ret_val & consts.RET_CODE_ERR:
         return ret_val
     if arglist.get("api_version") is not None:  # FIXME catch also env variable?
-        Globals.set_api_version(arglist.get("api_version"))
+        specifics.set_api_version(arglist.get("api_version"))
 
     # if action in ("backup", "restore"):
     Globals.set("acls_active", arglist.get("acls"))

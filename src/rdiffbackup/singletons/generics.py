@@ -18,6 +18,7 @@
 # 02110-1301, USA
 """
 A variety of variables which need to have the same value across connections.
+They are generic to all instances of rdiff-backup involved.
 """
 
 import os
@@ -166,10 +167,6 @@ permission_mask = 0o7777
 # the original permissions
 symlink_perms = None
 
-# If set, the path that should be used instead of the default Python
-# tempfile.tempdir value on remote connections
-remote_tempdir = None
-
 # Fsync everything by default. Use --no-fsync only if you really know what you are doing
 # Not having the data written to disk may render your backup unusable in case of FS failure.
 # Using --no-fsync disables only fsync of files during backup and sync() system call upon backup finish
@@ -219,41 +216,3 @@ def set_all(setting_name, value):
 def set_local(name, val):
     """Like set above, but only set current connection"""
     globals()[name] = val
-
-
-def set_integer(name, val):
-    """Like set, but make sure val is an integer"""
-    try:
-        intval = int(val)
-    except ValueError:
-        log.Log.FatalError(
-            "Variable {vr} must be set to an integer, received "
-            "value '{vl}' instead".format(vr=name, vl=val)
-        )
-    set(name, intval)
-
-
-# @API(set_api_version, 201)
-def set_api_version(val):
-    """sets the actual API version after having verified that the new
-    value is an integer between mix and max values."""
-    try:
-        intval = int(val)
-    except ValueError:
-        log.Log.FatalError(
-            "API version must be set to an integer, "
-            "received value {va} instead.".format(va=val)
-        )
-    if intval < api_version["min"] or intval > api_version["max"]:
-        log.Log.FatalError(
-            "API version {av} must be between {mi} and {ma}.".format(
-                av=val, mi=api_version["min"], ma=api_version["max"]
-            )
-        )
-    api_version["actual"] = intval
-
-
-def get_api_version():
-    """Return the actual API version, either set explicitly or the default
-    one"""
-    return api_version["actual"] or api_version["default"]

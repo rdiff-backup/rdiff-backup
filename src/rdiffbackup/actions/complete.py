@@ -26,7 +26,7 @@ import argparse
 
 from rdiff_backup import Globals, log
 from rdiffbackup import actions, actions_mgr, arguments
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
@@ -99,7 +99,7 @@ class CompleteAction(actions.BaseAction):
         # get a dictionary of discovered action plugins
         discovered_actions = actions_mgr.get_actions_dict()
         generic_parsers = actions_mgr.get_generic_parsers()
-        version_string = "rdiff-backup {ver}".format(ver=Globals.version)
+        version_string = "rdiff-backup {ver}".format(ver=specifics.version)
 
         parser = arguments.get_parser(
             version_string, generic_parsers, discovered_actions

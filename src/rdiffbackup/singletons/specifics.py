@@ -18,6 +18,7 @@
 # 02110-1301, USA
 """
 A variety of variables which can have different values across connections.
+They are specific to each instance of rdiff-backup involved.
 """
 
 import os
@@ -204,67 +205,11 @@ symlink_perms = None
 # tempfile.tempdir value on remote connections
 remote_tempdir = None
 
-# Fsync everything by default. Use --no-fsync only if you really know what you are doing
-# Not having the data written to disk may render your backup unusable in case of FS failure.
-# Using --no-fsync disables only fsync of files during backup and sync() system call upon backup finish
-# and pre-regress
-do_fsync = True
-
-# This is the current time, either as integer (epoch) or formatted string.
-# It is set once at the beginning of the program and defines the backup's
-# date and time
-current_time = None
-current_time_string = None
-
 
 # @API(get, 200)
 def get(name):
     """Return the value of something in this module"""
     return globals()[name]
-
-
-def set(name, val):
-    """
-    Set the value of something in this module on this connection and, delayed,
-    on all others
-
-    Use this instead of writing the values directly if the setting
-    matters to remote sides.  This function updates the
-    changed_settings list, so other connections know to copy the changes
-    during connection initiation. After the connection has been initiated,
-    use C<set_all> instead.
-    """
-    changed_settings.append(name)
-    globals()[name] = val
-
-
-def set_all(setting_name, value):
-    """
-    Sets the setting given to the value on all connections
-
-    Where set relies on each connection to grab the value at a later stage,
-    set_all forces the value on all connections at once.
-    """
-    for conn in connection_dict.values():
-        conn.Globals.set_local(setting_name, value)
-
-
-# @API(set_local, 200)
-def set_local(name, val):
-    """Like set above, but only set current connection"""
-    globals()[name] = val
-
-
-def set_integer(name, val):
-    """Like set, but make sure val is an integer"""
-    try:
-        intval = int(val)
-    except ValueError:
-        log.Log.FatalError(
-            "Variable {vr} must be set to an integer, received "
-            "value '{vl}' instead".format(vr=name, vl=val)
-        )
-    set(name, intval)
 
 
 # @API(set_api_version, 201)
