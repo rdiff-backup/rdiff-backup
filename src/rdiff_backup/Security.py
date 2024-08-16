@@ -343,7 +343,7 @@ def _set_allowed_requests(sec_class, sec_level):
             [
                 "SetConnections.init_connection_remote",
                 # API >= 201
-                "Globals.set_api_version",
+                "specifics.set_api_version",
                 # API >= 300
                 "log.Log.set_verbosity",  # FIXME can we pipe this through?
             ]
