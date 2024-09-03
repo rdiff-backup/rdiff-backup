@@ -104,7 +104,7 @@ jobs:
     steps:
     - name: Download artifacts
       id: download
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4.1.7
       with:
         name: package-artifacts
         path: .
@@ -144,7 +144,7 @@ jobs:
         ./tools/get_changelog_since.sh -M >> body.myown.md
     - name: Download artifacts
       id: download
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4.1.7
       with:
         name: package-artifacts
         path: dist
