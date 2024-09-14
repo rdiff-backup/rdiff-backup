@@ -42,7 +42,7 @@ jobs:
           plat=manylinux${{ matrix.many-linux }}
           $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{12,11,10,9}*/bin
     - name: Upload wheel artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: package-artifacts
         path: dist/*.whl
@@ -63,7 +63,7 @@ jobs:
         pip install build  # package python3-build is too old
         pyproject-build --sdist
     - name: Upload sdist artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: package-artifacts
         path: dist/*.tar.gz
@@ -92,7 +92,7 @@ jobs:
     - name: Package rdiff-backup
       run: tools/win_package_rdiffbackup.sh ${{ matrix.arch }}
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: package-artifacts
         path: |
@@ -109,7 +109,7 @@ jobs:
     steps:
     - name: Download artifacts
       id: download
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v4
       with:
         name: package-artifacts
         path: .
@@ -134,7 +134,7 @@ jobs:
     steps:
     - name: Download artifacts
       id: download
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v4
       with:
         name: package-artifacts
         path: dist
