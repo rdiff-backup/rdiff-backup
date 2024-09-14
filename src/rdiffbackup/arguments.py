@@ -47,6 +47,8 @@ def parse_args(parser, args):
         if exc.code != 0:
             exc.code = 1
         raise
+    except argparse.ArgumentError as exc:
+        sys.exit(exc)
     return parsed_args
 
 
