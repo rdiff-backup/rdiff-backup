@@ -25,3 +25,5 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - add https://docs.python.org/3/library/argparse.html#argument-groups to arguments coming from actions
 - pass null_separator to selection functions
 - get rid of usage of selection module in fs_abilities
+- specific variable change_mirror_perms doesn't seem to be used anywhere
+- generic variable preserve_atime isn't modified anywhere

@@ -33,38 +33,34 @@ change_ownership = None
 preserve_atime = None
 
 # The following three attributes represent whether extended attributes
-# are supported.  If eas_active is true, then the current session
-# supports them.  If eas_write is true, then the extended attributes
-# should also be written to the destination side.  Finally, eas_conn
-# is relative to the current connection, and should be true iff that
-# particular connection supports extended attributes.
+# are supported.
+# If eas_active is true, then the current session supports them.
+# If eas_write is true, then the extended attributes should also be written to
+# the destination side.
+# Finally, eas_conn is relative to the current connection, and should be true iff
+# that particular connection supports extended attributes.
+# This last variable is in the specifics.
 eas_active = None
 eas_write = None
-eas_conn = None
 
 # The following settings are like the extended attribute settings, but
 # apply to access control lists instead.
 acls_active = None
 acls_write = None
-acls_conn = None
 
-# Like the above, but applies to support of Windows
-# access control lists.
+# Like the above, but applies to support of Windows access control lists.
 win_acls_active = None
 win_acls_write = None
-win_acls_conn = None
 
 # Like above two setting groups, but applies to support of Mac OS X
 # style resource forks.
 resource_forks_active = None
 resource_forks_write = None
-resource_forks_conn = None
 
 # Like the above, but applies to MacOS Carbon Finder creator/type info.
 # As of 1.0.2 this has defaulted to off because of bugs
 carbonfile_active = None
 carbonfile_write = None
-carbonfile_conn = None
 
 # This will be set as soon as the LocalConnection class loads
 local_connection = None

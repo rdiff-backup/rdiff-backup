@@ -383,7 +383,7 @@ def reset_connections():
     Globals.chars_to_quote_regexp = None
     Globals.chars_to_quote_unregexp = None
     # EAs and ACLs support
-    Globals.eas_active = Globals.acls_active = None
+    generics.eas_active = generics.acls_active = None  # FIXME use set_all?
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):

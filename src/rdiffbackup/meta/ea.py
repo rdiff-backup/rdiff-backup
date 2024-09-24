@@ -246,7 +246,7 @@ class ExtendedAttributesFile(meta.FlatFile):
 
     @classmethod
     def is_active(cls):
-        return Globals.eas_active
+        return generics.eas_active
 
     @staticmethod
     def _object_to_record(ea):

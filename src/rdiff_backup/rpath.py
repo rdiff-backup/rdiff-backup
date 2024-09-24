@@ -45,7 +45,7 @@ import time
 from rdiff_backup import Globals, Time, log, C
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import usrgrp
 
 try:
@@ -87,18 +87,18 @@ class RORPath:
         """Returns a set of keys to be ignored during comparaison,
         based on global settings."""
         global_ignored_keys = set(())
-        if not Globals.preserve_atime:
+        if not generics.preserve_atime:
             global_ignored_keys.add("atime")
-        if not Globals.eas_write:
+        if not generics.eas_write:
             global_ignored_keys.add("ea")
-        if not Globals.acls_write:
+        if not generics.acls_write:
             global_ignored_keys.add("acl")
-        if not Globals.win_acls_write:
+        if not generics.win_acls_write:
             global_ignored_keys.add("win_acl")
-        if not Globals.carbonfile_write:
-            global_ignored_keys.add("carbonfile")
-        if not Globals.resource_forks_write:
+        if not generics.resource_forks_write:
             global_ignored_keys.add("resource_forks")
+        if not generics.carbonfile_write:
+            global_ignored_keys.add("carbonfile")
         return global_ignored_keys
 
     @classmethod
@@ -266,7 +266,7 @@ class RORPath:
             if key not in other.data or self.data[key] != other.data[key]:
                 return False
 
-        if self.lstat() and not self.issym() and Globals.change_ownership:
+        if self.lstat() and not self.issym() and generics.change_ownership:
             # Now compare ownership.  Symlinks don't have ownership
             try:
                 own_uid_gid = map_owners.map_rpath_owner(self)
@@ -618,7 +618,7 @@ class RORPath:
                 pass
             elif key == "type" and not compare_type:
                 pass
-            elif key == "atime" and not Globals.preserve_atime:
+            elif key == "atime" and not generics.preserve_atime:
                 pass
             elif key == "ctime":
                 pass
@@ -1692,24 +1692,24 @@ def copy_attribs(rpin, rpout):
     assert (
         rpout.conn is Globals.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpout.conn)
-    if Globals.change_ownership:
+    if generics.change_ownership:
         rpout.chown(*map_owners.map_rpath_owner(rpin))
-    if Globals.eas_write:
+    if generics.eas_write:
         if not rpin.issym():  # make sure EAs can be written
             rpout.chmod(rpin.getperms() | 0o666)
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
         return  # symlinks don't have times or perms
-    if Globals.resource_forks_write and rpin.isreg() and rpin.has_resource_fork():
+    if generics.resource_forks_write and rpin.isreg() and rpin.has_resource_fork():
         rpout.write_resource_fork(rpin.get_resource_fork())
-    if Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile():
+    if generics.carbonfile_write and rpin.isreg() and rpin.has_carbonfile():
         rpout.write_carbonfile(rpin.get_carbonfile())
     rpout.chmod(rpin.getperms())
-    if Globals.acls_write:
+    if generics.acls_write:
         rpout.write_acl(rpin.get_acl())
     if not rpin.isdev():
         rpout.setmtime(rpin.getmtime())
-    if Globals.win_acls_write:
+    if generics.win_acls_write:
         rpout.write_win_acl(rpin.get_win_acl())
 
 
@@ -1728,21 +1728,21 @@ def copy_attribs_inc(rpin, rpout):
         log.DEBUG,
     )
     _check_for_files(rpin, rpout)
-    if Globals.change_ownership:
+    if generics.change_ownership:
         rpout.chown(*rpin.getuidgid())
-    if Globals.eas_write:
+    if generics.eas_write:
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
         return  # symlinks don't have times or perms
     if (
-        Globals.resource_forks_write
+        generics.resource_forks_write
         and rpin.isreg()
         and rpin.has_resource_fork()
         and rpout.isreg()
     ):
         rpout.write_resource_fork(rpin.get_resource_fork())
     if (
-        Globals.carbonfile_write
+        generics.carbonfile_write
         and rpin.isreg()
         and rpin.has_carbonfile()
         and rpout.isreg()
@@ -1752,7 +1752,7 @@ def copy_attribs_inc(rpin, rpout):
         rpout.chmod(rpin.getperms() & 0o777)
     else:
         rpout.chmod(rpin.getperms())
-    if Globals.acls_write:
+    if generics.acls_write:
         rpout.write_acl(rpin.get_acl(), map_names=0)
     if not rpin.isdev():
         rpout.setmtime(rpin.getmtime())
@@ -2001,15 +2001,15 @@ def setdata_local(rp):
 
     rp.data["uname"] = usrgrp.uid2uname(rp.data["uid"])
     rp.data["gname"] = usrgrp.gid2gname(rp.data["gid"])
-    if Globals.eas_conn:
+    if specifics.eas_conn:
         rp.data["ea"] = ea.get_meta(rp)
-    if Globals.acls_conn:
+    if specifics.acls_conn:
         rp.data["acl"] = acl_posix.get_meta(rp)
-    if Globals.win_acls_conn:
+    if specifics.win_acls_conn:
         rp.data["win_acl"] = acl_win.get_meta(rp)
-    if Globals.resource_forks_conn and rp.isreg():
+    if specifics.resource_forks_conn and rp.isreg():
         rp.get_resource_fork()
-    if Globals.carbonfile_conn and rp.isreg():
+    if specifics.carbonfile_conn and rp.isreg():
         rp.data["carbonfile"] = _carbonfile_get(rp)
 
     if reset_perms:
@@ -2057,7 +2057,7 @@ def _cmp_file_attribs(rp1, rp2):
 
     """
     _check_for_files(rp1, rp2)
-    if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
+    if generics.change_ownership and rp1.getuidgid() != rp2.getuidgid():
         result = None
     elif rp1.getperms() != rp2.getperms():
         result = None
