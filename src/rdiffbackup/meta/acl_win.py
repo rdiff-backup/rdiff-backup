@@ -20,6 +20,7 @@
 import os
 from rdiff_backup import C, Globals, log, rorpiter
 from rdiffbackup import meta
+from rdiffbackup.singletons import generics
 from rdiffbackup.utils import safestr
 
 try:
@@ -298,7 +299,7 @@ class WinAccessControlListFile(meta.FlatFile):
 
     @classmethod
     def is_active(cls):
-        return Globals.win_acls_active
+        return generics.win_acls_active
 
     @staticmethod
     def join_iter(rorp_iter, wacl_iter):

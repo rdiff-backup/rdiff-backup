@@ -12,7 +12,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import Globals, rpath
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, generics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -463,7 +463,7 @@ class NonRoot(BaseRootTest):
     def test_non_root(self):
         """Main non-root -> root test"""
         input_rp1, input_rp2 = self.make_root_dirs()
-        Globals.change_ownership = 1
+        generics.change_ownership = 1
         output_rp = rpath.RPath(Globals.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(output_rp, userid)
         restore_rp = rpath.RPath(Globals.local_connection, self.restore_dir)

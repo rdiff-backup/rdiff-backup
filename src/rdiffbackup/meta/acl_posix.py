@@ -37,6 +37,7 @@ from rdiff_backup import C, Globals, log, rorpiter
 from rdiffbackup import meta
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
+from rdiffbackup.singletons import generics
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name
@@ -295,7 +296,7 @@ class AccessControlListFile(meta.FlatFile):
 
     @classmethod
     def is_active(cls):
-        return Globals.acls_active
+        return generics.acls_active
 
     @staticmethod
     def _object_to_record(acl):

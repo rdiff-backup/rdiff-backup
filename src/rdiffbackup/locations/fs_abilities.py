@@ -31,7 +31,7 @@ import os
 from rdiff_backup import Globals, log, robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, generics, specifics
 
 
 class FSAbilities:
@@ -809,7 +809,7 @@ class SetGlobals:
             self.dest_fsa.acls,
             ("acls_active", "acls_write", "acls_conn"),
         )
-        if Globals.never_drop_acls and not Globals.acls_active:
+        if Globals.never_drop_acls and not generics.acls_active:
             log.Log.FatalError(
                 "--never-drop-acls specified, but ACL support "
                 "missing from source filesystem"
@@ -844,7 +844,7 @@ class SetGlobals:
         Globals.set_all("fsync_directories", self.dest_fsa.fsync_dirs)
 
     def set_change_ownership(self):
-        Globals.set_all("change_ownership", self.dest_fsa.ownership)
+        generics.set_all("change_ownership", self.dest_fsa.ownership)
 
     def set_high_perms(self):
         if not self.dest_fsa.high_perms:
@@ -964,17 +964,18 @@ class Dir2RepoSetGlobals(SetGlobals):
         Many of the settings have a common form we can handle here
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            Globals.set_all(attr, None)
+        if generics.get(active_attr) is not None:
+            return  # don't override a value set by the user
+        generics.set_all(active_attr, None)
+        generics.set_all(write_attr, None)
+        specifics.set(conn_attr, None)
         if not src_support:
             return  # if source doesn't support, nothing
-        Globals.set_all(active_attr, 1)
-        self.in_conn.Globals.set_local(conn_attr, 1)
+        generics.set_all(active_attr, 1)
+        self.in_conn.specifics.set(conn_attr, 1)
         if dest_support:
-            Globals.set_all(write_attr, 1)
-            self.out_conn.Globals.set_local(conn_attr, 1)
+            generics.set_all(write_attr, 1)
+            self.out_conn.specifics.set(conn_attr, 1)
 
     def _get_ctq_from_fsas(self):
         """
@@ -1158,17 +1159,18 @@ class Repo2DirSetGlobals(SetGlobals):
         supports.
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            Globals.set_all(attr, None)
+        if generics.get(active_attr) is not None:
+            return  # don't override a value set by the user
+        generics.set_all(active_attr, None)
+        generics.set_all(write_attr, None)
+        specifics.set(conn_attr, None)
         if not dest_support:
             return  # if dest doesn't support, do nothing
-        Globals.set_all(active_attr, 1)
-        self.out_conn.Globals.set_local(conn_attr, 1)
-        self.out_conn.Globals.set_local(write_attr, 1)
+        generics.set_all(active_attr, 1)
+        self.out_conn.specifics.set(conn_attr, 1)
+        self.out_conn.generics.set_local(write_attr, 1)  # FIXME: generics.set_all?
         if src_support:
-            self.in_conn.Globals.set_local(conn_attr, 1)
+            self.in_conn.specifics.set(conn_attr, 1)
 
 
 class SingleRepoSetGlobals(Repo2DirSetGlobals):
@@ -1233,12 +1235,13 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         Update global vars from single fsa test
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            Globals.set_all(attr, None)
+        if generics.get(active_attr) is not None:
+            return  # don't override a value set by the user
+        generics.set_all(active_attr, None)
+        generics.set_all(write_attr, None)
+        specifics.set(conn_attr, None)
         if not fsa_support:
             return
-        Globals.set_all(active_attr, 1)
-        Globals.set_all(write_attr, 1)
-        self.conn.Globals.set_local(conn_attr, 1)
+        generics.set_all(active_attr, 1)
+        generics.set_all(write_attr, 1)
+        self.conn.specifics.set(conn_attr, 1)

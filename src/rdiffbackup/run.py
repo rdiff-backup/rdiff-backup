@@ -22,7 +22,7 @@ import os
 import sys
 from rdiff_backup import Globals, log
 from rdiffbackup import arguments, actions_mgr
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, generics, specifics
 
 if os.name == "nt":
     import msvcrt
@@ -172,13 +172,13 @@ def _system_setup(arglist):
         specifics.set_api_version(arglist.get("api_version"))
 
     # if action in ("backup", "restore"):
-    Globals.set("acls_active", arglist.get("acls"))
-    Globals.set("win_acls_active", arglist.get("acls"))
-    Globals.set("carbonfile_active", arglist.get("carbonfile"))
+    generics.set("eas_active", arglist.get("eas"))
+    generics.set("acls_active", arglist.get("acls"))
+    generics.set("win_acls_active", arglist.get("acls"))
+    generics.set("resource_forks_active", arglist.get("resource_forks"))
+    generics.set("carbonfile_active", arglist.get("carbonfile"))
     Globals.set("compare_inode", arglist.get("compare_inode"))
-    Globals.set("eas_active", arglist.get("eas"))
     Globals.set("preserve_hardlinks", arglist.get("hard_links"))
-    Globals.set("resource_forks_active", arglist.get("resource_forks"))
     Globals.set("never_drop_acls", arglist.get("never_drop_acls"))
     # if action in ("backup", "regress", "restore"):
     Globals.set("compression", arglist.get("compression"))
