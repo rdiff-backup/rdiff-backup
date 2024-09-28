@@ -769,7 +769,7 @@ def detect_fs_abilities(root_rp, writable=True):
     Returns an FSAbilities object if detection goes well, else None if it fails
     """
     assert (
-        root_rp.conn is Globals.local_connection
+        root_rp.conn is specifics.local_connection
     ), "Action only foreseen locally and not over {conn}.".format(conn=root_rp.conn)
     try:
         return FSAbilities(root_rp, writable=writable)

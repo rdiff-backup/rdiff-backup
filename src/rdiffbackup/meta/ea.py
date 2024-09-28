@@ -110,7 +110,7 @@ class ExtendedAttributes:
     def write_to_rp(self, rp):
         """Write extended attributes to rpath rp"""
         assert (
-            rp.conn is Globals.local_connection
+            rp.conn is specifics.local_connection
         ), "Function works locally not over '{co}'.".format(co=rp.conn)
 
         self._clear_rp(rp)
@@ -292,7 +292,7 @@ def get_meta(rp):
     Get extended attributes of given rpath
     """
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function works locally not over '{co}'.".format(co=rp.conn)
     ea = get_meta_object(rp.index)
     if not rp.issock() and not rp.isfifo():

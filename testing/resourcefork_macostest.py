@@ -19,9 +19,9 @@ Globals.read_resource_forks = Globals.write_resource_forks = 1
 class ResourceForkTest(unittest.TestCase):
     """Test dealing with Mac OS X style resource forks"""
 
-    tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
-    rf_testdir1 = rpath.RPath(Globals.local_connection, "testfiles/resource_fork_test1")
-    rf_testdir2 = rpath.RPath(Globals.local_connection, "testfiles/resource_fork_test2")
+    tempdir = rpath.RPath(specifics.local_connection, "testfiles/output")
+    rf_testdir1 = rpath.RPath(specifics.local_connection, "testfiles/resource_fork_test1")
+    rf_testdir2 = rpath.RPath(specifics.local_connection, "testfiles/resource_fork_test2")
 
     def make_temp(self):
         """Make temp directory testfiles/resource_fork_test"""

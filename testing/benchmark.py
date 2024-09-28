@@ -52,7 +52,7 @@ def create_many(dirname, s, count):
     contain the string s.
 
     """
-    dir_rp = rpath.RPath(Globals.local_connection, dirname)
+    dir_rp = rpath.RPath(specifics.local_connection, dirname)
     if not dir_rp.isdir():
         dir_rp.mkdir()
     for i in range(count):
@@ -80,7 +80,7 @@ def create_nested(dirname, s, depth, branch_factor):
             list(map(lambda rp: helper(rp, depth - 1), sub_rps))
 
     comtst.re_init_subdir(TEST_BASE_DIR, b"nested_out")
-    helper(rpath.RPath(Globals.local_connection, dirname), depth)
+    helper(rpath.RPath(specifics.local_connection, dirname), depth)
 
 
 def benchmark(backup_cmd, restore_cmd, desc, update_func=None):

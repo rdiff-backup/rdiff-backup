@@ -123,7 +123,7 @@ class AccessControlLists:
     def write_to_rp(self, rp, map_names=1):
         """Write current access control list to RPath rp"""
         assert (
-            rp.conn is Globals.local_connection
+            rp.conn is specifics.local_connection
         ), "Function works locally not over '{co}'.".format(co=rp.conn)
         set_rp_acl(rp, self.entry_list, self.default_entry_list, map_names)
 
@@ -333,7 +333,7 @@ class AccessControlListFile(meta.FlatFile):
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Set ACLs of path should only be done locally not over {conn}.".format(
         conn=rp.conn
     )
@@ -364,7 +364,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
 def get_acl_lists_from_rp(rp):
     """Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Get ACLs of path should only be done locally not over {conn}.".format(
         conn=rp.conn
     )
@@ -549,7 +549,7 @@ def get_meta(rp):
     Get acls of given rpath rp.
     """
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function works locally not over '{co}'.".format(co=rp.conn)
     acl = get_meta_object(rp.index)
     if not rp.issym():

@@ -54,7 +54,7 @@ else:
 
 def remove_dir(dirstring):
     """Run myrm on given directory string"""
-    root_rp = rpath.RPath(Globals.local_connection, dirstring)
+    root_rp = rpath.RPath(specifics.local_connection, dirstring)
     for rp in selection.Select(root_rp).get_select_iter():
         if rp.isdir():
             rp.chmod(0o700)  # otherwise may not be able to remove
@@ -311,8 +311,8 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
     InternalBackup, but then delete rdiff-backup-data directory.
     """
     # Save attributes of root to restore later
-    src_root = rpath.RPath(Globals.local_connection, src_dir)
-    dest_root = rpath.RPath(Globals.local_connection, dest_dir)
+    src_root = rpath.RPath(specifics.local_connection, src_dir)
+    dest_root = rpath.RPath(specifics.local_connection, dest_dir)
     dest_rbdir = dest_root.append("rdiff-backup-data")
 
     InternalBackup(source_local, dest_local, src_dir, dest_dir, force=force)
@@ -376,8 +376,8 @@ def reset_connections():
     Globals.rbdir = None
     # reset the connection status
     Globals.connection_number = 0
-    Globals.connections = [Globals.local_connection]
-    Globals.connection_dict = {0: Globals.local_connection}
+    Globals.connections = [specifics.local_connection]
+    Globals.connection_dict = {0: specifics.local_connection}
     # reset the quoting status
     Globals.chars_to_quote = None
     Globals.chars_to_quote_regexp = None
@@ -644,12 +644,12 @@ def backup_restore_series(
         os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP),
     )
     time = 10000
-    dest_rp = rpath.RPath(Globals.local_connection, backup_dir)
-    restore_rp = rpath.RPath(Globals.local_connection, restore_dir)
+    dest_rp = rpath.RPath(specifics.local_connection, backup_dir)
+    restore_rp = rpath.RPath(specifics.local_connection, restore_dir)
 
     remove_dir(backup_dir)
     for dirname in list_of_dirnames:
-        src_rp = rpath.RPath(Globals.local_connection, dirname)
+        src_rp = rpath.RPath(specifics.local_connection, dirname)
         reset_hardlink_dicts()
         reset_connections()
 
@@ -686,7 +686,7 @@ def backup_restore_series(
             eas=compare_eas,
             acls=compare_acls,
         )
-        src_rp = rpath.RPath(Globals.local_connection, dirname)
+        src_rp = rpath.RPath(specifics.local_connection, dirname)
         assert compare_recursive(
             src_rp,
             restore_rp,

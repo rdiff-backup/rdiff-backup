@@ -128,7 +128,7 @@ TotalDestinationSizeChange 7 (7 bytes)
     def test_write_rp(self):
         """Test reading and writing of statistics object"""
         rp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"statstest")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"statstest")
         )
         if rp.lstat():
             rp.delete()
@@ -221,7 +221,7 @@ class IncStatTest(unittest.TestCase):
         )
 
         rbdir = rpath.RPath(
-            Globals.local_connection, os.path.join(self.out_dir, b"rdiff-backup-data")
+            specifics.local_connection, os.path.join(self.out_dir, b"rdiff-backup-data")
         )
 
         incs = sorti(rbdir.append("session_statistics").get_incfiles_list())

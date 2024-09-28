@@ -26,7 +26,7 @@ def MakeRandomFile(path):
 class RdiffTest(unittest.TestCase):
     """Test rdiff"""
 
-    lc = Globals.local_connection
+    lc = specifics.local_connection
 
     basis = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"basis"))
     new = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"new"))

@@ -1090,7 +1090,7 @@ class RPath(RORPath):
     def get_temp_rpath(self, sibling=False):
         """Return new temp rpath in given or parent directory"""
         assert (
-            self.conn is Globals.local_connection
+            self.conn is specifics.local_connection
         ), "Function must be called locally not over {conn}.".format(conn=self.conn)
 
         # recursion if current rpath isn't a directory or if explicitly asked
@@ -1124,7 +1124,7 @@ class RPath(RORPath):
         risk apparent from the remote call.
 
         """
-        if self.conn is Globals.local_connection:
+        if self.conn is specifics.local_connection:
             if compress:
                 return gzip.GzipFile(self.path, mode)
             else:
@@ -1267,7 +1267,7 @@ class RPath(RORPath):
 
         """
         assert (
-            self.conn is Globals.local_connection
+            self.conn is specifics.local_connection
         ), "Function must be called locally not over {conn}.".format(conn=self.conn)
         try:
             fd = os.open(self.path, os.O_RDONLY)
@@ -1623,7 +1623,7 @@ def copy(rpin, rpout, compress=0):
 def copy_reg_file(rpin, rpout, compress=0):
     """Copy regular file rpin to rpout, possibly avoiding connection"""
     try:
-        if rpout.conn is rpin.conn and rpout.conn is not Globals.local_connection:
+        if rpout.conn is rpin.conn and rpout.conn is not specifics.local_connection:
             v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
             rpout.setdata()
             return v
@@ -1690,7 +1690,7 @@ def copy_attribs(rpin, rpout):
         "or input be special.".format(irp=rpin, orp=rpout)
     )
     assert (
-        rpout.conn is Globals.local_connection
+        rpout.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpout.conn)
     if generics.change_ownership:
         rpout.chown(*map_owners.map_rpath_owner(rpin))
@@ -1905,7 +1905,7 @@ def make_socket_local(rpath):
     (Miscellaneous strings will not be.)
     """
     assert (
-        rpath.conn is Globals.local_connection
+        rpath.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
 
@@ -1914,7 +1914,7 @@ def make_socket_local(rpath):
 def gzip_open_local_read(rpath):
     """Return open GzipFile.  See security note directly above"""
     assert (
-        rpath.conn is Globals.local_connection
+        rpath.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     return gzip.GzipFile(rpath.path, "rb")
 
@@ -1923,7 +1923,7 @@ def gzip_open_local_read(rpath):
 def open_local_read(rpath):
     """Return open file (provided for security reasons)"""
     assert (
-        rpath.conn is Globals.local_connection
+        rpath.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     return open(rpath.path, "rb")
 
@@ -1978,7 +1978,7 @@ def setdata_local(rp):
     these features may exist or not depending on the connection.
     """
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function must be called locally not over {conn}.".format(conn=rp.conn)
     reset_perms = False
     if Globals.process_uid != 0 and not rp.readable() and rp.isowner():

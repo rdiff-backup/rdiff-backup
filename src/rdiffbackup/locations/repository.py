@@ -48,7 +48,7 @@ class Repo(location.Location):
         restore actions.
         """
         super().__init__(orig_path, values)
-        if orig_path.conn is Globals.local_connection:
+        if orig_path.conn is specifics.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _repo_shadow
 

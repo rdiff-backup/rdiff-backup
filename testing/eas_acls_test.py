@@ -45,15 +45,15 @@ class EATest(unittest.TestCase):
     ea3 = ea.ExtendedAttributes(("e3",))
     ea4 = ea.ExtendedAttributes(("e4",), {b"user.deleted": b"File to be deleted"})
     ea_test1_dir = os.path.join(TEST_BASE_DIR, b"ea_test1")
-    ea_test1_rpath = rpath.RPath(Globals.local_connection, ea_test1_dir)
+    ea_test1_rpath = rpath.RPath(specifics.local_connection, ea_test1_dir)
     ea_test2_dir = os.path.join(TEST_BASE_DIR, b"ea_test2")
-    ea_test2_rpath = rpath.RPath(Globals.local_connection, ea_test2_dir)
+    ea_test2_rpath = rpath.RPath(specifics.local_connection, ea_test2_dir)
     ea_empty_dir = os.path.join(TEST_BASE_DIR, b"ea_empty")
-    ea_empty_rpath = rpath.RPath(Globals.local_connection, ea_empty_dir)
+    ea_empty_rpath = rpath.RPath(specifics.local_connection, ea_empty_dir)
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
     restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
-    restore_rp = rpath.RPath(Globals.local_connection, restore_dir)
+    restore_rp = rpath.RPath(specifics.local_connection, restore_dir)
 
     def make_temp_out_dirs(self):
         """Make temp output and restore directories empty"""
@@ -333,15 +333,15 @@ other::---""",
     )
     empty_acl = acl_posix.AccessControlLists((), "user::rwx\ngroup::---\nother::---")
     acl_test1_dir = os.path.join(TEST_BASE_DIR, b"acl_test1")
-    acl_test1_rpath = rpath.RPath(Globals.local_connection, acl_test1_dir)
+    acl_test1_rpath = rpath.RPath(specifics.local_connection, acl_test1_dir)
     acl_test2_dir = os.path.join(TEST_BASE_DIR, b"acl_test2")
-    acl_test2_rpath = rpath.RPath(Globals.local_connection, acl_test2_dir)
+    acl_test2_rpath = rpath.RPath(specifics.local_connection, acl_test2_dir)
     acl_empty_dir = os.path.join(TEST_BASE_DIR, b"acl_empty")
-    acl_empty_rpath = rpath.RPath(Globals.local_connection, acl_empty_dir)
+    acl_empty_rpath = rpath.RPath(specifics.local_connection, acl_empty_dir)
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
     restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
-    restore_rp = rpath.RPath(Globals.local_connection, restore_dir)
+    restore_rp = rpath.RPath(specifics.local_connection, restore_dir)
 
     def make_temp_out_dirs(self):
         """Make temp output and restore directories empty"""
@@ -622,7 +622,7 @@ other::---""".format(
 
         self.make_temp_out_dirs()
         rootrp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"acl_map_test")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"acl_map_test")
         )
         make_dir(rootrp)
         (users_map_rp, groups_map_rp) = write_mapping_files(rootrp)
@@ -697,15 +697,15 @@ class CombinedTest(unittest.TestCase):
     """Test backing up and restoring directories with both EAs and ACLs"""
 
     combo_test1_dir = os.path.join(TEST_BASE_DIR, b"ea_acl_test1")
-    combo_test1_rpath = rpath.RPath(Globals.local_connection, combo_test1_dir)
+    combo_test1_rpath = rpath.RPath(specifics.local_connection, combo_test1_dir)
     combo_test2_dir = os.path.join(TEST_BASE_DIR, b"ea_acl_test2")
-    combo_test2_rpath = rpath.RPath(Globals.local_connection, combo_test2_dir)
+    combo_test2_rpath = rpath.RPath(specifics.local_connection, combo_test2_dir)
     combo_empty_dir = os.path.join(TEST_BASE_DIR, b"ea_acl_empty")
-    combo_empty_rpath = rpath.RPath(Globals.local_connection, combo_empty_dir)
+    combo_empty_rpath = rpath.RPath(specifics.local_connection, combo_empty_dir)
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
     restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
-    restore_rp = rpath.RPath(Globals.local_connection, restore_dir)
+    restore_rp = rpath.RPath(specifics.local_connection, restore_dir)
 
     def make_backup_dirs(self):
         """Create testfiles/ea_acl_test[12] directories"""

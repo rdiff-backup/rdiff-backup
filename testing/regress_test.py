@@ -17,13 +17,13 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class RegressTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
     out_rbdir_rp = out_rp.append_path("rdiff-backup-data")
     incrp = []
     for i in range(4):
         incrp.append(
             rpath.RPath(
-                Globals.local_connection,
+                specifics.local_connection,
                 os.path.join(comtst.old_test_dir, b"increment%d" % (i + 1)),
             )
         )
@@ -133,7 +133,7 @@ class RegressTest(unittest.TestCase):
 
         """
         rp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"regress")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"regress")
         )
         if rp.lstat():
             comtst.remove_dir(rp.path)

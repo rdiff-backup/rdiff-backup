@@ -80,7 +80,7 @@ local_connection = None
 
 # All connections should be added to the following list, so
 # further global changes can be propagated to the remote systems.
-# The first element should be Globals.local_connection.  For a
+# The first element should be specifics.local_connection.  For a
 # server, the second is the connection to the client.
 connections = []
 
@@ -98,12 +98,6 @@ isbackup_writer = None  # compat201
 
 # Connection of the backup writer
 backup_writer = None  # compat201
-
-# When backing up, issource should be true on the reader and isdest on
-# the writer.  When restoring, issource should be true on the mirror
-# and isdest should be true on the target.
-issource = None
-isdest = None
 
 # This list is used by the set function below.  When a new
 # connection is created with init_connection, its Globals class

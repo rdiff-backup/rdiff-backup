@@ -231,7 +231,7 @@ class Logger:
     def open_logfile_local(self, log_rp):
         """Open logfile locally - should only be run on one connection"""
         assert (
-            log_rp.conn is Globals.local_connection
+            log_rp.conn is specifics.local_connection
         ), "Action only foreseen locally and not over {conn}".format(conn=log_rp.conn)
         try:
             self.logfp = log_rp.open("ab")
@@ -258,7 +258,7 @@ class Logger:
     def close_logfile_local(self):
         """Run by logging connection - close logfile"""
         assert (
-            self.log_file_conn is Globals.local_connection
+            self.log_file_conn is specifics.local_connection
         ), "Action only foreseen locally and not over {lc}".format(
             lc=self.log_file_conn
         )

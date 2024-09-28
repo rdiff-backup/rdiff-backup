@@ -21,7 +21,7 @@ regfilename = os.path.join(comtst.old_test_dir, b"various_file_types", b"regular
 class LocalConnectionTest(unittest.TestCase):
     """Test the dummy connection"""
 
-    lc = Globals.local_connection
+    lc = specifics.local_connection
 
     def testGetAttrs(self):
         """Test getting of various attributes"""
@@ -172,7 +172,7 @@ class PipeConnectionTest(unittest.TestCase):
         rp = rpath.RPath(self.conn, regfilename)
         self.assertEqual(self.conn.reval("getattr", rp, "data"), rp.data)
         self.assertEqual(
-            self.conn.reval("getattr", rp, "conn"), Globals.local_connection
+            self.conn.reval("getattr", rp, "conn"), specifics.local_connection
         )
 
     def testQuotedRPaths(self):

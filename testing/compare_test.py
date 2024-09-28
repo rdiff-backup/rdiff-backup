@@ -223,7 +223,7 @@ class CompareTest(unittest.TestCase):
                 "Something is wrong with the test setup.".format(diffs=templist),
             )
             diff_rp = rpath.RPath(
-                Globals.local_connection, os.path.join(incs_dir, templist[0])
+                specifics.local_connection, os.path.join(incs_dir, templist[0])
             )
             change_file(diff_rp)
 
@@ -248,7 +248,7 @@ class CompareTest(unittest.TestCase):
         )
         change_file(
             rpath.RPath(
-                Globals.local_connection, os.path.join(self.outdir, b"stph_icons.h")
+                specifics.local_connection, os.path.join(self.outdir, b"stph_icons.h")
             )
         )
         self.assertTrue(
