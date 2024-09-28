@@ -25,16 +25,16 @@ def MakeRandomFile(path, length=None):
 class LibrsyncTest(unittest.TestCase):
     """Test various librsync wrapper functions"""
 
-    basis = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"basis"))
-    new = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"new"))
-    new2 = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"new2"))
+    basis = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"basis"))
+    new = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"new"))
+    new2 = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"new2"))
     sig = rpath.RPath(
-        Globals.local_connection, os.path.join(TEST_BASE_DIR, b"signature")
+        specifics.local_connection, os.path.join(TEST_BASE_DIR, b"signature")
     )
     sig2 = rpath.RPath(
-        Globals.local_connection, os.path.join(TEST_BASE_DIR, b"signature2")
+        specifics.local_connection, os.path.join(TEST_BASE_DIR, b"signature2")
     )
-    delta = rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, b"delta"))
+    delta = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"delta"))
 
     def sig_file_test_helper(self, blocksize, iterations, file_len=None):
         """Compare SigFile output to rdiff output at given blocksize"""

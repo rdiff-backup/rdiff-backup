@@ -19,7 +19,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 Globals.exclude_mirror_regexps = [re.compile(b".*/rdiff-backup-data")]
 
-lc = Globals.local_connection
+lc = specifics.local_connection
 
 
 class Local:
@@ -28,13 +28,13 @@ class Local:
 
     def get_src_local_rp(extension):
         return rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(comtst.old_test_dir, os.fsencode(extension)),
         )
 
     def get_tgt_local_rp(extension):
         return rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(TEST_BASE_DIR, os.fsencode(extension)),
         )
 
@@ -251,9 +251,9 @@ class PathSetter(unittest.TestCase):
         within a given directory."""
 
         if quoted:
-            dirrp = map_filenames.QuotedRPath(Globals.local_connection, directory)
+            dirrp = map_filenames.QuotedRPath(specifics.local_connection, directory)
         else:
-            dirrp = rpath.RPath(Globals.local_connection, directory)
+            dirrp = rpath.RPath(specifics.local_connection, directory)
         incbasenames = [
             filename
             for filename in robust.listrp(dirrp)
@@ -272,7 +272,7 @@ class Final(PathSetter):
         """Test initial backup of /proc locally"""
         procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         comtst.remove_dir(procout_dir)
-        procout = rpath.RPath(Globals.local_connection, procout_dir)
+        procout = rpath.RPath(specifics.local_connection, procout_dir)
         comtst.rdiff_backup(True, True, "/proc", procout.path, current_time=10000)
         time.sleep(1)
         comtst.rdiff_backup(True, True, "/proc", procout.path, current_time=20000)
@@ -289,7 +289,7 @@ class Final(PathSetter):
         """Test mirroring proc remote"""
         procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         comtst.remove_dir(procout_dir)
-        procout = rpath.RPath(Globals.local_connection, procout_dir)
+        procout = rpath.RPath(specifics.local_connection, procout_dir)
         comtst.rdiff_backup(True, False, "/proc", procout.path, current_time=10000)
         time.sleep(1)
         comtst.rdiff_backup(True, False, "/proc", procout.path, current_time=20000)
@@ -306,7 +306,7 @@ class Final(PathSetter):
         """Test mirroring proc, this time when proc is remote, dest local"""
         procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         comtst.remove_dir(procout_dir)
-        procout = rpath.RPath(Globals.local_connection, procout_dir)
+        procout = rpath.RPath(specifics.local_connection, procout_dir)
         comtst.rdiff_backup(False, True, "/proc", procout.path)
 
     @unittest.skipUnless(os.name == "nt", "Requires Windows support")
@@ -683,7 +683,7 @@ class FinalSelection(PathSetter):
         )
 
         # Test selective restoring
-        mirror_rp = rpath.RPath(Globals.local_connection, out_rel)
+        mirror_rp = rpath.RPath(specifics.local_connection, out_rel)
         restore_filename = comtst.get_increment_rp(mirror_rp, 10000).path
 
         comtst.rdiff_backup(
@@ -929,7 +929,7 @@ class FinalBugs(PathSetter):
 
         # create the bigdir on the fly
         bigdir_path = os.path.join(TEST_BASE_DIR, b"cmd_bigdir")
-        bigrp = rpath.RPath(Globals.local_connection, bigdir_path)
+        bigrp = rpath.RPath(specifics.local_connection, bigdir_path)
         bigdir_struct = {
             "subdir{}": {
                 "range": 4,

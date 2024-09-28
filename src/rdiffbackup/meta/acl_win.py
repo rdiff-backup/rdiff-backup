@@ -372,7 +372,7 @@ def init_acls():
 
 def get_meta(rp):
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function works locally not over '{co}'.".format(co=rp.conn)
     acl = get_meta_object(rp.index)
     acl.read_from_rp(rp)

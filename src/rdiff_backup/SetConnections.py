@@ -111,7 +111,7 @@ def get_connected_rpath(cmd_pair):
     if cmd:
         conn = _init_connection(cmd)
     else:
-        conn = Globals.local_connection
+        conn = specifics.local_connection
     if conn:
         return rpath.RPath(conn, filename).normalize()
     else:
@@ -122,9 +122,9 @@ def get_connected_rpath(cmd_pair):
 def init_connection_remote(conn_number):
     """Run on server side to tell self that have given conn_number"""
     Globals.connection_number = conn_number
-    Globals.local_connection.conn_number = conn_number
+    specifics.local_connection.conn_number = conn_number
     Globals.connection_dict[0] = Globals.connections[1]
-    Globals.connection_dict[conn_number] = Globals.local_connection
+    Globals.connection_dict[conn_number] = specifics.local_connection
 
 
 # @API(add_redirected_conn, 200)
@@ -140,7 +140,7 @@ def CloseConnections():
         if conn:  # could be None, if the connection failed
             conn.quit()
     del Globals.connections[1:]  # Only leave local connection
-    Globals.connection_dict = {0: Globals.local_connection}
+    Globals.connection_dict = {0: specifics.local_connection}
 
 
 def test_connections(rpaths):
@@ -319,7 +319,7 @@ def _init_connection(remote_cmd):
 
     """
     if not remote_cmd:
-        return Globals.local_connection
+        return specifics.local_connection
 
     log.Log(
         "Executing remote command {rc}".format(rc=safestr.to_str(remote_cmd)), log.INFO

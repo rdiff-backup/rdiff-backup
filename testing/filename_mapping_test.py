@@ -46,7 +46,7 @@ class FilenameMappingTest(unittest.TestCase):
             b".1969-12-31;08421;05833;05820-07;05800.data.gz"
         )
         qrp = map_filenames.get_quotedrpath(
-            rpath.RPath(Globals.local_connection, path), 1
+            rpath.RPath(specifics.local_connection, path), 1
         )
         self.assertEqual(qrp.base, b"/usr/local")
         self.assertEqual(len(qrp.index), 1)
@@ -56,10 +56,10 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
-        outrp = rpath.RPath(Globals.local_connection, self.out_dir)
+        outrp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(outrp)
         inrp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"quotetest")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"quotetest")
         )
         comtst.re_init_rpath_dir(inrp)
         long_filename = b"A" * 200  # when quoted should cause overflow
@@ -93,11 +93,11 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testReQuote(self):
         inrp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"requote")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"requote")
         )
         comtst.re_init_rpath_dir(inrp)
         inrp.append("ABC_XYZ.1").touch()
-        outrp = rpath.RPath(Globals.local_connection, self.out_dir)
+        outrp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(outrp)
         self.assertEqual(
             comtst.rdiff_backup_action(

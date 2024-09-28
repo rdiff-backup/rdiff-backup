@@ -26,8 +26,8 @@ class HashTest(unittest.TestCase):
     s3_hash = "8843d7f92416211de9ebb963ff4ce28125932878"
 
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
-    root_rp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
+    root_rp = rpath.RPath(specifics.local_connection, TEST_BASE_DIR)
 
     def test_basic(self):
         """Compare sha1sum of a few strings"""
@@ -102,7 +102,7 @@ class HashTest(unittest.TestCase):
 
         comtst.rdiff_backup(1, 1, in_rp1.path, self.out_dir, 10000)
         meta_prefix = rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
         )
         incs = meta_prefix.get_incfiles_list()

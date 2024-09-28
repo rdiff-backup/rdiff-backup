@@ -49,7 +49,7 @@ class SecurityTest(unittest.TestCase):
         conn = SetConnections._init_connection(remote_cmd)
 
         for rp in [
-            rpath.RPath(Globals.local_connection, b"blahblah"),
+            rpath.RPath(specifics.local_connection, b"blahblah"),
             rpath.RPath(conn, b"foo/bar"),
         ]:
             conn.Globals.set_local("TEST_var", rp)
@@ -69,7 +69,7 @@ class SecurityTest(unittest.TestCase):
         )
         conn = SetConnections._init_connection(remote_cmd)
         for rp in [
-            rpath.RPath(Globals.local_connection, "blahblah"),
+            rpath.RPath(specifics.local_connection, "blahblah"),
             rpath.RPath(conn, "foo/bar"),
         ]:
             conn.Globals.set_local("TEST_var", rp)
@@ -277,7 +277,7 @@ class SecurityTest(unittest.TestCase):
             b"--restrict-path foobar",
             expected_ret_code=consts.RET_CODE_ERR,
         )
-        output = rpath.RPath(Globals.local_connection, self.out_dir)
+        output = rpath.RPath(specifics.local_connection, self.out_dir)
         self.assertFalse(output.lstat())
 
     def test_quoting_bug(self):

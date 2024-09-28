@@ -116,7 +116,7 @@ class ActionReadOnlyTest(unittest.TestCase):
     def test_readonly_delete(self):
         """test the "delete" method of rpath on a read-only repository"""
 
-        from1_rp = rpath.RPath(Globals.local_connection, self.from1_path)
+        from1_rp = rpath.RPath(specifics.local_connection, self.from1_path)
         from1_rp.delete()
         self.assertIsNone(from1_rp.lstat())
 

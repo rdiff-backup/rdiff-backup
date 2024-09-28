@@ -407,7 +407,7 @@ class _DirPatchITRB(rorpiter.ITRBranch):
     def __init__(self, basis_root_rp):
         """Set basis_root_rp, the base of the tree to be incremented"""
         assert (
-            basis_root_rp.conn is Globals.local_connection
+            basis_root_rp.conn is specifics.local_connection
         ), "Function shall be called only locally."
         self.basis_root_rp = basis_root_rp
         self.dir_replacement, self.dir_update = None, None

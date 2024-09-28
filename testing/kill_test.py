@@ -22,7 +22,7 @@ class Local:
     """Hold some local RPaths"""
 
     def get_local_rp(ext):
-        return rpath.RPath(Globals.local_connection, os.path.join(TEST_BASE_DIR, ext))
+        return rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, ext))
 
     ktrp = []
     for i in range(4):

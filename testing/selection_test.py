@@ -20,7 +20,7 @@ class MatchingTest(unittest.TestCase):
     """Test matching of file names against various selection functions"""
 
     def makerp(self, path):
-        return rpath.RPath(Globals.local_connection, path)
+        return rpath.RPath(specifics.local_connection, path)
 
     def makeext(self, path):
         return self.root.new_index(tuple(path.split("/")))
@@ -30,7 +30,7 @@ class MatchingTest(unittest.TestCase):
         os.chdir(comtst.old_test_dir)
         os.chdir(os.pardir)  # chdir one level up
         self.root = rpath.RPath(
-            Globals.local_connection, "rdiff-backup_testfiles/select"
+            specifics.local_connection, "rdiff-backup_testfiles/select"
         )
         self.Select = selection.Select(self.root)
 
@@ -337,7 +337,7 @@ rdiff-backup_testfiles/select/1/1
 
     def testRoot(self):
         """testRoot - / may be a counterexample to several of these.."""
-        root = rpath.RPath(Globals.local_connection, "/")
+        root = rpath.RPath(specifics.local_connection, "/")
         select = selection.Select(root)
 
         self.assertEqual(select._glob_get_sf("/", 1)(root), 1)
@@ -361,23 +361,23 @@ rdiff-backup_testfiles/select/1/1
     @unittest.skipIf(sys.platform.startswith("win"), "can't work with Windows")
     def testOtherFilesystems(self):
         """Test to see if --exclude-other-filesystems works correctly"""
-        root = rpath.RPath(Globals.local_connection, "/")
+        root = rpath.RPath(specifics.local_connection, "/")
         select = selection.Select(root)
         sf = select._other_filesystems_get_sf(0)
         self.assertIsNone(sf(root))
         self.assertIsNone(
-            sf(rpath.RPath(Globals.local_connection, "/usr/bin")),
+            sf(rpath.RPath(specifics.local_connection, "/usr/bin")),
             "Assumption: /usr/bin is on the same filesystem as /",
         )
         self.assertEqual(
-            sf(rpath.RPath(Globals.local_connection, "/proc")),
+            sf(rpath.RPath(specifics.local_connection, "/proc")),
             0,
             "Assumption: /proc is on a different filesystem",
         )
         for check_dir in (b"/boot", b"/boot/efi", b"/tmp"):
             if (b" " + check_dir + b" ") in subprocess.check_output("mount"):
                 self.assertEqual(
-                    sf(rpath.RPath(Globals.local_connection, check_dir)),
+                    sf(rpath.RPath(specifics.local_connection, check_dir)),
                     0,
                     "Assumption: {dir} is on a different filesystem".format(
                         dir=check_dir
@@ -398,7 +398,7 @@ class ParseSelectionArgsTest(unittest.TestCase):
 
         if not self.root:
             self.root = rpath.RPath(
-                Globals.local_connection, "rdiff-backup_testfiles/select"
+                specifics.local_connection, "rdiff-backup_testfiles/select"
             )
         self.Select = selection.Select(self.root)
         self.Select.parse_selection_args(tuplelist)
@@ -638,7 +638,7 @@ rdiff-backup_testfiles/select**/2
     def testAlternateRoot(self):
         """Test select with different root"""
         self.root = rpath.RPath(
-            Globals.local_connection, "rdiff-backup_testfiles/select/1"
+            specifics.local_connection, "rdiff-backup_testfiles/select/1"
         )
         self.ParseTest(
             [("exclude", b"rdiff-backup_testfiles/select/1/[23]")],
@@ -646,7 +646,7 @@ rdiff-backup_testfiles/select**/2
         )
 
         if sys.platform.startswith("win"):
-            self.root = rpath.RPath(Globals.local_connection, "C:/")
+            self.root = rpath.RPath(specifics.local_connection, "C:/")
             self.ParseTest(
                 [
                     ("exclude", b"C:/Users/*"),
@@ -656,7 +656,7 @@ rdiff-backup_testfiles/select**/2
                 [(), ("Users",)],
             )
         else:
-            self.root = rpath.RPath(Globals.local_connection, "/")
+            self.root = rpath.RPath(specifics.local_connection, "/")
             self.ParseTest(
                 [("exclude", b"/home/*"), ("include", b"/home"), ("exclude", b"/")],
                 [(), ("home",)],
@@ -781,13 +781,13 @@ class CommandTest(unittest.TestCase):
         This checks for a bug present in 1.0.3/1.1.5 and similar.
         """
         out_dir = os.path.join(TEST_BASE_DIR, b"output")
-        out_rp = rpath.RPath(Globals.local_connection, out_dir)
+        out_rp = rpath.RPath(specifics.local_connection, out_dir)
         comtst.re_init_rpath_dir(out_rp)
         # we need to change directory to be able to work with relative paths
         os.chdir(TEST_BASE_DIR)
         currdir = os.path.basename(os.getcwdb())
         os.chdir(os.pardir)  # chdir one level up
-        selrp = rpath.RPath(Globals.local_connection, os.path.join(currdir, b"seltest"))
+        selrp = rpath.RPath(specifics.local_connection, os.path.join(currdir, b"seltest"))
         comtst.re_init_rpath_dir(selrp)
         emptydir = selrp.append("emptydir")
         emptydir.mkdir()
@@ -815,7 +815,7 @@ class CommandTest(unittest.TestCase):
         while ignoring this repo
         """
 
-        testrp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR).append(
+        testrp = rpath.RPath(specifics.local_connection, TEST_BASE_DIR).append(
             "selection_overlap"
         )
         comtst.re_init_rpath_dir(testrp)

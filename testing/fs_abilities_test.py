@@ -80,7 +80,7 @@ class FSAbilitiesTest(unittest.TestCase):
 
     def testReadOnly(self):
         """Test basic querying read only"""
-        base_dir = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
+        base_dir = rpath.RPath(specifics.local_connection, TEST_BASE_DIR)
         t = time.time()
         fsa = fs_abilities.detect_fs_abilities(base_dir, writable=False)
         print("Time elapsed = ", time.time() - t)
@@ -95,7 +95,7 @@ class FSAbilitiesTest(unittest.TestCase):
 
     def testReadWrite(self):
         """Test basic querying read/write"""
-        base_dir = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
+        base_dir = rpath.RPath(specifics.local_connection, TEST_BASE_DIR)
         new_dir = base_dir.append("fs_abilitiestest")
         if new_dir.lstat():
             comtst.remove_dir(new_dir.path)
@@ -127,7 +127,7 @@ class FSAbilitiesTest(unittest.TestCase):
     )
     def test_case_sensitive(self):
         """Test a read-only case-INsensitive directory"""
-        rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)
+        rp = rpath.RPath(specifics.local_connection, self.case_insensitive_path)
         fsa = fs_abilities.detect_fs_abilities(rp, writable=False)
         fsa._detect_case_sensitive_readonly(rp)
         self.assertEqual(fsa.case_sensitive, 0)

@@ -82,7 +82,7 @@ class testMiscIters(unittest.TestCase):
     def setUp(self):
         """Make testfiles/output directory and a few files"""
         comtst.remove_dir(self.out_dir)
-        self.outputrp = rpath.RPath(Globals.local_connection, self.out_dir)
+        self.outputrp = rpath.RPath(specifics.local_connection, self.out_dir)
         self.regfile1 = self.outputrp.append("reg1")
         self.regfile2 = self.outputrp.append("reg2")
         self.regfile3 = self.outputrp.append("reg3")

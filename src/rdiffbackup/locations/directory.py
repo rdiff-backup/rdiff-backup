@@ -32,7 +32,7 @@ from rdiffbackup.singletons import consts
 class ReadDir(location.Location):
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)
-        if orig_path.conn is Globals.local_connection:
+        if orig_path.conn is specifics.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 
@@ -99,7 +99,7 @@ class ReadDir(location.Location):
 class WriteDir(location.Location):
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)
-        if orig_path.conn is Globals.local_connection:
+        if orig_path.conn is specifics.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 

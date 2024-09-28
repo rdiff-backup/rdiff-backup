@@ -156,9 +156,9 @@ class LocalConnection(Connection):
     def __init__(self):
         """This prevents two instances of LocalConnection"""
         assert (
-            not Globals.local_connection
+            not specifics.local_connection
         ), "Local connection has already been initialized with {conn}.".format(
-            conn=Globals.local_connection
+            conn=specifics.local_connection
         )
         super().__init__()
         self.conn_number = 0  # changed by SetConnections for server
@@ -732,14 +732,14 @@ def RedirectedRun(conn_number, func, *args):
     """
     conn = Globals.connection_dict[conn_number]
     assert (
-        conn is not Globals.local_connection
+        conn is not specifics.local_connection
     ), "A redirected run shouldn't be required locally for {fnc}.".format(
         fnc=func.__name__
     )
     return conn.reval(func, *args)
 
 
-Globals.local_connection = LocalConnection()
-Globals.connections.append(Globals.local_connection)
+specifics.local_connection = LocalConnection()
+Globals.connections.append(specifics.local_connection)
 # Following changed by server in SetConnections
-Globals.connection_dict[0] = Globals.local_connection
+Globals.connection_dict[0] = specifics.local_connection

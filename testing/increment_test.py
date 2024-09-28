@@ -13,7 +13,7 @@ from rdiffbackup.locations import increment
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
-lc = Globals.local_connection
+lc = specifics.local_connection
 Globals.change_source_perms = 1
 
 

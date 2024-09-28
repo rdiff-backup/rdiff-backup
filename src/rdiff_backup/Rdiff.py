@@ -82,7 +82,7 @@ def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
     used to produce hashes.
     """
     assert (
-        rp_basis.conn is Globals.local_connection
+        rp_basis.conn is specifics.local_connection
     ), "This function must run locally and not over '{conn}'.".format(
         conn=rp_basis.conn
     )

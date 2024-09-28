@@ -84,7 +84,7 @@ def parse_args():
         usage(1)
 
     data_dir = rpath.RPath(
-        Globals.local_connection,
+        specifics.local_connection,
         os.path.join(os.fsencode(args[0]), b"rdiff-backup-data"),
     )
     if not data_dir.isdir():

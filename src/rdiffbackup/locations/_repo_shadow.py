@@ -996,7 +996,7 @@ class RepoShadow(location.LocationShadow):
         increments, and this is done automatically for rorp iterators.
         Encode the lines in the first element of the rorp's index.
         """
-        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        assert cls._base_dir.conn is specifics.local_connection, "Run locally only"
         cls.init_loop(restore_to_time)
 
         old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
@@ -1024,7 +1024,7 @@ class RepoShadow(location.LocationShadow):
         Output is a RORP Iterator with info in index.
         See list_files_changed_since for details.
         """
-        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        assert cls._base_dir.conn is specifics.local_connection, "Run locally only"
         cls.init_loop(reftime)
         old_iter = cls._get_mirror_rorp_iter()
         for rorp in old_iter:
@@ -1144,7 +1144,7 @@ class RepoShadow(location.LocationShadow):
         Remove increments older than the given time
         """
         assert (
-            cls._data_dir.conn is Globals.local_connection
+            cls._data_dir.conn is specifics.local_connection
         ), "Function should be called only locally " "and not over '{co}'.".format(
             co=cls._data_dir.conn
         )
@@ -1305,7 +1305,7 @@ class RepoShadow(location.LocationShadow):
         Compute SHA1 sums of repository files and check against metadata
         """
         assert (
-            cls._ref_path.conn is Globals.local_connection
+            cls._ref_path.conn is specifics.local_connection
         ), "Only verify mirror locally, not remotely over '{conn}'.".format(
             conn=cls._ref_path.conn
         )
@@ -1477,7 +1477,7 @@ information in it.
             cls._base_dir.isdir() and cls._incs_dir.isdir()
         ), "Mirror and increments paths must be directories"
         assert (
-            cls._base_dir.conn is cls._incs_dir.conn is Globals.local_connection
+            cls._base_dir.conn is cls._incs_dir.conn is specifics.local_connection
         ), "Regress must happen locally."
         meta_manager, former_current_mirror_rp = cls._set_regress_time()
         cls._set_restore_times()
@@ -1583,7 +1583,7 @@ information in it.
 
         for curmir_rp in curmir_incs:
             assert (
-                curmir_rp.conn is Globals.local_connection
+                curmir_rp.conn is specifics.local_connection
             ), "Function must be called locally not over '{conn}'.".format(
                 conn=curmir_rp.conn
             )
@@ -2262,10 +2262,10 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
     def __init__(self, basis_root_rp, CCPP):
         """Set basis_root_rp, the base of the tree to be incremented"""
         self.basis_root_rp = basis_root_rp
-        assert basis_root_rp.conn is Globals.local_connection, (
+        assert basis_root_rp.conn is specifics.local_connection, (
             "Basis root path connection {conn} isn't "
             "local connection {lconn}.".format(
-                conn=basis_root_rp.conn, lconn=Globals.local_connection
+                conn=basis_root_rp.conn, lconn=specifics.local_connection
             )
         )
         self.statfileobj = (

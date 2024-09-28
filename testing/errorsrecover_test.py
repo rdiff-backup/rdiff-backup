@@ -18,7 +18,7 @@ class BrokenRepoTest(unittest.TestCase):
     """Handling of somehow broken repos"""
 
     def makerp(self, path):
-        return rpath.RPath(Globals.local_connection, path)
+        return rpath.RPath(specifics.local_connection, path)
 
     def makeext(self, path):
         return self.root.new_index(tuple(path.split("/")))

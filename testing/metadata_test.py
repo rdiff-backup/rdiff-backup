@@ -20,7 +20,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class MetadataTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
 
     def testQuote(self):
         """Test quoting and unquoting"""
@@ -42,12 +42,12 @@ class MetadataTest(unittest.TestCase):
     def get_rpaths(self):
         """Return list of rorps"""
         vft = rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(comtst.old_test_dir, b"various_file_types"),
         )
         rpaths = [vft.append(x) for x in vft.listdir()]
         extra_rpaths = [
-            rpath.RPath(Globals.local_connection, x)
+            rpath.RPath(specifics.local_connection, x)
             for x in [b"/bin/ls", b"/dev/ttyS0", b"/dev/hda", b"aoeuaou"]
         ]
         return [vft] + rpaths + extra_rpaths
@@ -103,7 +103,7 @@ class MetadataTest(unittest.TestCase):
         fileset.create_fileset(bigdir_path, bigdir_struct)
 
         comtst.re_init_rpath_dir(self.out_rp)
-        rootrp = rpath.RPath(Globals.local_connection, bigdir_path)
+        rootrp = rpath.RPath(specifics.local_connection, bigdir_path)
         rpath_iter = selection.Select(rootrp).get_select_iter()
 
         start_time = time.time()
@@ -194,7 +194,7 @@ class MetadataTest(unittest.TestCase):
 
         comtst.re_init_rpath_dir(self.out_rp)
         rootrp = rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(comtst.old_test_dir, b"various_file_types"),
         )
         # the following 3 lines make sure that we ignore incorrect files
@@ -285,16 +285,16 @@ class MetadataTest(unittest.TestCase):
         comtst.re_init_rpath_dir(self.out_rp)
         man = meta_mgr.PatchDiffMan(self.out_rp)
         inc1 = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment1")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment1")
         )
         inc2 = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment2")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment2")
         )
         inc3 = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment3")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment3")
         )
         inc4 = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment4")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment4")
         )
         write_dir_to_meta(man, inc1, 10000)
         compare(man, inc1, 10000)

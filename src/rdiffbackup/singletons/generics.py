@@ -62,35 +62,12 @@ resource_forks_write = None
 carbonfile_active = None
 carbonfile_write = None
 
-# This will be set as soon as the LocalConnection class loads
-local_connection = None
-
-# All connections should be added to the following list, so
-# further global changes can be propagated to the remote systems.
-# The first element should be Globals.local_connection.  For a
-# server, the second is the connection to the client.
-connections = []
-
-# Each process should have a connection number unique to the
-# session.  The client has connection number 0.
-connection_number = 0
-
-# Dictionary pairing connection numbers with connections.  Set in
-# SetConnections for all connections.
-connection_dict = {}
-
 # True if the script is the end that writes to the increment and
 # mirror directories.  True for purely local sessions.
 isbackup_writer = None  # compat201
 
 # Connection of the backup writer
 backup_writer = None  # compat201
-
-# When backing up, issource should be true on the reader and isdest on
-# the writer.  When restoring, issource should be true on the mirror
-# and isdest should be true on the target.
-issource = None
-isdest = None
 
 # This list is used by the set function below.  When a new
 # connection is created with init_connection, its Globals class

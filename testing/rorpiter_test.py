@@ -25,7 +25,7 @@ class RORPIterTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
     def setUp(self):
-        self.lc = Globals.local_connection
+        self.lc = specifics.local_connection
         self.inc0rp = rpath.RPath(
             self.lc, os.path.join(comtst.old_test_dir, b"empty"), ()
         )
@@ -124,7 +124,7 @@ class FillTest(unittest.TestCase):
 
     def test_fill_in(self):
         """Test fill_in_iter"""
-        rootrp = rpath.RPath(Globals.local_connection, self.out_dir)
+        rootrp = rpath.RPath(specifics.local_connection, self.out_dir)
 
         def get_rpiter():
             for index in [

@@ -129,7 +129,7 @@ class ActionRegressTest(unittest.TestCase):
         )
         # we again simulate a crash
         _repo_shadow.RepoShadow.init(
-            rpath.RPath(Globals.local_connection, self.bak_path),
+            rpath.RPath(specifics.local_connection, self.bak_path),
             {},
             True,
             True,
