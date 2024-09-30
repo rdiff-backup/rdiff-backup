@@ -121,6 +121,7 @@ class Logger:
             )
         else:
             termfp.write(tmpstr)
+        termfp.flush()
 
     def conn(self, direction, result, req_num):
         """Log some data on the connection

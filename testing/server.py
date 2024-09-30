@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+from rdiffbackup.singletons import specifics
 
 __doc__ = """
 
@@ -26,5 +27,6 @@ except (OSError, ImportError):
     print_usage()
     raise
 
+specifics.server = True
 Security._security_level = "override"
 sys.exit(connection.PipeConnection(sys.stdin.buffer, sys.stdout.buffer).Server())
