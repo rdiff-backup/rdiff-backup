@@ -69,7 +69,7 @@ class QuotedRPath(rpath.RPath):
         Reproduce QuotedRPath from __getstate__ output
         """
         conn_number, self.base, self.index, self.data = rpath_state
-        self.conn = Globals.connection_dict[conn_number]
+        self.conn = specifics.connection_dict[conn_number]
         self.quoted_index = tuple(map(quote, self.index))
         self.path = self.path_join(self.base, *self.quoted_index)
 

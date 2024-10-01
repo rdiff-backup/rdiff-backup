@@ -635,7 +635,7 @@ class BaseAction:
             tempfile.tempdir = self.values["tempdir"]
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
-        for conn in Globals.connections:
+        for conn in specifics.connections:
             conn.robust.install_signal_handlers()
 
         return consts.RET_CODE_OK

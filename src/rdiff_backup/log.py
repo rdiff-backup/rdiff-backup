@@ -218,7 +218,7 @@ class Logger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         log_rp.conn.log.Log.open_logfile_local(log_rp)
-        for conn in Globals.connections:
+        for conn in specifics.connections:
             conn.log.Log.open_logfile_allconn(log_rp.conn)
 
     # @API(Log.open_logfile_allconn, 200)
@@ -245,7 +245,7 @@ class Logger:
     def close_logfile(self):
         """Close logfile and inform all connections"""
         if self.log_file_open:
-            for conn in Globals.connections:
+            for conn in specifics.connections:
                 conn.log.Log.close_logfile_allconn()
             self.log_file_conn.log.Log.close_logfile_local()
 

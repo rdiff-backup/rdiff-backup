@@ -121,26 +121,25 @@ def get_connected_rpath(cmd_pair):
 # @API(init_connection_remote, 200)
 def init_connection_remote(conn_number):
     """Run on server side to tell self that have given conn_number"""
-    Globals.connection_number = conn_number
     specifics.local_connection.conn_number = conn_number
-    Globals.connection_dict[0] = Globals.connections[1]
-    Globals.connection_dict[conn_number] = specifics.local_connection
+    specifics.connection_dict[0] = specifics.connections[1]
+    specifics.connection_dict[conn_number] = specifics.local_connection
 
 
 # @API(add_redirected_conn, 200)
 def add_redirected_conn(conn_number):
     """Run on server side - tell about redirected connection"""
-    Globals.connection_dict[conn_number] = connection.RedirectedConnection(conn_number)
+    specifics.connection_dict[conn_number] = connection.RedirectedConnection(conn_number)
 
 
 def CloseConnections():
     """Close all connections.  Run by client"""
     assert not Globals.server, "Connections can't be closed by server"
-    for conn in Globals.connections:
+    for conn in specifics.connections:
         if conn:  # could be None, if the connection failed
             conn.quit()
-    del Globals.connections[1:]  # Only leave local connection
-    Globals.connection_dict = {0: specifics.local_connection}
+    del specifics.connections[1:]  # Only leave local connection
+    specifics.connection_dict = {0: specifics.local_connection}
 
 
 def test_connections(rpaths):
@@ -152,7 +151,7 @@ def test_connections(rpaths):
     """
     # the function doesn't use the log functions because it might not have
     # an error or log file to use.
-    conn_len = len(Globals.connections)
+    conn_len = len(specifics.connections)
     if conn_len == 1:
         log.Log("No remote connections specified, only local one available", log.ERROR)
         return consts.RET_CODE_FILE_ERR
@@ -342,7 +341,7 @@ def _init_connection(remote_cmd):
         (stdin, stdout) = (process.stdin, process.stdout)
     except OSError:
         (stdin, stdout) = (None, None)
-    conn_number = len(Globals.connections)
+    conn_number = len(specifics.connections)
     conn = connection.PipeConnection(stdout, stdin, conn_number, process)
 
     if not _validate_connection_version(conn, remote_cmd):
@@ -494,14 +493,14 @@ Please make sure you have compatible versions of rdiff-backup""".format(
 
 def _init_connection_routing(conn, conn_number, remote_cmd):
     """Called by _init_connection, establish routing, conn dict"""
-    Globals.connection_dict[conn_number] = conn
+    specifics.connection_dict[conn_number] = conn
 
     conn.SetConnections.init_connection_remote(conn_number)
-    for other_remote_conn in Globals.connections[1:]:
+    for other_remote_conn in specifics.connections[1:]:
         conn.SetConnections.add_redirected_conn(other_remote_conn.conn_number)
         other_remote_conn.SetConnections.add_redirected_conn(conn_number)
 
-    Globals.connections.append(conn)
+    specifics.connections.append(conn)
     __conn_remote_cmds.append(remote_cmd)
 
 
@@ -518,7 +517,7 @@ def _test_connection(conn_number, rp):
     # the function doesn't use the log functions because it might not have
     # an error or log file to use.
     print("Testing server started by: ", __conn_remote_cmds[conn_number])
-    conn = Globals.connections[conn_number]
+    conn = specifics.connections[conn_number]
     if conn is None:
         sys.stderr.write("- Connection failed, server tests skipped\n")
         return False

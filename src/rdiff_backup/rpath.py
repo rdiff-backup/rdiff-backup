@@ -740,7 +740,7 @@ class RPath(RORPath):
     def __setstate__(self, rpath_state):
         """Reproduce RPath from __getstate__ output"""
         conn_number, self.base, self.index, self.data = rpath_state
-        self.conn = Globals.connection_dict[conn_number]
+        self.conn = specifics.connection_dict[conn_number]
         self.path = self.path_join(self.base, *self.index)
 
     def setdata(self):
