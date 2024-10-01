@@ -388,7 +388,7 @@ class LowLevelPipeConnection(Connection):
         elif format_string == b"Q":
             result = self._getqrpath(data)
         elif format_string == b"c":
-            result = Globals.connection_dict[self._b2i(data)]
+            result = specifics.connection_dict[self._b2i(data)]
         else:
             raise ConnectionReadError(
                 "Format character '{form}' invalid in <{hdr}> "
@@ -408,13 +408,13 @@ class LowLevelPipeConnection(Connection):
     def _getrpath(self, raw_rpath_buf):
         """Return RPath object indicated by raw_rpath_buf"""
         conn_number, base, index, data = pickle.loads(raw_rpath_buf)
-        return rpath.RPath(Globals.connection_dict[conn_number], base, index, data)
+        return rpath.RPath(specifics.connection_dict[conn_number], base, index, data)
 
     def _getqrpath(self, raw_qrpath_buf):
         """Return QuotedRPath object from raw buffer"""
         conn_number, base, index, data = pickle.loads(raw_qrpath_buf)
         return map_filenames.QuotedRPath(
-            Globals.connection_dict[conn_number], base, index, data
+            specifics.connection_dict[conn_number], base, index, data
         )
 
     def _close(self):
@@ -466,7 +466,7 @@ class PipeConnection(LowLevelPipeConnection):
 
     def Server(self):
         """Start server's read eval return loop"""
-        Globals.connections.append(self)
+        specifics.connections.append(self)
         log.Log("Starting server", log.INFO)
         self._get_response(-1)
         return consts.RET_CODE_OK
@@ -618,7 +618,7 @@ class RedirectedConnection(Connection):
         super().__init__()
         self.conn_number = conn_number
         self.routing_number = routing_number
-        self.routing_conn = Globals.connection_dict[routing_number]
+        self.routing_conn = specifics.connection_dict[routing_number]
 
     def reval(self, function_string, *args):
         """Evaluation function_string on args on remote connection"""
@@ -730,7 +730,7 @@ def RedirectedRun(conn_number, func, *args):
     available).
 
     """
-    conn = Globals.connection_dict[conn_number]
+    conn = specifics.connection_dict[conn_number]
     assert (
         conn is not specifics.local_connection
     ), "A redirected run shouldn't be required locally for {fnc}.".format(
@@ -740,6 +740,6 @@ def RedirectedRun(conn_number, func, *args):
 
 
 specifics.local_connection = LocalConnection()
-Globals.connections.append(specifics.local_connection)
+specifics.connections.append(specifics.local_connection)
 # Following changed by server in SetConnections
-Globals.connection_dict[0] = specifics.local_connection
+specifics.connection_dict[0] = specifics.local_connection

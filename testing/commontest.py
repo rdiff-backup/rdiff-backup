@@ -375,9 +375,9 @@ def reset_connections():
     Globals.isbackup_reader = Globals.isbackup_writer = None
     Globals.rbdir = None
     # reset the connection status
-    Globals.connection_number = 0
-    Globals.connections = [specifics.local_connection]
-    Globals.connection_dict = {0: specifics.local_connection}
+    specifics.local_connection.conn_number = 0
+    specifics.connections = [specifics.local_connection]
+    specifics.connection_dict = {0: specifics.local_connection}
     # reset the quoting status
     Globals.chars_to_quote = None
     Globals.chars_to_quote_regexp = None

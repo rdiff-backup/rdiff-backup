@@ -84,10 +84,6 @@ local_connection = None
 # server, the second is the connection to the client.
 connections = []
 
-# Each process should have a connection number unique to the
-# session.  The client has connection number 0.
-connection_number = 0
-
 # Dictionary pairing connection numbers with connections.  Set in
 # SetConnections for all connections.
 connection_dict = {}

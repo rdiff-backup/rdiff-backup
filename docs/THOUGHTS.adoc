@@ -27,3 +27,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - get rid of usage of selection module in fs_abilities
 - specific variable change_mirror_perms doesn't seem to be used anywhere
 - generic variable preserve_atime isn't modified anywhere
+- simplify usage of connections and connection_dict (get rid of one of both?)
