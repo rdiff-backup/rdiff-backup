@@ -12,6 +12,9 @@ all: clean container test build
 
 test: test-static test-runtime
 
+check:
+	@command -v rdiff >/dev/null && echo "rdiff is installed" || { echo "Error: rdiff is not installed"; exit 1; }
+
 test-static:
 	${RUN_COMMAND} tox -c tox.ini -e check-static
 
@@ -21,7 +24,7 @@ test-runtime-files:
 	@echo "=== Install files required by the tests ==="
 	${RUN_COMMAND} ./tools/setup-testfiles.sh  # This must run as root or sudo be available
 
-test-runtime-base: test-runtime-files
+test-runtime-base: check test-runtime-files
 	@echo "=== Base tests ==="
 	${RUN_COMMAND} tox -c tox.ini -e py
 
