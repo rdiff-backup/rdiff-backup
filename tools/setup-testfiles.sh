@@ -15,7 +15,7 @@ then
 	echo "Test files found, not re-installing them..." >&2
 else
 	echo "Test files not found, installing them..." >&2
-	cd ..
+	pushd ..
 	if [ ! -f ${TESTREPODIR}/${TESTTARFILE} ]
 	then
 		rm -fr ${TESTREPODIR}  # Clean away potential cruft
@@ -36,7 +36,7 @@ else
 	${SUDO} tar xf ${TESTREPODIR}/${TESTTARFILE}
 	${SUDO} ${TESTREPODIR}/rdiff-backup_testfiles.fix.sh "${RDIFF_TEST_USER}" "${RDIFF_TEST_GROUP}"
 
-	cd rdiff-backup
+	popd
 fi
 
 echo "
