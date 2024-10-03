@@ -90,7 +90,7 @@ connection_dict = {}
 
 # True if the script is the end that writes to the increment and
 # mirror directories.  True for purely local sessions.
-isbackup_writer = None  # compat201
+is_backup_writer = None  # compat201
 
 # Connection of the backup writer
 backup_writer = None  # compat201

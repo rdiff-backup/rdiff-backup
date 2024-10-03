@@ -62,13 +62,6 @@ resource_forks_write = None
 carbonfile_active = None
 carbonfile_write = None
 
-# True if the script is the end that writes to the increment and
-# mirror directories.  True for purely local sessions.
-isbackup_writer = None  # compat201
-
-# Connection of the backup writer
-backup_writer = None  # compat201
-
 # This list is used by the set function below.  When a new
 # connection is created with init_connection, its Globals class
 # will match this one for all the variables mentioned in this
