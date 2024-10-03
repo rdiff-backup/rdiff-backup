@@ -42,6 +42,7 @@ jobs:
         name: package-artifacts
         path: dist/*.whl
         if-no-files-found: error
+        overwrite: true
 
   build-sdist:
     runs-on: ubuntu-latest
@@ -63,6 +64,7 @@ jobs:
         name: package-artifacts
         path: dist/*.tar.gz
         if-no-files-found: error
+        overwrite: true
 
   build-windows:
     runs-on: windows-latest
@@ -94,6 +96,7 @@ jobs:
           dist/*.zip
           dist/*.whl
         if-no-files-found: error
+        overwrite: true
 
   test-built-windows:
     runs-on: windows-latest
