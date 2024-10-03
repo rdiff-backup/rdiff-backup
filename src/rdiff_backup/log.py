@@ -363,17 +363,17 @@ class ErrorLog:
     # @API(ErrorLog.isopen, 200)
     def isopen(cls):
         """True if the error log file is currently open"""
-        if Globals.isbackup_writer or not Globals.backup_writer:
+        if specifics.is_backup_writer or not specifics.backup_writer:
             return cls._log_fileobj is not None
         else:
-            return Globals.backup_writer.log.ErrorLog.isopen()
+            return specifics.backup_writer.log.ErrorLog.isopen()
 
     @classmethod
     # @API(ErrorLog.write_if_open, 200)
     def write_if_open(cls, error_type, rp, exc):
         """Call cls._write(...) if error log open, only log otherwise"""
-        if not Globals.isbackup_writer and Globals.backup_writer:
-            return Globals.backup_writer.log.ErrorLog.write_if_open(error_type, rp, exc)
+        if not specifics.is_backup_writer and specifics.backup_writer:
+            return specifics.backup_writer.log.ErrorLog.write_if_open(error_type, rp, exc)
         if cls.isopen():
             cls._write(error_type, rp, exc)
         else:

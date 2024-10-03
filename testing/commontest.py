@@ -372,7 +372,7 @@ def get_increment_rp(mirror_rp, time):
 def reset_connections():
     """Reset some global connection information"""
     Security._security_level = "override"
-    Globals.isbackup_reader = Globals.isbackup_writer = None
+    Globals.isbackup_reader = specifics.is_backup_writer = None
     Globals.rbdir = None
     # reset the connection status
     specifics.local_connection.conn_number = 0
