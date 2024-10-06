@@ -8,8 +8,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
 from rdiffbackup.locations import fs_abilities
+from rdiffbackup.singletons import specifics
 
 # we don't need all these imports but we use them to decide which type will
 # have the corresponding attributes

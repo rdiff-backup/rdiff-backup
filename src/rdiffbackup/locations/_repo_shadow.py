@@ -51,7 +51,7 @@ from rdiffbackup.locations import fs_abilities, increment, location
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
-from rdiffbackup.singletons import consts, generics
+from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import locking, simpleps
 
 # ### COPIED FROM BACKUP ####

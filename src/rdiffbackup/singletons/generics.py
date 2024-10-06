@@ -22,9 +22,6 @@ They are generic to all instances of rdiff-backup involved.
 """
 
 import os
-import yaml
-from importlib import metadata
-from rdiff_backup import log
 from rdiffbackup.singletons import specifics
 
 # If true, when copying attributes, also change target's uid/gid

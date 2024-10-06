@@ -37,7 +37,7 @@ from rdiff_backup import C, Globals, log, rorpiter
 from rdiffbackup import meta
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
-from rdiffbackup.singletons import generics
+from rdiffbackup.singletons import generics, specifics
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name

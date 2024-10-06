@@ -18,9 +18,9 @@
 # 02110-1301, USA
 
 import os
-from rdiff_backup import C, Globals, log, rorpiter
+from rdiff_backup import C, log, rorpiter
 from rdiffbackup import meta
-from rdiffbackup.singletons import generics
+from rdiffbackup.singletons import generics, specifics
 from rdiffbackup.utils import safestr
 
 try:

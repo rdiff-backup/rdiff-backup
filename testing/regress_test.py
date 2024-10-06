@@ -10,7 +10,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import Globals, rpath, Time
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

@@ -13,7 +13,7 @@ import fileset
 
 from rdiff_backup import Globals, log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

@@ -9,7 +9,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, librsync, rpath
+from rdiff_backup import librsync, rpath
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -25,7 +26,9 @@ def MakeRandomFile(path, length=None):
 class LibrsyncTest(unittest.TestCase):
     """Test various librsync wrapper functions"""
 
-    basis = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"basis"))
+    basis = rpath.RPath(
+        specifics.local_connection, os.path.join(TEST_BASE_DIR, b"basis")
+    )
     new = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"new"))
     new2 = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"new2"))
     sig = rpath.RPath(
@@ -34,7 +37,9 @@ class LibrsyncTest(unittest.TestCase):
     sig2 = rpath.RPath(
         specifics.local_connection, os.path.join(TEST_BASE_DIR, b"signature2")
     )
-    delta = rpath.RPath(specifics.local_connection, os.path.join(TEST_BASE_DIR, b"delta"))
+    delta = rpath.RPath(
+        specifics.local_connection, os.path.join(TEST_BASE_DIR, b"delta")
+    )
 
     def sig_file_test_helper(self, blocksize, iterations, file_len=None):
         """Compare SigFile output to rdiff output at given blocksize"""

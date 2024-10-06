@@ -18,7 +18,8 @@
 # 02110-1301, USA
 """Invoke rdiff utility to make signatures, deltas, or patch"""
 
-from rdiff_backup import Globals, log, rpath, hash, librsync
+from rdiff_backup import log, rpath, hash, librsync
+from rdiffbackup.singletons import specifics
 
 
 def get_signature(rp, blocksize=None):

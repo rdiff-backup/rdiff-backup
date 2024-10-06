@@ -34,7 +34,7 @@ from rdiff_backup import (
     Security,
 )
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 
 class ConnectionError(Exception):

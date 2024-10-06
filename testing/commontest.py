@@ -22,6 +22,7 @@ from rdiff_backup import (
 from rdiffbackup import actions, run
 from rdiffbackup.meta import ea, acl_posix
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
+from rdiffbackup.singletons import generics, specifics
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 

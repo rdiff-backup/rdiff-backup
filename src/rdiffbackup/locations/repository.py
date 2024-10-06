@@ -21,9 +21,9 @@
 A location module to define repository classes as created by rdiff-backup
 """
 
-from rdiff_backup import Globals, log
+from rdiff_backup import log
 from rdiffbackup.locations import fs_abilities, location
-from rdiffbackup.singletons import consts, generics
+from rdiffbackup.singletons import consts, generics, specifics
 
 
 class Repo(location.Location):

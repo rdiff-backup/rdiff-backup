@@ -20,7 +20,8 @@
 
 import os
 import tempfile
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
+from rdiffbackup.singletons import specifics
 
 
 class Violation(Exception):

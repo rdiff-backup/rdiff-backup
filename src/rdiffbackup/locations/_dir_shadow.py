@@ -39,7 +39,7 @@ from rdiff_backup import (
 )
 from rdiffbackup.locations import location
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 # ### COPIED FROM BACKUP ####
 

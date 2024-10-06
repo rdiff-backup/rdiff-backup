@@ -8,8 +8,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath, Security, SetConnections
-from rdiffbackup.singletons import consts
+from rdiff_backup import rpath, Security, SetConnections
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

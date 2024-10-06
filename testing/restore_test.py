@@ -7,8 +7,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, log, rpath, Time
+from rdiff_backup import log, rpath, Time
 from rdiffbackup.locations import _repo_shadow
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
