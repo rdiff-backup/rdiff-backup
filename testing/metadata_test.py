@@ -10,9 +10,10 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import rpath, Globals, selection
+from rdiff_backup import rpath, selection
 from rdiffbackup import meta_mgr
 from rdiffbackup.meta import stdattr
+from rdiffbackup.singletons import specifics
 from rdiffbackup.utils import quoting
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)

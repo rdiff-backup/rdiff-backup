@@ -10,6 +10,7 @@ import commontest as comtst
 
 from rdiff_backup import Globals, rpath
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

@@ -9,8 +9,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import hash, rpath, Globals, Security, SetConnections
+from rdiff_backup import hash, rpath, Security, SetConnections
 from rdiffbackup.meta import stdattr
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

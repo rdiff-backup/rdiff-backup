@@ -12,6 +12,7 @@ import fileset
 from rdiff_backup import Globals, rpath, selection
 from rdiffbackup.meta import stdattr
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

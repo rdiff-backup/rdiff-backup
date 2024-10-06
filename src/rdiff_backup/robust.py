@@ -21,7 +21,7 @@
 import errno
 import signal
 import zlib
-from rdiff_backup import librsync, C, rpath, Globals, log, connection
+from rdiff_backup import librsync, C, rpath, log, connection
 from rdiffbackup.singletons import generics
 
 

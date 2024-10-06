@@ -9,8 +9,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import connection, Globals, rpath, Security, SetConnections
+from rdiff_backup import connection, rpath, Security, SetConnections
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

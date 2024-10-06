@@ -31,6 +31,7 @@ handle that error.)
 import os
 import re
 from rdiff_backup import Globals, log, rpath
+from rdiffbackup.singletons import specifics
 from rdiffbackup.utils import safestr
 
 

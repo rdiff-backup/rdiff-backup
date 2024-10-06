@@ -373,7 +373,9 @@ class ErrorLog:
     def write_if_open(cls, error_type, rp, exc):
         """Call cls._write(...) if error log open, only log otherwise"""
         if not specifics.is_backup_writer and generics.backup_writer:
-            return generics.backup_writer.log.ErrorLog.write_if_open(error_type, rp, exc)
+            return generics.backup_writer.log.ErrorLog.write_if_open(
+                error_type, rp, exc
+            )
         if cls.isopen():
             cls._write(error_type, rp, exc)
         else:

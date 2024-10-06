@@ -10,6 +10,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import rpath, metadata, Globals
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -20,8 +21,12 @@ class ResourceForkTest(unittest.TestCase):
     """Test dealing with Mac OS X style resource forks"""
 
     tempdir = rpath.RPath(specifics.local_connection, "testfiles/output")
-    rf_testdir1 = rpath.RPath(specifics.local_connection, "testfiles/resource_fork_test1")
-    rf_testdir2 = rpath.RPath(specifics.local_connection, "testfiles/resource_fork_test2")
+    rf_testdir1 = rpath.RPath(
+        specifics.local_connection, "testfiles/resource_fork_test1"
+    )
+    rf_testdir2 = rpath.RPath(
+        specifics.local_connection, "testfiles/resource_fork_test2"
+    )
 
     def make_temp(self):
         """Make temp directory testfiles/resource_fork_test"""

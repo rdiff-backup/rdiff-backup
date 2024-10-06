@@ -8,9 +8,9 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
 from rdiffbackup.locations import _repo_shadow
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

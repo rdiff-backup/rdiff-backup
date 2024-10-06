@@ -129,7 +129,9 @@ def init_connection_remote(conn_number):
 # @API(add_redirected_conn, 200)
 def add_redirected_conn(conn_number):
     """Run on server side - tell about redirected connection"""
-    specifics.connection_dict[conn_number] = connection.RedirectedConnection(conn_number)
+    specifics.connection_dict[conn_number] = connection.RedirectedConnection(
+        conn_number
+    )
 
 
 def CloseConnections():
@@ -414,7 +416,9 @@ which should only print out the text: rdiff-backup <version>""".format(
                 "Remote version {rv} isn't compatible with local "
                 "API version {av}".format(
                     rv=remote_version,
-                    av=(specifics.api_version["actual"] or specifics.api_version["min"]),
+                    av=(
+                        specifics.api_version["actual"] or specifics.api_version["min"]
+                    ),
                 ),
                 log.ERROR,
             )

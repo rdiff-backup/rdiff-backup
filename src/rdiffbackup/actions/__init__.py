@@ -29,7 +29,7 @@ import platform
 import sys
 import tempfile
 import yaml
-from rdiff_backup import Globals, log, Security, SetConnections, Time
+from rdiff_backup import log, Security, SetConnections, Time
 from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 

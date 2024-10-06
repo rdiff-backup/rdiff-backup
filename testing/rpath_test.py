@@ -11,7 +11,8 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -460,8 +461,12 @@ class FileCopying(RPathTest):
         fileset.create_fileset(
             base_path, struct, recurse={"atime": 12345, "mtime": 12345}
         )
-        short_dir = rpath.RPath(specifics.local_connection, os.path.join(base_path, b"1"))
-        long_dir = rpath.RPath(specifics.local_connection, os.path.join(base_path, b"2"))
+        short_dir = rpath.RPath(
+            specifics.local_connection, os.path.join(base_path, b"1")
+        )
+        long_dir = rpath.RPath(
+            specifics.local_connection, os.path.join(base_path, b"2")
+        )
         # Can guarantee below by adding files to long_dir
         self.assertGreater(long_dir.getsize(), short_dir.getsize())
         self.assertEqual(short_dir, long_dir)

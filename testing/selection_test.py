@@ -11,7 +11,7 @@ import commontest as comtst
 import fileset
 
 from rdiff_backup import Globals, rpath, selection
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -787,7 +787,9 @@ class CommandTest(unittest.TestCase):
         os.chdir(TEST_BASE_DIR)
         currdir = os.path.basename(os.getcwdb())
         os.chdir(os.pardir)  # chdir one level up
-        selrp = rpath.RPath(specifics.local_connection, os.path.join(currdir, b"seltest"))
+        selrp = rpath.RPath(
+            specifics.local_connection, os.path.join(currdir, b"seltest")
+        )
         comtst.re_init_rpath_dir(selrp)
         emptydir = selrp.append("emptydir")
         emptydir.mkdir()
