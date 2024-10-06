@@ -47,6 +47,8 @@ from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
 
+import signal
+
 try:
     import win32api
     import win32con
@@ -1126,6 +1128,8 @@ class RPath(RORPath):
         if self.conn is Globals.local_connection:
             if compress:
                 return gzip.GzipFile(self.path, mode)
+            elif mode == "rb":
+                return open_local_read(self)
             else:
                 return open(self.path, mode)
 
@@ -1919,13 +1923,38 @@ def gzip_open_local_read(rpath):
     return gzip.GzipFile(rpath.path, "rb")
 
 
+def timeout_handler(signum, frame):
+    raise RPathException("File read operation timed out.")
+
+
+def read_timeout(self, size, timeout=300):
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)
+    data = self.orig_read(size)
+    signal.alarm(0)
+    self.read = self.orig_read
+    return data
+
+
 # @API(open_local_read, 200)
 def open_local_read(rpath):
     """Return open file (provided for security reasons)"""
     assert (
         rpath.conn is Globals.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
-    return open(rpath.path, "rb")
+    fp = open(rpath.path, "rb")
+    # When file is not present on disk, it's most likely a file to be fetch from cloud.
+    # Add timeout of 5min to `read` function when it's the case to avoid getting blocked
+    # by buggy cloud software.
+    if (
+        os.name != "nt"
+        and rpath.isreg()
+        and rpath.data.get("size", 0) > 0
+        and os.lstat(rpath.path).st_blocks == 0
+    ):
+        fp.orig_read = fp.read
+        fp.read = read_timeout.__get__(fp)
+    return fp
 
 
 def get_incfile_info(basename):
