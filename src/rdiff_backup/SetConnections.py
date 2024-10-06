@@ -29,7 +29,7 @@ import re
 import sys
 import subprocess
 from rdiff_backup import connection, Globals, log, rpath
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
 
 # This is a list of remote commands used to start the connections.
@@ -507,8 +507,7 @@ def _init_connection_routing(conn, conn_number, remote_cmd):
 def _init_connection_settings(conn):
     """Tell new conn about log settings and updated globals"""
     conn.log.Log.set_verbosity(log.Log.file_verbosity, log.Log.term_verbosity)
-    for setting_name in Globals.changed_settings:
-        conn.Globals.set_local(setting_name, Globals.get(setting_name))
+    generics.dispatch_settings(conn)
 
 
 def _test_connection(conn_number, rp):

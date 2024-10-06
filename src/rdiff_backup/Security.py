@@ -82,7 +82,8 @@ _file_requests = {
 
 # functions to set global values
 _globals_requests = {
-    "Globals.set_local",
+    "generics.set_local",
+    "specifics.set",
 }
 
 
@@ -212,7 +213,7 @@ def _set_allowed_requests(sec_class, sec_level):
         "RedirectedRun",  # connection.RedirectedRun
         "VirtualFile.readfromid",  # connection.VirtualFile.readfromid
         "VirtualFile.closebyid",  # connection.VirtualFile.closebyid
-        "Globals.get",
+        "specifics.get",
         "log.Log.open_logfile_allconn",
         "log.Log.close_logfile_allconn",
         "log.Log.log_to_file",

@@ -32,7 +32,7 @@ from rdiff_backup import (
     Time,
 )
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import specifics
+from rdiffbackup.singletons import generics, specifics
 from rdiffbackup.utils import safestr
 
 data_dir = None  # directory where statistics are written
@@ -570,8 +570,8 @@ def set_chars_to_quote():
             Globals.chars_to_quote, Globals.quoting_char
         )
 
-        Globals.set_all("chars_to_quote_regexp", regexp)
-        Globals.set_all("chars_to_quote_unregexp", unregexp)
+        generics.set("chars_to_quote_regexp", regexp)
+        generics.set("chars_to_quote_unregexp", unregexp)
 
         data_dir = map_filenames.get_quotedrpath(data_dir)
 

@@ -23,7 +23,7 @@ A location module to define repository classes as created by rdiff-backup
 
 from rdiff_backup import Globals, log
 from rdiffbackup.locations import fs_abilities, location
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, generics
 
 
 class Repo(location.Location):
@@ -94,8 +94,8 @@ class Repo(location.Location):
         else:
             # FIXME this shouldn't be necessary, and the setting of variable
             # across the connection should happen through the shadow
-            Globals.set_all("backup_writer", self.base_dir.conn)
-            self.base_dir.conn.Globals.set_local("isbackup_writer", True)
+            generics.set("backup_writer", self.base_dir.conn)
+            self.base_dir.conn.specifics.set("is_backup_writer", True)
             # this is the new way, more dedicated but not sufficient yet
             ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
             if ret_code & consts.RET_CODE_ERR:
@@ -113,8 +113,8 @@ class Repo(location.Location):
         """
         # FIXME this shouldn't be necessary, and the setting of variable
         # across the connection should happen through the shadow
-        Globals.set_all("backup_writer", None)
-        self.base_dir.conn.Globals.set_local("isbackup_writer", False)
+        generics.set("backup_writer", None)
+        self.base_dir.conn.specifics.set("is_backup_writer", False)
         self._shadow.exit()
 
     def setup_finish(self):

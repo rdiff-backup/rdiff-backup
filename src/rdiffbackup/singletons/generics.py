@@ -25,6 +25,7 @@ import os
 import yaml
 from importlib import metadata
 from rdiff_backup import log
+from rdiffbackup.singletons import specifics
 
 # If true, when copying attributes, also change target's uid/gid
 change_ownership = None
@@ -62,11 +63,8 @@ resource_forks_write = None
 carbonfile_active = None
 carbonfile_write = None
 
-# This list is used by the set function below.  When a new
-# connection is created with init_connection, its Globals class
-# will match this one for all the variables mentioned in this
-# list.
-changed_settings = []
+# Connection of the backup writer
+backup_writer = None  # compat201
 
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be set if certain characters in filenames on the source side
@@ -146,39 +144,42 @@ current_time = None
 current_time_string = None
 
 
-# @API(get, 200)
-def get(name):
-    """Return the value of something in this module"""
-    return globals()[name]
+def get(setting_name):
+    """Return the value of a setting in this module"""
+    return globals()[setting_name]
 
 
-def set(name, val):
+# This list is used by the set function below.  When a new
+# connection is created with init_connection, the variables
+# listed here will be dispatched to the connection's generics.
+changed_settings = []
+
+
+def set(setting_name, value):
     """
-    Set the value of something in this module on this connection and, delayed,
-    on all others
-
-    Use this instead of writing the values directly if the setting
-    matters to remote sides.  This function updates the
-    changed_settings list, so other connections know to copy the changes
-    during connection initiation. After the connection has been initiated,
-    use C<set_all> instead.
+    Set the value of something in this module on this connection and,
+    potentially delayed, on all others.
     """
-    changed_settings.append(name)
-    globals()[name] = val
+    # we always save generic values here, so that they can be later transferred
+    changed_settings.append(setting_name)
+    # if there are no connections yet, only set locally
+    if specifics.connection_dict:
+        for conn in specifics.connection_dict.values():
+            conn.generics.set_local(setting_name, value)
+    else:
+        globals()[setting_name] = value
 
 
-def set_all(setting_name, value):
+def dispatch_settings(conn):
     """
-    Sets the setting given to the value on all connections
-
-    Where set relies on each connection to grab the value at a later stage,
-    set_all forces the value on all connections at once.
+    A function to dispatch all generic settings remembered but not yet dispatched
+    to the (assumed new) given connection.
     """
-    for conn in connection_dict.values():
-        conn.Globals.set_local(setting_name, value)
+    for setting_name in changed_settings:
+        conn.generics.set_local(setting_name, get(setting_name))
 
 
 # @API(set_local, 200)
-def set_local(name, val):
+def set_local(setting_name, value):
     """Like set above, but only set current connection"""
-    globals()[name] = val
+    globals()[setting_name] = value
