@@ -92,15 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# Connection of the backup writer
-backup_writer = None  # compat201
-
-# This list is used by the set function below.  When a new
-# connection is created with init_connection, its Globals class
-# will match this one for all the variables mentioned in this
-# list.
-changed_settings = []
-
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be set if certain characters in filenames on the source side
 # should be escaped (see locations.map.filenames for more info).
@@ -171,13 +162,23 @@ symlink_perms = None
 remote_tempdir = None
 
 
-# @API(get, 200)
-def get(name):
-    """Return the value of something in this module"""
-    return globals()[name]
+# @API(get, 300)
+def get(setting_name):
+    """
+    Return the value of a specific setting
+    """
+    return globals()[setting_name]
 
 
-# @API(set_api_version, 201)
+# @API(set, 300)
+def set(setting_name, value):
+    """
+    Set the value of a specific setting
+    """
+    globals()[setting_name] = value
+
+
+# @API(set_api_version, 300)
 def set_api_version(val):
     """sets the actual API version after having verified that the new
     value is an integer between mix and max values."""

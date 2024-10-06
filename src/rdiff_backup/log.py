@@ -27,7 +27,7 @@ import textwrap
 import typing
 import traceback
 from rdiff_backup import Globals
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, generics, specifics
 
 LOGFILE_ENCODING = "utf-8"
 
@@ -363,17 +363,17 @@ class ErrorLog:
     # @API(ErrorLog.isopen, 200)
     def isopen(cls):
         """True if the error log file is currently open"""
-        if specifics.is_backup_writer or not specifics.backup_writer:
+        if specifics.is_backup_writer or not generics.backup_writer:
             return cls._log_fileobj is not None
         else:
-            return specifics.backup_writer.log.ErrorLog.isopen()
+            return generics.backup_writer.log.ErrorLog.isopen()
 
     @classmethod
     # @API(ErrorLog.write_if_open, 200)
     def write_if_open(cls, error_type, rp, exc):
         """Call cls._write(...) if error log open, only log otherwise"""
-        if not specifics.is_backup_writer and specifics.backup_writer:
-            return specifics.backup_writer.log.ErrorLog.write_if_open(error_type, rp, exc)
+        if not specifics.is_backup_writer and generics.backup_writer:
+            return generics.backup_writer.log.ErrorLog.write_if_open(error_type, rp, exc)
         if cls.isopen():
             cls._write(error_type, rp, exc)
         else:

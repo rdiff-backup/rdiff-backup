@@ -838,24 +838,24 @@ class SetGlobals:
 
     def set_hardlinks(self):
         if Globals.preserve_hardlinks != 0:
-            Globals.set_all("preserve_hardlinks", self.dest_fsa.hardlinks)
+            generics.set("preserve_hardlinks", self.dest_fsa.hardlinks)
 
     def set_fsync_directories(self):
-        Globals.set_all("fsync_directories", self.dest_fsa.fsync_dirs)
+        generics.set("fsync_directories", self.dest_fsa.fsync_dirs)
 
     def set_change_ownership(self):
-        generics.set_all("change_ownership", self.dest_fsa.ownership)
+        generics.set("change_ownership", self.dest_fsa.ownership)
 
     def set_high_perms(self):
         if not self.dest_fsa.high_perms:
-            Globals.set_all("permission_mask", 0o777)
+            generics.set("permission_mask", 0o777)
 
     def set_symlink_perms(self):
-        Globals.set_all("symlink_perms", self.dest_fsa.symlink_perms)
+        generics.set("symlink_perms", self.dest_fsa.symlink_perms)
 
     def set_compatible_timestamps(self):
         if Globals.chars_to_quote.find(b":") > -1:
-            Globals.set_all("use_compatible_timestamps", 1)
+            generics.set("use_compatible_timestamps", 1)
             # Update the current time string to new timestamp format
             Time.set_current_time(Time.getcurtime())
             log.Log("Enabled use_compatible_timestamps", log.INFO)
@@ -938,10 +938,10 @@ class Dir2RepoSetGlobals(SetGlobals):
                     log.WARNING,
                 )
 
-        Globals.set_all("escape_dos_devices", actual_edd)
+        generics.set("escape_dos_devices", actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd), log.INFO)
 
-        Globals.set_all("escape_trailing_spaces", actual_ets)
+        generics.set("escape_trailing_spaces", actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets), log.INFO)
 
     def set_chars_to_quote(self, repo):
@@ -955,9 +955,9 @@ class Dir2RepoSetGlobals(SetGlobals):
         ctq = self._compare_ctq_file(repo, self._get_ctq_from_fsas())
         regexp, unregexp = map_filenames.get_quoting_regexps(ctq, Globals.quoting_char)
 
-        Globals.set_all("chars_to_quote", ctq)
-        Globals.set_all("chars_to_quote_regexp", regexp)
-        Globals.set_all("chars_to_quote_unregexp", unregexp)
+        generics.set("chars_to_quote", ctq)
+        generics.set("chars_to_quote_regexp", regexp)
+        generics.set("chars_to_quote_unregexp", unregexp)
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """
@@ -966,15 +966,15 @@ class Dir2RepoSetGlobals(SetGlobals):
         active_attr, write_attr, conn_attr = attr_triple
         if generics.get(active_attr) is not None:
             return  # don't override a value set by the user
-        generics.set_all(active_attr, None)
-        generics.set_all(write_attr, None)
+        generics.set(active_attr, None)
+        generics.set(write_attr, None)
         specifics.set(conn_attr, None)
         if not src_support:
             return  # if source doesn't support, nothing
-        generics.set_all(active_attr, 1)
+        generics.set(active_attr, 1)
         self.in_conn.specifics.set(conn_attr, 1)
         if dest_support:
-            generics.set_all(write_attr, 1)
+            generics.set(write_attr, 1)
             self.out_conn.specifics.set(conn_attr, 1)
 
     def _get_ctq_from_fsas(self):
@@ -1117,10 +1117,10 @@ class Repo2DirSetGlobals(SetGlobals):
                 actual_edd = self.dest_fsa.escape_dos_devices
                 actual_ets = self.dest_fsa.escape_trailing_spaces
 
-        Globals.set_all("escape_dos_devices", actual_edd)
+        generics.set("escape_dos_devices", actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd), log.INFO)
 
-        Globals.set_all("escape_trailing_spaces", actual_ets)
+        generics.set("escape_trailing_spaces", actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets), log.INFO)
 
     def set_chars_to_quote(self, repo):
@@ -1138,16 +1138,16 @@ class Repo2DirSetGlobals(SetGlobals):
             regexp, unregexp = map_filenames.get_quoting_regexps(
                 ctq, Globals.quoting_char
             )
-            Globals.set_all("chars_to_quote", ctq)
-            Globals.set_all("chars_to_quote_regexp", regexp)
-            Globals.set_all("chars_to_quote_unregexp", unregexp)
+            generics.set("chars_to_quote", ctq)
+            generics.set("chars_to_quote_regexp", regexp)
+            generics.set("chars_to_quote_unregexp", unregexp)
         else:
             log.Log(
                 "chars_to_quote config not found, assuming no quoting "
                 "required in backup repository".format(),
                 log.WARNING,
             )
-            Globals.set_all("chars_to_quote", b"")
+            generics.set("chars_to_quote", b"")
 
     def _update_triple(self, src_support, dest_support, attr_triple):
         """
@@ -1161,12 +1161,12 @@ class Repo2DirSetGlobals(SetGlobals):
         active_attr, write_attr, conn_attr = attr_triple
         if generics.get(active_attr) is not None:
             return  # don't override a value set by the user
-        generics.set_all(active_attr, None)
-        generics.set_all(write_attr, None)
+        generics.set(active_attr, None)
+        generics.set(write_attr, None)
         specifics.set(conn_attr, None)
         if not dest_support:
             return  # if dest doesn't support, do nothing
-        generics.set_all(active_attr, 1)
+        generics.set(active_attr, 1)
         self.out_conn.specifics.set(conn_attr, 1)
         self.out_conn.generics.set_local(write_attr, 1)  # FIXME: generics.set_all?
         if src_support:
@@ -1237,11 +1237,11 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         active_attr, write_attr, conn_attr = attr_triple
         if generics.get(active_attr) is not None:
             return  # don't override a value set by the user
-        generics.set_all(active_attr, None)
-        generics.set_all(write_attr, None)
+        generics.set(active_attr, None)
+        generics.set(write_attr, None)
         specifics.set(conn_attr, None)
         if not fsa_support:
             return
-        generics.set_all(active_attr, 1)
-        generics.set_all(write_attr, 1)
+        generics.set(active_attr, 1)
+        generics.set(write_attr, 1)
         self.conn.specifics.set(conn_attr, 1)

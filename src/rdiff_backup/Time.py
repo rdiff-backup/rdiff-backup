@@ -22,6 +22,7 @@ import calendar
 import re
 import time
 from rdiff_backup import Globals
+from rdiffbackup.singletons import generics
 
 
 _interval_conv_dict = {
@@ -61,8 +62,8 @@ def set_current_time(reftime=None):
     """
     if reftime is None:
         reftime = time.time()
-    Globals.set_all("current_time", reftime)
-    Globals.set_all("current_time_string", timetostring(reftime))
+    generics.set("current_time", reftime)
+    generics.set("current_time_string", timetostring(reftime))
 
 
 def getcurtime():
