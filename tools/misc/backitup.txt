@@ -1,0 +1,9 @@
+- ignorecase:**/NTUSER.DAT
+- ignorecase:**/NTUSER.DAT.LOG?
+- ignorecase:**/UsrClass.dat
+- ignorecase:**/UsrClass.dat.LOG?
+- ignorecase:**/cache/*
+- ignorecase:**/*Cache/*
+- ignorecase:**/*Cache/*
+- ignorecase:**/CachedFiles/*
+- ignorecase:**/Temp/*
