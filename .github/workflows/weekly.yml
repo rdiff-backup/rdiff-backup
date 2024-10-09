@@ -39,10 +39,9 @@ jobs:
     - name: Upload wheel artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: package-artifacts
+        name: package-artifacts-linux-${{ matrix.many-linux }}
         path: dist/*.whl
         if-no-files-found: error
-        overwrite: true
 
   build-sdist:
     runs-on: ubuntu-latest
@@ -61,10 +60,9 @@ jobs:
     - name: Upload sdist artifact
       uses: actions/upload-artifact@v4
       with:
-        name: package-artifacts
+        name: package-artifacts-sdist
         path: dist/*.tar.gz
         if-no-files-found: error
-        overwrite: true
 
   build-windows:
     runs-on: windows-latest
@@ -91,12 +89,11 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: package-artifacts
+        name: package-artifacts-win-${{ matrix.arch }}
         path: |
           dist/*.zip
           dist/*.whl
         if-no-files-found: error
-        overwrite: true
 
   test-built-windows:
     runs-on: windows-latest
@@ -109,7 +106,7 @@ jobs:
       id: download
       uses: actions/download-artifact@v4
       with:
-        name: package-artifacts
+        name: package-artifacts-win-${{ matrix.arch }}
         path: .
     - name: Extract and test Windows binary
       run: |
@@ -149,8 +146,9 @@ jobs:
       id: download
       uses: actions/download-artifact@v4
       with:
-        name: package-artifacts
+        pattern: package-artifacts-*
         path: dist
+        merge-multiple: true
     - name: Export artifacts
       id: export
       run: echo artifact_files=${{ steps.download.outputs.download-path }}/*.* >> $GITHUB_OUTPUT
