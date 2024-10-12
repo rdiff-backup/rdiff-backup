@@ -28,7 +28,7 @@ jobs:
         #--- Build and deploy Linux wheels using manylinux containers ---
         many-linux: [_2_28_x86_64]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # to have the correct version
     - name: create manylinux wheel(s) in a container
@@ -51,7 +51,7 @@ jobs:
   build-sdist:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # to have the correct version
     - name: Install asciidoctor to generate manpages and other dependencies
@@ -75,11 +75,11 @@ jobs:
       matrix:
         arch: [x86, x64]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # to have the correct version
     - name: Set up Python ${{ env.WIN_PYTHON_VERSION }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ env.WIN_PYTHON_VERSION }}
         architecture: ${{ matrix.arch }}
