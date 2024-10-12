@@ -79,7 +79,7 @@ jobs:
       with:
         fetch-depth: 0  # to have the correct version
     - name: Set up Python ${{ env.WIN_PYTHON_VERSION }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ env.WIN_PYTHON_VERSION }}
         architecture: ${{ matrix.arch }}
