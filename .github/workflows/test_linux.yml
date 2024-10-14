@@ -24,6 +24,7 @@ jobs:
     - uses: actions/checkout@v4
       if: ${{ env.SKIP != 'true' }}
     - name: Set up Python ${{ matrix.python-version }}
+      id: inst-py
       if: ${{ env.SKIP != 'true' }}
       uses: actions/setup-python@v5
       with:
@@ -32,11 +33,11 @@ jobs:
       if: ${{ env.SKIP != 'true' }}
       run: |
         sudo apt install librsync-dev libacl1-dev rdiff asciidoctor
-        sudo pip3 install --upgrade -r requs/base.txt -r requs/optional.txt -r requs/test.txt
+        sudo ${{ steps.inst-py.outputs.python-path }} -m pip install --upgrade -r requs/base.txt -r requs/optional.txt -r requs/test.txt
     - name: Execute tests ${{ matrix.test-step }}
       if: ${{ env.SKIP != 'true' }}
       run: |
         export RUN_COMMAND=
-        export SUDO=sudo
+        export SUDO="sudo -E env PATH=$PATH"
         make test
       # the empty RUN_COMMAND avoids using docker
