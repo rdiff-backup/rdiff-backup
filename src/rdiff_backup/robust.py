@@ -47,6 +47,7 @@ _robust_errno_list = [
     errno.EDEADLK,
     errno.EOPNOTSUPP,
     errno.ETIMEDOUT,
+    errno.EXDEV,
 ]
 # Skip on resource deadlock only if the error is defined (_not_ on MacOSX)
 if hasattr(errno, "EDEADLOCK"):
