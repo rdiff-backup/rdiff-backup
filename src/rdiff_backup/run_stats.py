@@ -25,14 +25,9 @@ import re
 import subprocess
 import sys
 
-from rdiff_backup import (
-    Globals,
-    robust,
-    rpath,
-    Time,
-)
+from rdiff_backup import robust, rpath, Time
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import generics, specifics
+from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
 
 data_dir = None  # directory where statistics are written
@@ -564,10 +559,10 @@ def set_chars_to_quote():
     global data_dir
     ctq_rp = data_dir.append("chars_to_quote")
     if ctq_rp.lstat():
-        Globals.chars_to_quote = ctq_rp.get_bytes()
-    if Globals.chars_to_quote:
+        generics.set("chars_to_quote", ctq_rp.get_bytes())
+    if generics.chars_to_quote:
         regexp, unregexp = map_filenames.get_quoting_regexps(
-            Globals.chars_to_quote, Globals.quoting_char
+            generics.chars_to_quote, consts.QUOTING_CHAR
         )
 
         generics.set("chars_to_quote_regexp", regexp)

@@ -13,7 +13,7 @@ import fileset
 
 from rdiff_backup import Globals, log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -349,11 +349,11 @@ class Final(PathSetter):
                 self.AssertNotIn(":", walker)
 
         # Start restore of increment 2
-        Globals.chars_to_quote = b"^a-z0-9_ -."
+        generics.set("chars_to_quote", b"^a-z0-9_ -.")
         inc_paths = self.getinc_paths(
             b"increments.", b"testfiles/output/rdiff-backup-data", 1
         )
-        Globals.chars_to_quote = None
+        generics.set("chars_to_quote", None)
         self.assertEqual(len(inc_paths), 1)
         self.exec_rb(None, inc_paths[0], b"testfiles/restoretarget2")
         self.assertTrue(

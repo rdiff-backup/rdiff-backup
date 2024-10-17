@@ -92,15 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# chars_to_quote is a string whose characters should be quoted.  It
-# should be set if certain characters in filenames on the source side
-# should be escaped (see locations.map.filenames for more info).
-chars_to_quote = None
-chars_to_quote_regexp = None
-chars_to_quote_unregexp = None
-# the quoting character is used to mark quoted characters
-quoting_char = b";"
-
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.
 # The default is based on the operating system type (nt or posix).

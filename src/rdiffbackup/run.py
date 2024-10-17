@@ -189,7 +189,7 @@ def _system_setup(arglist):
     Globals.set("use_compatible_timestamps", arglist.get("use_compatible_timestamps"))
     Globals.set("do_fsync", arglist.get("fsync"))
     if arglist.get("chars_to_quote") is not None:
-        Globals.set("chars_to_quote", os.fsencode(arglist.get("chars_to_quote")))
+        generics.set("chars_to_quote", os.fsencode(arglist.get("chars_to_quote")))
     return ret_val
 
 

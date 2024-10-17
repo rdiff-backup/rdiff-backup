@@ -222,7 +222,7 @@ class RepoShadow(location.LocationShadow):
         # FIXME the problem is that the chars_to_quote can come from the command
         # line but can also be a value coming from the repository itself,
         # set globally by the fs_abilities.xxx_set_globals functions.
-        if not Globals.chars_to_quote:
+        if not generics.chars_to_quote:
             return False
 
         cls._base_dir = map_filenames.get_quotedrpath(cls._base_dir)

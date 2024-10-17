@@ -9,6 +9,7 @@ import commontest as comtst
 import fileset
 
 from rdiff_backup import Globals
+from rdiffbackup.singletons import consts, generics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -303,11 +304,11 @@ class LocationMapFilenamesUnitTest(unittest.TestCase):
 
         chars_to_quote = b"A-Z"
         regexp, unregexp = map_filenames.get_quoting_regexps(
-            chars_to_quote, Globals.quoting_char
+            chars_to_quote, consts.QUOTING_CHAR
         )
-        Globals.chars_to_quote = chars_to_quote
-        Globals.chars_to_quote_regexp = regexp
-        Globals.chars_to_quote_unregexp = unregexp
+        generics.set("chars_to_quote", chars_to_quote)
+        generics.set("chars_to_quote_regexp", regexp)
+        generics.set("chars_to_quote_unregexp", unregexp)
 
         self.assertEqual(map_filenames.quote(b"aux.123"), b";097ux.123")
         self.assertEqual(map_filenames.quote(b"ends in space "), b"ends in space;032")

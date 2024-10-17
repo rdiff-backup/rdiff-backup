@@ -380,9 +380,9 @@ def reset_connections():
     specifics.connections = [specifics.local_connection]
     specifics.connection_dict = {0: specifics.local_connection}
     # reset the quoting status
-    Globals.chars_to_quote = None
-    Globals.chars_to_quote_regexp = None
-    Globals.chars_to_quote_unregexp = None
+    generics.set("chars_to_quote", None)
+    generics.set("chars_to_quote_regexp", None)
+    generics.set("chars_to_quote_unregexp", None)
     # EAs and ACLs support
     generics.eas_active = generics.acls_active = None  # FIXME use set_all?
 

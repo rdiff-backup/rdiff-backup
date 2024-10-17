@@ -51,3 +51,6 @@ PIPELINE_MAX_LENGTH = 500
 # understand the maximum protocol version used.
 # Protocol 4 is understood since Python 3.4, protocol 5 since 3.8.
 PICKLE_PROTOCOL = 4
+
+# the quoting character is used to mark quoted characters
+QUOTING_CHAR = b";"

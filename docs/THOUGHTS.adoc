@@ -29,3 +29,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - generic variable preserve_atime isn't modified anywhere
 - simplify usage of connections and connection_dict (get rid of one of both?)
 - get rid of the backup_writer variables (in singleton/specifics), replace with log/stats access to repository
+- get rid of mixing input parameters and global/generic parameters in run._system_setup

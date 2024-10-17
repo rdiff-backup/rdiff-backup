@@ -8,9 +8,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import specifics
+from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -24,11 +24,11 @@ class FilenameMappingTest(unittest.TestCase):
         """Just initialize quoting"""
         ctq = b"A-Z"
         # FIXME possibly too much internas
-        regexp, unregexp = map_filenames.get_quoting_regexps(ctq, Globals.quoting_char)
+        regexp, unregexp = map_filenames.get_quoting_regexps(ctq, consts.QUOTING_CHAR)
 
-        Globals.chars_to_quote = ctq
-        Globals.chars_to_quote_regexp = regexp
-        Globals.chars_to_quote_unregexp = unregexp
+        generics.set("chars_to_quote", ctq)
+        generics.set("chars_to_quote_regexp", regexp)
+        generics.set("chars_to_quote_unregexp", unregexp)
 
     def tearDown(self):
         comtst.reset_connections()

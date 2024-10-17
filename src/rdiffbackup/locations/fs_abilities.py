@@ -854,7 +854,7 @@ class SetGlobals:
         generics.set("symlink_perms", self.dest_fsa.symlink_perms)
 
     def set_compatible_timestamps(self):
-        if Globals.chars_to_quote.find(b":") > -1:
+        if generics.chars_to_quote.find(b":") > -1:
             generics.set("use_compatible_timestamps", 1)
             # Update the current time string to new timestamp format
             Time.set_current_time(Time.getcurtime())
@@ -953,7 +953,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         directory, not just the current fs features.
         """
         ctq = self._compare_ctq_file(repo, self._get_ctq_from_fsas())
-        regexp, unregexp = map_filenames.get_quoting_regexps(ctq, Globals.quoting_char)
+        regexp, unregexp = map_filenames.get_quoting_regexps(ctq, consts.QUOTING_CHAR)
 
         generics.set("chars_to_quote", ctq)
         generics.set("chars_to_quote_regexp", regexp)
@@ -997,7 +997,7 @@ class Dir2RepoSetGlobals(SetGlobals):
 
         # Quote quoting char if quoting anything
         if ctq:
-            ctq.append(Globals.quoting_char)
+            ctq.append(consts.QUOTING_CHAR)
         return b"".join(ctq)
 
     def _compare_ctq_file(self, repo, suggested_ctq):
@@ -1008,10 +1008,10 @@ class Dir2RepoSetGlobals(SetGlobals):
         """
         previous_ctq = repo.get_chars_to_quote()
         if previous_ctq is None:  # there was no previous chars_to_quote
-            if Globals.chars_to_quote is None:
+            if generics.chars_to_quote is None:
                 actual_ctq = suggested_ctq
             else:
-                actual_ctq = Globals.chars_to_quote
+                actual_ctq = generics.chars_to_quote
                 if actual_ctq != suggested_ctq:
                     log.Log(
                         "File system at '{fs}' suggested quoting '{sq}' "
@@ -1024,7 +1024,7 @@ class Dir2RepoSetGlobals(SetGlobals):
             repo.set_chars_to_quote(actual_ctq)
             return actual_ctq
 
-        if Globals.chars_to_quote is None:
+        if generics.chars_to_quote is None:
             if suggested_ctq and suggested_ctq != previous_ctq:
                 # the file system has new specific requirements
                 actual_ctq = suggested_ctq
@@ -1038,7 +1038,7 @@ class Dir2RepoSetGlobals(SetGlobals):
                         log.NOTE,
                     )
         else:
-            actual_ctq = Globals.chars_to_quote  # Globals override
+            actual_ctq = generics.chars_to_quote  # Globals override
             if actual_ctq != suggested_ctq:
                 log.Log(
                     "File system at '{fs}' suggested quoting '{sq}' "
@@ -1127,16 +1127,16 @@ class Repo2DirSetGlobals(SetGlobals):
         """
         Set chars_to_quote from rdiff-backup-data dir
         """
-        if Globals.chars_to_quote is None:
+        if generics.chars_to_quote is None:
             ctq = repo.get_chars_to_quote()
         else:
             # value has been overwritten from the command line but still needs
             # to be set across the connections and (un)regexp defined
-            ctq = Globals.chars_to_quote
+            ctq = generics.chars_to_quote
 
         if ctq is not None:
             regexp, unregexp = map_filenames.get_quoting_regexps(
-                ctq, Globals.quoting_char
+                ctq, consts.QUOTING_CHAR
             )
             generics.set("chars_to_quote", ctq)
             generics.set("chars_to_quote_regexp", regexp)

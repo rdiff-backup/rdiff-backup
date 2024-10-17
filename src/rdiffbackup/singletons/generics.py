@@ -69,8 +69,6 @@ backup_writer = None  # compat201
 chars_to_quote = None
 chars_to_quote_regexp = None
 chars_to_quote_unregexp = None
-# the quoting character is used to mark quoted characters
-quoting_char = b";"
 
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.
