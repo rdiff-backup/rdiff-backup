@@ -30,7 +30,7 @@ handle that error.)
 
 import os
 import re
-from rdiff_backup import Globals, log, rpath
+from rdiff_backup import log, rpath
 from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
 
@@ -124,12 +124,12 @@ def quote(path):
     the quoting character.
     """
     quoted_path = generics.chars_to_quote_regexp.sub(_quote_single, path)
-    if not Globals.escape_dos_devices and not Globals.escape_trailing_spaces:
+    if not generics.escape_dos_devices and not generics.escape_trailing_spaces:
         return quoted_path
 
     # Escape a trailing space or period (invalid in names on FAT32 under DOS,
     # Windows and modern Linux)
-    if Globals.escape_trailing_spaces:
+    if generics.escape_trailing_spaces:
         if len(quoted_path) and (
             quoted_path[-1] == ord(" ") or quoted_path[-1] == ord(".")
         ):
@@ -138,7 +138,7 @@ def quote(path):
                 quoted_path[-1],
             )
 
-        if not Globals.escape_dos_devices:
+        if not generics.escape_dos_devices:
             return quoted_path
 
     # Escape first char of any special DOS device files even if filename has an

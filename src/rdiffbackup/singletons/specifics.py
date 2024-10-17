@@ -92,12 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
-# or spaces at the end of file and directory names.
-# The default is based on the operating system type (nt or posix).
-escape_dos_devices = os.name == "nt"
-escape_trailing_spaces = os.name == "nt"
-
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
 # don't need to be escaped on Windows.
