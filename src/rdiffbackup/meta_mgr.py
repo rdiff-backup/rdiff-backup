@@ -23,6 +23,7 @@ store and retrieve different types of metadata.
 
 import os
 from rdiff_backup import log, Globals, rpath, Time, rorpiter
+from rdiffbackup.singletons import generics
 from rdiffbackup.utils import plugins
 import rdiffbackup.meta
 
@@ -242,7 +243,7 @@ class PatchDiffMan(Manager):
         unique_set = set()
         for time, rp in sortlist:
             if time in unique_set:
-                if Globals.allow_duplicate_timestamps:
+                if generics.allow_duplicate_timestamps:
                     log.Log(
                         "Metadata file '{mf}' has a duplicate "
                         "timestamp date, you might not be able to "

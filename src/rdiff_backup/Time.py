@@ -79,7 +79,7 @@ def timetostring(timeinseconds):
     Return w3 datetime compliant listing of timeinseconds, or one in
     which :'s have been replaced with -'s
     """
-    if not Globals.use_compatible_timestamps:
+    if not generics.use_compatible_timestamps:
         format_string = TIMEDATE_FORMAT_STRING
     else:
         format_string = TIMEDATE_FORMAT_COMPAT
@@ -283,7 +283,7 @@ def _get_tzd(timeinseconds=None):
     if timeinseconds is None:
         timeinseconds = time.time()
     tzd = time.strftime("%z", time.localtime(timeinseconds))
-    if Globals.use_compatible_timestamps:
+    if generics.use_compatible_timestamps:
         time_separator = "-"
     else:
         time_separator = ":"

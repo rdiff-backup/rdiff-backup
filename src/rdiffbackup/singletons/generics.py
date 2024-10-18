@@ -79,12 +79,11 @@ escape_trailing_spaces = os.name == "nt"
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
 # don't need to be escaped on Windows.
-use_compatible_timestamps = 0
+use_compatible_timestamps = False
 
 # Normally there shouldn't be any case of duplicate timestamp but it seems
 # we had the issue at some point in time, hence we need the flag to allow
 # users to clean up their repository. The default is to abort on such cases.
-
 allow_duplicate_timestamps = False
 
 # If true, then hardlinks will be preserved to mirror and recorded

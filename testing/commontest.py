@@ -47,7 +47,7 @@ abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(__file__)))
 __no_execute__ = 1  # Keeps the actual rdiff-backup program from running
 
 if os.name == "nt":
-    Globals.use_compatible_timestamps = 1
+    generics.set("use_compatible_timestamps", True)
     CMD_SEP = b" & "
 else:
     CMD_SEP = b" ; "
