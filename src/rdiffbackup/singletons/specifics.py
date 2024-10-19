@@ -92,10 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# If true, filelists and directory statistics will be split on
-# nulls instead of newlines.
-null_separator = None
-
 # On the backup writer connection, holds the root incrementing branch
 # object.  Access is provided to increment error counts.
 ITRB = None

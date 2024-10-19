@@ -185,7 +185,7 @@ def _system_setup(arglist):
     # if action in ("regress"):
     generics.set("allow_duplicate_timestamps", arglist.get("allow_duplicate_timestamps"))
     # generic settings
-    Globals.set("null_separator", arglist.get("null_separator"))
+    generics.set("null_separator", arglist.get("null_separator"))
     generics.set("use_compatible_timestamps", arglist.get("use_compatible_timestamps"))
     Globals.set("do_fsync", arglist.get("fsync"))
     if arglist.get("chars_to_quote") is not None:

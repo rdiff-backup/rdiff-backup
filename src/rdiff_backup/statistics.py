@@ -377,7 +377,7 @@ class FileStats:
         )
         cls._fileobj = cls._rp.open("wb", compress=generics.compression)
 
-        cls._line_sep = Globals.null_separator and b"\0" or b"\n"
+        cls._line_sep = generics.null_separator and b"\0" or b"\n"
         cls._write_docstring()
         cls._line_buffer = []
 

@@ -99,7 +99,7 @@ compression = True
 
 # If true, filelists and directory statistics will be split on
 # nulls instead of newlines.
-null_separator = None
+null_separator = False
 
 # On the backup writer connection, holds the root incrementing branch
 # object.  Access is provided to increment error counts.

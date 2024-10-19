@@ -403,7 +403,7 @@ class ErrorLog:
         """Add line to log file indicating error exc with file rp"""
         logstr = cls._get_log_string(error_type, rp, exc)
         Log(logstr, WARNING)
-        if Globals.null_separator:
+        if generics.null_separator:
             logstr += "\0"
         else:
             logstr = re.sub("\n", " ", logstr)

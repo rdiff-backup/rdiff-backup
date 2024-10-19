@@ -10,8 +10,8 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath, selection
-from rdiffbackup.singletons import consts, specifics
+from rdiff_backup import rpath, selection
+from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -159,7 +159,7 @@ rdiff-backup_testfiles/select/3\t"""  # noqa: W291 trailing whitespaces
     def testFilelistIncludeNullSep(self):
         """Test included filelist but with null_separator set"""
         filelist = b"""\0rdiff-backup_testfiles/select/1/2\0rdiff-backup_testfiles/select/1\0rdiff-backup_testfiles/select/1/2/3\0rdiff-backup_testfiles/select/3/3/2\0rdiff-backup_testfiles/select/hello\nthere\0"""
-        Globals.null_separator = 1
+        generics.null_separator = True
         sf = self.Select._filelist_get_sf(filelist, 1, "test")
         self.assertEqual(sf(self.root), 1)
         self.assertEqual(sf(self.makeext("1")), 1)
@@ -171,7 +171,7 @@ rdiff-backup_testfiles/select/3\t"""  # noqa: W291 trailing whitespaces
         self.assertIsNone(sf(self.makeext("3/3/3")))
         if not sys.platform.startswith("win"):  # can't succeed
             self.assertEqual(sf(self.makeext("hello\nthere")), 1)
-        Globals.null_separator = 0
+        generics.null_separator = False
 
     def testFilelistExclude(self):
         """Test included filelist"""
