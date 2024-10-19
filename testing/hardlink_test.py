@@ -9,10 +9,10 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath, selection
+from rdiff_backup import rpath, selection
 from rdiffbackup.meta import stdattr
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
-from rdiffbackup.singletons import specifics
+from rdiffbackup.singletons import generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -50,7 +50,7 @@ class HardlinkTest(unittest.TestCase):
 
     def testBuildingDict(self):
         """See if the partial inode dictionary is correct"""
-        Globals.preserve_hardlinks = 1
+        generics.preserve_hardlinks = True
         comtst.reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp3).get_select_iter():
             map_hardlinks.add_rorp(dsrp)

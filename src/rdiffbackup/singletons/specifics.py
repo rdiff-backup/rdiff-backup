@@ -92,13 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# If true, then hardlinks will be preserved to mirror and recorded
-# in the increments directory.  There is also a difference here
-# between None and 0.  When restoring, None or 1 means to preserve
-# hardlinks iff can find a hardlink dictionary.  0 means ignore
-# hardlink information regardless.
-preserve_hardlinks = 1
-
 # If this is false, then rdiff-backup will not compress any
 # increments.  Default is to compress based on regexp below.
 compression = 1

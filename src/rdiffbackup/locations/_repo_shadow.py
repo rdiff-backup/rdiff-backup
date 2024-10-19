@@ -579,7 +579,7 @@ class RepoShadow(location.LocationShadow):
                 and dest_rorp
                 and src_rorp == dest_rorp
                 and (
-                    not Globals.preserve_hardlinks
+                    not generics.preserve_hardlinks
                     or map_hardlinks.rorp_eq(src_rorp, dest_rorp)
                 )
             ):
@@ -593,7 +593,7 @@ class RepoShadow(location.LocationShadow):
     def _get_one_sig(cls, baserp, index, src_rorp, dest_rorp):
         """Return a signature given source and destination rorps"""
         if (
-            Globals.preserve_hardlinks
+            generics.preserve_hardlinks
             and src_rorp
             and map_hardlinks.is_linked(src_rorp)
         ):
@@ -950,21 +950,21 @@ class RepoShadow(location.LocationShadow):
     def _get_diffs_from_collated(cls, collated):
         """Get diff iterator from collated"""
         for mir_rorp, target_rorp in collated:
-            if Globals.preserve_hardlinks and mir_rorp:
+            if generics.preserve_hardlinks and mir_rorp:
                 map_hardlinks.add_rorp(mir_rorp, target_rorp)
             if (
                 not target_rorp
                 or not mir_rorp
                 or not mir_rorp == target_rorp
                 or (
-                    Globals.preserve_hardlinks
+                    generics.preserve_hardlinks
                     and not map_hardlinks.rorp_eq(mir_rorp, target_rorp)
                 )
             ):
                 diff = cls._get_diff(mir_rorp, target_rorp)
             else:
                 diff = None
-            if Globals.preserve_hardlinks and mir_rorp:
+            if generics.preserve_hardlinks and mir_rorp:
                 map_hardlinks.del_rorp(mir_rorp)
             if diff:
                 yield diff
@@ -974,7 +974,7 @@ class RepoShadow(location.LocationShadow):
         """Get a diff for mir_rorp at time"""
         if not mir_rorp:
             mir_rorp = rpath.RORPath(target_rorp.index)
-        elif Globals.preserve_hardlinks and map_hardlinks.is_linked(mir_rorp):
+        elif generics.preserve_hardlinks and map_hardlinks.is_linked(mir_rorp):
             mir_rorp.flaglinked(map_hardlinks.get_link_index(mir_rorp))
         elif mir_rorp.isreg():
             expanded_index = cls.mirror_base.index + mir_rorp.index
@@ -2109,7 +2109,7 @@ class _CacheCollatedPostProcess:
         errors at this point, so don't do anything which assumes they
         will be backed up correctly.
         """
-        if Globals.preserve_hardlinks:
+        if generics.preserve_hardlinks:
             if source_rorp:
                 map_hardlinks.add_rorp(source_rorp, dest_rorp)
             else:
@@ -2206,7 +2206,7 @@ class _CacheCollatedPostProcess:
         be true if the files have been successfully updated (this is
         always false for un-changed files).
         """
-        if Globals.preserve_hardlinks and source_rorp:
+        if generics.preserve_hardlinks and source_rorp:
             map_hardlinks.del_rorp(source_rorp)
 
         if not changed or success:

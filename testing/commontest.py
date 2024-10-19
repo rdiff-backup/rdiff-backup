@@ -639,7 +639,7 @@ def backup_restore_series(
     """
     backup_dir = os.path.join(test_base_dir, b"output")
     restore_dir = os.path.join(test_base_dir, b"restore")
-    Globals.set("preserve_hardlinks", compare_hardlinks)
+    generics.set("preserve_hardlinks", compare_hardlinks)
     Globals.set(
         "no_compression_regexp_string",
         os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP),

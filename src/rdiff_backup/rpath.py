@@ -152,7 +152,7 @@ class RORPath:
             not self.isreg()
             or self.getnumlinks() == 1
             or not Globals.compare_inode
-            or not Globals.preserve_hardlinks
+            or not generics.preserve_hardlinks
         ):
             ignored_keys.add("inode")
             ignored_keys.add("devloc")

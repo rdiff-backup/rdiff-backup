@@ -837,7 +837,7 @@ class SetGlobals:
         )
 
     def set_hardlinks(self):
-        if Globals.preserve_hardlinks != 0:
+        if generics.preserve_hardlinks:
             generics.set("preserve_hardlinks", self.dest_fsa.hardlinks)
 
     def set_fsync_directories(self):

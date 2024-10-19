@@ -55,8 +55,9 @@ field names and values.
 
 import re
 import binascii
-from rdiff_backup import log, Globals, rpath
+from rdiff_backup import log, rpath
 from rdiffbackup import meta
+from rdiffbackup.singletons import generics
 from rdiffbackup.utils import quoting
 
 
@@ -186,7 +187,7 @@ class AttrFile(meta.FlatFile):
                 str_list.append(b"  CarbonFile %b\n" % (cfile,))
 
             # If file is hardlinked, add that information
-            if Globals.preserve_hardlinks != 0:
+            if generics.preserve_hardlinks:
                 numlinks = rorpath.getnumlinks()
                 if numlinks > 1:
                     str_list.append(b"  NumHardLinks %i\n" % numlinks)
