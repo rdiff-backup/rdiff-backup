@@ -92,10 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# If this is false, then rdiff-backup will not compress any
-# increments.  Default is to compress based on regexp below.
-compression = 1
-
 # If true, filelists and directory statistics will be split on
 # nulls instead of newlines.
 null_separator = None

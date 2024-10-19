@@ -8,8 +8,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, statistics, rpath
-from rdiffbackup.singletons import specifics
+from rdiff_backup import statistics, rpath
+from rdiffbackup.singletons import generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -208,7 +208,7 @@ class IncStatTest(unittest.TestCase):
             templist.sort()
             return [inc for (t, inc) in templist]
 
-        Globals.compression = 1
+        generics.compression = True
         comtst.remove_dir(self.out_dir)
         comtst.InternalBackup(
             1, 1, os.path.join(comtst.old_test_dir, b"stattest1"), self.out_dir

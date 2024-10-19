@@ -129,7 +129,7 @@ class Manager:
         writer = self._meta_main_class(
             temprp[0],
             "wb",
-            compress=Globals.compression,
+            compress=generics.compression,
             check_path=0,
             callback=callback,
         )
@@ -201,7 +201,7 @@ class Manager:
         if meta_class.is_active() or force:
             # Before API 201, metafiles couldn't be compressed
             return meta_class(
-                rp, "w", compress=Globals.compression, callback=self._add_incrp
+                rp, "w", compress=generics.compression, callback=self._add_incrp
             )
         else:
             return None

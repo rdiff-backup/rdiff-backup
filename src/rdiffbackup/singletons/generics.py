@@ -91,11 +91,11 @@ allow_duplicate_timestamps = False
 # between None and 0.  When restoring, None or 1 means to preserve
 # hardlinks iff can find a hardlink dictionary.  0 means ignore
 # hardlink information regardless.
-preserve_hardlinks = 1
+preserve_hardlinks = True
 
 # If this is false, then rdiff-backup will not compress any
 # increments.  Default is to compress based on regexp below.
-compression = 1
+compression = True
 
 # If true, filelists and directory statistics will be split on
 # nulls instead of newlines.

@@ -22,6 +22,7 @@ import time
 from functools import reduce
 from rdiff_backup import Globals, log, Time
 from rdiffbackup.locations import increment
+from rdiffbackup.singletons import generics
 from rdiffbackup.utils import quoting
 
 
@@ -369,12 +370,12 @@ class FileStats:
         """Open file stats object and prepare to write"""
         assert not (cls._fileobj or cls._rp), "FileStats has already been initialized."
         rpbase = data_dir.append(b"file_statistics")
-        suffix = Globals.compression and "data.gz" or "data"
+        suffix = generics.compression and "data.gz" or "data"
         cls._rp = increment.get_increment(rpbase, suffix, Time.getcurtime())
         assert not cls._rp.lstat(), "Path '{rp}' shouldn't be existing.".format(
             rp=cls._rp
         )
-        cls._fileobj = cls._rp.open("wb", compress=Globals.compression)
+        cls._fileobj = cls._rp.open("wb", compress=generics.compression)
 
         cls._line_sep = Globals.null_separator and b"\0" or b"\n"
         cls._write_docstring()
