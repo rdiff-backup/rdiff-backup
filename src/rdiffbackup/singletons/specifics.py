@@ -92,10 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# On the backup writer connection, holds the root incrementing branch
-# object.  Access is provided to increment error counts.
-ITRB = None
-
 # If set, a file will be marked as changed if its inode changes.  See
 # the man page under --no-compare-inode for more information.
 compare_inode = 1

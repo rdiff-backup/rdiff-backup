@@ -101,10 +101,6 @@ compression = True
 # nulls instead of newlines.
 null_separator = False
 
-# On the backup writer connection, holds the root incrementing branch
-# object.  Access is provided to increment error counts.
-ITRB = None
-
 # If set, a file will be marked as changed if its inode changes.  See
 # the man page under --no-compare-inode for more information.
 compare_inode = 1
