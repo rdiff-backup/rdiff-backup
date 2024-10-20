@@ -92,10 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# If set, a file will be marked as changed if its inode changes.  See
-# the man page under --no-compare-inode for more information.
-compare_inode = 1
-
 # If set, directories can be fsync'd just like normal files, to
 # guarantee that any changes have been comitted to disk.
 fsync_directories = None

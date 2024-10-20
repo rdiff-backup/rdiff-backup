@@ -177,7 +177,7 @@ def _system_setup(arglist):
     generics.set("win_acls_active", arglist.get("acls"))
     generics.set("resource_forks_active", arglist.get("resource_forks"))
     generics.set("carbonfile_active", arglist.get("carbonfile"))
-    Globals.set("compare_inode", arglist.get("compare_inode"))
+    generics.set("compare_inode", arglist.get("compare_inode"))
     generics.set("preserve_hardlinks", arglist.get("hard_links"))
     Globals.set("never_drop_acls", arglist.get("never_drop_acls"))
     # if action in ("backup", "regress", "restore"):
