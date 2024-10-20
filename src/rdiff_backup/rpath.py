@@ -1259,12 +1259,9 @@ class RPath(RORPath):
                 os.fsync(fp.fileno())
 
     # @API(RPath.fsync_local, 200)
-    def fsync_local(self, thunk=None):
-        """fsync current file, run locally
-
-        If thunk is given, run it before syncing but after gathering
-        the file's file descriptor.
-
+    def fsync_local(self):
+        """
+        fsync current file, run locally
         """
         assert (
             self.conn is specifics.local_connection
@@ -1295,8 +1292,6 @@ class RPath(RORPath):
             fd = os.open(self.path, os.O_RDWR)
             if oldperms is not None:
                 self.chmod(oldperms)
-            if thunk:
-                thunk()
             os.fsync(fd)  # Sync after we switch back permissions!
             os.close(fd)
 
