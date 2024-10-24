@@ -92,10 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# Apply this mask to permissions before chmoding.  (Set to 0777 to
-# prevent highbit permissions on systems which don't support them.)
-permission_mask = 0o7777
-
 # If true, symlinks permissions are affected by the process umask, and
 # we should change the umask when creating them in order to preserve
 # the original permissions

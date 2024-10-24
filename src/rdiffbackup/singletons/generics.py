@@ -111,7 +111,7 @@ compare_inode = True
 # performance reasons, so that the need for fsync can be checked on both sides,
 # without the need to open a connection.
 # That's OK because writing happens anyway only on one side.
-fsync_directories = False
+fsync_directories = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.
 never_drop_acls = False
@@ -125,10 +125,10 @@ permission_mask = 0o7777
 # the original permissions
 symlink_perms = None
 
-# Fsync everything by default. Use --no-fsync only if you really know what you are doing
-# Not having the data written to disk may render your backup unusable in case of FS failure.
-# Using --no-fsync disables only fsync of files during backup and sync() system call upon backup finish
-# and pre-regress
+# Fsync everything by default. Use --no-fsync only if you really know what you are
+# doing. Not having the data written to disk may render your backup unusable in case
+# of FS failure. Using --no-fsync disables only fsync of files during backup and
+# sync() system call upon backup finish and pre-regress.
 do_fsync = True
 
 # This is the current time, either as integer (epoch) or formatted string.

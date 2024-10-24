@@ -752,7 +752,7 @@ class RPath(RORPath):
     def chmod(self, permissions, loglevel=log.WARNING):
         """Wrapper around os.chmod"""
         try:
-            self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
+            self.conn.os.chmod(self.path, permissions & generics.permission_mask)
         except OSError as e:
             if e.strerror == "Inappropriate file type or format" and not self.isdir():
                 # Some systems throw this error if try to set sticky bit
@@ -765,7 +765,7 @@ class RPath(RORPath):
                     loglevel,
                 )
                 self.conn.os.chmod(
-                    self.path, permissions & 0o6777 & Globals.permission_mask
+                    self.path, permissions & 0o6777 & generics.permission_mask
                 )
             else:
                 raise
