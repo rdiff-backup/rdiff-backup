@@ -690,7 +690,7 @@ class RepoShadow(location.LocationShadow):
             older_inc = curmir_incs[0]
         else:
             older_inc = curmir_incs[1]
-        if Globals.do_fsync:
+        if generics.do_fsync:
             # Make sure everything is written before current_mirror is removed
             C.sync()
         older_inc.delete()
@@ -1488,7 +1488,7 @@ information in it.
             ITR(rf.index, rf)
         ITR.finish_processing()
         if former_current_mirror_rp:
-            if Globals.do_fsync:
+            if generics.do_fsync:
                 # Sync first, since we are marking dest dir as good now
                 C.sync()
             former_current_mirror_rp.delete()

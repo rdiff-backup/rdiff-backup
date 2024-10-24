@@ -1252,7 +1252,7 @@ class RPath(RORPath):
         This can be useful for directories.
 
         """
-        if Globals.do_fsync:
+        if generics.do_fsync:
             if not fp:
                 self.conn.rpath.RPath.fsync_local(self)
             else:
