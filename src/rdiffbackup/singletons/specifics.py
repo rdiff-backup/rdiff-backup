@@ -92,11 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# If true, symlinks permissions are affected by the process umask, and
-# we should change the umask when creating them in order to preserve
-# the original permissions
-symlink_perms = None
-
 # If set, the path that should be used instead of the default Python
 # tempfile.tempdir value on remote connections
 remote_tempdir = None
