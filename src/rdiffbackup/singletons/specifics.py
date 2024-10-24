@@ -92,9 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# If set, exit with error instead of dropping ACLs or ACL entries.
-never_drop_acls = None
-
 # Apply this mask to permissions before chmoding.  (Set to 0777 to
 # prevent highbit permissions on systems which don't support them.)
 permission_mask = 0o7777

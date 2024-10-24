@@ -33,7 +33,7 @@ try:
 except ImportError:
     pass
 
-from rdiff_backup import C, Globals, log, rorpiter
+from rdiff_backup import C, log, rorpiter
 from rdiffbackup import meta
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
@@ -494,7 +494,7 @@ def _list_to_acl(entry_list, map_names=1):
     def warn_drop(name):
         """Warn about acl with name getting dropped"""
         global dropped_acl_names
-        if Globals.never_drop_acls:
+        if generics.never_drop_acls:
             log.Log.FatalError(
                 "--never-drop-acls specified but cannot map "
                 "ACL name {an}".format(an=name)

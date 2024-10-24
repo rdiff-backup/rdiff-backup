@@ -111,10 +111,10 @@ compare_inode = True
 # performance reasons, so that the need for fsync can be checked on both sides,
 # without the need to open a connection.
 # That's OK because writing happens anyway only on one side.
-fsync_directories = None
+fsync_directories = False
 
 # If set, exit with error instead of dropping ACLs or ACL entries.
-never_drop_acls = None
+never_drop_acls = False
 
 # Apply this mask to permissions before chmoding.  (Set to 0777 to
 # prevent highbit permissions on systems which don't support them.)

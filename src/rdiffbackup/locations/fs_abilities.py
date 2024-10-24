@@ -28,7 +28,7 @@ FSAbilities object describing it.
 
 import errno
 import os
-from rdiff_backup import Globals, log, robust, selection, Time
+from rdiff_backup import log, robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, specifics
@@ -783,7 +783,7 @@ def detect_fs_abilities(root_rp, writable=True):
 
 class SetGlobals:
     """
-    Various functions for setting Globals vars given FSAbilities object(s)
+    Various functions for setting generic vars given FSAbilities object(s)
 
     Factually it is an abstract class and shan't be instantiated but only
     derived.
@@ -809,7 +809,7 @@ class SetGlobals:
             self.dest_fsa.acls,
             ("acls_active", "acls_write", "acls_conn"),
         )
-        if Globals.never_drop_acls and not generics.acls_active:
+        if generics.never_drop_acls and not generics.acls_active:
             log.Log.FatalError(
                 "--never-drop-acls specified, but ACL support "
                 "missing from source filesystem"
@@ -1038,7 +1038,7 @@ class Dir2RepoSetGlobals(SetGlobals):
                         log.NOTE,
                     )
         else:
-            actual_ctq = generics.chars_to_quote  # Globals override
+            actual_ctq = generics.chars_to_quote  # globals override
             if actual_ctq != suggested_ctq:
                 log.Log(
                     "File system at '{fs}' suggested quoting '{sq}' "

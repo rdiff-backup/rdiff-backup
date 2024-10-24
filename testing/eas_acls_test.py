@@ -674,10 +674,10 @@ other::---""",
         acl2 = acl_posix.AccessControlLists(("a1",))
         acl2.read_from_rp(rp2)
         self.assertTrue(acl2.is_basic())
-        Globals.never_drop_acls = 1
+        generics.never_drop_acls = True
         with self.assertRaises(SystemExit):
             rp.write_acl(acl)
-        Globals.never_drop_acls = None
+        generics.never_drop_acls = False
 
     def test_nochange(self):
         """Make sure files with ACLs not unnecessarily flagged changed"""
