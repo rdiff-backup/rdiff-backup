@@ -92,10 +92,6 @@ connection_dict = {}
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
 
-# If set, directories can be fsync'd just like normal files, to
-# guarantee that any changes have been comitted to disk.
-fsync_directories = None
-
 # If set, exit with error instead of dropping ACLs or ACL entries.
 never_drop_acls = None
 

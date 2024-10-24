@@ -107,6 +107,10 @@ compare_inode = True
 
 # If set, directories can be fsync'd just like normal files, to
 # guarantee that any changes have been comitted to disk.
+# It should be a variable specific to a file system, but it's made generic for
+# performance reasons, so that the need for fsync can be checked on both sides,
+# without the need to open a connection.
+# That's OK because writing happens anyway only on one side.
 fsync_directories = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.

@@ -22,7 +22,7 @@ store and retrieve different types of metadata.
 """
 
 import os
-from rdiff_backup import log, Globals, rpath, Time, rorpiter
+from rdiff_backup import log, rpath, Time, rorpiter
 from rdiffbackup.singletons import generics
 from rdiffbackup.utils import plugins
 import rdiffbackup.meta
@@ -144,7 +144,7 @@ class Manager:
             mrp=finalrp
         )
         rpath.rename(temprp[0], finalrp)
-        if Globals.fsync_directories:
+        if generics.fsync_directories:
             self.data_dir.fsync()
 
     def _get_meta_main_at_time(self, time, restrict_index):

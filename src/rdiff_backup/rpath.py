@@ -961,7 +961,7 @@ class RPath(RORPath):
             try:
                 self.rmdir()
             except os.error:
-                if Globals.fsync_directories:
+                if generics.fsync_directories:
                     self.fsync()
                 self.conn.shutil.rmtree(self.path)
         else:
@@ -1298,7 +1298,7 @@ class RPath(RORPath):
     def fsync_with_dir(self, fp=None):
         """fsync self and directory self is under"""
         self.fsync(fp)
-        if Globals.fsync_directories:
+        if generics.fsync_directories:
             self.get_parent_rp().fsync()
 
     def get_bytes(self, compressed=None):
