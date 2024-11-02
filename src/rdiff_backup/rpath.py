@@ -42,7 +42,7 @@ import shutil
 import stat
 import tempfile
 import time
-from rdiff_backup import Globals, Time, log, C
+from rdiff_backup import Time, log, C
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
 from rdiffbackup.singletons import consts, generics, specifics
@@ -950,7 +950,7 @@ class RPath(RORPath):
 
     def isgroup(self):
         """Return true if process has group of rp"""
-        return "gid" in self.data and self.data["gid"] in self.conn.Globals.get(
+        return "gid" in self.data and self.data["gid"] in self.conn.specifics.get(
             "process_groups"
         )
 
@@ -1976,7 +1976,7 @@ def setdata_local(rp):
         rp.conn is specifics.local_connection
     ), "Function must be called locally not over {conn}.".format(conn=rp.conn)
     reset_perms = False
-    if Globals.process_uid != 0 and not rp.readable() and rp.isowner():
+    if specifics.process_uid != 0 and not rp.readable() and rp.isowner():
         if rp.lstat() == "sym":
             # a symlink which isn't readable is strange, hence better not backup
             # only case known is 'C:\Users\All Users' mounted over Samba

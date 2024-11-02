@@ -49,19 +49,10 @@ server = None
 # vary depending on the connection.
 try:
     process_uid = os.getuid()
-    process_gid = os.getgid()
-    process_groups = [process_gid] + os.getgroups()
+    process_groups = set(os.getgroups())
 except AttributeError:
     process_uid = 0
-    process_gid = 0
-    process_groups = [0]
-
-# If true, change the permissions of unwriteable mirror files
-# (such as directories) so that they can be written, and then
-# change them back.  This defaults to 1 just in case the process
-# is not running as root (root doesn't need to change
-# permissions).
-change_mirror_perms = process_uid != 0
+    process_groups = {0}
 
 # The following three attributes represent whether extended attributes
 # are supported.  If eas_active is true, then the current session
@@ -91,10 +82,6 @@ connection_dict = {}
 # True if the script is the end that writes to the increment and
 # mirror directories.  True for purely local sessions.
 is_backup_writer = None  # compat201
-
-# If set, the path that should be used instead of the default Python
-# tempfile.tempdir value on remote connections
-remote_tempdir = None
 
 
 # @API(get, 300)

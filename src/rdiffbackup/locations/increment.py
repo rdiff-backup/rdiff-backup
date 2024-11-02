@@ -20,8 +20,8 @@
 
 import os
 import re
-from rdiff_backup import Globals, log, Rdiff, robust, rpath, statistics, Time
-from rdiffbackup.singletons import consts
+from rdiff_backup import log, Rdiff, robust, rpath, statistics, Time
+from rdiffbackup.singletons import consts, specifics
 
 compression = True
 not_compressed_regexp = None
@@ -154,7 +154,7 @@ def _make_diff_increment(new, mirror, incpref, inc_time):
 
     old_new_perms, old_mirror_perms = (None, None)
 
-    if Globals.process_uid != 0:
+    if specifics.process_uid != 0:
         # Check for unreadable files
         if not new.readable():
             old_new_perms = new.getperms()

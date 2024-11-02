@@ -33,7 +33,6 @@ import tempfile
 import yaml
 from rdiff_backup import (
     C,
-    Globals,
     hash,
     iterfile,
     log,
@@ -156,7 +155,7 @@ class RepoShadow(location.LocationShadow):
         if cls._must_be_writable:
             if not cls._create():
                 return consts.RET_CODE_ERR
-        if cls._check_time and Globals.current_time <= cls.get_mirror_time():
+        if cls._check_time and generics.current_time <= cls.get_mirror_time():
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
             return consts.RET_CODE_ERR
         Security.reset_restrict_path(cls._base_dir)
@@ -621,7 +620,7 @@ class RepoShadow(location.LocationShadow):
                 "File changed from regular file before signature",
             )
             return None
-        if Globals.process_uid != 0 and not dest_rp.readable() and dest_rp.isowner():
+        if specifics.process_uid != 0 and not dest_rp.readable() and dest_rp.isowner():
             # This branch can happen with root source and non-root
             # destination.  Permissions are changed permanently, which
             # should propagate to the diffs
@@ -1716,7 +1715,7 @@ information in it.
 
         def helper(rf):
             mirror_rp = rf.mirror_rp
-            if Globals.process_uid != 0:
+            if specifics.process_uid != 0:
                 if mirror_rp.isreg() and not mirror_rp.readable():
                     mirror_rp.chmod(0o400 | mirror_rp.getperms())
                 elif mirror_rp.isdir() and not mirror_rp.hasfullperms():
@@ -1852,7 +1851,7 @@ information in it.
             return False
         pid = os.getpid()
         identifier = {
-            "timestamp": Globals.current_time_string,
+            "timestamp": generics.current_time_string,
             "pid": pid,
             "cmd": simpleps.get_pid_name(pid),
             "hostname": socket.gethostname(),
@@ -2117,7 +2116,7 @@ class _CacheCollatedPostProcess:
         if (
             dest_rorp
             and dest_rorp.isdir()
-            and Globals.process_uid != 0
+            and specifics.process_uid != 0
             and dest_rorp.getperms() % 0o1000 < 0o700
         ):
             self._unreadable_dir_init(source_rorp, dest_rorp)
@@ -2331,7 +2330,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             ), "Base directory '{rp}' isn't a directory.".format(rp=self.base_rp)
             rpath.copy_attribs(self.dir_update, self.base_rp)
 
-            if Globals.process_uid != 0 and self.dir_update.getperms() % 0o1000 < 0o700:
+            if specifics.process_uid != 0 and self.dir_update.getperms() % 0o1000 < 0o700:
                 # Directory was unreadable at start -- keep it readable
                 # until the end of the backup process.
                 self.base_rp.chmod(0o700 | self.dir_update.getperms())
@@ -2602,7 +2601,7 @@ class _CachedRF:
         """Initialize _CachedRF, self.rf_list variable"""
         self.root_rf = root_rf
         self.rf_list = []  # list should filled in index order
-        if Globals.process_uid != 0:
+        if specifics.process_uid != 0:
             self.perm_changer = _PermissionChanger(root_rf.mirror_rp)
 
     def get_fp(self, index, mir_rorp):
@@ -2626,7 +2625,7 @@ class _CachedRF:
 
     def close(self):
         """Finish remaining rps in _PermissionChanger"""
-        if Globals.process_uid != 0:
+        if specifics.process_uid != 0:
             self.perm_changer.finish()
 
     def _get_rf(self, index, mir_rorp=None):
@@ -2637,7 +2636,7 @@ class _CachedRF:
                     return None
             rf = self.rf_list[0]
             if rf.index == index:
-                if Globals.process_uid != 0:
+                if specifics.process_uid != 0:
                     self.perm_changer(index, mir_rorp)
                 return rf
             elif rf.index > index:
@@ -2661,7 +2660,7 @@ class _CachedRF:
         if mir_rorp.has_alt_mirror_name():
             return  # longname alias separate
         parent_index = index[:-1]
-        if Globals.process_uid != 0:
+        if specifics.process_uid != 0:
             self.perm_changer(parent_index)
         temp_rf = _RestoreFile(
             self.root_rf.mirror_rp.new_index(parent_index),

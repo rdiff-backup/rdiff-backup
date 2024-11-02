@@ -21,7 +21,6 @@
 import calendar
 import re
 import time
-from rdiff_backup import Globals
 from rdiffbackup.singletons import generics
 
 
@@ -67,11 +66,11 @@ def set_current_time(reftime=None):
 
 
 def getcurtime():
-    return Globals.current_time
+    return generics.current_time
 
 
 def getcurtimestr():
-    return Globals.current_time_string
+    return generics.current_time_string
 
 
 def timetostring(timeinseconds):

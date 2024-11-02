@@ -27,7 +27,6 @@ be instantiated.
 import os
 
 from rdiff_backup import (
-    Globals,
     hash,
     iterfile,
     log,
@@ -147,7 +146,7 @@ class ReadDirShadow(location.LocationShadow):
             elif src_rp.isreg():
                 reset_perms = False
                 if (
-                    Globals.process_uid != 0
+                    specifics.process_uid != 0
                     and not src_rp.readable()
                     and src_rp.isowner()
                 ):

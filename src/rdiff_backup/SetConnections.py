@@ -529,9 +529,9 @@ def _test_connection(conn_number, rp):
     try:
         remote_time = conn.Globals.get("current_time")
         assert (
-            remote_time == Globals.current_time
+            remote_time == generics.current_time
         ), "connection not returning current time {ct1} but {ct2}".format(
-            ct1=Globals.current_time, ct2=remote_time
+            ct1=generics.current_time, ct2=remote_time
         )
         assert (
             type(conn.os.listdir(rp.path)) is list
