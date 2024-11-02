@@ -28,7 +28,7 @@ import os
 import re
 import sys
 import subprocess
-from rdiff_backup import connection, Globals, log, rpath
+from rdiff_backup import connection, log, rpath
 from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
 
@@ -136,7 +136,7 @@ def add_redirected_conn(conn_number):
 
 def CloseConnections():
     """Close all connections.  Run by client"""
-    assert not Globals.server, "Connections can't be closed by server"
+    assert not specifics.server, "Connections can't be closed by server"
     for conn in specifics.connections:
         if conn:  # could be None, if the connection failed
             conn.quit()
@@ -425,7 +425,7 @@ which should only print out the text: rdiff-backup <version>""".format(
             return False
 
     # servers don't validate the API version, client does
-    if Globals.server:
+    if specifics.server:
         return True
 
     # Now compare the remote and local API versions and agree actual version

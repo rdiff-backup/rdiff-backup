@@ -24,7 +24,7 @@ Comparaison can be done using metadata, file content or hashes.
 """
 
 import yaml
-from rdiff_backup import Globals, log
+from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
 from rdiffbackup.singletons import consts
@@ -166,7 +166,7 @@ class CompareAction(actions.BaseAction):
 
         Output a list in YAML format if parsable is True.
         """
-        assert not Globals.server, "This function shouldn't run as server."
+        assert not specifics.server, "This function shouldn't run as server."
         changed_files_found = 0
         reason_verify_list = []
         for report in report_iter:

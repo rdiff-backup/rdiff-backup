@@ -43,7 +43,7 @@ api_version = {"default": 201, "min": 201, "max": 201, "actual": 0}
 api_version.update(yaml.safe_load(os.environ.get("RDIFF_BACKUP_API_VERSION", "{}")))
 
 # True if script is running as a server
-server = None
+server = False
 
 # uid and gid of the owner of the rdiff-backup process.  This can
 # vary depending on the connection.

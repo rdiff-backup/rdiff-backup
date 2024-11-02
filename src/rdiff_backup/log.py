@@ -26,7 +26,6 @@ import sys
 import textwrap
 import typing
 import traceback
-from rdiff_backup import Globals
 from rdiffbackup.singletons import consts, generics, specifics
 
 LOGFILE_ENCODING = "utf-8"
@@ -101,7 +100,7 @@ class Logger:
 
     def log_to_term(self, message, verbosity):
         """Write message to stdout/stderr"""
-        if verbosity in {ERROR, WARNING} or Globals.server:
+        if verbosity in {ERROR, WARNING} or specifics.server:
             termfp = sys.stderr
         else:
             termfp = sys.stdout
@@ -140,7 +139,7 @@ class Logger:
             result_repr = str(result)
         # shorten the result to a max size of 720 chars with ellipsis if needed
         # result_repr = result_repr[:720] + (result_repr[720:] and '[...]')  # noqa: E265
-        if Globals.server:
+        if specifics.server:
             conn_str = "Server"
         else:
             conn_str = "Client"
@@ -291,7 +290,7 @@ class Logger:
                 .astimezone()
                 .strftime("%F %H:%M:%S.%f %z")
             )
-            if Globals.server:
+            if specifics.server:
                 role = "SERVER"
             else:
                 role = "CLIENT"

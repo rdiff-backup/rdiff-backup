@@ -26,7 +26,6 @@ import time
 import traceback
 
 from rdiff_backup import (
-    Globals,
     iterfile,
     log,
     robust,
@@ -94,7 +93,6 @@ class Connection:
             # "socket": "socket",
             # "tempfile": "tempfile",
             # "types": "types",
-            "Globals": "rdiff_backup.Globals",
             # "increment": "rdiff_backup.increment",
             # "iterfile": "rdiff_backup.iterfile",
             # "librsync": "rdiff_backup.librsync",
@@ -111,6 +109,9 @@ class Connection:
             "_dir_shadow": "rdiffbackup.locations._dir_shadow",
             "_repo_shadow": "rdiffbackup.locations._repo_shadow",
             "map_filenames": "rdiffbackup.locations.map.filenames",
+            "consts": "rdiffbackup.singletons.consts",
+            "generics": "rdiffbackup.singletons.generics",
+            "specifics": "rdiffbackup.singletons.specifics",
         }
         for name, module in modules.items():
             cls.globals[name] = importlib.import_module(module)
@@ -496,7 +497,7 @@ class PipeConnection(LowLevelPipeConnection):
 
     def quit(self):
         """Close the associated pipes and tell server side to quit"""
-        assert not Globals.server, "This function shouldn't run as server."
+        assert not specifics.server, "This function shouldn't run as server."
         self._putquit()
         self._get()
         self._close()
