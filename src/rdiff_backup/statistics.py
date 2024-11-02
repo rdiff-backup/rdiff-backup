@@ -20,7 +20,7 @@
 
 import time
 from functools import reduce
-from rdiff_backup import Globals, log, Time
+from rdiff_backup import log, Time
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import generics
 from rdiffbackup.utils import quoting
