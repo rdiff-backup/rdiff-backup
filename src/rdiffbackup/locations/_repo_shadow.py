@@ -2330,7 +2330,10 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             ), "Base directory '{rp}' isn't a directory.".format(rp=self.base_rp)
             rpath.copy_attribs(self.dir_update, self.base_rp)
 
-            if specifics.process_uid != 0 and self.dir_update.getperms() % 0o1000 < 0o700:
+            if (
+                specifics.process_uid != 0
+                and self.dir_update.getperms() % 0o1000 < 0o700
+            ):
                 # Directory was unreadable at start -- keep it readable
                 # until the end of the backup process.
                 self.base_rp.chmod(0o700 | self.dir_update.getperms())

@@ -9,7 +9,7 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath, Time
+from rdiff_backup import rpath, Time
 from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
@@ -54,8 +54,6 @@ class RegressTest(unittest.TestCase):
 
         comtst.rdiff_backup(1, 1, self.incrp[3].path, self.out_dir, current_time=40000)
         self.assertTrue(comtst.compare_recursive(self.incrp[3], self.out_rp))
-
-        Globals.rbdir = self.out_rbdir_rp
 
         regress_function(30000)
         self.assertTrue(

@@ -26,7 +26,6 @@ the related connections.
 
 import os
 import re
-import sys
 import subprocess
 from rdiff_backup import connection, log, rpath
 from rdiffbackup.singletons import consts, generics, specifics
@@ -528,12 +527,12 @@ def _test_connection(conn_number, rp):
         transfer_value = "xyz123"
         conn.specifics.set("test_variable", transfer_value)
         return_value = conn.specifics.get("test_variable")
-        if transfer_value != test_value:
+        if transfer_value != return_value:
             log.Log(
                 "Returned value '{rv}' of test variable is not the same as "
-                "transferred value '{tv}'".format(
-                    rv=return_value, tv=transfer_value
-                ), log.ERROR)
+                "transferred value '{tv}'".format(rv=return_value, tv=transfer_value),
+                log.ERROR,
+            )
             return False
         if type(conn.os.listdir(rp.path)) is not list:
             log.Log(

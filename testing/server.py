@@ -10,11 +10,6 @@ the directory the source files are in.
 """
 
 
-def Test_SetConnGlobals(conn, setting, value):
-    """This is used in connectiontest.py"""
-    conn.Globals.set_local(setting, value)
-
-
 def print_usage():
     print("Usage: server.py  [path to source files]", __doc__)
 

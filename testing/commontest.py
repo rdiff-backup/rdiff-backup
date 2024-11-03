@@ -11,7 +11,6 @@ import shutil
 import subprocess
 
 from rdiff_backup import (
-    Globals,
     hash,
     log,
     rorpiter,
@@ -19,7 +18,7 @@ from rdiff_backup import (
     Security,
     selection,
 )
-from rdiffbackup import actions, run
+from rdiffbackup import run
 from rdiffbackup.meta import ea, acl_posix
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.singletons import generics, specifics
@@ -373,8 +372,7 @@ def get_increment_rp(mirror_rp, time):
 def reset_connections():
     """Reset some global connection information"""
     Security._security_level = "override"
-    Globals.isbackup_reader = specifics.is_backup_writer = None
-    Globals.rbdir = None
+    specifics.is_backup_writer = None
     # reset the connection status
     specifics.local_connection.conn_number = 0
     specifics.connections = [specifics.local_connection]
@@ -640,10 +638,6 @@ def backup_restore_series(
     backup_dir = os.path.join(test_base_dir, b"output")
     restore_dir = os.path.join(test_base_dir, b"restore")
     generics.set("preserve_hardlinks", compare_hardlinks)
-    Globals.set(
-        "no_compression_regexp_string",
-        os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP),
-    )
     time = 10000
     dest_rp = rpath.RPath(specifics.local_connection, backup_dir)
     restore_rp = rpath.RPath(specifics.local_connection, restore_dir)

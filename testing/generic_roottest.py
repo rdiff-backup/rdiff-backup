@@ -11,13 +11,10 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
 from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-Globals.set("change_source_perms", None)
-Globals.counter = 0
 
 assert os.getuid() == 0, "Run this test as root!"
 

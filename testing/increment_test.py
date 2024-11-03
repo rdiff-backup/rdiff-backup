@@ -7,7 +7,7 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath, Time, Rdiff
+from rdiff_backup import rpath, Time, Rdiff
 from rdiffbackup import actions
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import specifics
@@ -15,7 +15,6 @@ from rdiffbackup.singletons import specifics
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 lc = specifics.local_connection
-Globals.change_source_perms = 1
 
 
 def getrp(ending):
@@ -48,7 +47,7 @@ class inctest(unittest.TestCase):
     """Test the incrementRP function"""
 
     def setUp(self):
-        Globals.set("isbackup_writer", 1)
+        specifics.set("is_backup_writer", 1)
 
     def check_time(self, rp):
         """Make sure that rp is an inc file, and time is prevtime"""

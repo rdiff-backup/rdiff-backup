@@ -26,7 +26,7 @@ import sys
 
 from rdiff_backup import connection, log, Security
 from rdiffbackup import actions
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 
 class ServerAction(actions.BaseAction):

@@ -27,7 +27,7 @@ import yaml
 from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, specifics
 
 
 class CompareAction(actions.BaseAction):

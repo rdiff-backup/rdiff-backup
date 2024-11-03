@@ -4,20 +4,17 @@ Regression tests
 
 import os
 import pathlib
-import re
 import time
 import unittest
 
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, log, robust, rpath, selection, Time
+from rdiff_backup import log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-Globals.exclude_mirror_regexps = [re.compile(b".*/rdiff-backup-data")]
 
 lc = specifics.local_connection
 

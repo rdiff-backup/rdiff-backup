@@ -9,12 +9,10 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import rpath, metadata, Globals
+from rdiff_backup import rpath, metadata
 from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-Globals.read_resource_forks = Globals.write_resource_forks = 1
 
 
 class ResourceForkTest(unittest.TestCase):
@@ -91,7 +89,6 @@ class ResourceForkTest(unittest.TestCase):
 
     def testSeriesLocal(self):
         """Test backing up and restoring directories with ACLs locally"""
-        Globals.read_resource_forks = Globals.write_resource_forks = 1
         self.make_backup_dirs()
         dirlist = [
             "testfiles/resource_fork_test1",
@@ -103,7 +100,6 @@ class ResourceForkTest(unittest.TestCase):
 
     def testSeriesRemote(self):
         """Test backing up and restoring directories with ACLs locally"""
-        Globals.read_resource_forks = Globals.write_resource_forks = 1
         self.make_backup_dirs()
         dirlist = [
             "testfiles/resource_fork_test1",

@@ -10,11 +10,11 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
 from rdiffbackup import meta_mgr
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, ea
-from rdiffbackup.singletons import specifics
+from rdiffbackup.singletons import generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 

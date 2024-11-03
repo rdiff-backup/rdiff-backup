@@ -132,8 +132,8 @@ class HashTest(unittest.TestCase):
         self.assertEqual(conn.reval("pow", 2, 5), 32)
 
         fp = hash.FileWrapper(io.BytesIO(self.s1.encode()))
-        conn.Globals.set_local("tmp_file", fp)
-        fp_remote = conn.Globals.get("tmp_file")
+        conn.specifics.set("tmp_file", fp)
+        fp_remote = conn.specifics.get("tmp_file")
         self.assertEqual(fp_remote.read(), self.s1.encode())
         self.assertEqual(fp_remote.close().sha1_digest, self.s1_hash)
 
@@ -147,8 +147,8 @@ class HashTest(unittest.TestCase):
         rp2.setfile(hash.FileWrapper(rp2.open("rb")))
         rpiter = iter([rp1, rp2])
 
-        conn.Globals.set_local("tmp_conn_iter", rpiter)
-        remote_iter = conn.Globals.get("tmp_conn_iter")
+        conn.specifics.set("tmp_conn_iter", rpiter)
+        remote_iter = conn.specifics.get("tmp_conn_iter")
 
         rorp1 = next(remote_iter)
         fp = hash.FileWrapper(rorp1.open("rb"))
