@@ -172,13 +172,7 @@ def _system_setup(arglist):
         specifics.set_api_version(arglist.get("api_version"))
 
     # if action in ("backup", "restore"):
-    generics.set("eas_active", arglist.get("eas"))
-    generics.set("acls_active", arglist.get("acls"))
-    generics.set("win_acls_active", arglist.get("acls"))
-    generics.set("resource_forks_active", arglist.get("resource_forks"))
-    generics.set("carbonfile_active", arglist.get("carbonfile"))
     generics.set("compare_inode", arglist.get("compare_inode"))
-    generics.set("preserve_hardlinks", arglist.get("hard_links"))
     generics.set("never_drop_acls", arglist.get("never_drop_acls"))
     # if action in ("backup", "regress", "restore"):
     generics.set("compression", arglist.get("compression"))

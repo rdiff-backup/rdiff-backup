@@ -800,13 +800,17 @@ class SetGlobals:
 
     def set_eas(self):
         self._update_triple(
-            self.src_fsa.eas, self.dest_fsa.eas, ("eas_active", "eas_write", "eas_conn")
+            self.src_fsa.eas,
+            self.dest_fsa.eas,
+            self.values.get("eas"),
+            ("eas_active", "eas_write", "eas_conn"),
         )
 
     def set_acls(self):
         self._update_triple(
             self.src_fsa.acls,
             self.dest_fsa.acls,
+            self.values.get("acls"),
             ("acls_active", "acls_write", "acls_conn"),
         )
         if generics.never_drop_acls and not generics.acls_active:
@@ -819,6 +823,7 @@ class SetGlobals:
         self._update_triple(
             self.src_fsa.win_acls,
             self.dest_fsa.win_acls,
+            self.values.get("acls"),
             ("win_acls_active", "win_acls_write", "win_acls_conn"),
         )
 
@@ -826,6 +831,7 @@ class SetGlobals:
         self._update_triple(
             self.src_fsa.resource_forks,
             self.dest_fsa.resource_forks,
+            self.values.get("resource_forks"),
             ("resource_forks_active", "resource_forks_write", "resource_forks_conn"),
         )
 
@@ -833,12 +839,15 @@ class SetGlobals:
         self._update_triple(
             self.src_fsa.carbonfile,
             self.dest_fsa.carbonfile,
+            self.values.get("carbonfile"),
             ("carbonfile_active", "carbonfile_write", "carbonfile_conn"),
         )
 
     def set_hardlinks(self):
-        if generics.preserve_hardlinks:
-            generics.set("preserve_hardlinks", self.dest_fsa.hardlinks)
+        generics.set(
+            "preserve_hardlinks",
+            self.dest_fsa.hardlinks and self.values.get("hard_links"),
+        )
 
     def set_fsync_directories(self):
         generics.set("fsync_directories", self.dest_fsa.fsync_dirs)
@@ -870,6 +879,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         """Just store some variables for use below"""
         super().__init__(src_dir, dest_repo)
         self.repo = dest_repo
+        self.values = dest_repo.values
 
     def __call__(self):
         """
@@ -959,23 +969,17 @@ class Dir2RepoSetGlobals(SetGlobals):
         generics.set("chars_to_quote_regexp", regexp)
         generics.set("chars_to_quote_unregexp", unregexp)
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
+    def _update_triple(self, src_support, dest_support, toggle, attr_triple):
         """
         Many of the settings have a common form we can handle here
+
+        Toogle contains the value selected by the user via a CLI parameter.
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if generics.get(active_attr) is not None:
-            return  # don't override a value set by the user
-        generics.set(active_attr, None)
-        generics.set(write_attr, None)
-        specifics.set(conn_attr, None)
-        if not src_support:
-            return  # if source doesn't support, nothing
-        generics.set(active_attr, 1)
-        self.in_conn.specifics.set(conn_attr, 1)
-        if dest_support:
-            generics.set(write_attr, 1)
-            self.out_conn.specifics.set(conn_attr, 1)
+        generics.set(active_attr, src_support and toggle)
+        self.in_conn.specifics.set(conn_attr, src_support and toggle)
+        generics.set(write_attr, dest_support and toggle)
+        self.out_conn.specifics.set(conn_attr, dest_support and toggle)
 
     def _get_ctq_from_fsas(self):
         """
@@ -1072,6 +1076,7 @@ class Repo2DirSetGlobals(SetGlobals):
         """Just store some variables for use below"""
         super().__init__(src_repo, dest_dir)
         self.repo = src_repo
+        self.values = src_repo.values
 
     def __call__(self):
         """
@@ -1149,7 +1154,7 @@ class Repo2DirSetGlobals(SetGlobals):
             )
             generics.set("chars_to_quote", b"")
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
+    def _update_triple(self, src_support, dest_support, toggle, attr_triple):
         """
         Update global settings for feature based on fsa results
 
@@ -1157,20 +1162,14 @@ class Repo2DirSetGlobals(SetGlobals):
         because (using the mirror_metadata file) rpaths from the
         source may have more information than the file system
         supports.
+
+        Toogle contains the value selected by the user via a CLI parameter.
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if generics.get(active_attr) is not None:
-            return  # don't override a value set by the user
-        generics.set(active_attr, None)
-        generics.set(write_attr, None)
-        specifics.set(conn_attr, None)
-        if not dest_support:
-            return  # if dest doesn't support, do nothing
-        generics.set(active_attr, 1)
-        self.out_conn.specifics.set(conn_attr, 1)
-        self.out_conn.generics.set_local(write_attr, 1)  # FIXME: generics.set_all?
-        if src_support:
-            self.in_conn.specifics.set(conn_attr, 1)
+        generics.set(active_attr, dest_support and toggle)
+        generics.set(write_attr, dest_support and toggle)
+        self.out_conn.specifics.set(conn_attr, dest_support and toggle)
+        self.in_conn.specifics.set(conn_attr, src_support and toggle)
 
 
 class SingleRepoSetGlobals(Repo2DirSetGlobals):
@@ -1182,6 +1181,7 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         self.conn = repo.base_dir.conn
         self.dest_fsa = repo.fs_abilities
         self.repo = repo
+        self.values = repo.values
 
     def __call__(self):
         """
@@ -1205,43 +1205,47 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         return consts.RET_CODE_OK
 
     def set_eas(self):
-        self._update_triple(self.dest_fsa.eas, ("eas_active", "eas_write", "eas_conn"))
+        self._update_triple(
+            self.dest_fsa.eas,
+            self.values.get("eas"),
+            ("eas_active", "eas_write", "eas_conn"),
+        )
 
     def set_acls(self):
         self._update_triple(
-            self.dest_fsa.acls, ("acls_active", "acls_write", "acls_conn")
+            self.dest_fsa.acls,
+            self.values.get("acls"),
+            ("acls_active", "acls_write", "acls_conn"),
         )
 
     def set_win_acls(self):
         self._update_triple(
             self.dest_fsa.win_acls,
+            self.values.get("acls"),
             ("win_acls_active", "win_acls_write", "win_acls_conn"),
         )
 
     def set_resource_forks(self):
         self._update_triple(
             self.dest_fsa.resource_forks,
+            self.values.get("resource_forks"),
             ("resource_forks_active", "resource_forks_write", "resource_forks_conn"),
         )
 
     def set_carbonfile(self):
         self._update_triple(
             self.dest_fsa.carbonfile,
+            self.values.get("carbonfile"),
             ("carbonfile_active", "carbonfile_write", "carbonfile_conn"),
         )
 
-    def _update_triple(self, fsa_support, attr_triple):
+    def _update_triple(self, fsa_support, toggle, attr_triple):
         """
         Update global vars from single fsa test
+
+        Toogle contains the value selected by the user via a CLI parameter.
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if generics.get(active_attr) is not None:
-            return  # don't override a value set by the user
-        generics.set(active_attr, None)
-        generics.set(write_attr, None)
-        specifics.set(conn_attr, None)
-        if not fsa_support:
-            return
-        generics.set(active_attr, 1)
-        generics.set(write_attr, 1)
-        self.conn.specifics.set(conn_attr, 1)
+        generics.set(active_attr, fsa_support and toggle)
+        generics.set(write_attr, fsa_support and toggle)
+        self.conn.specifics.set(conn_attr, fsa_support and toggle)

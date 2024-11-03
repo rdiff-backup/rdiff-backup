@@ -109,7 +109,11 @@ class ExtendedAttributes:
                     raise
 
     def write_to_rp(self, rp):
-        """Write extended attributes to rpath rp"""
+        """
+        Write extended attributes to rpath rp
+
+        Beware that the attributes don't get re-read and rp still bears the old EAs.
+        """
         assert (
             rp.conn is specifics.local_connection
         ), "Function works locally not over '{co}'.".format(co=rp.conn)

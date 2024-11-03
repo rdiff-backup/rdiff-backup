@@ -56,6 +56,12 @@ class EATest(unittest.TestCase):
     restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
     restore_rp = rpath.RPath(specifics.local_connection, restore_dir)
 
+    def setUp(self):
+        # make sure EAs are active (assuming the test file system supports it)
+        generics.set("eas_active", True)
+        generics.set("eas_write", True)
+        specifics.set("eas_conn", True)
+
     def make_temp_out_dirs(self):
         """Make temp output and restore directories empty"""
         self.out_rp.setdata()  # in case the file changed in-between
@@ -156,6 +162,7 @@ user.empty
         rp1_4 = self.ea_test1_rpath.append("e4")
         list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3, rp1_4]))
         self.sample_ea.write_to_rp(self.ea_test1_rpath)
+        self.ea_test1_rpath.setdata()
         self.ea1.write_to_rp(rp1_1)
         self.ea2.write_to_rp(rp1_2)
         self.ea4.write_to_rp(rp1_4)
@@ -166,6 +173,7 @@ user.empty
         rp2_3 = self.ea_test2_rpath.append("e3")
         list(map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3]))
         self.ea3.write_to_rp(self.ea_test2_rpath)
+        self.ea_test2_rpath.setdata()
         self.sample_ea.write_to_rp(rp2_1)
         self.ea1.write_to_rp(rp2_2)
         self.ea2.write_to_rp(rp2_3)
@@ -178,6 +186,7 @@ user.empty
     def testIterate(self):
         """Test writing several records and then reading them back"""
         self.make_backup_dirs()
+        self.make_temp_out_dirs()
         rp1 = self.ea_test1_rpath.append("e1")
         rp2 = self.ea_test1_rpath.append("e2")
         rp3 = self.ea_test1_rpath.append("e3")

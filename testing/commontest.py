@@ -382,7 +382,8 @@ def reset_connections():
     generics.set("chars_to_quote_regexp", None)
     generics.set("chars_to_quote_unregexp", None)
     # EAs and ACLs support
-    generics.eas_active = generics.acls_active = None  # FIXME use set_all?
+    generics.set("eas_active", None)
+    generics.set("acls_active", None)
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):
