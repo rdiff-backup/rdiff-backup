@@ -522,23 +522,28 @@ def _test_connection(conn_number, rp):
     print("Testing server started by: ", __conn_remote_cmds[conn_number])
     conn = specifics.connections[conn_number]
     if conn is None:
-        sys.stderr.write("- Connection failed, server tests skipped\n")
+        log.Log("Connection failed, server tests skipped", log.ERROR)
         return False
-    # FIXME the tests don't sound right, the path given needs to pre-exist
-    # on Windows but not on Linux? What are we exactly testing here?
     try:
-        remote_time = conn.Globals.get("current_time")
-        assert (
-            remote_time == generics.current_time
-        ), "connection not returning current time {ct1} but {ct2}".format(
-            ct1=generics.current_time, ct2=remote_time
-        )
-        assert (
-            type(conn.os.listdir(rp.path)) is list
-        ), "connection not listing directory '{rp}'".format(rp=rp)
+        transfer_value = "xyz123"
+        conn.specifics.set("test_variable", transfer_value)
+        return_value = conn.specifics.get("test_variable")
+        if transfer_value != test_value:
+            log.Log(
+                "Returned value '{rv}' of test variable is not the same as "
+                "transferred value '{tv}'".format(
+                    rv=return_value, tv=transfer_value
+                ), log.ERROR)
+            return False
+        if type(conn.os.listdir(rp.path)) is not list:
+            log.Log(
+                "Connection not listing directory '{rp}'".format(rp=rp),
+                log.ERROR,
+            )
+            return False
     except BaseException as exc:
-        sys.stderr.write("- Server tests failed due to {exc}\n".format(exc=exc))
+        log.Log("Server tests failed due to {exc}".format(exc=exc), log.ERROR)
         return False
     else:
-        print("- Server OK")
+        log.Log("Server OK", log.NOTE)
         return True
