@@ -157,7 +157,7 @@ def test_connections(rpaths):
         log.Log("No remote connections specified, only local one available", log.ERROR)
         return consts.RET_CODE_FILE_ERR
     elif conn_len != len(rpaths) + 1:
-        print(
+        log.Log(
             "All {pa} parameters must be remote of the form "
             "'server::path'".format(pa=len(rpaths)),
             log.ERROR,
@@ -518,7 +518,10 @@ def _test_connection(conn_number, rp):
     depending on test results."""
     # the function doesn't use the log functions because it might not have
     # an error or log file to use.
-    print("Testing server started by: ", __conn_remote_cmds[conn_number])
+    log.Log(
+        "Testing server started by: {rc}".format(rc=__conn_remote_cmds[conn_number]),
+        log.NOTE,
+    )
     conn = specifics.connections[conn_number]
     if conn is None:
         log.Log("Connection failed, server tests skipped", log.ERROR)
