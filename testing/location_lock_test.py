@@ -8,8 +8,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
 from rdiffbackup.locations import _repo_shadow
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -21,7 +22,7 @@ class LocationLockTest(unittest.TestCase):
 
     def setUp(self):
         self.base_dir = os.path.join(TEST_BASE_DIR, b"location_lock")
-        self.base_rp = rpath.RPath(Globals.local_connection, self.base_dir)
+        self.base_rp = rpath.RPath(specifics.local_connection, self.base_dir)
         self.lockfile = self.base_rp.append("lock")
         comtst.re_init_rpath_dir(self.base_rp)
         self.success = False

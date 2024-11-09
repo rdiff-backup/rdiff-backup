@@ -59,7 +59,7 @@ elif os.name == "posix":
         fcntl.flock(file, flags)
 
     def unlock(file):
-        fcntl.flock(file, fcntl.LOCK_UN)
+        fcntl.flock(file, fcntl.LOCK_UN | fcntl.LOCK_NB)
 
 else:  # pragma: no cover  # we will never test on other platforms
     raise RuntimeError("Portable locking only defined for nt and posix platforms")

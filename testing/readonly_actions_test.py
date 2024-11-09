@@ -8,7 +8,8 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -116,7 +117,7 @@ class ActionReadOnlyTest(unittest.TestCase):
     def test_readonly_delete(self):
         """test the "delete" method of rpath on a read-only repository"""
 
-        from1_rp = rpath.RPath(Globals.local_connection, self.from1_path)
+        from1_rp = rpath.RPath(specifics.local_connection, self.from1_path)
         from1_rp.delete()
         self.assertIsNone(from1_rp.lstat())
 

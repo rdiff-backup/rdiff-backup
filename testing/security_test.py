@@ -8,7 +8,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath, Security, SetConnections
+from rdiff_backup import rpath, Security, SetConnections
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -48,16 +49,16 @@ class SecurityTest(unittest.TestCase):
         conn = SetConnections._init_connection(remote_cmd)
 
         for rp in [
-            rpath.RPath(Globals.local_connection, b"blahblah"),
+            rpath.RPath(specifics.local_connection, b"blahblah"),
             rpath.RPath(conn, b"foo/bar"),
         ]:
-            conn.Globals.set_local("TEST_var", rp)
-            self.assertEqual(conn.Globals.get("TEST_var").path, rp.path)
+            conn.specifics.set("TEST_var", rp)
+            self.assertEqual(conn.specifics.get("TEST_var").path, rp.path)
 
         for path in [b"foobar", b"/usr/local", b"foo/../bar"]:
             with self.assertRaises(Security.Violation):
                 rp = rpath.RPath(conn, path)
-                conn.Globals.set_local("TEST_var", rp)
+                conn.specifics.set("TEST_var", rp)
 
         SetConnections.CloseConnections()
 
@@ -68,11 +69,11 @@ class SecurityTest(unittest.TestCase):
         )
         conn = SetConnections._init_connection(remote_cmd)
         for rp in [
-            rpath.RPath(Globals.local_connection, "blahblah"),
+            rpath.RPath(specifics.local_connection, "blahblah"),
             rpath.RPath(conn, "foo/bar"),
         ]:
-            conn.Globals.set_local("TEST_var", rp)
-            self.assertEqual(conn.Globals.get("TEST_var").path, rp.path)
+            conn.specifics.set("TEST_var", rp)
+            self.assertEqual(conn.specifics.get("TEST_var").path, rp.path)
         SetConnections.CloseConnections()
 
     def secure_rdiff_backup(
@@ -152,7 +153,7 @@ class SecurityTest(unittest.TestCase):
             output2_dir,
             1,
             b"--restrict-path %b" % self.out_dir,
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
         # Restore to wrong directory
@@ -165,7 +166,7 @@ class SecurityTest(unittest.TestCase):
             1,
             b"--restrict-path %b" % output2_dir,
             extra_args=(b"restore", b"--at", b"now"),
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
         # Backup from wrong directory
@@ -176,7 +177,7 @@ class SecurityTest(unittest.TestCase):
             self.out_dir,
             0,
             b"--restrict-path %b" % wrong_files_dir,
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
     def test_restrict_readonly_positive(self):
@@ -199,7 +200,7 @@ class SecurityTest(unittest.TestCase):
             0,
             b"--restrict-path %b --restrict-mode read-only" % self.out_dir,
             extra_args=(b"restore", b"--at", b"now"),
-            expected_ret_code=Globals.RET_CODE_OK,
+            expected_ret_code=consts.RET_CODE_OK,
         )
 
     def test_restrict_readonly_negative(self):
@@ -211,7 +212,7 @@ class SecurityTest(unittest.TestCase):
             self.out_dir,
             1,
             b"--restrict-path %b --restrict-mode read-only" % self.out_dir,
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
         # Restore to restricted directory
@@ -224,7 +225,7 @@ class SecurityTest(unittest.TestCase):
             1,
             b"--restrict-path %b --restrict-mode read-only" % self.restore_dir,
             extra_args=(b"restore", b"--at", b"now"),
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
     def test_restrict_updateonly_positive(self):
@@ -248,10 +249,10 @@ class SecurityTest(unittest.TestCase):
             self.out_dir,
             1,
             b"--restrict-path %b --restrict-mode update-only" % self.out_dir,
-            expected_ret_code=Globals.RET_CODE_OK,
+            expected_ret_code=consts.RET_CODE_OK,
             # FIXME following was the correct value under old versions
             # but the new concept doesn't differentiate update from r/w
-            # expected_ret_code=Globals.RET_CODE_ERR,
+            # expected_ret_code=consts.RET_CODE_ERR,
         )
 
         comtst.remove_dir(self.out_dir)
@@ -263,7 +264,7 @@ class SecurityTest(unittest.TestCase):
             1,
             b"--restrict-path %b --restrict-mode update-only" % self.restore_dir,
             extra_args=(b"restore", b"--at", b"now"),
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
     def test_restrict_bug(self):
@@ -274,9 +275,9 @@ class SecurityTest(unittest.TestCase):
             self.out_dir,
             1,
             b"--restrict-path foobar",
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
-        output = rpath.RPath(Globals.local_connection, self.out_dir)
+        output = rpath.RPath(specifics.local_connection, self.out_dir)
         self.assertFalse(output.lstat())
 
     def test_quoting_bug(self):

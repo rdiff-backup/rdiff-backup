@@ -33,10 +33,11 @@ try:
 except ImportError:
     pass
 
-from rdiff_backup import C, Globals, log, rorpiter
+from rdiff_backup import C, log, rorpiter
 from rdiffbackup import meta
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
+from rdiffbackup.singletons import generics, specifics
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name
@@ -122,7 +123,7 @@ class AccessControlLists:
     def write_to_rp(self, rp, map_names=1):
         """Write current access control list to RPath rp"""
         assert (
-            rp.conn is Globals.local_connection
+            rp.conn is specifics.local_connection
         ), "Function works locally not over '{co}'.".format(co=rp.conn)
         set_rp_acl(rp, self.entry_list, self.default_entry_list, map_names)
 
@@ -295,7 +296,7 @@ class AccessControlListFile(meta.FlatFile):
 
     @classmethod
     def is_active(cls):
-        return Globals.acls_active
+        return generics.acls_active
 
     @staticmethod
     def _object_to_record(acl):
@@ -332,7 +333,7 @@ class AccessControlListFile(meta.FlatFile):
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Set ACLs of path should only be done locally not over {conn}.".format(
         conn=rp.conn
     )
@@ -363,7 +364,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
 def get_acl_lists_from_rp(rp):
     """Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Get ACLs of path should only be done locally not over {conn}.".format(
         conn=rp.conn
     )
@@ -493,7 +494,7 @@ def _list_to_acl(entry_list, map_names=1):
     def warn_drop(name):
         """Warn about acl with name getting dropped"""
         global dropped_acl_names
-        if Globals.never_drop_acls:
+        if generics.never_drop_acls:
             log.Log.FatalError(
                 "--never-drop-acls specified but cannot map "
                 "ACL name {an}".format(an=name)
@@ -548,7 +549,7 @@ def get_meta(rp):
     Get acls of given rpath rp.
     """
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function works locally not over '{co}'.".format(co=rp.conn)
     acl = get_meta_object(rp.index)
     if not rp.issym():

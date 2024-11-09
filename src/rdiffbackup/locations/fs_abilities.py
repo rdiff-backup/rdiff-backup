@@ -28,9 +28,10 @@ FSAbilities object describing it.
 
 import errno
 import os
-from rdiff_backup import Globals, log, robust, selection, Time
+from rdiff_backup import log, robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import consts, generics, specifics
 
 
 class FSAbilities:
@@ -768,7 +769,7 @@ def detect_fs_abilities(root_rp, writable=True):
     Returns an FSAbilities object if detection goes well, else None if it fails
     """
     assert (
-        root_rp.conn is Globals.local_connection
+        root_rp.conn is specifics.local_connection
     ), "Action only foreseen locally and not over {conn}.".format(conn=root_rp.conn)
     try:
         return FSAbilities(root_rp, writable=writable)
@@ -782,7 +783,7 @@ def detect_fs_abilities(root_rp, writable=True):
 
 class SetGlobals:
     """
-    Various functions for setting Globals vars given FSAbilities object(s)
+    Various functions for setting generic vars given FSAbilities object(s)
 
     Factually it is an abstract class and shan't be instantiated but only
     derived.
@@ -799,16 +800,20 @@ class SetGlobals:
 
     def set_eas(self):
         self._update_triple(
-            self.src_fsa.eas, self.dest_fsa.eas, ("eas_active", "eas_write", "eas_conn")
+            self.src_fsa.eas,
+            self.dest_fsa.eas,
+            self.values.get("eas"),
+            ("eas_active", "eas_write", "eas_conn"),
         )
 
     def set_acls(self):
         self._update_triple(
             self.src_fsa.acls,
             self.dest_fsa.acls,
+            self.values.get("acls"),
             ("acls_active", "acls_write", "acls_conn"),
         )
-        if Globals.never_drop_acls and not Globals.acls_active:
+        if generics.never_drop_acls and not generics.acls_active:
             log.Log.FatalError(
                 "--never-drop-acls specified, but ACL support "
                 "missing from source filesystem"
@@ -818,6 +823,7 @@ class SetGlobals:
         self._update_triple(
             self.src_fsa.win_acls,
             self.dest_fsa.win_acls,
+            self.values.get("acls"),
             ("win_acls_active", "win_acls_write", "win_acls_conn"),
         )
 
@@ -825,6 +831,7 @@ class SetGlobals:
         self._update_triple(
             self.src_fsa.resource_forks,
             self.dest_fsa.resource_forks,
+            self.values.get("resource_forks"),
             ("resource_forks_active", "resource_forks_write", "resource_forks_conn"),
         )
 
@@ -832,29 +839,32 @@ class SetGlobals:
         self._update_triple(
             self.src_fsa.carbonfile,
             self.dest_fsa.carbonfile,
+            self.values.get("carbonfile"),
             ("carbonfile_active", "carbonfile_write", "carbonfile_conn"),
         )
 
     def set_hardlinks(self):
-        if Globals.preserve_hardlinks != 0:
-            Globals.set_all("preserve_hardlinks", self.dest_fsa.hardlinks)
+        generics.set(
+            "preserve_hardlinks",
+            self.dest_fsa.hardlinks and self.values.get("hard_links"),
+        )
 
     def set_fsync_directories(self):
-        Globals.set_all("fsync_directories", self.dest_fsa.fsync_dirs)
+        generics.set("fsync_directories", self.dest_fsa.fsync_dirs)
 
     def set_change_ownership(self):
-        Globals.set_all("change_ownership", self.dest_fsa.ownership)
+        generics.set("change_ownership", self.dest_fsa.ownership)
 
     def set_high_perms(self):
         if not self.dest_fsa.high_perms:
-            Globals.set_all("permission_mask", 0o777)
+            generics.set("permission_mask", 0o777)
 
     def set_symlink_perms(self):
-        Globals.set_all("symlink_perms", self.dest_fsa.symlink_perms)
+        generics.set("symlink_perms", self.dest_fsa.symlink_perms)
 
     def set_compatible_timestamps(self):
-        if Globals.chars_to_quote.find(b":") > -1:
-            Globals.set_all("use_compatible_timestamps", 1)
+        if generics.chars_to_quote.find(b":") > -1:
+            generics.set("use_compatible_timestamps", True)
             # Update the current time string to new timestamp format
             Time.set_current_time(Time.getcurtime())
             log.Log("Enabled use_compatible_timestamps", log.INFO)
@@ -869,6 +879,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         """Just store some variables for use below"""
         super().__init__(src_dir, dest_repo)
         self.repo = dest_repo
+        self.values = dest_repo.values
 
     def __call__(self):
         """
@@ -888,7 +899,7 @@ class Dir2RepoSetGlobals(SetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def set_special_escapes(self, repo):
         """
@@ -937,10 +948,10 @@ class Dir2RepoSetGlobals(SetGlobals):
                     log.WARNING,
                 )
 
-        Globals.set_all("escape_dos_devices", actual_edd)
+        generics.set("escape_dos_devices", actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd), log.INFO)
 
-        Globals.set_all("escape_trailing_spaces", actual_ets)
+        generics.set("escape_trailing_spaces", actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets), log.INFO)
 
     def set_chars_to_quote(self, repo):
@@ -952,28 +963,23 @@ class Dir2RepoSetGlobals(SetGlobals):
         directory, not just the current fs features.
         """
         ctq = self._compare_ctq_file(repo, self._get_ctq_from_fsas())
-        regexp, unregexp = map_filenames.get_quoting_regexps(ctq, Globals.quoting_char)
+        regexp, unregexp = map_filenames.get_quoting_regexps(ctq, consts.QUOTING_CHAR)
 
-        Globals.set_all("chars_to_quote", ctq)
-        Globals.set_all("chars_to_quote_regexp", regexp)
-        Globals.set_all("chars_to_quote_unregexp", unregexp)
+        generics.set("chars_to_quote", ctq)
+        generics.set("chars_to_quote_regexp", regexp)
+        generics.set("chars_to_quote_unregexp", unregexp)
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
+    def _update_triple(self, src_support, dest_support, toggle, attr_triple):
         """
         Many of the settings have a common form we can handle here
+
+        Toogle contains the value selected by the user via a CLI parameter.
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            Globals.set_all(attr, None)
-        if not src_support:
-            return  # if source doesn't support, nothing
-        Globals.set_all(active_attr, 1)
-        self.in_conn.Globals.set_local(conn_attr, 1)
-        if dest_support:
-            Globals.set_all(write_attr, 1)
-            self.out_conn.Globals.set_local(conn_attr, 1)
+        generics.set(active_attr, src_support and toggle)
+        self.in_conn.specifics.set(conn_attr, src_support and toggle)
+        generics.set(write_attr, dest_support and toggle)
+        self.out_conn.specifics.set(conn_attr, dest_support and toggle)
 
     def _get_ctq_from_fsas(self):
         """
@@ -995,7 +1001,7 @@ class Dir2RepoSetGlobals(SetGlobals):
 
         # Quote quoting char if quoting anything
         if ctq:
-            ctq.append(Globals.quoting_char)
+            ctq.append(consts.QUOTING_CHAR)
         return b"".join(ctq)
 
     def _compare_ctq_file(self, repo, suggested_ctq):
@@ -1006,10 +1012,10 @@ class Dir2RepoSetGlobals(SetGlobals):
         """
         previous_ctq = repo.get_chars_to_quote()
         if previous_ctq is None:  # there was no previous chars_to_quote
-            if Globals.chars_to_quote is None:
+            if generics.chars_to_quote is None:
                 actual_ctq = suggested_ctq
             else:
-                actual_ctq = Globals.chars_to_quote
+                actual_ctq = generics.chars_to_quote
                 if actual_ctq != suggested_ctq:
                     log.Log(
                         "File system at '{fs}' suggested quoting '{sq}' "
@@ -1022,7 +1028,7 @@ class Dir2RepoSetGlobals(SetGlobals):
             repo.set_chars_to_quote(actual_ctq)
             return actual_ctq
 
-        if Globals.chars_to_quote is None:
+        if generics.chars_to_quote is None:
             if suggested_ctq and suggested_ctq != previous_ctq:
                 # the file system has new specific requirements
                 actual_ctq = suggested_ctq
@@ -1036,7 +1042,7 @@ class Dir2RepoSetGlobals(SetGlobals):
                         log.NOTE,
                     )
         else:
-            actual_ctq = Globals.chars_to_quote  # Globals override
+            actual_ctq = generics.chars_to_quote  # globals override
             if actual_ctq != suggested_ctq:
                 log.Log(
                     "File system at '{fs}' suggested quoting '{sq}' "
@@ -1070,6 +1076,7 @@ class Repo2DirSetGlobals(SetGlobals):
         """Just store some variables for use below"""
         super().__init__(src_repo, dest_dir)
         self.repo = src_repo
+        self.values = src_repo.values
 
     def __call__(self):
         """
@@ -1089,7 +1096,7 @@ class Repo2DirSetGlobals(SetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def set_special_escapes(self, repo):
         """
@@ -1115,39 +1122,39 @@ class Repo2DirSetGlobals(SetGlobals):
                 actual_edd = self.dest_fsa.escape_dos_devices
                 actual_ets = self.dest_fsa.escape_trailing_spaces
 
-        Globals.set_all("escape_dos_devices", actual_edd)
+        generics.set("escape_dos_devices", actual_edd)
         log.Log("Backup: escape_dos_devices = {dd}".format(dd=actual_edd), log.INFO)
 
-        Globals.set_all("escape_trailing_spaces", actual_ets)
+        generics.set("escape_trailing_spaces", actual_ets)
         log.Log("Backup: escape_trailing_spaces = {ts}".format(ts=actual_ets), log.INFO)
 
     def set_chars_to_quote(self, repo):
         """
         Set chars_to_quote from rdiff-backup-data dir
         """
-        if Globals.chars_to_quote is None:
+        if generics.chars_to_quote is None:
             ctq = repo.get_chars_to_quote()
         else:
             # value has been overwritten from the command line but still needs
             # to be set across the connections and (un)regexp defined
-            ctq = Globals.chars_to_quote
+            ctq = generics.chars_to_quote
 
         if ctq is not None:
             regexp, unregexp = map_filenames.get_quoting_regexps(
-                ctq, Globals.quoting_char
+                ctq, consts.QUOTING_CHAR
             )
-            Globals.set_all("chars_to_quote", ctq)
-            Globals.set_all("chars_to_quote_regexp", regexp)
-            Globals.set_all("chars_to_quote_unregexp", unregexp)
+            generics.set("chars_to_quote", ctq)
+            generics.set("chars_to_quote_regexp", regexp)
+            generics.set("chars_to_quote_unregexp", unregexp)
         else:
             log.Log(
                 "chars_to_quote config not found, assuming no quoting "
                 "required in backup repository".format(),
                 log.WARNING,
             )
-            Globals.set_all("chars_to_quote", b"")
+            generics.set("chars_to_quote", b"")
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
+    def _update_triple(self, src_support, dest_support, toggle, attr_triple):
         """
         Update global settings for feature based on fsa results
 
@@ -1155,19 +1162,14 @@ class Repo2DirSetGlobals(SetGlobals):
         because (using the mirror_metadata file) rpaths from the
         source may have more information than the file system
         supports.
+
+        Toogle contains the value selected by the user via a CLI parameter.
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            Globals.set_all(attr, None)
-        if not dest_support:
-            return  # if dest doesn't support, do nothing
-        Globals.set_all(active_attr, 1)
-        self.out_conn.Globals.set_local(conn_attr, 1)
-        self.out_conn.Globals.set_local(write_attr, 1)
-        if src_support:
-            self.in_conn.Globals.set_local(conn_attr, 1)
+        generics.set(active_attr, dest_support and toggle)
+        generics.set(write_attr, dest_support and toggle)
+        self.out_conn.specifics.set(conn_attr, dest_support and toggle)
+        self.in_conn.specifics.set(conn_attr, src_support and toggle)
 
 
 class SingleRepoSetGlobals(Repo2DirSetGlobals):
@@ -1179,6 +1181,7 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         self.conn = repo.base_dir.conn
         self.dest_fsa = repo.fs_abilities
         self.repo = repo
+        self.values = repo.values
 
     def __call__(self):
         """
@@ -1199,45 +1202,50 @@ class SingleRepoSetGlobals(Repo2DirSetGlobals):
         self.set_special_escapes(self.repo)
         self.set_compatible_timestamps()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def set_eas(self):
-        self._update_triple(self.dest_fsa.eas, ("eas_active", "eas_write", "eas_conn"))
+        self._update_triple(
+            self.dest_fsa.eas,
+            self.values.get("eas"),
+            ("eas_active", "eas_write", "eas_conn"),
+        )
 
     def set_acls(self):
         self._update_triple(
-            self.dest_fsa.acls, ("acls_active", "acls_write", "acls_conn")
+            self.dest_fsa.acls,
+            self.values.get("acls"),
+            ("acls_active", "acls_write", "acls_conn"),
         )
 
     def set_win_acls(self):
         self._update_triple(
             self.dest_fsa.win_acls,
+            self.values.get("acls"),
             ("win_acls_active", "win_acls_write", "win_acls_conn"),
         )
 
     def set_resource_forks(self):
         self._update_triple(
             self.dest_fsa.resource_forks,
+            self.values.get("resource_forks"),
             ("resource_forks_active", "resource_forks_write", "resource_forks_conn"),
         )
 
     def set_carbonfile(self):
         self._update_triple(
             self.dest_fsa.carbonfile,
+            self.values.get("carbonfile"),
             ("carbonfile_active", "carbonfile_write", "carbonfile_conn"),
         )
 
-    def _update_triple(self, fsa_support, attr_triple):
+    def _update_triple(self, fsa_support, toggle, attr_triple):
         """
         Update global vars from single fsa test
+
+        Toogle contains the value selected by the user via a CLI parameter.
         """
         active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            Globals.set_all(attr, None)
-        if not fsa_support:
-            return
-        Globals.set_all(active_attr, 1)
-        Globals.set_all(write_attr, 1)
-        self.conn.Globals.set_local(conn_attr, 1)
+        generics.set(active_attr, fsa_support and toggle)
+        generics.set(write_attr, fsa_support and toggle)
+        self.conn.specifics.set(conn_attr, fsa_support and toggle)

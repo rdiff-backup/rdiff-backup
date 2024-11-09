@@ -8,7 +8,7 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -118,7 +118,7 @@ class ActionRemoveTest(unittest.TestCase):
                 b"remove",
                 ("increments", "--older-than", "1B"),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
@@ -130,7 +130,7 @@ class ActionRemoveTest(unittest.TestCase):
                 b"remove",
                 ("increments", "--older-than", "1B"),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         # then check that only one increment and mirror remain
         self.assertRegex(
@@ -167,7 +167,7 @@ class ActionRemoveTest(unittest.TestCase):
                 b"remove",
                 ("increments", "--older-than", "30000"),
             ),
-            Globals.RET_CODE_WARN,
+            consts.RET_CODE_WARN,
         )
         self.assertRegex(
             comtst.rdiff_backup_action(
@@ -205,7 +205,7 @@ class ActionRemoveTest(unittest.TestCase):
                 b"remove",
                 ("increments", "--older-than", "30001", "--size"),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         # and check that only the mirror is left
         self.assertEqual(
@@ -241,7 +241,7 @@ class ActionRemoveTest(unittest.TestCase):
                 b"remove",
                 ("increments", "--older-than", "now"),
             ),
-            Globals.RET_CODE_WARN,
+            consts.RET_CODE_WARN,
         )
         # and check that it is still there
         self.assertEqual(

@@ -37,8 +37,9 @@ except ImportError:
     except ImportError:
         pass
 
-from rdiff_backup import C, Globals, log, rorpiter
+from rdiff_backup import C, log, rorpiter
 from rdiffbackup import meta
+from rdiffbackup.singletons import generics, specifics
 from rdiffbackup.utils import safestr
 
 
@@ -108,9 +109,13 @@ class ExtendedAttributes:
                     raise
 
     def write_to_rp(self, rp):
-        """Write extended attributes to rpath rp"""
+        """
+        Write extended attributes to rpath rp
+
+        Beware that the attributes don't get re-read and rp still bears the old EAs.
+        """
         assert (
-            rp.conn is Globals.local_connection
+            rp.conn is specifics.local_connection
         ), "Function works locally not over '{co}'.".format(co=rp.conn)
 
         self._clear_rp(rp)
@@ -246,7 +251,7 @@ class ExtendedAttributesFile(meta.FlatFile):
 
     @classmethod
     def is_active(cls):
-        return Globals.eas_active
+        return generics.eas_active
 
     @staticmethod
     def _object_to_record(ea):
@@ -292,7 +297,7 @@ def get_meta(rp):
     Get extended attributes of given rpath
     """
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function works locally not over '{co}'.".format(co=rp.conn)
     ea = get_meta_object(rp.index)
     if not rp.issock() and not rp.isfifo():

@@ -26,7 +26,7 @@ import sys
 import textwrap
 import typing
 import traceback
-from rdiff_backup import Globals
+from rdiffbackup.singletons import consts, generics, specifics
 
 LOGFILE_ENCODING = "utf-8"
 
@@ -100,7 +100,7 @@ class Logger:
 
     def log_to_term(self, message, verbosity):
         """Write message to stdout/stderr"""
-        if verbosity in {ERROR, WARNING} or Globals.server:
+        if verbosity in {ERROR, WARNING} or specifics.server:
             termfp = sys.stderr
         else:
             termfp = sys.stdout
@@ -139,7 +139,7 @@ class Logger:
             result_repr = str(result)
         # shorten the result to a max size of 720 chars with ellipsis if needed
         # result_repr = result_repr[:720] + (result_repr[720:] and '[...]')  # noqa: E265
-        if Globals.server:
+        if specifics.server:
             conn_str = "Server"
         else:
             conn_str = "Client"
@@ -203,10 +203,10 @@ class Logger:
             else:
                 self.term_verbosity = self.validate_verbosity(term_verbosity)
         except ValueError:
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         else:
             self.file_verbosity = tmp_verbosity
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
 
     def open_logfile(self, log_rp):
         """Inform all connections of an open logfile.
@@ -217,7 +217,7 @@ class Logger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         log_rp.conn.log.Log.open_logfile_local(log_rp)
-        for conn in Globals.connections:
+        for conn in specifics.connections:
             conn.log.Log.open_logfile_allconn(log_rp.conn)
 
     # @API(Log.open_logfile_allconn, 200)
@@ -230,7 +230,7 @@ class Logger:
     def open_logfile_local(self, log_rp):
         """Open logfile locally - should only be run on one connection"""
         assert (
-            log_rp.conn is Globals.local_connection
+            log_rp.conn is specifics.local_connection
         ), "Action only foreseen locally and not over {conn}".format(conn=log_rp.conn)
         try:
             self.logfp = log_rp.open("ab")
@@ -244,7 +244,7 @@ class Logger:
     def close_logfile(self):
         """Close logfile and inform all connections"""
         if self.log_file_open:
-            for conn in Globals.connections:
+            for conn in specifics.connections:
                 conn.log.Log.close_logfile_allconn()
             self.log_file_conn.log.Log.close_logfile_local()
 
@@ -257,7 +257,7 @@ class Logger:
     def close_logfile_local(self):
         """Run by logging connection - close logfile"""
         assert (
-            self.log_file_conn is Globals.local_connection
+            self.log_file_conn is specifics.local_connection
         ), "Action only foreseen locally and not over {lc}".format(
             lc=self.log_file_conn
         )
@@ -290,7 +290,7 @@ class Logger:
                 .astimezone()
                 .strftime("%F %H:%M:%S.%f %z")
             )
-            if Globals.server:
+            if specifics.server:
                 role = "SERVER"
             else:
                 role = "CLIENT"
@@ -362,17 +362,19 @@ class ErrorLog:
     # @API(ErrorLog.isopen, 200)
     def isopen(cls):
         """True if the error log file is currently open"""
-        if Globals.isbackup_writer or not Globals.backup_writer:
+        if specifics.is_backup_writer or not generics.backup_writer:
             return cls._log_fileobj is not None
         else:
-            return Globals.backup_writer.log.ErrorLog.isopen()
+            return generics.backup_writer.log.ErrorLog.isopen()
 
     @classmethod
     # @API(ErrorLog.write_if_open, 200)
     def write_if_open(cls, error_type, rp, exc):
         """Call cls._write(...) if error log open, only log otherwise"""
-        if not Globals.isbackup_writer and Globals.backup_writer:
-            return Globals.backup_writer.log.ErrorLog.write_if_open(error_type, rp, exc)
+        if not specifics.is_backup_writer and generics.backup_writer:
+            return generics.backup_writer.log.ErrorLog.write_if_open(
+                error_type, rp, exc
+            )
         if cls.isopen():
             cls._write(error_type, rp, exc)
         else:
@@ -400,7 +402,7 @@ class ErrorLog:
         """Add line to log file indicating error exc with file rp"""
         logstr = cls._get_log_string(error_type, rp, exc)
         Log(logstr, WARNING)
-        if Globals.null_separator:
+        if generics.null_separator:
             logstr += "\0"
         else:
             logstr = re.sub("\n", " ", logstr)

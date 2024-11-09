@@ -22,7 +22,8 @@ store and retrieve different types of metadata.
 """
 
 import os
-from rdiff_backup import log, Globals, rpath, Time, rorpiter
+from rdiff_backup import log, rpath, Time, rorpiter
+from rdiffbackup.singletons import generics
 from rdiffbackup.utils import plugins
 import rdiffbackup.meta
 
@@ -128,7 +129,7 @@ class Manager:
         writer = self._meta_main_class(
             temprp[0],
             "wb",
-            compress=Globals.compression,
+            compress=generics.compression,
             check_path=0,
             callback=callback,
         )
@@ -143,7 +144,7 @@ class Manager:
             mrp=finalrp
         )
         rpath.rename(temprp[0], finalrp)
-        if Globals.fsync_directories:
+        if generics.fsync_directories:
             self.data_dir.fsync()
 
     def _get_meta_main_at_time(self, time, restrict_index):
@@ -200,7 +201,7 @@ class Manager:
         if meta_class.is_active() or force:
             # Before API 201, metafiles couldn't be compressed
             return meta_class(
-                rp, "w", compress=Globals.compression, callback=self._add_incrp
+                rp, "w", compress=generics.compression, callback=self._add_incrp
             )
         else:
             return None
@@ -242,7 +243,7 @@ class PatchDiffMan(Manager):
         unique_set = set()
         for time, rp in sortlist:
             if time in unique_set:
-                if Globals.allow_duplicate_timestamps:
+                if generics.allow_duplicate_timestamps:
                     log.Log(
                         "Metadata file '{mf}' has a duplicate "
                         "timestamp date, you might not be able to "

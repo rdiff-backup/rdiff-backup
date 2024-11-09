@@ -21,9 +21,9 @@
 A location module to define repository classes as created by rdiff-backup
 """
 
+from rdiff_backup import log
 from rdiffbackup.locations import fs_abilities, location
-
-from rdiff_backup import Globals, log
+from rdiffbackup.singletons import consts, generics, specifics
 
 
 class Repo(location.Location):
@@ -48,7 +48,7 @@ class Repo(location.Location):
         restore actions.
         """
         super().__init__(orig_path, values)
-        if orig_path.conn is Globals.local_connection:
+        if orig_path.conn is specifics.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _repo_shadow
 
@@ -74,12 +74,12 @@ class Repo(location.Location):
         )
 
         ret_code = self._shadow.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         else:
             log.Log(
                 "--- Repository file system capabilities ---\n"
@@ -89,20 +89,20 @@ class Repo(location.Location):
 
         if src_dir is None:
             ret_code |= fs_abilities.SingleRepoSetGlobals(self)()
-            if ret_code & Globals.RET_CODE_ERR:
+            if ret_code & consts.RET_CODE_ERR:
                 return ret_code
         else:
             # FIXME this shouldn't be necessary, and the setting of variable
             # across the connection should happen through the shadow
-            Globals.set_all("backup_writer", self.base_dir.conn)
-            self.base_dir.conn.Globals.set_local("isbackup_writer", True)
+            generics.set("backup_writer", self.base_dir.conn)
+            self.base_dir.conn.specifics.set("is_backup_writer", True)
             # this is the new way, more dedicated but not sufficient yet
             ret_code |= fs_abilities.Dir2RepoSetGlobals(src_dir, self)()
-            if ret_code & Globals.RET_CODE_ERR:
+            if ret_code & consts.RET_CODE_ERR:
                 return ret_code
         self.base_dir = self.setup_finish()
 
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         return ret_code
@@ -113,8 +113,8 @@ class Repo(location.Location):
         """
         # FIXME this shouldn't be necessary, and the setting of variable
         # across the connection should happen through the shadow
-        Globals.set_all("backup_writer", None)
-        self.base_dir.conn.Globals.set_local("isbackup_writer", False)
+        generics.set("backup_writer", None)
+        self.base_dir.conn.specifics.set("is_backup_writer", False)
         self._shadow.exit()
 
     def setup_finish(self):

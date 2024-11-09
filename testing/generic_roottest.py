@@ -11,12 +11,10 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
+from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-Globals.set("change_source_perms", None)
-Globals.counter = 0
 
 assert os.getuid() == 0, "Run this test as root!"
 
@@ -33,7 +31,7 @@ class BaseRootTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
     restore_dir = os.path.join(TEST_BASE_DIR, b"restore")
 
-    def _run_cmd(self, cmd, expect_rc=Globals.RET_CODE_OK):
+    def _run_cmd(self, cmd, expect_rc=consts.RET_CODE_OK):
         print("Running: ", cmd)
         rc = comtst.os_system(cmd)
         self.assertEqual(
@@ -79,7 +77,7 @@ class RootTest(BaseRootTest):
         (Earlier symlink ownership was not preserved.)
         """
         dirrp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_owner")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"root_owner")
         )
 
         def make_dir():
@@ -112,7 +110,7 @@ class RootTest(BaseRootTest):
         # this works only because we know that backup_restore_series creates
         # the backup in the 'output' sub-directory
         symrp = rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(TEST_BASE_DIR, b"output", b"symlink"),
         )
         self.assertTrue(symrp.issym())
@@ -124,7 +122,7 @@ class RootTest(BaseRootTest):
         def write_ownership_dir():
             """Write the directory testfiles/root_mapping"""
             rp = rpath.RPath(
-                Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
+                specifics.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
             )
             comtst.re_init_rpath_dir(rp)
             rp1 = rp.append("1")
@@ -151,7 +149,7 @@ class RootTest(BaseRootTest):
 
         in_rp = write_ownership_dir()
         user_map, group_map = write_mapping_files(in_rp)
-        out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        out_rp = rpath.RPath(specifics.local_connection, self.out_dir)
         if out_rp.lstat():
             comtst.remove_dir(out_rp.path)
 
@@ -183,7 +181,7 @@ class RootTest(BaseRootTest):
         def write_ownership_dir():
             """Write the directory testfiles/root_mapping"""
             rp = rpath.RPath(
-                Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
+                specifics.local_connection, os.path.join(TEST_BASE_DIR, b"root_mapping")
             )
             comtst.re_init_rpath_dir(rp)
             rp1 = rp.append("1")
@@ -201,7 +199,7 @@ class RootTest(BaseRootTest):
             return (rp1.getuidgid(), rp2.getuidgid())
 
         in_rp = write_ownership_dir()
-        out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        out_rp = rpath.RPath(specifics.local_connection, self.out_dir)
         if out_rp.lstat():
             comtst.remove_dir(out_rp.path)
 
@@ -228,7 +226,7 @@ class HalfRoot(BaseRootTest):
 
         """
         rp1 = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_half1")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"root_half1")
         )
         comtst.re_init_rpath_dir(rp1)
         rp1_1 = rp1.append("foo")
@@ -251,7 +249,7 @@ class HalfRoot(BaseRootTest):
         rp1_3.chmod(0)
 
         rp2 = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_half2")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"root_half2")
         )
         comtst.re_init_rpath_dir(rp2)
         rp2_1 = rp2.append("foo")
@@ -308,7 +306,7 @@ class HalfRoot(BaseRootTest):
     def test_backup(self):
         """Test back up, simple restores"""
         in_rp1, in_rp2 = self.make_dirs()
-        outrp = rpath.RPath(Globals.local_connection, self.out_dir)
+        outrp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(outrp, userid)
         remote_schema = b'su -c "%s server" %s' % (comtst.RBBin, user.encode())
 
@@ -340,7 +338,7 @@ class HalfRoot(BaseRootTest):
         in_rp2.setdata()
         outrp.setdata()
 
-        rout_rp = rpath.RPath(Globals.local_connection, self.restore_dir)
+        rout_rp = rpath.RPath(specifics.local_connection, self.restore_dir)
         comtst.remove_dir(rout_rp.path)
         cmd3 = (
             comtst.RBBin,
@@ -384,7 +382,7 @@ class HalfRoot(BaseRootTest):
             b"%s regress %s" % (comtst.RBBin, outrp.path),
             user.encode(),
         )
-        self._run_cmd(cmd5, Globals.RET_CODE_WARN)
+        self._run_cmd(cmd5, consts.RET_CODE_WARN)
 
 
 class NonRoot(BaseRootTest):
@@ -399,7 +397,7 @@ class NonRoot(BaseRootTest):
     def make_root_dirs(self):
         """Make directory createable only by root"""
         rp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_out1")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"root_out1")
         )
         comtst.re_init_rpath_dir(rp)
         rp1 = rp.append("1")
@@ -414,7 +412,7 @@ class NonRoot(BaseRootTest):
         rp4.makedev("c", 4, 28)
 
         sp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"root_out2")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"root_out2")
         )
         if sp.lstat():
             comtst.remove_dir(sp.path)
@@ -462,12 +460,12 @@ class NonRoot(BaseRootTest):
     def test_non_root(self):
         """Main non-root -> root test"""
         input_rp1, input_rp2 = self.make_root_dirs()
-        Globals.change_ownership = 1
-        output_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        generics.change_ownership = 1
+        output_rp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(output_rp, userid)
-        restore_rp = rpath.RPath(Globals.local_connection, self.restore_dir)
+        restore_rp = rpath.RPath(specifics.local_connection, self.restore_dir)
         empty_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"empty")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"empty")
         )
 
         self.backup(input_rp1, output_rp, 1000000)

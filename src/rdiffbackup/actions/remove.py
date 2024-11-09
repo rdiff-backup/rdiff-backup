@@ -22,9 +22,10 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import Globals, log
+from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
+from rdiffbackup.singletons import consts
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
@@ -91,7 +92,7 @@ class RemoveAction(actions.BaseAction):
                 ),
                 log.ERROR,
             )
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
 
         return ret_code
 
@@ -99,11 +100,11 @@ class RemoveAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.repo.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         return ret_code
@@ -113,7 +114,7 @@ class RemoveAction(actions.BaseAction):
         Check the given repository and remove old increments
         """
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code |= self.repo.remove_increments_older_than()

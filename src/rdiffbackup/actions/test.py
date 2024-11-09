@@ -24,8 +24,9 @@ This plug-in tests that all remote locations are properly reachable and
 usable for a back-up.
 """
 
+from rdiff_backup import log, SetConnections
 from rdiffbackup import actions
-from rdiff_backup import Globals, log, SetConnections
+from rdiffbackup.singletons import consts
 
 
 class TestAction(actions.BaseAction):
@@ -54,14 +55,14 @@ class TestAction(actions.BaseAction):
             (file_host, file_path, err) = SetConnections.parse_location(location)
             if err:
                 log.Log(err, log.ERROR)
-                ret_code |= Globals.RET_CODE_ERR
+                ret_code |= consts.RET_CODE_ERR
             elif not file_host:
                 log.Log(
                     "Only remote locations can be tested but location "
                     "'{lo}' isn't remote".format(lo=location),
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_ERR
+                ret_code |= consts.RET_CODE_ERR
 
         return ret_code
 
@@ -72,11 +73,11 @@ class TestAction(actions.BaseAction):
         # even if some connections are bad, we want to validate the remaining
         # ones later on. The 'None' filter keeps only trueish values.
         self.connected_locations = list(filter(None, self.connected_locations))
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             # at least one connection has failed
             if self.connected_locations:
                 # at least one location is apparently valid, so no error
-                return Globals.RET_CODE_WARN
+                return consts.RET_CODE_WARN
             else:
                 return ret_code
         else:
@@ -84,7 +85,7 @@ class TestAction(actions.BaseAction):
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code |= SetConnections.test_connections(self.connected_locations)

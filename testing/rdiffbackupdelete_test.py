@@ -9,7 +9,7 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -87,13 +87,13 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         # Call without arguments
         self._rdiff_backup_delete(
             extra_args=[],
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
             expected_output=b"fatal: missing arguments",
         )
         # Call with invalid arguments
         self._rdiff_backup_delete(
             extra_args=[b"--invalid"],
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
             expected_output=b"fatal: bad command line: option --invalid not recognized",
         )
 
@@ -101,7 +101,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         # without rdiff-backup-dir
         self._rdiff_backup_delete(
             to_delete=b"somefile",
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
             expected_output=b"fatal: not a rdiff-backup repository (or any parent up to mount point /)",
         )
 
@@ -160,7 +160,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
             self.repo,
             None,
             extra_options=b"verify",
-            expected_ret_code=Globals.RET_CODE_FILE_WARN,
+            expected_ret_code=consts.RET_CODE_FILE_WARN,
         )
         self.assertNotFound(b"fifo")
 
@@ -178,7 +178,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
             self.repo,
             None,
             extra_options=b"verify",
-            expected_ret_code=Globals.RET_CODE_FILE_WARN,
+            expected_ret_code=consts.RET_CODE_FILE_WARN,
         )
 
     def test_delete_access_control_lists(self):
@@ -204,7 +204,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
             self.repo,
             None,
             extra_options=b"verify",
-            expected_ret_code=Globals.RET_CODE_FILE_WARN,
+            expected_ret_code=consts.RET_CODE_FILE_WARN,
         )
         self.assertFound(b"tmp")
 
@@ -219,7 +219,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
             f.write(b"PID 1234")
         self._rdiff_backup_delete(
             to_delete=os.path.join(self.repo, b"tmp"),
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
             expected_output=b"failed to acquire repository lock. "
             b"A backup may be running.",
         )

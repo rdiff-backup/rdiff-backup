@@ -18,8 +18,9 @@
 # 02110-1301, USA
 
 import os
-from rdiff_backup import C, Globals, log, rorpiter
+from rdiff_backup import C, log, rorpiter
 from rdiffbackup import meta
+from rdiffbackup.singletons import generics, specifics
 from rdiffbackup.utils import safestr
 
 try:
@@ -298,7 +299,7 @@ class WinAccessControlListFile(meta.FlatFile):
 
     @classmethod
     def is_active(cls):
-        return Globals.win_acls_active
+        return generics.win_acls_active
 
     @staticmethod
     def join_iter(rorp_iter, wacl_iter):
@@ -371,7 +372,7 @@ def init_acls():
 
 def get_meta(rp):
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function works locally not over '{co}'.".format(co=rp.conn)
     acl = get_meta_object(rp.index)
     acl.read_from_rp(rp)

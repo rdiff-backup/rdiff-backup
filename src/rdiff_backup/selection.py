@@ -25,7 +25,8 @@ documentation on what this code does can be found on the man page.
 
 import os
 import re
-from rdiff_backup import Globals, log, robust, rorpiter, rpath
+from rdiff_backup import log, robust, rorpiter, rpath
+from rdiffbackup.singletons import generics
 from rdiffbackup.utils import safestr
 
 
@@ -383,7 +384,7 @@ probably isn't what you meant""".format(
                     log.Log("Future prefix errors will not be logged", log.WARNING)
 
         something_excluded, tuple_list = None, []
-        separator = Globals.null_separator and b"\0" or b"\n"
+        separator = generics.null_separator and b"\0" or b"\n"
         for line in list_content.split(separator):
             line = line.rstrip(b"\r")  # for Windows/DOS endings
             if not line:
@@ -460,7 +461,7 @@ probably isn't what you meant""".format(
 
         """
         log.Log("Reading globbing filelist {gf}".format(gf=list_name), log.INFO)
-        separator = Globals.null_separator and b"\0" or b"\n"
+        separator = generics.null_separator and b"\0" or b"\n"
         for line in list_content.split(separator):
             line = line.rstrip(b"\r")  # for Windows/DOS endings
             if not line:

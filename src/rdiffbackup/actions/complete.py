@@ -24,9 +24,10 @@ so that they can be used for e.g. bash completion
 
 import argparse
 
+from rdiff_backup import log
 from rdiffbackup import actions, actions_mgr, arguments
+from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils.argopts import BooleanOptionalAction
-from rdiff_backup import Globals, log
 
 
 class CompleteAction(actions.BaseAction):
@@ -70,7 +71,7 @@ class CompleteAction(actions.BaseAction):
                 "the command rdiff-backup itself, to complete",
                 log.ERROR,
             )
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
 
         try:
             self.values["words"][self.values["cword"]]
@@ -82,23 +83,23 @@ class CompleteAction(actions.BaseAction):
                 ),
                 log.ERROR,
             )
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
 
         return ret_code
 
     def setup(self):
         # there is nothing to setup for the complete action
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         # get a dictionary of discovered action plugins
         discovered_actions = actions_mgr.get_actions_dict()
         generic_parsers = actions_mgr.get_generic_parsers()
-        version_string = "rdiff-backup {ver}".format(ver=Globals.version)
+        version_string = "rdiff-backup {ver}".format(ver=specifics.version)
 
         parser = arguments.get_parser(
             version_string, generic_parsers, discovered_actions

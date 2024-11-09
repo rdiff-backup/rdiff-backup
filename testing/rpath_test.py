@@ -11,14 +11,15 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class RPathTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    lc = Globals.local_connection
+    lc = specifics.local_connection
     mainprefix = comtst.old_test_dir
     prefix = os.path.join(mainprefix, b"various_file_types")
     write_dir = comtst.re_init_subdir(TEST_BASE_DIR, b"rpathtests")
@@ -460,8 +461,12 @@ class FileCopying(RPathTest):
         fileset.create_fileset(
             base_path, struct, recurse={"atime": 12345, "mtime": 12345}
         )
-        short_dir = rpath.RPath(Globals.local_connection, os.path.join(base_path, b"1"))
-        long_dir = rpath.RPath(Globals.local_connection, os.path.join(base_path, b"2"))
+        short_dir = rpath.RPath(
+            specifics.local_connection, os.path.join(base_path, b"1")
+        )
+        long_dir = rpath.RPath(
+            specifics.local_connection, os.path.join(base_path, b"2")
+        )
         # Can guarantee below by adding files to long_dir
         self.assertGreater(long_dir.getsize(), short_dir.getsize())
         self.assertEqual(short_dir, long_dir)
@@ -577,11 +582,11 @@ class CheckPath(unittest.TestCase):
 
     def testpath(self):
         """Test root paths"""
-        root = rpath.RPath(Globals.local_connection, "/")
+        root = rpath.RPath(specifics.local_connection, "/")
         self.assertEqual(root.path, b"/")
         bin = root.append("bin")
         self.assertEqual(bin.path, b"/bin")
-        bin2 = rpath.RPath(Globals.local_connection, "/bin")
+        bin2 = rpath.RPath(specifics.local_connection, "/bin")
         self.assertEqual(bin2.path, b"/bin")
 
 

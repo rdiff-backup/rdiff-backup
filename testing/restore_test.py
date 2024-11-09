@@ -7,14 +7,15 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, log, rpath, Time
+from rdiff_backup import log, rpath, Time
 from rdiffbackup.locations import _repo_shadow
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
-lc = Globals.local_connection
+lc = specifics.local_connection
 restore_base_rp = rpath.RPath(
-    Globals.local_connection, os.path.join(comtst.old_test_dir, b"restoretest")
+    specifics.local_connection, os.path.join(comtst.old_test_dir, b"restoretest")
 )
 restore_base_filenames = restore_base_rp.listdir()
 mirror_time = 1041109438  # just some late time
@@ -33,7 +34,7 @@ class RestoreFileComparer:
         self.rf = rf
         self.time_rp_dict = {}
         self.out_dir = os.path.join(TEST_BASE_DIR, b"output")
-        self.out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        self.out_rp = rpath.RPath(specifics.local_connection, self.out_dir)
 
     def add_rpath(self, rp, t):
         """Add rp, which represents what rf should be at given time t"""
@@ -149,18 +150,18 @@ class RestoreTest(unittest.TestCase):
         """
         comtst.remove_dir(self.out_dir)
         restore3_dir = os.path.join(comtst.old_test_dir, b"restoretest3")
-        target_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        target_rp = rpath.RPath(specifics.local_connection, self.out_dir)
         inc1_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment1")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment1")
         )
         inc2_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment2")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment2")
         )
         inc3_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment3")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment3")
         )
         inc4_rp = rpath.RPath(
-            Globals.local_connection, os.path.join(comtst.old_test_dir, b"increment4")
+            specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment4")
         )
 
         comtst.InternalRestore(

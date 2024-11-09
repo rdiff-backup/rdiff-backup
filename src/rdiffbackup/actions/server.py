@@ -24,8 +24,9 @@ A built-in rdiff-backup action plug-in to start a remote server process.
 import os
 import sys
 
+from rdiff_backup import connection, log, Security
 from rdiffbackup import actions
-from rdiff_backup import connection, Globals, log, Security
+from rdiffbackup.singletons import consts, specifics
 
 
 class ServerAction(actions.BaseAction):
@@ -49,7 +50,7 @@ class ServerAction(actions.BaseAction):
 
     def __init__(self, values):
         super().__init__(values)
-        Globals.server = True  # FIXME make local?
+        specifics.server = True
         if self.values.get("debug"):
             self._set_breakpoint()
 
@@ -66,7 +67,7 @@ class ServerAction(actions.BaseAction):
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code |= connection.PipeConnection(

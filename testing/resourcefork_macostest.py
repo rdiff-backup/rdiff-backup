@@ -9,19 +9,22 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import rpath, metadata, Globals
+from rdiff_backup import rpath, metadata
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
-Globals.read_resource_forks = Globals.write_resource_forks = 1
 
 
 class ResourceForkTest(unittest.TestCase):
     """Test dealing with Mac OS X style resource forks"""
 
-    tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
-    rf_testdir1 = rpath.RPath(Globals.local_connection, "testfiles/resource_fork_test1")
-    rf_testdir2 = rpath.RPath(Globals.local_connection, "testfiles/resource_fork_test2")
+    tempdir = rpath.RPath(specifics.local_connection, "testfiles/output")
+    rf_testdir1 = rpath.RPath(
+        specifics.local_connection, "testfiles/resource_fork_test1"
+    )
+    rf_testdir2 = rpath.RPath(
+        specifics.local_connection, "testfiles/resource_fork_test2"
+    )
 
     def make_temp(self):
         """Make temp directory testfiles/resource_fork_test"""
@@ -86,7 +89,6 @@ class ResourceForkTest(unittest.TestCase):
 
     def testSeriesLocal(self):
         """Test backing up and restoring directories with ACLs locally"""
-        Globals.read_resource_forks = Globals.write_resource_forks = 1
         self.make_backup_dirs()
         dirlist = [
             "testfiles/resource_fork_test1",
@@ -98,7 +100,6 @@ class ResourceForkTest(unittest.TestCase):
 
     def testSeriesRemote(self):
         """Test backing up and restoring directories with ACLs locally"""
-        Globals.read_resource_forks = Globals.write_resource_forks = 1
         self.make_backup_dirs()
         dirlist = [
             "testfiles/resource_fork_test1",

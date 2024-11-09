@@ -4,7 +4,8 @@ Test the logging functionality
 
 import unittest
 
-from rdiff_backup import Globals, log
+from rdiff_backup import log
+from rdiffbackup.singletons import consts
 
 
 class LogTest(unittest.TestCase):
@@ -30,23 +31,23 @@ class LogTest(unittest.TestCase):
         """test that verbosity is correctly set"""
         # happy path
         testlog = log.Logger()
-        self.assertEqual(testlog.set_verbosity(log.NONE), Globals.RET_CODE_OK)
+        self.assertEqual(testlog.set_verbosity(log.NONE), consts.RET_CODE_OK)
         self.assertEqual(testlog.file_verbosity, log.NONE)
         self.assertEqual(testlog.term_verbosity, log.NONE)
         self.assertEqual(
             testlog.set_verbosity(str(log.DEBUG), str(log.WARNING)),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertEqual(testlog.file_verbosity, log.DEBUG)
         self.assertEqual(testlog.term_verbosity, log.WARNING)
         # error cases
-        self.assertEqual(testlog.set_verbosity(str(log.NONE - 1)), Globals.RET_CODE_ERR)
+        self.assertEqual(testlog.set_verbosity(str(log.NONE - 1)), consts.RET_CODE_ERR)
         # nothing changes
         self.assertEqual(testlog.file_verbosity, log.DEBUG)
         self.assertEqual(testlog.term_verbosity, log.WARNING)
         self.assertEqual(
             testlog.set_verbosity(str(log.ERROR), log.TIMESTAMP + 1),
-            Globals.RET_CODE_ERR,
+            consts.RET_CODE_ERR,
         )
         # nothing changes even if only the 2nd value is wrong
         self.assertEqual(testlog.file_verbosity, log.DEBUG)

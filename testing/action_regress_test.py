@@ -8,8 +8,9 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
 from rdiffbackup.locations import _repo_shadow
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -124,11 +125,11 @@ class ActionRegressTest(unittest.TestCase):
                 b"regress",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         # we again simulate a crash
         _repo_shadow.RepoShadow.init(
-            rpath.RPath(Globals.local_connection, self.bak_path),
+            rpath.RPath(specifics.local_connection, self.bak_path),
             {},
             True,
             True,
@@ -146,7 +147,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"regress",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         # but it runs with --force
         self.assertEqual(
@@ -159,7 +160,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"regress",
                 (),
             ),
-            Globals.RET_CODE_WARN,
+            consts.RET_CODE_WARN,
         )
         # we restore and compare
         self.assertEqual(
@@ -172,7 +173,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"restore",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertFalse(fileset.compare_paths(self.from2_path, self.to2_path))
         # we again simulate a crash
@@ -188,7 +189,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"backup",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         # now with --force, it can't be exactly the same time or it fails
         # on error_log already existing
@@ -202,7 +203,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"backup",
                 (),
             ),
-            Globals.RET_CODE_WARN,
+            consts.RET_CODE_WARN,
         )
         # we restore and compare
         self.assertEqual(
@@ -215,7 +216,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"restore",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertFalse(fileset.compare_paths(self.from4_path, self.to4_path))
 
@@ -235,7 +236,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"regress",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         # we do it twice
         self.assertEqual(
@@ -248,7 +249,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"regress",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         # we restore and compare
         self.assertEqual(
@@ -261,7 +262,7 @@ class ActionRegressTest(unittest.TestCase):
                 b"restore",
                 (),
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertFalse(fileset.compare_paths(self.from1_path, self.to1_path))
         # the last tentative to regress forcefully ends with a warning

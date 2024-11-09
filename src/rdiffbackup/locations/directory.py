@@ -24,14 +24,15 @@ This plug-in tests that all remote locations are properly reachable and
 usable for a back-up.
 """
 
+from rdiff_backup import log
 from rdiffbackup.locations import fs_abilities, location
-from rdiff_backup import Globals, log
+from rdiffbackup.singletons import consts, specifics
 
 
 class ReadDir(location.Location):
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)
-        if orig_path.conn is Globals.local_connection:
+        if orig_path.conn is specifics.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 
@@ -43,12 +44,12 @@ class ReadDir(location.Location):
 
     def setup(self):
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
-            return ret_code | Globals.RET_CODE_ERR
+            return ret_code | consts.RET_CODE_ERR
         else:
             log.Log(
                 "--- Read directory file system capabilities ---\n"
@@ -98,7 +99,7 @@ class ReadDir(location.Location):
 class WriteDir(location.Location):
     def __init__(self, orig_path, values):
         super().__init__(orig_path, values)
-        if orig_path.conn is Globals.local_connection:
+        if orig_path.conn is specifics.local_connection:
             # should be more efficient than going through the connection
             from rdiffbackup.locations import _dir_shadow
 
@@ -110,12 +111,12 @@ class WriteDir(location.Location):
 
     def setup(self, src_repo):
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.fs_abilities = self.get_fs_abilities()
         if not self.fs_abilities:
-            return ret_code | Globals.RET_CODE_ERR
+            return ret_code | consts.RET_CODE_ERR
         else:
             log.Log(
                 "--- Write directory file system capabilities ---\n"
@@ -123,10 +124,10 @@ class WriteDir(location.Location):
                 log.INFO,
             )
         ret_code |= fs_abilities.Repo2DirSetGlobals(src_repo, self)()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         return ret_code

@@ -29,7 +29,8 @@ import platform
 import sys
 import tempfile
 import yaml
-from rdiff_backup import Globals, log, Security, SetConnections, Time
+from rdiff_backup import log, Security, SetConnections, Time
+from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
 # The default regexp for not compressing those files
@@ -391,7 +392,7 @@ class BaseAction:
     parent_parsers = []
 
     # connection status
-    conn_status = Globals.RET_CODE_OK
+    conn_status = consts.RET_CODE_OK
 
     @classmethod
     def get_name(cls):
@@ -547,7 +548,7 @@ class BaseAction:
                 "'{ac}'.".format(av=self.values["action"], ac=self.name),
                 log.ERROR,
             )
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
         if self.values["tempdir"] and not os.path.isdir(self.values["tempdir"]):
             log.Log(
                 "Temporary directory '{td}' doesn't exist.".format(
@@ -555,7 +556,7 @@ class BaseAction:
                 ),
                 log.ERROR,
             )
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
         if (
             self.security is None
             and "locations" in self.values
@@ -566,7 +567,7 @@ class BaseAction:
                 "locations".format(ac=self.name),
                 log.ERROR,
             )
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
         return ret_code
 
     def connect(self):
@@ -600,7 +601,7 @@ class BaseAction:
                         "Location '{lo}' couldn't be connected.".format(lo=loc),
                         log.ERROR,
                     )
-                    self.conn_status = Globals.RET_CODE_ERR
+                    self.conn_status = consts.RET_CODE_ERR
         else:
             Security.initialize(self.get_security_class(), [])
             self.connected_locations = []
@@ -634,10 +635,10 @@ class BaseAction:
             tempfile.tempdir = self.values["tempdir"]
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
-        for conn in Globals.connections:
+        for conn in specifics.connections:
             conn.robust.install_signal_handlers()
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def run(self):
         """
@@ -645,13 +646,13 @@ class BaseAction:
 
         Return 0 if everything looked good, else an error code.
         """
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def is_connection_ok(self):
         """
         Return True if connection is OK, False else
         """
-        return not self.conn_status & Globals.RET_CODE_ERR
+        return not self.conn_status & consts.RET_CODE_ERR
 
     def _operate_regress(self, try_regress=True, noticeable=False, force=False):
         """
@@ -666,12 +667,12 @@ class BaseAction:
 
         if self.repo.needs_regress():
             if not try_regress:
-                return Globals.RET_CODE_ERR
+                return consts.RET_CODE_ERR
             log.Log(
                 "Previous backup seems to have failed, regressing " "destination now",
                 log.WARNING,
             )
-            return self.repo.regress() | Globals.RET_CODE_WARN
+            return self.repo.regress() | consts.RET_CODE_WARN
         elif force:
             if self.repo.force_regress():
                 log.Log(
@@ -686,10 +687,10 @@ class BaseAction:
                     "regressed even if forced",
                     log.WARNING,
                 )
-                return Globals.RET_CODE_WARN
+                return consts.RET_CODE_WARN
         else:
             log.Log("Given repository doesn't need to be regressed", regress_verbosity)
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
 
     @classmethod
     def get_runtime_info(cls, parsed=None):
@@ -700,8 +701,8 @@ class BaseAction:
         """
         return {
             "exec": {
-                "version": Globals.version,
-                "api_version": Globals.api_version,
+                "version": specifics.version,
+                "api_version": specifics.api_version,
                 "argv": sys.argv,
                 "parsed": parsed,
             },

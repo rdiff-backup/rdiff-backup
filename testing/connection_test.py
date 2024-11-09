@@ -9,8 +9,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import connection, Globals, rpath, Security, SetConnections
+from rdiff_backup import connection, rpath, Security, SetConnections
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -21,7 +22,7 @@ regfilename = os.path.join(comtst.old_test_dir, b"various_file_types", b"regular
 class LocalConnectionTest(unittest.TestCase):
     """Test the dummy connection"""
 
-    lc = Globals.local_connection
+    lc = specifics.local_connection
 
     def testGetAttrs(self):
         """Test getting of various attributes"""
@@ -172,7 +173,7 @@ class PipeConnectionTest(unittest.TestCase):
         rp = rpath.RPath(self.conn, regfilename)
         self.assertEqual(self.conn.reval("getattr", rp, "data"), rp.data)
         self.assertEqual(
-            self.conn.reval("getattr", rp, "conn"), Globals.local_connection
+            self.conn.reval("getattr", rp, "conn"), specifics.local_connection
         )
 
     def testQuotedRPaths(self):
@@ -209,21 +210,21 @@ class RedirectedConnectionTest(unittest.TestCase):
 
     def testBasic(self):
         """Test basic operations with redirection"""
-        self.conna.Globals.set("tmp_val", 1)
-        self.connb.Globals.set("tmp_val", 2)
-        self.assertEqual(self.conna.Globals.get("tmp_val"), 1)
-        self.assertEqual(self.connb.Globals.get("tmp_val"), 2)
+        self.conna.specifics.set("tmp_val", 1)
+        self.connb.specifics.set("tmp_val", 2)
+        self.assertEqual(self.conna.specifics.get("tmp_val"), 1)
+        self.assertEqual(self.connb.specifics.get("tmp_val"), 2)
 
-        self.conna.Globals.set("tmp_connb", self.connb)
-        self.connb.Globals.set("tmp_conna", self.conna)
-        self.assertIs(self.conna.Globals.get("tmp_connb"), self.connb)
-        self.assertIs(self.connb.Globals.get("tmp_conna"), self.conna)
+        self.conna.specifics.set("tmp_connb", self.connb)
+        self.connb.specifics.set("tmp_conna", self.conna)
+        self.assertIs(self.conna.specifics.get("tmp_connb"), self.connb)
+        self.assertIs(self.connb.specifics.get("tmp_conna"), self.conna)
 
     def testRpaths(self):
         """Test moving rpaths back and forth across connections"""
         rp = rpath.RPath(self.conna, "foo")
-        self.connb.Globals.set("tmp_rpath", rp)
-        rp_returned = self.connb.Globals.get("tmp_rpath")
+        self.connb.specifics.set("tmp_rpath", rp)
+        rp_returned = self.connb.specifics.get("tmp_rpath")
         self.assertIs(rp_returned.conn, rp.conn)
         self.assertEqual(rp_returned.path, rp.path)
 
