@@ -81,3 +81,14 @@ This means to avoid using imported functions, classes and variables without modu
 For example `from package import module` or `import module`, but _neither_ `import package.module` _nor_ `from module import func_or_var_or_class`.
 * acceptable exceptions are standard modules (e.g.
 `os.path`) or where the purpose of the import is to wrap the variable/function/class and do as if it would belong to the importing module.
+
+== TYPING
+
+Typing and static type checking with https://mypy.readthedocs.io/[mypy] has been tentatively introduced.
+Relevant good practices still need to be developed, and usage to be introduced step by step.
+
+In the meantime, consider the following:
+
+* don't introduce imports only for typing purposes.
+Introduce such imports only depending on the statement `if typing.TYPE_CHECKING:`.
+Also double-quote type hints requiring such an additional import.
