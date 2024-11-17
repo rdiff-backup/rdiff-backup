@@ -26,7 +26,6 @@ import time
 import traceback
 
 from rdiff_backup import (
-    Globals,
     iterfile,
     log,
     robust,
@@ -34,6 +33,7 @@ from rdiff_backup import (
     Security,
 )
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import consts, specifics
 
 
 class ConnectionError(Exception):
@@ -93,7 +93,6 @@ class Connection:
             # "socket": "socket",
             # "tempfile": "tempfile",
             # "types": "types",
-            "Globals": "rdiff_backup.Globals",
             # "increment": "rdiff_backup.increment",
             # "iterfile": "rdiff_backup.iterfile",
             # "librsync": "rdiff_backup.librsync",
@@ -110,6 +109,9 @@ class Connection:
             "_dir_shadow": "rdiffbackup.locations._dir_shadow",
             "_repo_shadow": "rdiffbackup.locations._repo_shadow",
             "map_filenames": "rdiffbackup.locations.map.filenames",
+            "consts": "rdiffbackup.singletons.consts",
+            "generics": "rdiffbackup.singletons.generics",
+            "specifics": "rdiffbackup.singletons.specifics",
         }
         for name, module in modules.items():
             cls.globals[name] = importlib.import_module(module)
@@ -155,9 +157,9 @@ class LocalConnection(Connection):
     def __init__(self):
         """This prevents two instances of LocalConnection"""
         assert (
-            not Globals.local_connection
+            not specifics.local_connection
         ), "Local connection has already been initialized with {conn}.".format(
-            conn=Globals.local_connection
+            conn=specifics.local_connection
         )
         super().__init__()
         self.conn_number = 0  # changed by SetConnections for server
@@ -260,7 +262,7 @@ class LowLevelPipeConnection(Connection):
 
     def _putobj(self, obj, req_num):
         """Send a generic python obj down the outpipe"""
-        self._write("o", pickle.dumps(obj, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("o", pickle.dumps(obj, consts.PICKLE_PROTOCOL), req_num)
 
     def _putbuf(self, buf, req_num):
         """Send buffer buf down the outpipe"""
@@ -284,12 +286,12 @@ class LowLevelPipeConnection(Connection):
 
         """
         rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index, rpath.data)
-        self._write("R", pickle.dumps(rpath_repr, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("R", pickle.dumps(rpath_repr, consts.PICKLE_PROTOCOL), req_num)
 
     def _putqrpath(self, qrpath, req_num):
         """Put a quoted rpath into the pipe (similar to _putrpath above)"""
         qrpath_repr = (qrpath.conn.conn_number, qrpath.base, qrpath.index, qrpath.data)
-        self._write("Q", pickle.dumps(qrpath_repr, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("Q", pickle.dumps(qrpath_repr, consts.PICKLE_PROTOCOL), req_num)
 
     def _putrorpath(self, rorpath, req_num):
         """Put an rorpath into the pipe
@@ -299,7 +301,7 @@ class LowLevelPipeConnection(Connection):
 
         """
         rorpath_repr = (rorpath.index, rorpath.data)
-        self._write("r", pickle.dumps(rorpath_repr, Globals.PICKLE_PROTOCOL), req_num)
+        self._write("r", pickle.dumps(rorpath_repr, consts.PICKLE_PROTOCOL), req_num)
 
     def _putconn(self, pipeconn, req_num):
         """Put a connection into the pipe
@@ -387,7 +389,7 @@ class LowLevelPipeConnection(Connection):
         elif format_string == b"Q":
             result = self._getqrpath(data)
         elif format_string == b"c":
-            result = Globals.connection_dict[self._b2i(data)]
+            result = specifics.connection_dict[self._b2i(data)]
         else:
             raise ConnectionReadError(
                 "Format character '{form}' invalid in <{hdr}> "
@@ -407,13 +409,13 @@ class LowLevelPipeConnection(Connection):
     def _getrpath(self, raw_rpath_buf):
         """Return RPath object indicated by raw_rpath_buf"""
         conn_number, base, index, data = pickle.loads(raw_rpath_buf)
-        return rpath.RPath(Globals.connection_dict[conn_number], base, index, data)
+        return rpath.RPath(specifics.connection_dict[conn_number], base, index, data)
 
     def _getqrpath(self, raw_qrpath_buf):
         """Return QuotedRPath object from raw buffer"""
         conn_number, base, index, data = pickle.loads(raw_qrpath_buf)
         return map_filenames.QuotedRPath(
-            Globals.connection_dict[conn_number], base, index, data
+            specifics.connection_dict[conn_number], base, index, data
         )
 
     def _close(self):
@@ -465,10 +467,10 @@ class PipeConnection(LowLevelPipeConnection):
 
     def Server(self):
         """Start server's read eval return loop"""
-        Globals.connections.append(self)
+        specifics.connections.append(self)
         log.Log("Starting server", log.INFO)
         self._get_response(-1)
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def reval(self, function_string, *args):
         """
@@ -495,7 +497,7 @@ class PipeConnection(LowLevelPipeConnection):
 
     def quit(self):
         """Close the associated pipes and tell server side to quit"""
-        assert not Globals.server, "This function shouldn't run as server."
+        assert not specifics.server, "This function shouldn't run as server."
         self._putquit()
         self._get()
         self._close()
@@ -617,7 +619,7 @@ class RedirectedConnection(Connection):
         super().__init__()
         self.conn_number = conn_number
         self.routing_number = routing_number
-        self.routing_conn = Globals.connection_dict[routing_number]
+        self.routing_conn = specifics.connection_dict[routing_number]
 
     def reval(self, function_string, *args):
         """Evaluation function_string on args on remote connection"""
@@ -729,16 +731,16 @@ def RedirectedRun(conn_number, func, *args):
     available).
 
     """
-    conn = Globals.connection_dict[conn_number]
+    conn = specifics.connection_dict[conn_number]
     assert (
-        conn is not Globals.local_connection
+        conn is not specifics.local_connection
     ), "A redirected run shouldn't be required locally for {fnc}.".format(
         fnc=func.__name__
     )
     return conn.reval(func, *args)
 
 
-Globals.local_connection = LocalConnection()
-Globals.connections.append(Globals.local_connection)
+specifics.local_connection = LocalConnection()
+specifics.connections.append(specifics.local_connection)
 # Following changed by server in SetConnections
-Globals.connection_dict[0] = Globals.local_connection
+specifics.connection_dict[0] = specifics.local_connection

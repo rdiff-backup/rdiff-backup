@@ -21,7 +21,7 @@
 import calendar
 import re
 import time
-from rdiff_backup import Globals
+from rdiffbackup.singletons import generics
 
 
 _interval_conv_dict = {
@@ -61,16 +61,16 @@ def set_current_time(reftime=None):
     """
     if reftime is None:
         reftime = time.time()
-    Globals.set_all("current_time", reftime)
-    Globals.set_all("current_time_string", timetostring(reftime))
+    generics.set("current_time", reftime)
+    generics.set("current_time_string", timetostring(reftime))
 
 
 def getcurtime():
-    return Globals.current_time
+    return generics.current_time
 
 
 def getcurtimestr():
-    return Globals.current_time_string
+    return generics.current_time_string
 
 
 def timetostring(timeinseconds):
@@ -78,7 +78,7 @@ def timetostring(timeinseconds):
     Return w3 datetime compliant listing of timeinseconds, or one in
     which :'s have been replaced with -'s
     """
-    if not Globals.use_compatible_timestamps:
+    if not generics.use_compatible_timestamps:
         format_string = TIMEDATE_FORMAT_STRING
     else:
         format_string = TIMEDATE_FORMAT_COMPAT
@@ -282,7 +282,7 @@ def _get_tzd(timeinseconds=None):
     if timeinseconds is None:
         timeinseconds = time.time()
     tzd = time.strftime("%z", time.localtime(timeinseconds))
-    if Globals.use_compatible_timestamps:
+    if generics.use_compatible_timestamps:
         time_separator = "-"
     else:
         time_separator = ":"

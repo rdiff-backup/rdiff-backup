@@ -30,7 +30,8 @@ handle that error.)
 
 import os
 import re
-from rdiff_backup import Globals, log, rpath
+from rdiff_backup import log, rpath
+from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
 
 
@@ -69,7 +70,7 @@ class QuotedRPath(rpath.RPath):
         Reproduce QuotedRPath from __getstate__ output
         """
         conn_number, self.base, self.index, self.data = rpath_state
-        self.conn = Globals.connection_dict[conn_number]
+        self.conn = specifics.connection_dict[conn_number]
         self.quoted_index = tuple(map(quote, self.index))
         self.path = self.path_join(self.base, *self.quoted_index)
 
@@ -122,22 +123,22 @@ def quote(path):
     would go to "10;05811;05812" if ":" were quoted and ";" were
     the quoting character.
     """
-    quoted_path = Globals.chars_to_quote_regexp.sub(_quote_single, path)
-    if not Globals.escape_dos_devices and not Globals.escape_trailing_spaces:
+    quoted_path = generics.chars_to_quote_regexp.sub(_quote_single, path)
+    if not generics.escape_dos_devices and not generics.escape_trailing_spaces:
         return quoted_path
 
     # Escape a trailing space or period (invalid in names on FAT32 under DOS,
     # Windows and modern Linux)
-    if Globals.escape_trailing_spaces:
+    if generics.escape_trailing_spaces:
         if len(quoted_path) and (
             quoted_path[-1] == ord(" ") or quoted_path[-1] == ord(".")
         ):
             quoted_path = quoted_path[:-1] + b"%b%03d" % (
-                Globals.quoting_char,
+                consts.QUOTING_CHAR,
                 quoted_path[-1],
             )
 
-        if not Globals.escape_dos_devices:
+        if not generics.escape_dos_devices:
             return quoted_path
 
     # Escape first char of any special DOS device files even if filename has an
@@ -146,14 +147,14 @@ def quote(path):
         rb"(aux|prn|con|nul|com[0-9]|lpt[1-9])(\.|$)", quoted_path, re.I
     ):
         return quoted_path
-    return b"%b%03d" % (Globals.quoting_char, quoted_path[0]) + quoted_path[1:]
+    return b"%b%03d" % (consts.QUOTING_CHAR, quoted_path[0]) + quoted_path[1:]
 
 
 def unquote(path):
     """
     Return original version of quoted filename
     """
-    return Globals.chars_to_quote_unregexp.sub(_unquote_single, path)
+    return generics.chars_to_quote_unregexp.sub(_unquote_single, path)
 
 
 def get_quotedrpath(rp, separate_basename=0):
@@ -195,7 +196,7 @@ def _quote_single(match):
     """
     Return replacement for a single character
     """
-    return b"%b%03d" % (Globals.quoting_char, ord(match.group()))
+    return b"%b%03d" % (consts.QUOTING_CHAR, ord(match.group()))
 
 
 def _unquote_single(match):

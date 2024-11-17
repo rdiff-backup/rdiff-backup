@@ -27,7 +27,6 @@ be instantiated.
 import os
 
 from rdiff_backup import (
-    Globals,
     hash,
     iterfile,
     log,
@@ -39,6 +38,7 @@ from rdiff_backup import (
 )
 from rdiffbackup.locations import location
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
+from rdiffbackup.singletons import consts, specifics
 
 # ### COPIED FROM BACKUP ####
 
@@ -87,7 +87,7 @@ class ReadDirShadow(location.LocationShadow):
         sel = selection.Select(base_rp)
         sel.parse_selection_args(select_opts)
         sel_iter = sel.get_select_iter()
-        cache_size = Globals.pipeline_max_length * 3  # to and from+leeway
+        cache_size = consts.PIPELINE_MAX_LENGTH * 3  # to and from+leeway
         cls._select = rorpiter.CacheIndexable(sel_iter, cache_size)
         # FIXME do we really need the cache? It can be removed if we remove
         # cls._select.get
@@ -146,7 +146,7 @@ class ReadDirShadow(location.LocationShadow):
             elif src_rp.isreg():
                 reset_perms = False
                 if (
-                    Globals.process_uid != 0
+                    specifics.process_uid != 0
                     and not src_rp.readable()
                     and src_rp.isowner()
                 ):
@@ -322,14 +322,14 @@ class WriteDirShadow(location.LocationShadow):
                     "might be force overwritten by restore".format(tp=cls._base_dir),
                     log.WARNING,
                 )
-                ret_code |= Globals.RET_CODE_WARN
+                ret_code |= consts.RET_CODE_WARN
             else:
                 log.Log(
                     "Target path {tp} exists and isn't empty, "
                     "call with '--force' to overwrite".format(tp=cls._base_dir),
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_ERR
+                ret_code |= consts.RET_CODE_ERR
 
         return ret_code
 
@@ -337,7 +337,7 @@ class WriteDirShadow(location.LocationShadow):
     @classmethod
     def setup(cls):
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
         ret_code |= cls._init_owners_mapping()
         return ret_code
@@ -406,7 +406,7 @@ class _DirPatchITRB(rorpiter.ITRBranch):
     def __init__(self, basis_root_rp):
         """Set basis_root_rp, the base of the tree to be incremented"""
         assert (
-            basis_root_rp.conn is Globals.local_connection
+            basis_root_rp.conn is specifics.local_connection
         ), "Function shall be called only locally."
         self.basis_root_rp = basis_root_rp
         self.dir_replacement, self.dir_update = None, None

@@ -33,7 +33,6 @@ import tempfile
 import yaml
 from rdiff_backup import (
     C,
-    Globals,
     hash,
     iterfile,
     log,
@@ -51,6 +50,7 @@ from rdiffbackup.locations import fs_abilities, increment, location
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
+from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import locking, simpleps
 
 # ### COPIED FROM BACKUP ####
@@ -154,13 +154,13 @@ class RepoShadow(location.LocationShadow):
     def setup(cls):
         if cls._must_be_writable:
             if not cls._create():
-                return Globals.RET_CODE_ERR
-        if cls._check_time and Globals.current_time <= cls.get_mirror_time():
+                return consts.RET_CODE_ERR
+        if cls._check_time and generics.current_time <= cls.get_mirror_time():
             log.Log("The last backup is not in the past. Aborting.", log.ERROR)
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         Security.reset_restrict_path(cls._base_dir)
         lock_result = cls._lock()
-        ret_code = Globals.RET_CODE_OK
+        ret_code = consts.RET_CODE_OK
         if lock_result is False:
             if cls._values["force"]:
                 log.Log(
@@ -177,7 +177,7 @@ class RepoShadow(location.LocationShadow):
                     "or use the --force option".format(lf=cls._lockfile),
                     log.ERROR,
                 )
-                return Globals.RET_CODE_ERR
+                return consts.RET_CODE_ERR
         elif lock_result is None:
             log.Log(
                 "Repository couldn't be locked by file {lf}, probably "
@@ -186,13 +186,13 @@ class RepoShadow(location.LocationShadow):
                 log.NOTE,
             )
         ret_code |= cls._init_owners_mapping()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
         ret_code |= increment.init(
             cls._values.get("compression"),
             cls._values.get("not_compressed_regexp"),
         )
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
         return ret_code
 
@@ -221,7 +221,7 @@ class RepoShadow(location.LocationShadow):
         # FIXME the problem is that the chars_to_quote can come from the command
         # line but can also be a value coming from the repository itself,
         # set globally by the fs_abilities.xxx_set_globals functions.
-        if not Globals.chars_to_quote:
+        if not generics.chars_to_quote:
             return False
 
         cls._base_dir = map_filenames.get_quotedrpath(cls._base_dir)
@@ -551,7 +551,7 @@ class RepoShadow(location.LocationShadow):
         collated = rorpiter.Collate2Iters(source_iter, dest_iter)
         cls.CCPP = _CacheCollatedPostProcess(
             collated,
-            Globals.pipeline_max_length * 4,
+            consts.PIPELINE_MAX_LENGTH * 4,
             baserp,
             cls._data_dir,
             cls._values.get("file_statistics"),
@@ -563,7 +563,7 @@ class RepoShadow(location.LocationShadow):
         """
         Yield signatures of any changed destination files
         """
-        flush_threshold = Globals.pipeline_max_length - 2
+        flush_threshold = consts.PIPELINE_MAX_LENGTH - 2
         num_rorps_seen = 0
         for src_rorp, dest_rorp in cls.CCPP:
             # If we are backing up across a pipe, we must flush the pipeline
@@ -578,7 +578,7 @@ class RepoShadow(location.LocationShadow):
                 and dest_rorp
                 and src_rorp == dest_rorp
                 and (
-                    not Globals.preserve_hardlinks
+                    not generics.preserve_hardlinks
                     or map_hardlinks.rorp_eq(src_rorp, dest_rorp)
                 )
             ):
@@ -592,7 +592,7 @@ class RepoShadow(location.LocationShadow):
     def _get_one_sig(cls, baserp, index, src_rorp, dest_rorp):
         """Return a signature given source and destination rorps"""
         if (
-            Globals.preserve_hardlinks
+            generics.preserve_hardlinks
             and src_rorp
             and map_hardlinks.is_linked(src_rorp)
         ):
@@ -620,7 +620,7 @@ class RepoShadow(location.LocationShadow):
                 "File changed from regular file before signature",
             )
             return None
-        if Globals.process_uid != 0 and not dest_rp.readable() and dest_rp.isowner():
+        if specifics.process_uid != 0 and not dest_rp.readable() and dest_rp.isowner():
             # This branch can happen with root source and non-root
             # destination.  Permissions are changed permanently, which
             # should propagate to the diffs
@@ -689,7 +689,7 @@ class RepoShadow(location.LocationShadow):
             older_inc = curmir_incs[0]
         else:
             older_inc = curmir_incs[1]
-        if Globals.do_fsync:
+        if generics.do_fsync:
             # Make sure everything is written before current_mirror is removed
             C.sync()
         older_inc.delete()
@@ -949,21 +949,21 @@ class RepoShadow(location.LocationShadow):
     def _get_diffs_from_collated(cls, collated):
         """Get diff iterator from collated"""
         for mir_rorp, target_rorp in collated:
-            if Globals.preserve_hardlinks and mir_rorp:
+            if generics.preserve_hardlinks and mir_rorp:
                 map_hardlinks.add_rorp(mir_rorp, target_rorp)
             if (
                 not target_rorp
                 or not mir_rorp
                 or not mir_rorp == target_rorp
                 or (
-                    Globals.preserve_hardlinks
+                    generics.preserve_hardlinks
                     and not map_hardlinks.rorp_eq(mir_rorp, target_rorp)
                 )
             ):
                 diff = cls._get_diff(mir_rorp, target_rorp)
             else:
                 diff = None
-            if Globals.preserve_hardlinks and mir_rorp:
+            if generics.preserve_hardlinks and mir_rorp:
                 map_hardlinks.del_rorp(mir_rorp)
             if diff:
                 yield diff
@@ -973,7 +973,7 @@ class RepoShadow(location.LocationShadow):
         """Get a diff for mir_rorp at time"""
         if not mir_rorp:
             mir_rorp = rpath.RORPath(target_rorp.index)
-        elif Globals.preserve_hardlinks and map_hardlinks.is_linked(mir_rorp):
+        elif generics.preserve_hardlinks and map_hardlinks.is_linked(mir_rorp):
             mir_rorp.flaglinked(map_hardlinks.get_link_index(mir_rorp))
         elif mir_rorp.isreg():
             expanded_index = cls.mirror_base.index + mir_rorp.index
@@ -995,7 +995,7 @@ class RepoShadow(location.LocationShadow):
         increments, and this is done automatically for rorp iterators.
         Encode the lines in the first element of the rorp's index.
         """
-        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        assert cls._base_dir.conn is specifics.local_connection, "Run locally only"
         cls.init_loop(restore_to_time)
 
         old_iter = cls._get_mirror_rorp_iter(cls._restore_time, True)
@@ -1023,7 +1023,7 @@ class RepoShadow(location.LocationShadow):
         Output is a RORP Iterator with info in index.
         See list_files_changed_since for details.
         """
-        assert cls._base_dir.conn is Globals.local_connection, "Run locally only"
+        assert cls._base_dir.conn is specifics.local_connection, "Run locally only"
         cls.init_loop(reftime)
         old_iter = cls._get_mirror_rorp_iter()
         for rorp in old_iter:
@@ -1143,7 +1143,7 @@ class RepoShadow(location.LocationShadow):
         Remove increments older than the given time
         """
         assert (
-            cls._data_dir.conn is Globals.local_connection
+            cls._data_dir.conn is specifics.local_connection
         ), "Function should be called only locally " "and not over '{co}'.".format(
             co=cls._data_dir.conn
         )
@@ -1166,7 +1166,7 @@ class RepoShadow(location.LocationShadow):
                 "No increment is older than '{ot}'".format(ot=time_string),
                 log.WARNING,
             )
-            return Globals.RET_CODE_WARN
+            return consts.RET_CODE_WARN
 
         for rp in yield_files(cls._data_dir):
             if (rp.isincfile() and rp.getinctime() < removal_time) or (
@@ -1174,7 +1174,7 @@ class RepoShadow(location.LocationShadow):
             ):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     @classmethod
     def _get_removal_time(cls, time_string, show_sizes):
@@ -1304,7 +1304,7 @@ class RepoShadow(location.LocationShadow):
         Compute SHA1 sums of repository files and check against metadata
         """
         assert (
-            cls._ref_path.conn is Globals.local_connection
+            cls._ref_path.conn is specifics.local_connection
         ), "Only verify mirror locally, not remotely over '{conn}'.".format(
             conn=cls._ref_path.conn
         )
@@ -1313,7 +1313,7 @@ class RepoShadow(location.LocationShadow):
 
         bad_files = 0
         no_hash = 0
-        ret_code = Globals.RET_CODE_OK
+        ret_code = consts.RET_CODE_OK
         for repo_rorp in repo_iter:
             if not repo_rorp.isreg():
                 continue
@@ -1325,7 +1325,7 @@ class RepoShadow(location.LocationShadow):
                     log.WARNING,
                 )
                 no_hash += 1
-                ret_code |= Globals.RET_CODE_FILE_WARN
+                ret_code |= consts.RET_CODE_FILE_WARN
                 continue
             fp = cls.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
             computed_hash = hash.compute_sha1_fp(fp)
@@ -1343,7 +1343,7 @@ class RepoShadow(location.LocationShadow):
                     ),
                     log.ERROR,
                 )
-                ret_code |= Globals.RET_CODE_FILE_ERR
+                ret_code |= consts.RET_CODE_FILE_ERR
         cls.finish_loop()
         if bad_files:
             log.Log(
@@ -1383,10 +1383,10 @@ class RepoShadow(location.LocationShadow):
                 ),
                 log.ERROR,
             )
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
         else:
             cls._logging_to_file = True
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
 
     @classmethod
     def _log_success(cls, src_rorp, mir_rorp=None):
@@ -1476,7 +1476,7 @@ information in it.
             cls._base_dir.isdir() and cls._incs_dir.isdir()
         ), "Mirror and increments paths must be directories"
         assert (
-            cls._base_dir.conn is cls._incs_dir.conn is Globals.local_connection
+            cls._base_dir.conn is cls._incs_dir.conn is specifics.local_connection
         ), "Regress must happen locally."
         meta_manager, former_current_mirror_rp = cls._set_regress_time()
         cls._set_restore_times()
@@ -1487,11 +1487,11 @@ information in it.
             ITR(rf.index, rf)
         ITR.finish_processing()
         if former_current_mirror_rp:
-            if Globals.do_fsync:
+            if generics.do_fsync:
                 # Sync first, since we are marking dest dir as good now
                 C.sync()
             former_current_mirror_rp.delete()
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     # @API(RepoShadow.force_regress, 300)
     @classmethod
@@ -1582,7 +1582,7 @@ information in it.
 
         for curmir_rp in curmir_incs:
             assert (
-                curmir_rp.conn is Globals.local_connection
+                curmir_rp.conn is specifics.local_connection
             ), "Function must be called locally not over '{conn}'.".format(
                 conn=curmir_rp.conn
             )
@@ -1715,7 +1715,7 @@ information in it.
 
         def helper(rf):
             mirror_rp = rf.mirror_rp
-            if Globals.process_uid != 0:
+            if specifics.process_uid != 0:
                 if mirror_rp.isreg() and not mirror_rp.readable():
                     mirror_rp.chmod(0o400 | mirror_rp.getperms())
                 elif mirror_rp.isdir() and not mirror_rp.hasfullperms():
@@ -1851,7 +1851,7 @@ information in it.
             return False
         pid = os.getpid()
         identifier = {
-            "timestamp": Globals.current_time_string,
+            "timestamp": generics.current_time_string,
             "pid": pid,
             "cmd": simpleps.get_pid_name(pid),
             "hostname": socket.gethostname(),
@@ -2108,7 +2108,7 @@ class _CacheCollatedPostProcess:
         errors at this point, so don't do anything which assumes they
         will be backed up correctly.
         """
-        if Globals.preserve_hardlinks:
+        if generics.preserve_hardlinks:
             if source_rorp:
                 map_hardlinks.add_rorp(source_rorp, dest_rorp)
             else:
@@ -2116,7 +2116,7 @@ class _CacheCollatedPostProcess:
         if (
             dest_rorp
             and dest_rorp.isdir()
-            and Globals.process_uid != 0
+            and specifics.process_uid != 0
             and dest_rorp.getperms() % 0o1000 < 0o700
         ):
             self._unreadable_dir_init(source_rorp, dest_rorp)
@@ -2205,7 +2205,7 @@ class _CacheCollatedPostProcess:
         be true if the files have been successfully updated (this is
         always false for un-changed files).
         """
-        if Globals.preserve_hardlinks and source_rorp:
+        if generics.preserve_hardlinks and source_rorp:
             map_hardlinks.del_rorp(source_rorp)
 
         if not changed or success:
@@ -2261,10 +2261,10 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
     def __init__(self, basis_root_rp, CCPP):
         """Set basis_root_rp, the base of the tree to be incremented"""
         self.basis_root_rp = basis_root_rp
-        assert basis_root_rp.conn is Globals.local_connection, (
+        assert basis_root_rp.conn is specifics.local_connection, (
             "Basis root path connection {conn} isn't "
             "local connection {lconn}.".format(
-                conn=basis_root_rp.conn, lconn=Globals.local_connection
+                conn=basis_root_rp.conn, lconn=specifics.local_connection
             )
         )
         self.statfileobj = (
@@ -2330,7 +2330,10 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             ), "Base directory '{rp}' isn't a directory.".format(rp=self.base_rp)
             rpath.copy_attribs(self.dir_update, self.base_rp)
 
-            if Globals.process_uid != 0 and self.dir_update.getperms() % 0o1000 < 0o700:
+            if (
+                specifics.process_uid != 0
+                and self.dir_update.getperms() % 0o1000 < 0o700
+            ):
                 # Directory was unreadable at start -- keep it readable
                 # until the end of the backup process.
                 self.base_rp.chmod(0o700 | self.dir_update.getperms())
@@ -2360,7 +2363,7 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
                 return result
         if new.lstat():
             if diff_rorp.isflaglinked():
-                if Globals.eas_write:
+                if generics.eas_write:
                     # `isflaglinked() == True` implies that we are processing
                     # the 2nd (or later) file in a group of files linked to an
                     # inode.  As such, we don't need to perform the usual
@@ -2601,7 +2604,7 @@ class _CachedRF:
         """Initialize _CachedRF, self.rf_list variable"""
         self.root_rf = root_rf
         self.rf_list = []  # list should filled in index order
-        if Globals.process_uid != 0:
+        if specifics.process_uid != 0:
             self.perm_changer = _PermissionChanger(root_rf.mirror_rp)
 
     def get_fp(self, index, mir_rorp):
@@ -2625,7 +2628,7 @@ class _CachedRF:
 
     def close(self):
         """Finish remaining rps in _PermissionChanger"""
-        if Globals.process_uid != 0:
+        if specifics.process_uid != 0:
             self.perm_changer.finish()
 
     def _get_rf(self, index, mir_rorp=None):
@@ -2636,7 +2639,7 @@ class _CachedRF:
                     return None
             rf = self.rf_list[0]
             if rf.index == index:
-                if Globals.process_uid != 0:
+                if specifics.process_uid != 0:
                     self.perm_changer(index, mir_rorp)
                 return rf
             elif rf.index > index:
@@ -2660,7 +2663,7 @@ class _CachedRF:
         if mir_rorp.has_alt_mirror_name():
             return  # longname alias separate
         parent_index = index[:-1]
-        if Globals.process_uid != 0:
+        if specifics.process_uid != 0:
             self.perm_changer(parent_index)
         temp_rf = _RestoreFile(
             self.root_rf.mirror_rp.new_index(parent_index),
@@ -3174,5 +3177,5 @@ class _RepoRegressITRB(rorpiter.ITRBranch):
                 rf.mirror_rp.delete()
             rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
             rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
-        if Globals.fsync_directories:
+        if generics.fsync_directories:
             rf.mirror_rp.get_parent_rp().fsync()  # force move before inc delete

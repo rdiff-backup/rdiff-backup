@@ -9,8 +9,9 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import hash, rpath, Globals, Security, SetConnections
+from rdiff_backup import hash, rpath, Security, SetConnections
 from rdiffbackup.meta import stdattr
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -26,8 +27,8 @@ class HashTest(unittest.TestCase):
     s3_hash = "8843d7f92416211de9ebb963ff4ce28125932878"
 
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
-    root_rp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
+    root_rp = rpath.RPath(specifics.local_connection, TEST_BASE_DIR)
 
     def test_basic(self):
         """Compare sha1sum of a few strings"""
@@ -102,7 +103,7 @@ class HashTest(unittest.TestCase):
 
         comtst.rdiff_backup(1, 1, in_rp1.path, self.out_dir, 10000)
         meta_prefix = rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
         )
         incs = meta_prefix.get_incfiles_list()
@@ -131,8 +132,8 @@ class HashTest(unittest.TestCase):
         self.assertEqual(conn.reval("pow", 2, 5), 32)
 
         fp = hash.FileWrapper(io.BytesIO(self.s1.encode()))
-        conn.Globals.set_local("tmp_file", fp)
-        fp_remote = conn.Globals.get("tmp_file")
+        conn.specifics.set("tmp_file", fp)
+        fp_remote = conn.specifics.get("tmp_file")
         self.assertEqual(fp_remote.read(), self.s1.encode())
         self.assertEqual(fp_remote.close().sha1_digest, self.s1_hash)
 
@@ -146,8 +147,8 @@ class HashTest(unittest.TestCase):
         rp2.setfile(hash.FileWrapper(rp2.open("rb")))
         rpiter = iter([rp1, rp2])
 
-        conn.Globals.set_local("tmp_conn_iter", rpiter)
-        remote_iter = conn.Globals.get("tmp_conn_iter")
+        conn.specifics.set("tmp_conn_iter", rpiter)
+        remote_iter = conn.specifics.get("tmp_conn_iter")
 
         rorp1 = next(remote_iter)
         fp = hash.FileWrapper(rorp1.open("rb"))

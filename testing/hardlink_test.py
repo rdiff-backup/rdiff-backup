@@ -9,9 +9,10 @@ import unittest
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, rpath, selection
+from rdiff_backup import rpath, selection
 from rdiffbackup.meta import stdattr
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
+from rdiffbackup.singletons import generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -26,10 +27,10 @@ class HardlinkTest(unittest.TestCase):
     hlinks_dir1copy = os.path.join(hlinks_dir, b"dir1copy")
     hlinks_dir2 = os.path.join(hlinks_dir, b"dir2")
     hlinks_dir3 = os.path.join(hlinks_dir, b"dir3")
-    hlinks_rp1 = rpath.RPath(Globals.local_connection, hlinks_dir1)
-    hlinks_rp1copy = rpath.RPath(Globals.local_connection, hlinks_dir1copy)
-    hlinks_rp2 = rpath.RPath(Globals.local_connection, hlinks_dir2)
-    hlinks_rp3 = rpath.RPath(Globals.local_connection, hlinks_dir3)
+    hlinks_rp1 = rpath.RPath(specifics.local_connection, hlinks_dir1)
+    hlinks_rp1copy = rpath.RPath(specifics.local_connection, hlinks_dir1copy)
+    hlinks_rp2 = rpath.RPath(specifics.local_connection, hlinks_dir2)
+    hlinks_rp3 = rpath.RPath(specifics.local_connection, hlinks_dir3)
     hello_str = "Hello, world!"
     hello_str_hash = "943a702d06f34599aee1f8da8ef9f7296031d699"
 
@@ -49,7 +50,7 @@ class HardlinkTest(unittest.TestCase):
 
     def testBuildingDict(self):
         """See if the partial inode dictionary is correct"""
-        Globals.preserve_hardlinks = 1
+        generics.preserve_hardlinks = True
         comtst.reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp3).get_select_iter():
             map_hardlinks.add_rorp(dsrp)
@@ -87,13 +88,13 @@ class HardlinkTest(unittest.TestCase):
 
     def testInnerRestore(self):
         """Restore part of a dir, see if hard links preserved"""
-        out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        out_rp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(out_rp)
         hlout1_dir = os.path.join(TEST_BASE_DIR, b"out_hardlink1")
         hlout2_dir = os.path.join(TEST_BASE_DIR, b"out_hardlink2")
 
         # Now set up directories out_hardlink1 and out_hardlink2
-        hlout1 = rpath.RPath(Globals.local_connection, hlout1_dir)
+        hlout1 = rpath.RPath(specifics.local_connection, hlout1_dir)
         if hlout1.lstat():
             hlout1.delete()
         hlout1.mkdir()
@@ -109,7 +110,7 @@ class HardlinkTest(unittest.TestCase):
         hl1_3.touch()
         hl1_4.hardlink(hl1_3.path)
 
-        hlout2 = rpath.RPath(Globals.local_connection, hlout2_dir)
+        hlout2 = rpath.RPath(specifics.local_connection, hlout2_dir)
         if hlout2.lstat():
             hlout2.delete()
         comtst.xcopytree(hlout1_dir, hlout2_dir)
@@ -162,7 +163,7 @@ class HardlinkTest(unittest.TestCase):
         # Now try restoring, still checking hard links.
         sub_dir = os.path.join(self.out_dir, b"subdir")
         out2_dir = os.path.join(TEST_BASE_DIR, b"out2")
-        out2 = rpath.RPath(Globals.local_connection, out2_dir)
+        out2 = rpath.RPath(specifics.local_connection, out2_dir)
         hlout1 = out2.append("hardlink1")
         hlout2 = out2.append("hardlink2")
         hlout3 = out2.append("hardlink3")
@@ -215,11 +216,11 @@ class HardlinkTest(unittest.TestCase):
         """
 
         # Setup initial backup
-        out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        out_rp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(out_rp)
         hlsrc_dir = os.path.join(TEST_BASE_DIR, b"src_hardlink")
 
-        hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
+        hlsrc = rpath.RPath(specifics.local_connection, hlsrc_dir)
         if hlsrc.lstat():
             hlsrc.delete()
         hlsrc.mkdir()
@@ -239,7 +240,7 @@ class HardlinkTest(unittest.TestCase):
 
         # validate that hashes and link counts are correctly saved in metadata
         meta_prefix = rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
         )
         incs = meta_prefix.get_incfiles_list()
@@ -284,7 +285,7 @@ class HardlinkTest(unittest.TestCase):
         # Now try restoring, still checking hard links.
         sub_path = os.path.join(self.out_dir, b"subdir")
         restore_path = os.path.join(TEST_BASE_DIR, b"hl_restore")
-        restore_dir = rpath.RPath(Globals.local_connection, restore_path)
+        restore_dir = rpath.RPath(specifics.local_connection, restore_path)
         hlrestore_file1 = restore_dir.append("hardlink1")
         hlrestore_file2 = restore_dir.append("hardlink2")
         hlrestore_file3 = restore_dir.append("hardlink3")
@@ -320,11 +321,11 @@ class HardlinkTest(unittest.TestCase):
         """
 
         # Setup initial backup
-        out_rp = rpath.RPath(Globals.local_connection, self.out_dir)
+        out_rp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(out_rp)
         hlsrc_dir = os.path.join(TEST_BASE_DIR, b"src_hardlink")
 
-        hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
+        hlsrc = rpath.RPath(specifics.local_connection, hlsrc_dir)
         if hlsrc.lstat():
             hlsrc.delete()
         hlsrc.mkdir()
@@ -344,7 +345,7 @@ class HardlinkTest(unittest.TestCase):
 
         # validate that hashes and link counts are correctly saved in metadata
         meta_prefix = rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
         )
         incs = meta_prefix.get_incfiles_list()
@@ -385,7 +386,7 @@ class HardlinkTest(unittest.TestCase):
         # Now try restoring, still checking hard links.
         sub_path = os.path.join(self.out_dir, b"subdir")
         restore_path = os.path.join(TEST_BASE_DIR, b"hl_restore")
-        restore_dir = rpath.RPath(Globals.local_connection, restore_path)
+        restore_dir = rpath.RPath(specifics.local_connection, restore_path)
         hlrestore_file1 = restore_dir.append("hardlink1")
         hlrestore_file2 = restore_dir.append("hardlink2")
         hlrestore_file3 = restore_dir.append("hardlink3")

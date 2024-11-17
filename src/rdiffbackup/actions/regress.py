@@ -22,9 +22,9 @@ A built-in rdiff-backup action plug-in to regress a failed back-up from a
 back-up repository.
 """
 
-from rdiff_backup import Globals
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
+from rdiffbackup.singletons import consts
 
 
 class RegressAction(actions.BaseAction):
@@ -78,11 +78,11 @@ class RegressAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.repo.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         return ret_code
@@ -92,7 +92,7 @@ class RegressAction(actions.BaseAction):
         Check the given repository and regress it if necessary
         """
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code |= self._operate_regress(noticeable=True, force=self.values["force"])

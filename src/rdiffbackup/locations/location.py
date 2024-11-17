@@ -24,9 +24,10 @@ All those classes should be considered abstract and not instantiated directly.
 """
 
 import os
-from rdiff_backup import Globals, log
+from rdiff_backup import log
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import owners as map_owners
+from rdiffbackup.singletons import consts
 
 
 class Location:
@@ -87,15 +88,15 @@ class LocationShadow:
         """
         Check anything which can be checked about the location
 
-        Returns error codes as defined with Globals.RET_CODE_*
+        Returns error codes as defined with consts.RET_CODE_*
         """
-        ret_code = Globals.RET_CODE_OK
+        ret_code = consts.RET_CODE_OK
 
         if cls._must_exist and not cls._is_existing():
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
 
         if cls._must_be_writable and not cls._is_writable():
-            ret_code |= Globals.RET_CODE_ERR
+            ret_code |= consts.RET_CODE_ERR
 
         return ret_code
 
@@ -107,12 +108,12 @@ class LocationShadow:
         link two locations together (e.g. for backup resp. restore from
         one to the other).
 
-        Returns error codes as defined with Globals.RET_CODE_*
+        Returns error codes as defined with consts.RET_CODE_*
         """
         if cls._must_be_writable and not cls._create():
-            return Globals.RET_CODE_ERR
+            return consts.RET_CODE_ERR
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     @classmethod
     def get_fs_abilities(cls):
@@ -202,4 +203,4 @@ class LocationShadow:
             preserve_num_ids = cls._values.get("preserve_num_ids", False)
         map_owners.init_users_mapping(users_map, preserve_num_ids)
         map_owners.init_groups_mapping(groups_map, preserve_num_ids)
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK

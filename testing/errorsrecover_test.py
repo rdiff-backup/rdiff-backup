@@ -8,7 +8,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import rpath, Globals
+from rdiff_backup import rpath
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -17,7 +18,7 @@ class BrokenRepoTest(unittest.TestCase):
     """Handling of somehow broken repos"""
 
     def makerp(self, path):
-        return rpath.RPath(Globals.local_connection, path)
+        return rpath.RPath(specifics.local_connection, path)
 
     def makeext(self, path):
         return self.root.new_index(tuple(path.split("/")))
@@ -72,7 +73,7 @@ class BrokenRepoTest(unittest.TestCase):
             source_rp.__fspath__(),
             target_rp.__fspath__(),
             current_time=15 * 10000,
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
         # and this should also fail
         comtst.rdiff_backup(
@@ -80,7 +81,7 @@ class BrokenRepoTest(unittest.TestCase):
             1,
             target_rp.__fspath__(),
             None,
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
             extra_options=b"regress",
         )
         # but this should succeed (with a warning)
@@ -90,7 +91,7 @@ class BrokenRepoTest(unittest.TestCase):
             target_rp.__fspath__(),
             None,
             extra_options=(b"regress", b"--allow-duplicate-timestamps"),
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
         # now we can clean-up, getting rid of the duplicate metadata mirrors
         # NOTE: we could have cleaned-up even without checking/fixing the

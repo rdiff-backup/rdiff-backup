@@ -42,10 +42,11 @@ import shutil
 import stat
 import tempfile
 import time
-from rdiff_backup import Globals, Time, log, C
-from rdiffbackup.utils import usrgrp
+from rdiff_backup import Time, log, C
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
+from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.utils import usrgrp
 
 try:
     import win32api
@@ -86,18 +87,18 @@ class RORPath:
         """Returns a set of keys to be ignored during comparaison,
         based on global settings."""
         global_ignored_keys = set(())
-        if not Globals.preserve_atime:
+        if not generics.preserve_atime:
             global_ignored_keys.add("atime")
-        if not Globals.eas_write:
+        if not generics.eas_write:
             global_ignored_keys.add("ea")
-        if not Globals.acls_write:
+        if not generics.acls_write:
             global_ignored_keys.add("acl")
-        if not Globals.win_acls_write:
+        if not generics.win_acls_write:
             global_ignored_keys.add("win_acl")
-        if not Globals.carbonfile_write:
-            global_ignored_keys.add("carbonfile")
-        if not Globals.resource_forks_write:
+        if not generics.resource_forks_write:
             global_ignored_keys.add("resource_forks")
+        if not generics.carbonfile_write:
+            global_ignored_keys.add("carbonfile")
         return global_ignored_keys
 
     @classmethod
@@ -150,8 +151,8 @@ class RORPath:
         if (
             not self.isreg()
             or self.getnumlinks() == 1
-            or not Globals.compare_inode
-            or not Globals.preserve_hardlinks
+            or not generics.compare_inode
+            or not generics.preserve_hardlinks
         ):
             ignored_keys.add("inode")
             ignored_keys.add("devloc")
@@ -265,7 +266,7 @@ class RORPath:
             if key not in other.data or self.data[key] != other.data[key]:
                 return False
 
-        if self.lstat() and not self.issym() and Globals.change_ownership:
+        if self.lstat() and not self.issym() and generics.change_ownership:
             # Now compare ownership.  Symlinks don't have ownership
             try:
                 own_uid_gid = map_owners.map_rpath_owner(self)
@@ -467,7 +468,7 @@ class RORPath:
     def close_if_necessary(self):
         """If file is present, discard data and close"""
         if self.file:
-            while self.file.read(Globals.blocksize):
+            while self.file.read(consts.BLOCKSIZE):
                 pass
             self.file.close()
             self._file_already_open = False
@@ -617,7 +618,7 @@ class RORPath:
                 pass
             elif key == "type" and not compare_type:
                 pass
-            elif key == "atime" and not Globals.preserve_atime:
+            elif key == "atime" and not generics.preserve_atime:
                 pass
             elif key == "ctime":
                 pass
@@ -739,7 +740,7 @@ class RPath(RORPath):
     def __setstate__(self, rpath_state):
         """Reproduce RPath from __getstate__ output"""
         conn_number, self.base, self.index, self.data = rpath_state
-        self.conn = Globals.connection_dict[conn_number]
+        self.conn = specifics.connection_dict[conn_number]
         self.path = self.path_join(self.base, *self.index)
 
     def setdata(self):
@@ -751,7 +752,7 @@ class RPath(RORPath):
     def chmod(self, permissions, loglevel=log.WARNING):
         """Wrapper around os.chmod"""
         try:
-            self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
+            self.conn.os.chmod(self.path, permissions & generics.permission_mask)
         except OSError as e:
             if e.strerror == "Inappropriate file type or format" and not self.isdir():
                 # Some systems throw this error if try to set sticky bit
@@ -764,7 +765,7 @@ class RPath(RORPath):
                     loglevel,
                 )
                 self.conn.os.chmod(
-                    self.path, permissions & 0o6777 & Globals.permission_mask
+                    self.path, permissions & 0o6777 & generics.permission_mask
                 )
             else:
                 raise
@@ -949,7 +950,7 @@ class RPath(RORPath):
 
     def isgroup(self):
         """Return true if process has group of rp"""
-        return "gid" in self.data and self.data["gid"] in self.conn.Globals.get(
+        return "gid" in self.data and self.data["gid"] in self.conn.specifics.get(
             "process_groups"
         )
 
@@ -960,7 +961,7 @@ class RPath(RORPath):
             try:
                 self.rmdir()
             except os.error:
-                if Globals.fsync_directories:
+                if generics.fsync_directories:
                     self.fsync()
                 self.conn.shutil.rmtree(self.path)
         else:
@@ -1089,7 +1090,7 @@ class RPath(RORPath):
     def get_temp_rpath(self, sibling=False):
         """Return new temp rpath in given or parent directory"""
         assert (
-            self.conn is Globals.local_connection
+            self.conn is specifics.local_connection
         ), "Function must be called locally not over {conn}.".format(conn=self.conn)
 
         # recursion if current rpath isn't a directory or if explicitly asked
@@ -1123,7 +1124,7 @@ class RPath(RORPath):
         risk apparent from the remote call.
 
         """
-        if self.conn is Globals.local_connection:
+        if self.conn is specifics.local_connection:
             if compress:
                 return gzip.GzipFile(self.path, mode)
             else:
@@ -1251,22 +1252,19 @@ class RPath(RORPath):
         This can be useful for directories.
 
         """
-        if Globals.do_fsync:
+        if generics.do_fsync:
             if not fp:
                 self.conn.rpath.RPath.fsync_local(self)
             else:
                 os.fsync(fp.fileno())
 
     # @API(RPath.fsync_local, 200)
-    def fsync_local(self, thunk=None):
-        """fsync current file, run locally
-
-        If thunk is given, run it before syncing but after gathering
-        the file's file descriptor.
-
+    def fsync_local(self):
+        """
+        fsync current file, run locally
         """
         assert (
-            self.conn is Globals.local_connection
+            self.conn is specifics.local_connection
         ), "Function must be called locally not over {conn}.".format(conn=self.conn)
         try:
             fd = os.open(self.path, os.O_RDONLY)
@@ -1294,15 +1292,13 @@ class RPath(RORPath):
             fd = os.open(self.path, os.O_RDWR)
             if oldperms is not None:
                 self.chmod(oldperms)
-            if thunk:
-                thunk()
             os.fsync(fd)  # Sync after we switch back permissions!
             os.close(fd)
 
     def fsync_with_dir(self, fp=None):
         """fsync self and directory self is under"""
         self.fsync(fp)
-        if Globals.fsync_directories:
+        if generics.fsync_directories:
             self.get_parent_rp().fsync()
 
     def get_bytes(self, compressed=None):
@@ -1537,7 +1533,6 @@ class _RPathFileHook:
 
 def copyfileobj(inputfp, outputfp):
     """Copies file inputfp to outputfp in blocksize intervals"""
-    blocksize = Globals.blocksize
 
     sparse = False
     """Negative seeks are not supported by GzipFile"""
@@ -1546,7 +1541,7 @@ def copyfileobj(inputfp, outputfp):
         compressed = True
 
     while 1:
-        inbuf = inputfp.read(blocksize)
+        inbuf = inputfp.read(consts.BLOCKSIZE)
         if not inbuf:
             break
 
@@ -1594,10 +1589,10 @@ def copy(rpin, rpout, compress=0):
     elif rpin.issym():
         # some systems support permissions for symlinks, but
         # only by setting at creation via the umask
-        if Globals.symlink_perms:
+        if generics.symlink_perms:
             orig_umask = os.umask(0o777 & ~rpin.getperms())
         rpout.symlink(rpin.readlink())
-        if Globals.symlink_perms:
+        if generics.symlink_perms:
             os.umask(orig_umask)  # restore previous umask
     elif rpin.isdev():
         dev_type, major, minor = rpin.getdevnums()
@@ -1614,7 +1609,7 @@ def copy(rpin, rpout, compress=0):
 def copy_reg_file(rpin, rpout, compress=0):
     """Copy regular file rpin to rpout, possibly avoiding connection"""
     try:
-        if rpout.conn is rpin.conn and rpout.conn is not Globals.local_connection:
+        if rpout.conn is rpin.conn and rpout.conn is not specifics.local_connection:
             v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
             rpout.setdata()
             return v
@@ -1681,26 +1676,26 @@ def copy_attribs(rpin, rpout):
         "or input be special.".format(irp=rpin, orp=rpout)
     )
     assert (
-        rpout.conn is Globals.local_connection
+        rpout.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpout.conn)
-    if Globals.change_ownership:
+    if generics.change_ownership:
         rpout.chown(*map_owners.map_rpath_owner(rpin))
-    if Globals.eas_write:
+    if generics.eas_write:
         if not rpin.issym():  # make sure EAs can be written
             rpout.chmod(rpin.getperms() | 0o666)
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
         return  # symlinks don't have times or perms
-    if Globals.resource_forks_write and rpin.isreg() and rpin.has_resource_fork():
+    if generics.resource_forks_write and rpin.isreg() and rpin.has_resource_fork():
         rpout.write_resource_fork(rpin.get_resource_fork())
-    if Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile():
+    if generics.carbonfile_write and rpin.isreg() and rpin.has_carbonfile():
         rpout.write_carbonfile(rpin.get_carbonfile())
     rpout.chmod(rpin.getperms())
-    if Globals.acls_write:
+    if generics.acls_write:
         rpout.write_acl(rpin.get_acl())
     if not rpin.isdev():
         rpout.setmtime(rpin.getmtime())
-    if Globals.win_acls_write:
+    if generics.win_acls_write:
         rpout.write_win_acl(rpin.get_win_acl())
 
 
@@ -1719,21 +1714,21 @@ def copy_attribs_inc(rpin, rpout):
         log.DEBUG,
     )
     _check_for_files(rpin, rpout)
-    if Globals.change_ownership:
+    if generics.change_ownership:
         rpout.chown(*rpin.getuidgid())
-    if Globals.eas_write:
+    if generics.eas_write:
         rpout.write_ea(rpin.get_ea())
     if rpin.issym():
         return  # symlinks don't have times or perms
     if (
-        Globals.resource_forks_write
+        generics.resource_forks_write
         and rpin.isreg()
         and rpin.has_resource_fork()
         and rpout.isreg()
     ):
         rpout.write_resource_fork(rpin.get_resource_fork())
     if (
-        Globals.carbonfile_write
+        generics.carbonfile_write
         and rpin.isreg()
         and rpin.has_carbonfile()
         and rpout.isreg()
@@ -1743,7 +1738,7 @@ def copy_attribs_inc(rpin, rpout):
         rpout.chmod(rpin.getperms() & 0o777)
     else:
         rpout.chmod(rpin.getperms())
-    if Globals.acls_write:
+    if generics.acls_write:
         rpout.write_acl(rpin.get_acl(), map_names=0)
     if not rpin.isdev():
         rpout.setmtime(rpin.getmtime())
@@ -1899,7 +1894,7 @@ def make_socket_local(rpath):
     (Miscellaneous strings will not be.)
     """
     assert (
-        rpath.conn is Globals.local_connection
+        rpath.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
 
@@ -1908,7 +1903,7 @@ def make_socket_local(rpath):
 def gzip_open_local_read(rpath):
     """Return open GzipFile.  See security note directly above"""
     assert (
-        rpath.conn is Globals.local_connection
+        rpath.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     return gzip.GzipFile(rpath.path, "rb")
 
@@ -1917,7 +1912,7 @@ def gzip_open_local_read(rpath):
 def open_local_read(rpath):
     """Return open file (provided for security reasons)"""
     assert (
-        rpath.conn is Globals.local_connection
+        rpath.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     return open(rpath.path, "rb")
 
@@ -1972,10 +1967,10 @@ def setdata_local(rp):
     these features may exist or not depending on the connection.
     """
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function must be called locally not over {conn}.".format(conn=rp.conn)
     reset_perms = False
-    if Globals.process_uid != 0 and not rp.readable() and rp.isowner():
+    if specifics.process_uid != 0 and not rp.readable() and rp.isowner():
         if rp.lstat() == "sym":
             # a symlink which isn't readable is strange, hence better not backup
             # only case known is 'C:\Users\All Users' mounted over Samba
@@ -1995,15 +1990,15 @@ def setdata_local(rp):
 
     rp.data["uname"] = usrgrp.uid2uname(rp.data["uid"])
     rp.data["gname"] = usrgrp.gid2gname(rp.data["gid"])
-    if Globals.eas_conn:
+    if specifics.eas_conn:
         rp.data["ea"] = ea.get_meta(rp)
-    if Globals.acls_conn:
+    if specifics.acls_conn:
         rp.data["acl"] = acl_posix.get_meta(rp)
-    if Globals.win_acls_conn:
+    if specifics.win_acls_conn:
         rp.data["win_acl"] = acl_win.get_meta(rp)
-    if Globals.resource_forks_conn and rp.isreg():
+    if specifics.resource_forks_conn and rp.isreg():
         rp.get_resource_fork()
-    if Globals.carbonfile_conn and rp.isreg():
+    if specifics.carbonfile_conn and rp.isreg():
         rp.data["carbonfile"] = _carbonfile_get(rp)
 
     if reset_perms:
@@ -2051,7 +2046,7 @@ def _cmp_file_attribs(rp1, rp2):
 
     """
     _check_for_files(rp1, rp2)
-    if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
+    if generics.change_ownership and rp1.getuidgid() != rp2.getuidgid():
         result = None
     elif rp1.getperms() != rp2.getperms():
         result = None
@@ -2076,10 +2071,9 @@ def _cmp_file_attribs(rp1, rp2):
 
 def _cmp_file_obj(fp1, fp2):
     """True if file objects fp1 and fp2 contain same data, used for testing"""
-    blocksize = Globals.blocksize
     while 1:
-        buf1 = fp1.read(blocksize)
-        buf2 = fp2.read(blocksize)
+        buf1 = fp1.read(consts.BLOCKSIZE)
+        buf2 = fp2.read(consts.BLOCKSIZE)
         if buf1 != buf2:
             return None
         elif not buf1:

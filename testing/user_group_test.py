@@ -8,7 +8,6 @@ import os
 import pwd
 import unittest
 
-from rdiff_backup import Globals
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
 
@@ -41,7 +40,6 @@ class UserGroupTest(unittest.TestCase):
 
     def test_default_mapping(self):
         """Test the default user mapping"""
-        Globals.isdest = 1
         rootid = 0
         binid = pwd.getpwnam("bin")[2]
         mailid = pwd.getpwnam("mail")[2]
@@ -64,7 +62,6 @@ mail:0
         curr_user_uid = os.getuid()
         # testing UTF-8 user names
         mapping_string += "éłephänt:" + curr_user_name
-        Globals.isdest = 1
         rootid = 0
         binid = pwd.getpwnam("bin")[2]
         mailid = pwd.getpwnam("mail")[2]

@@ -4,21 +4,19 @@ Regression tests
 
 import os
 import pathlib
-import re
 import time
 import unittest
 
 import commontest as comtst
 import fileset
 
-from rdiff_backup import Globals, log, robust, rpath, selection, Time
+from rdiff_backup import log, robust, rpath, selection, Time
 from rdiffbackup.locations.map import filenames as map_filenames
+from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
-Globals.exclude_mirror_regexps = [re.compile(b".*/rdiff-backup-data")]
-
-lc = Globals.local_connection
+lc = specifics.local_connection
 
 
 class Local:
@@ -27,13 +25,13 @@ class Local:
 
     def get_src_local_rp(extension):
         return rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(comtst.old_test_dir, os.fsencode(extension)),
         )
 
     def get_tgt_local_rp(extension):
         return rpath.RPath(
-            Globals.local_connection,
+            specifics.local_connection,
             os.path.join(TEST_BASE_DIR, os.fsencode(extension)),
         )
 
@@ -250,9 +248,9 @@ class PathSetter(unittest.TestCase):
         within a given directory."""
 
         if quoted:
-            dirrp = map_filenames.QuotedRPath(Globals.local_connection, directory)
+            dirrp = map_filenames.QuotedRPath(specifics.local_connection, directory)
         else:
-            dirrp = rpath.RPath(Globals.local_connection, directory)
+            dirrp = rpath.RPath(specifics.local_connection, directory)
         incbasenames = [
             filename
             for filename in robust.listrp(dirrp)
@@ -271,7 +269,7 @@ class Final(PathSetter):
         """Test initial backup of /proc locally"""
         procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         comtst.remove_dir(procout_dir)
-        procout = rpath.RPath(Globals.local_connection, procout_dir)
+        procout = rpath.RPath(specifics.local_connection, procout_dir)
         comtst.rdiff_backup(True, True, "/proc", procout.path, current_time=10000)
         time.sleep(1)
         comtst.rdiff_backup(True, True, "/proc", procout.path, current_time=20000)
@@ -288,7 +286,7 @@ class Final(PathSetter):
         """Test mirroring proc remote"""
         procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         comtst.remove_dir(procout_dir)
-        procout = rpath.RPath(Globals.local_connection, procout_dir)
+        procout = rpath.RPath(specifics.local_connection, procout_dir)
         comtst.rdiff_backup(True, False, "/proc", procout.path, current_time=10000)
         time.sleep(1)
         comtst.rdiff_backup(True, False, "/proc", procout.path, current_time=20000)
@@ -305,7 +303,7 @@ class Final(PathSetter):
         """Test mirroring proc, this time when proc is remote, dest local"""
         procout_dir = os.path.join(TEST_BASE_DIR, b"procoutput")
         comtst.remove_dir(procout_dir)
-        procout = rpath.RPath(Globals.local_connection, procout_dir)
+        procout = rpath.RPath(specifics.local_connection, procout_dir)
         comtst.rdiff_backup(False, True, "/proc", procout.path)
 
     @unittest.skipUnless(os.name == "nt", "Requires Windows support")
@@ -348,11 +346,11 @@ class Final(PathSetter):
                 self.AssertNotIn(":", walker)
 
         # Start restore of increment 2
-        Globals.chars_to_quote = b"^a-z0-9_ -."
+        generics.set("chars_to_quote", b"^a-z0-9_ -.")
         inc_paths = self.getinc_paths(
             b"increments.", b"testfiles/output/rdiff-backup-data", 1
         )
-        Globals.chars_to_quote = None
+        generics.set("chars_to_quote", None)
         self.assertEqual(len(inc_paths), 1)
         self.exec_rb(None, inc_paths[0], b"testfiles/restoretarget2")
         self.assertTrue(
@@ -618,7 +616,7 @@ class FinalMisc(PathSetter):
             Local.vftrp.path,
             Local.rpout.path,
             extra_options=(b"--tempdir", b"DoesSurelyNotExist", b"backup"),
-            expected_ret_code=Globals.RET_CODE_ERR,
+            expected_ret_code=consts.RET_CODE_ERR,
         )
 
 
@@ -682,7 +680,7 @@ class FinalSelection(PathSetter):
         )
 
         # Test selective restoring
-        mirror_rp = rpath.RPath(Globals.local_connection, out_rel)
+        mirror_rp = rpath.RPath(specifics.local_connection, out_rel)
         restore_filename = comtst.get_increment_rp(mirror_rp, 10000).path
 
         comtst.rdiff_backup(
@@ -783,7 +781,7 @@ class FinalSelection(PathSetter):
             Local.rpout.path,
             Local.rpout1.path,
             extra_options=(b"--force", b"restore", b"--at", b"now") + excludes,
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
         for rp in (file1_target, file2_target, existing_file):
             rp.setdata()
@@ -910,7 +908,7 @@ class FinalBugs(PathSetter):
             None,
             current_time=30000,
             extra_options=b"regress",
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
 
         # Check to see if file still there
@@ -928,7 +926,7 @@ class FinalBugs(PathSetter):
 
         # create the bigdir on the fly
         bigdir_path = os.path.join(TEST_BASE_DIR, b"cmd_bigdir")
-        bigrp = rpath.RPath(Globals.local_connection, bigdir_path)
+        bigrp = rpath.RPath(specifics.local_connection, bigdir_path)
         bigdir_struct = {
             "subdir{}": {
                 "range": 4,

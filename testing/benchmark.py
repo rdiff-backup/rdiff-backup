@@ -12,7 +12,8 @@ import time
 
 import commontest as comtst
 
-from rdiff_backup import rpath, Globals
+from rdiff_backup import rpath
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -39,7 +40,7 @@ def run_cmd(cmd):
     print("Running command '%s'" % (full_cmd,))
     t = time.time()
     rc = comtst.os_system(full_cmd)
-    if rc & Globals.RET_CODE_ERR:
+    if rc & consts.RET_CODE_ERR:
         raise RuntimeError("Return code of '{cmd}' is '{rc}'".format(cmd=cmd, rc=rc))
     return time.time() - t
 
@@ -51,7 +52,7 @@ def create_many(dirname, s, count):
     contain the string s.
 
     """
-    dir_rp = rpath.RPath(Globals.local_connection, dirname)
+    dir_rp = rpath.RPath(specifics.local_connection, dirname)
     if not dir_rp.isdir():
         dir_rp.mkdir()
     for i in range(count):
@@ -79,7 +80,7 @@ def create_nested(dirname, s, depth, branch_factor):
             list(map(lambda rp: helper(rp, depth - 1), sub_rps))
 
     comtst.re_init_subdir(TEST_BASE_DIR, b"nested_out")
-    helper(rpath.RPath(Globals.local_connection, dirname), depth)
+    helper(rpath.RPath(specifics.local_connection, dirname), depth)
 
 
 def benchmark(backup_cmd, restore_cmd, desc, update_func=None):

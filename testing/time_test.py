@@ -8,7 +8,8 @@ import unittest
 import commontest as comtst
 from commontest import *  # noqa: F403, F401 some side effect or test fails
 
-from rdiff_backup import Globals, Time
+from rdiff_backup import Time
+from rdiffbackup.singletons import generics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -49,9 +50,9 @@ class TimeTest(unittest.TestCase):
 
     def testConversion_separator(self):
         """Same as testConversion, but change time Separator"""
-        Globals.time_separator = "_"
+        generics.set("use_compatible_timestamps", True)
         self.testConversion()
-        Globals.time_separator = ":"
+        generics.set("use_compatible_timestamps", False)
 
     def testCmp(self):
         """Test time comparisons"""

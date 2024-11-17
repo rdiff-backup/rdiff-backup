@@ -8,7 +8,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, Rdiff, rpath
+from rdiff_backup import Rdiff, rpath
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -26,7 +27,7 @@ def MakeRandomFile(path):
 class RdiffTest(unittest.TestCase):
     """Test rdiff"""
 
-    lc = Globals.local_connection
+    lc = specifics.local_connection
 
     basis = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"basis"))
     new = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"new"))

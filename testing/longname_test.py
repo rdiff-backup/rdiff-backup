@@ -8,7 +8,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath, Time
+from rdiff_backup import rpath, Time
+from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -21,7 +22,7 @@ else:
 class LongNameTest(unittest.TestCase):
     """Test the longname module"""
 
-    root_rp = rpath.RPath(Globals.local_connection, TEST_BASE_DIR)
+    root_rp = rpath.RPath(specifics.local_connection, TEST_BASE_DIR)
     out_rp = root_rp.append_path("output")
 
     def test_length_limit(self):
@@ -210,8 +211,8 @@ class LongNameTest(unittest.TestCase):
             extra_options=(b"restore", b"--at", b"0"),
         )
         comtst.compare_recursive(
-            rpath.RPath(Globals.local_connection, input_dir),
-            rpath.RPath(Globals.local_connection, restore_dir),
+            rpath.RPath(specifics.local_connection, input_dir),
+            rpath.RPath(specifics.local_connection, restore_dir),
         )
 
 

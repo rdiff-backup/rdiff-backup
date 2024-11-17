@@ -23,9 +23,10 @@ A built-in rdiff-backup action plug-in to backup a source to a target directory.
 
 import time
 
-from rdiff_backup import Globals, log, Time
+from rdiff_backup import log, Time
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
+from rdiffbackup.singletons import consts
 
 
 class BackupAction(actions.BaseAction):
@@ -84,15 +85,15 @@ class BackupAction(actions.BaseAction):
         # in setup we return as soon as we detect an issue to avoid changing
         # too much
         ret_code = super().setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.dir.setup()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         ret_code = self.repo.setup(self.dir)
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         self.dir.set_select()
@@ -105,12 +106,12 @@ class BackupAction(actions.BaseAction):
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         # do regress the target directory if necessary
         ret_code |= self._operate_regress()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             # regress was necessary and failed
             return ret_code
         previous_time = self.repo.get_mirror_time(refresh=True)
@@ -120,7 +121,7 @@ class BackupAction(actions.BaseAction):
                 "the last backup is not in the past. Aborting.",
                 log.ERROR,
             )
-            return ret_code | Globals.RET_CODE_ERR
+            return ret_code | consts.RET_CODE_ERR
 
         ret_code |= self._operate_backup(previous_time)
 
@@ -151,7 +152,7 @@ class BackupAction(actions.BaseAction):
 
         self.repo.close_statistics(time.time())
 
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def _warn_if_infinite_recursion(self, rpin, rpout):
         """
@@ -159,11 +160,11 @@ class BackupAction(actions.BaseAction):
         """
         # Just a few heuristics, we don't have to get every case
         if rpout.conn is not rpin.conn:
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
         if len(rpout.path) <= len(rpin.path) + 1:
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
         if rpout.path[: len(rpin.path) + 1] != rpin.path + b"/":
-            return Globals.RET_CODE_OK
+            return consts.RET_CODE_OK
 
         log.Log(
             "The target directory '{td}' may be contained in the "
@@ -173,7 +174,7 @@ class BackupAction(actions.BaseAction):
             "(which you might already have done).".format(td=rpout, sd=rpin),
             log.WARNING,
         )
-        return Globals.RET_CODE_WARN
+        return consts.RET_CODE_WARN
 
 
 def get_plugin_class():

@@ -20,7 +20,8 @@
 
 import os
 import re
-from rdiff_backup import Globals, log, Rdiff, robust, rpath, statistics, Time
+from rdiff_backup import log, Rdiff, robust, rpath, statistics, Time
+from rdiffbackup.singletons import consts, specifics
 
 compression = True
 not_compressed_regexp = None
@@ -31,7 +32,7 @@ def init(compression_value=True, not_compressed_regexp_str=None):
     compression = compression_value
     if not_compressed_regexp_str is None:
         not_compressed_regexp = None
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
     # else we need to compile the regexp
     not_compressed_regexp_bytes = os.fsencode(not_compressed_regexp_str)
     try:
@@ -42,8 +43,8 @@ def init(compression_value=True, not_compressed_regexp_str=None):
             "compile".format(ex=not_compressed_regexp_str),
             log.ERROR,
         )
-        return Globals.RET_CODE_ERR
-    return Globals.RET_CODE_OK
+        return consts.RET_CODE_ERR
+    return consts.RET_CODE_OK
 
 
 def make_increment(new, mirror, incpref, inc_time=None):
@@ -153,7 +154,7 @@ def _make_diff_increment(new, mirror, incpref, inc_time):
 
     old_new_perms, old_mirror_perms = (None, None)
 
-    if Globals.process_uid != 0:
+    if specifics.process_uid != 0:
         # Check for unreadable files
         if not new.readable():
             old_new_perms = new.getperms()

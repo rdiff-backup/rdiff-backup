@@ -25,7 +25,7 @@ for documenting an issue.
 import yaml
 
 from rdiffbackup import actions
-from rdiff_backup import Globals
+from rdiffbackup.singletons import consts
 
 
 class InfoAction(actions.BaseAction):
@@ -40,11 +40,11 @@ class InfoAction(actions.BaseAction):
 
     def setup(self):
         # there is nothing to setup for the info action
-        return Globals.RET_CODE_OK
+        return consts.RET_CODE_OK
 
     def run(self):
         ret_code = super().run()
-        if ret_code & Globals.RET_CODE_ERR:
+        if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
         runtime_info = self.get_runtime_info(parsed=self.values)

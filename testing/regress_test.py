@@ -9,20 +9,21 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath, Time
+from rdiff_backup import rpath, Time
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class RegressTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(Globals.local_connection, out_dir)
+    out_rp = rpath.RPath(specifics.local_connection, out_dir)
     out_rbdir_rp = out_rp.append_path("rdiff-backup-data")
     incrp = []
     for i in range(4):
         incrp.append(
             rpath.RPath(
-                Globals.local_connection,
+                specifics.local_connection,
                 os.path.join(comtst.old_test_dir, b"increment%d" % (i + 1)),
             )
         )
@@ -53,8 +54,6 @@ class RegressTest(unittest.TestCase):
 
         comtst.rdiff_backup(1, 1, self.incrp[3].path, self.out_dir, current_time=40000)
         self.assertTrue(comtst.compare_recursive(self.incrp[3], self.out_rp))
-
-        Globals.rbdir = self.out_rbdir_rp
 
         regress_function(30000)
         self.assertTrue(
@@ -95,7 +94,7 @@ class RegressTest(unittest.TestCase):
             self.out_dir,
             None,
             extra_options=b"regress",
-            expected_ret_code=Globals.RET_CODE_WARN,
+            expected_ret_code=consts.RET_CODE_WARN,
         )
 
     def test_local(self):
@@ -121,7 +120,7 @@ class RegressTest(unittest.TestCase):
 
         cmd = (b"rdiff-backup", b"regress", self.out_dir)
         print("Executing:", cmd)
-        self.assertEqual(comtst.os_system(cmd), Globals.RET_CODE_WARN)
+        self.assertEqual(comtst.os_system(cmd), consts.RET_CODE_WARN)
 
     def make_unreadable(self):
         """Make unreadable input directory
@@ -132,7 +131,7 @@ class RegressTest(unittest.TestCase):
 
         """
         rp = rpath.RPath(
-            Globals.local_connection, os.path.join(TEST_BASE_DIR, b"regress")
+            specifics.local_connection, os.path.join(TEST_BASE_DIR, b"regress")
         )
         if rp.lstat():
             comtst.remove_dir(rp.path)

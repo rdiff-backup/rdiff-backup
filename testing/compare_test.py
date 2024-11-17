@@ -7,7 +7,8 @@ import unittest
 
 import commontest as comtst
 
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
+from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -39,7 +40,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertNotEqual(
             comtst.rdiff_backup_action(
@@ -51,7 +52,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
 
         compare_options += ("--at", "10000")
@@ -66,7 +67,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertNotEqual(
             comtst.rdiff_backup_action(
@@ -78,7 +79,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
 
     def testBasicLocal(self):
@@ -123,7 +124,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertNotEqual(
             comtst.rdiff_backup_action(
@@ -135,7 +136,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
 
         compare_options += ("--at", "10000")
@@ -150,7 +151,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
         self.assertNotEqual(
             comtst.rdiff_backup_action(
@@ -162,7 +163,7 @@ class CompareTest(unittest.TestCase):
                 b"compare",
                 compare_options,
             ),
-            Globals.RET_CODE_OK,
+            consts.RET_CODE_OK,
         )
 
     def testSelLocal(self):
@@ -222,7 +223,7 @@ class CompareTest(unittest.TestCase):
                 "Something is wrong with the test setup.".format(diffs=templist),
             )
             diff_rp = rpath.RPath(
-                Globals.local_connection, os.path.join(incs_dir, templist[0])
+                specifics.local_connection, os.path.join(incs_dir, templist[0])
             )
             change_file(diff_rp)
 
@@ -247,7 +248,7 @@ class CompareTest(unittest.TestCase):
         )
         change_file(
             rpath.RPath(
-                Globals.local_connection, os.path.join(self.outdir, b"stph_icons.h")
+                specifics.local_connection, os.path.join(self.outdir, b"stph_icons.h")
             )
         )
         self.assertTrue(

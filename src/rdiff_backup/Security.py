@@ -20,7 +20,8 @@
 
 import os
 import tempfile
-from rdiff_backup import Globals, rpath
+from rdiff_backup import rpath
+from rdiffbackup.singletons import specifics
 
 
 class Violation(Exception):
@@ -82,7 +83,8 @@ _file_requests = {
 
 # functions to set global values
 _globals_requests = {
-    "Globals.set_local",
+    "generics.set_local",
+    "specifics.set",
 }
 
 
@@ -101,7 +103,7 @@ def initialize(
     )
     _security_level = security_level
     if restrict_path:
-        reset_restrict_path(rpath.RPath(Globals.local_connection, restrict_path))
+        reset_restrict_path(rpath.RPath(specifics.local_connection, restrict_path))
     _allowed_requests = _set_allowed_requests(security_class, security_level)
 
 
@@ -114,7 +116,7 @@ def reset_restrict_path(rp):
     It is assumed that the new path is a proper path, else function will fail.
     """
     assert (
-        rp.conn is Globals.local_connection
+        rp.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rp.conn)
     global _restrict_path, _restrict_path_list
     _restrict_path = rp.normalize().path
@@ -212,7 +214,7 @@ def _set_allowed_requests(sec_class, sec_level):
         "RedirectedRun",  # connection.RedirectedRun
         "VirtualFile.readfromid",  # connection.VirtualFile.readfromid
         "VirtualFile.closebyid",  # connection.VirtualFile.closebyid
-        "Globals.get",
+        "specifics.get",
         "log.Log.open_logfile_allconn",
         "log.Log.close_logfile_allconn",
         "log.Log.log_to_file",
@@ -343,7 +345,7 @@ def _set_allowed_requests(sec_class, sec_level):
             [
                 "SetConnections.init_connection_remote",
                 # API >= 201
-                "Globals.set_api_version",
+                "specifics.set_api_version",
                 # API >= 300
                 "log.Log.set_verbosity",  # FIXME can we pipe this through?
             ]
@@ -362,12 +364,12 @@ def _vet_filename(request, arglist):
             "argument %d doesn't look like a filename" % i, request, arglist
         )
 
-    _vet_rpath(rpath.RPath(Globals.local_connection, filename), request, arglist)
+    _vet_rpath(rpath.RPath(specifics.local_connection, filename), request, arglist)
 
 
 def _vet_rpath(rp, request, arglist):
     """Internal function to validate that a specific path isn't restricted"""
-    if _restrict_path and rp.conn is Globals.local_connection:
+    if _restrict_path and rp.conn is specifics.local_connection:
         norm_path = rp.normalize().path
         components = norm_path.split(b"/")
         # we can't properly assess paths with parent directory, so we reject
