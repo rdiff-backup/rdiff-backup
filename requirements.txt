@@ -42,4 +42,5 @@ flake8
 black
 bandit
 coverage
+mypy
 rpdb

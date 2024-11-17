@@ -86,9 +86,7 @@ class RORPath:
     def _global_ignored_keys():
         """Returns a set of keys to be ignored during comparaison,
         based on global settings."""
-        global_ignored_keys = set(())
-        if not generics.preserve_atime:
-            global_ignored_keys.add("atime")
+        global_ignored_keys = {"atime"}
         if not generics.eas_write:
             global_ignored_keys.add("ea")
         if not generics.acls_write:
@@ -611,18 +609,14 @@ class RORPath:
             return None
 
         for key in list(self.data.keys()):  # compare dicts key by key
-            if key in ("uid", "gid", "uname", "gname") and (
+            if key in {"uid", "gid", "uname", "gname"} and (
                 self.issym() or not compare_ownership
             ):
                 # Don't compare gid/uid for symlinks, or if told not to
                 pass
+            elif key in {"atime", "ctime", "devloc", "nlink"}:
+                pass
             elif key == "type" and not compare_type:
-                pass
-            elif key == "atime" and not generics.preserve_atime:
-                pass
-            elif key == "ctime":
-                pass
-            elif key == "devloc" or key == "nlink":
                 pass
             elif key == "size" and (not self.isreg() or not compare_size):
                 pass
