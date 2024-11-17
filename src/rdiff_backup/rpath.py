@@ -86,9 +86,7 @@ class RORPath:
     def _global_ignored_keys():
         """Returns a set of keys to be ignored during comparaison,
         based on global settings."""
-        global_ignored_keys = set(())
-        if not generics.preserve_atime:
-            global_ignored_keys.add("atime")
+        global_ignored_keys = {"atime"}
         if not generics.eas_write:
             global_ignored_keys.add("ea")
         if not generics.acls_write:
@@ -611,18 +609,14 @@ class RORPath:
             return None
 
         for key in list(self.data.keys()):  # compare dicts key by key
-            if key in ("uid", "gid", "uname", "gname") and (
+            if key in {"uid", "gid", "uname", "gname"} and (
                 self.issym() or not compare_ownership
             ):
                 # Don't compare gid/uid for symlinks, or if told not to
                 pass
+            elif key in {"atime", "ctime", "devloc", "nlink"}:
+                pass
             elif key == "type" and not compare_type:
-                pass
-            elif key == "atime" and not generics.preserve_atime:
-                pass
-            elif key == "ctime":
-                pass
-            elif key == "devloc" or key == "nlink":
                 pass
             elif key == "size" and (not self.isreg() or not compare_size):
                 pass
@@ -1561,15 +1555,6 @@ def copyfileobj(inputfp, outputfp):
         outputfp.write(b"\x00")
 
 
-def move(rpin, rpout):
-    """Move rpin to rpout, renaming if possible"""
-    try:
-        rename(rpin, rpout)
-    except os.error:
-        copy(rpin, rpout)
-        rpin.delete()
-
-
 def copy(rpin, rpout, compress=0):
     """Copy RPath or RORPath rpin to rpout.  Works for symlinks, dirs, etc.
 
@@ -1792,11 +1777,14 @@ def rename(rp_source, rp_dest):
             except OSError as error:
                 # XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
                 # pathname too long on Windows
-                if error.errno == errno.EXDEV and rp_source.issym():
-                    # On Linux, ZFS and quota project raise errno.EXDEV
-                    # Invalid cross-device link
-                    rp_source.conn.os.symlink(rp_source.readlink(), rp_dest.path)
-                    rp_source.conn.os.unlink(rp_source.path)
+                if error.errno == errno.EXDEV and (
+                    rp_source.issym() or rp_source.isfifo()
+                ):
+                    # On Linux, FS may not implement rename for symlink or fifo. e.g.: ZFS
+                    # Fallback to copy
+                    copy(rp_source, rp_dest)
+                    rp_source.delete()
+                    return
                 elif error.errno == errno.EEXIST:
                     # On Windows, files can't be renamed on top of an existing file
                     rp_source.conn.os.chmod(rp_dest.path, 0o700)

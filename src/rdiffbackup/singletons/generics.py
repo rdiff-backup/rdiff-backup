@@ -22,13 +22,16 @@ They are generic to all instances of rdiff-backup involved.
 """
 
 import os
+import typing
+
 from rdiffbackup.singletons import specifics
 
-# If true, when copying attributes, also change target's uid/gid
-change_ownership = None
+if typing.TYPE_CHECKING:  # for type checking only
+    import re
+    from rdiff_backup import connection
 
-# If true, try to reset the atimes of the source partition.
-preserve_atime = None
+# If true, when copying attributes, also change target's uid/gid
+change_ownership: bool = False
 
 # The following three attributes represent whether extended attributes
 # are supported.
@@ -38,72 +41,72 @@ preserve_atime = None
 # Finally, eas_conn is relative to the current connection, and should be true iff
 # that particular connection supports extended attributes.
 # This last variable is in the specifics.
-eas_active = None
-eas_write = None
+eas_active: typing.Optional[bool] = None
+eas_write: typing.Optional[bool] = None
 
 # The following settings are like the extended attribute settings, but
 # apply to access control lists instead.
-acls_active = None
-acls_write = None
+acls_active: typing.Optional[bool] = None
+acls_write: typing.Optional[bool] = None
 
 # Like the above, but applies to support of Windows access control lists.
-win_acls_active = None
-win_acls_write = None
+win_acls_active: typing.Optional[bool] = None
+win_acls_write: typing.Optional[bool] = None
 
 # Like above two setting groups, but applies to support of Mac OS X
 # style resource forks.
-resource_forks_active = None
-resource_forks_write = None
+resource_forks_active: typing.Optional[bool] = None
+resource_forks_write: typing.Optional[bool] = None
 
 # Like the above, but applies to MacOS Carbon Finder creator/type info.
 # As of 1.0.2 this has defaulted to off because of bugs
-carbonfile_active = None
-carbonfile_write = None
+carbonfile_active: typing.Optional[bool] = None
+carbonfile_write: typing.Optional[bool] = None
 
 # Connection of the backup writer
-backup_writer = None  # compat201
+backup_writer: typing.Optional["connection.Connection"] = None  # compat201
 
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be set if certain characters in filenames on the source side
 # should be escaped (see locations.map.filenames for more info).
-chars_to_quote = None
-chars_to_quote_regexp = None
-chars_to_quote_unregexp = None
+chars_to_quote: typing.Optional[bytes] = None
+chars_to_quote_regexp: typing.Optional["re.Pattern[bytes]"] = None
+chars_to_quote_unregexp: typing.Optional["re.Pattern[bytes]"] = None
 
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.
 # The default is based on the operating system type (nt or posix).
-escape_dos_devices = os.name == "nt"
-escape_trailing_spaces = os.name == "nt"
+escape_dos_devices: bool = os.name == "nt"
+escape_trailing_spaces: bool = os.name == "nt"
 
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
 # don't need to be escaped on Windows.
-use_compatible_timestamps = False
+use_compatible_timestamps: bool = False
 
 # Normally there shouldn't be any case of duplicate timestamp but it seems
 # we had the issue at some point in time, hence we need the flag to allow
 # users to clean up their repository. The default is to abort on such cases.
-allow_duplicate_timestamps = False
+allow_duplicate_timestamps: bool = False
 
 # If true, then hardlinks will be preserved to mirror and recorded
 # in the increments directory.  There is also a difference here
 # between None and 0.  When restoring, None or 1 means to preserve
 # hardlinks iff can find a hardlink dictionary.  0 means ignore
 # hardlink information regardless.
-preserve_hardlinks = True
+preserve_hardlinks: bool = True
 
 # If this is false, then rdiff-backup will not compress any
 # increments.  Default is to compress based on regexp below.
-compression = True
+compression: bool = True
 
 # If true, filelists and directory statistics will be split on
 # nulls instead of newlines.
-null_separator = False
+null_separator: bool = False
 
 # If set, a file will be marked as changed if its inode changes.  See
 # the man page under --no-compare-inode for more information.
-compare_inode = True
+compare_inode: bool = True
 
 # If set, directories can be fsync'd just like normal files, to
 # guarantee that any changes have been comitted to disk.
@@ -111,34 +114,34 @@ compare_inode = True
 # performance reasons, so that the need for fsync can be checked on both sides,
 # without the need to open a connection.
 # That's OK because writing happens anyway only on one side.
-fsync_directories = None
+fsync_directories: typing.Optional[bool] = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.
-never_drop_acls = False
+never_drop_acls: bool = False
 
 # Apply this mask to permissions before chmoding.  (Set to 0777 to
 # prevent highbit permissions on systems which don't support them.)
-permission_mask = 0o7777
+permission_mask: typing.Optional[int] = 0o7777
 
 # If true, symlinks permissions are affected by the process umask, and
 # we should change the umask when creating them in order to preserve
 # the original permissions
-symlink_perms = None
+symlink_perms: typing.Optional[bool] = None
 
 # Fsync everything by default. Use --no-fsync only if you really know what you are
 # doing. Not having the data written to disk may render your backup unusable in case
 # of FS failure. Using --no-fsync disables only fsync of files during backup and
 # sync() system call upon backup finish and pre-regress.
-do_fsync = True
+do_fsync: bool = True
 
 # This is the current time, either as integer (epoch) or formatted string.
 # It is set once at the beginning of the program and defines the backup's
 # date and time
-current_time = None
-current_time_string = None
+current_time: typing.Optional[int] = None
+current_time_string: typing.Optional[str] = None
 
 
-def get(setting_name):
+def get(setting_name: str) -> typing.Any:
     """Return the value of a setting in this module"""
     return globals()[setting_name]
 
@@ -146,10 +149,10 @@ def get(setting_name):
 # This list is used by the set function below.  When a new
 # connection is created with init_connection, the variables
 # listed here will be dispatched to the connection's generics.
-changed_settings = []
+changed_settings: list[str] = []
 
 
-def set(setting_name, value):
+def set(setting_name: str, value: typing.Any) -> None:
     """
     Set the value of something in this module on this connection and,
     potentially delayed, on all others.
@@ -159,21 +162,21 @@ def set(setting_name, value):
     # if there are no connections yet, only set locally
     if specifics.connection_dict:
         for conn in specifics.connection_dict.values():
-            conn.generics.set_local(setting_name, value)
+            conn.generics.set_local(setting_name, value)  # type: ignore
     else:
         globals()[setting_name] = value
 
 
-def dispatch_settings(conn):
+def dispatch_settings(conn: "connection.Connection") -> None:
     """
     A function to dispatch all generic settings remembered but not yet dispatched
     to the (assumed new) given connection.
     """
     for setting_name in changed_settings:
-        conn.generics.set_local(setting_name, get(setting_name))
+        conn.generics.set_local(setting_name, get(setting_name))  # type: ignore
 
 
 # @API(set_local, 200)
-def set_local(setting_name, value):
+def set_local(setting_name: str, value: typing.Any) -> None:
     """Like set above, but only set current connection"""
     globals()[setting_name] = value
