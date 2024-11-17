@@ -64,7 +64,7 @@ class ProcessFuncs(unittest.TestCase):
         # TODO check if following files really need to be deleted:
         # testfiles/vft_out timbar.pyc testfiles/vft2_out
 
-    def exec_rb(self, time, wait=None, *args):
+    def exec_rb(self, time, wait=False, *args):
         """Run rdiff-backup return pid.  Wait until done if wait is true"""
         arglist = [sys.executable, comtst.RBBin]
         if time:
@@ -76,9 +76,9 @@ class ProcessFuncs(unittest.TestCase):
             print("Waiting for ", arglist)
             return subprocess.call(arglist)
         else:
-            pid = subprocess.Popen(arglist).pid
-            print("Running ", arglist, " PID: ", pid)
-            return pid
+            subp = subprocess.Popen(arglist)
+            print("Running ", arglist, " PID: ", subp.pid)
+            return subp
 
     def exec_and_kill(self, min_max_pair, backup_time, arg1, arg2):
         """
@@ -88,31 +88,38 @@ class ProcessFuncs(unittest.TestCase):
         should not terminate before maxtime.
         """
         mintime, maxtime = min_max_pair
-        pid = self.exec_rb(backup_time, None, "backup", arg1, arg2)
+        subp = self.exec_rb(backup_time, False, "backup", arg1, arg2)
         time.sleep(random.uniform(mintime, maxtime))
         # kill doesn't fail on finished but still defunct (not waited) processes
-        os.kill(pid, self.killsignal)
+        os.kill(subp.pid, signal.SIGTERM)
         # we can waitpid only once for a finished process, hence we need to keep state
         exitpid, exitstatus = (0, 0)
-        while (exitpid, exitstatus) == (0, 0):  # until process terminates...
-            exitpid, exitstatus = os.waitpid(pid, os.WNOHANG)
-            time.sleep(0.1)
-        if exitpid == pid and exitstatus == 0:
+        max_wait_time = 2  # in seconds
+        wait_step = 0.1  # in seconds
+        while (exitpid, exitstatus) == (0, 0) and max_wait_time >= 0:
+            exitpid, exitstatus = os.waitpid(subp.pid, os.WNOHANG)
+            time.sleep(wait_step)
+            max_wait_time -= wait_step
+        if exitpid == subp.pid and exitstatus == 0:
             # process already terminated before we killed it (max time too big?)
-            print("---------------------- missed killing PID %d" % (pid))
+            print("---------------------- missed killing PID %d" % (exitpid))
             return -1
-        else:
+        elif max_wait_time >= 0:
             print("---------------------- killed PID/RC %d/%d" % (exitpid, exitstatus))
             # it should be like that but robust handling changes exit code:
-            # assert exitstatus & (1<<8-1) == self.killsignal, (
+            # assert exitstatus & (1<<8-1) == signal.SIGTERM, (
             self.assertNotEqual(
                 exitstatus,
                 0,
                 "Pid {pid}/{exit} killed by signal {sig}, but exited "
                 "with return code {rc} which should be non-zero.".format(
-                    pid=pid, exit=exitpid, rc=exitstatus, sig=self.killsignal
+                    pid=subp.pid, exit=exitpid, rc=exitstatus, sig=signal.SIGTERM
                 ),
             )
+        else:
+            print("---------------------- PID %d took too long to die" % (subp.pid,))
+        if subp and subp.returncode is None:  # just to be sure nothing is left
+            subp.kill()
 
     def create_killtest_dirs(self):
         """Create testfiles/killtest? directories
@@ -142,8 +149,6 @@ class ProcessFuncs(unittest.TestCase):
 class KillTest(ProcessFuncs):
     """Test rdiff-backup by killing it, recovering, and then comparing"""
 
-    killsignal = signal.SIGTERM
-
     # The following are lower and upper bounds on the amount of time
     # rdiff-backup is expected to run.  They are used to determine how
     # long to wait before killing the rdiff-backup process
@@ -169,7 +174,7 @@ class KillTest(ProcessFuncs):
 
         def run_once(current_time, input_rp, index):
             start_time = time.time()
-            self.exec_rb(current_time, 1, "backup", input_rp.path, Local.rpout.path)
+            self.exec_rb(current_time, True, "backup", input_rp.path, Local.rpout.path)
             time_list[index].append(time.time() - start_time)
 
         for i in range(iterations):
@@ -239,7 +244,7 @@ class KillTest(ProcessFuncs):
         # Back up killtest3 first because it is big and the first case
         # is kind of special (there's no incrementing, so different
         # code)
-        self.exec_rb(10000, 1, "backup", Local.ktrp[2].path, Local.rpout.path)
+        self.exec_rb(10000, True, "backup", Local.ktrp[2].path, Local.rpout.path)
         self.assertTrue(comtst.compare_recursive(Local.ktrp[2], Local.rpout))
 
         def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
@@ -250,7 +255,7 @@ class KillTest(ProcessFuncs):
             )
             result = self.mark_incomplete(curtime, Local.rpout)
             self.assertEqual(
-                self.exec_rb(None, 1, "regress", Local.rpout.path),
+                self.exec_rb(None, True, "regress", Local.rpout.path),
                 consts.RET_CODE_WARN,
             )
             self.assertTrue(
@@ -265,7 +270,7 @@ class KillTest(ProcessFuncs):
                 killed_too_late[0] += 1
             elif result == -1:
                 killed_too_soon[0] += 1
-        self.exec_rb(20000, 1, "backup", Local.ktrp[0].path, Local.rpout.path)
+        self.exec_rb(20000, True, "backup", Local.ktrp[0].path, Local.rpout.path)
 
         # Now keep regressing from ktrp[1], only staying there at the end
         for i in range(count):
@@ -274,7 +279,7 @@ class KillTest(ProcessFuncs):
                 killed_too_late[1] += 1
             elif result == -1:
                 killed_too_soon[1] += 1
-        self.exec_rb(30000, 1, "backup", Local.ktrp[1].path, Local.rpout.path)
+        self.exec_rb(30000, True, "backup", Local.ktrp[1].path, Local.rpout.path)
 
         # Now keep regressing from ktrp[2], only staying there at the end
         for i in range(count):
@@ -283,7 +288,7 @@ class KillTest(ProcessFuncs):
                 killed_too_late[2] += 1
             elif result == -1:
                 killed_too_soon[2] += 1
-        self.exec_rb(40000, 1, "backup", Local.ktrp[2].path, Local.rpout.path)
+        self.exec_rb(40000, True, "backup", Local.ktrp[2].path, Local.rpout.path)
 
         # Now keep regressing from ktrp[3], only staying there at the end
         for i in range(count):

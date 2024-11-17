@@ -21,13 +21,20 @@ A variety of variables which can have different values across connections.
 They are specific to each instance of rdiff-backup involved.
 """
 
+import builtins
 import os
+import typing
 import yaml
 from importlib import metadata
+
 from rdiff_backup import log
+
+if typing.TYPE_CHECKING:  # for type checking only
+    from rdiff_backup import connection
 
 # The current version of rdiff-backup
 # Get it from package info or fall back to DEV version.
+version: str
 try:
     version = metadata.version("rdiff-backup")
 except metadata.PackageNotFoundError:
@@ -37,19 +44,21 @@ except metadata.PackageNotFoundError:
 # An actual value of 0 means that the default version is to be used or whatever
 # makes the connection work within the min-max range, depending on the
 # API versions supported by the remote connection.
-api_version = {"default": 201, "min": 201, "max": 201, "actual": 0}
+api_version: dict[str, int] = {"default": 201, "min": 201, "max": 201, "actual": 0}
 # Allow overwrite from the environment variable RDIFF_BACKUP_API_VERSION
 # we don't do a lot of error handling because it's more of a dev option
 api_version.update(yaml.safe_load(os.environ.get("RDIFF_BACKUP_API_VERSION", "{}")))
 
 # True if script is running as a server
-server = False
+server: bool = False
 
 # uid and gid of the owner of the rdiff-backup process.  This can
 # vary depending on the connection.
+process_uid: int
+process_groups: builtins.set[int]
 try:
     process_uid = os.getuid()
-    process_groups = set(os.getgroups())
+    process_groups = builtins.set(os.getgroups())
 except AttributeError:
     process_uid = 0
     process_groups = {0}
@@ -60,32 +69,32 @@ except AttributeError:
 # should also be written to the destination side.  Finally, eas_conn
 # is relative to the current connection, and should be true iff that
 # particular connection supports extended attributes.
-eas_conn = None
-acls_conn = None
-win_acls_conn = None
-resource_forks_conn = None
-carbonfile_conn = None
+eas_conn: typing.Optional[bool] = None
+acls_conn: typing.Optional[bool] = None
+win_acls_conn: typing.Optional[bool] = None
+resource_forks_conn: typing.Optional[bool] = None
+carbonfile_conn: typing.Optional[bool] = None
 
 # This will be set as soon as the LocalConnection class loads
-local_connection = None
+local_connection: typing.Optional["connection.LocalConnection"] = None
 
 # All connections should be added to the following list, so
 # further global changes can be propagated to the remote systems.
 # The first element should be specifics.local_connection.  For a
 # server, the second is the connection to the client.
-connections = []
+connections: list["connection.Connection"] = []
 
 # Dictionary pairing connection numbers with connections.  Set in
 # SetConnections for all connections.
-connection_dict = {}
+connection_dict: dict[int, "connection.Connection"] = {}
 
 # True if the script is the end that writes to the increment and
 # mirror directories.  True for purely local sessions.
-is_backup_writer = None  # compat201
+is_backup_writer: typing.Optional[bool] = None  # compat201
 
 
 # @API(get, 300)
-def get(setting_name):
+def get(setting_name: str) -> typing.Any:
     """
     Return the value of a specific setting
     """
@@ -93,7 +102,7 @@ def get(setting_name):
 
 
 # @API(set, 300)
-def set(setting_name, value):
+def set(setting_name: str, value: typing.Any) -> None:
     """
     Set the value of a specific setting
     """
@@ -101,11 +110,11 @@ def set(setting_name, value):
 
 
 # @API(set_api_version, 300)
-def set_api_version(val):
+def set_api_version(val: typing.Union[int, str]) -> None:
     """sets the actual API version after having verified that the new
     value is an integer between mix and max values."""
     try:
-        intval = int(val)
+        intval: int = int(val)
     except ValueError:
         log.Log.FatalError(
             "API version must be set to an integer, "
@@ -120,7 +129,7 @@ def set_api_version(val):
     api_version["actual"] = intval
 
 
-def get_api_version():
+def get_api_version() -> int:
     """Return the actual API version, either set explicitly or the default
     one"""
     return api_version["actual"] or api_version["default"]

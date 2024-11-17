@@ -61,7 +61,7 @@ class LoggerError(Exception):
 class Logger:
     """All functions which deal with logging"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.log_file_open = None
         self.log_file_local = None
         # if something wrong happens during initialization, we want to know
