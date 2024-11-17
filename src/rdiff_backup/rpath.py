@@ -1555,15 +1555,6 @@ def copyfileobj(inputfp, outputfp):
         outputfp.write(b"\x00")
 
 
-def move(rpin, rpout):
-    """Move rpin to rpout, renaming if possible"""
-    try:
-        rename(rpin, rpout)
-    except os.error:
-        copy(rpin, rpout)
-        rpin.delete()
-
-
 def copy(rpin, rpout, compress=0):
     """Copy RPath or RORPath rpin to rpout.  Works for symlinks, dirs, etc.
 
@@ -1786,11 +1777,14 @@ def rename(rp_source, rp_dest):
             except OSError as error:
                 # XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
                 # pathname too long on Windows
-                if error.errno == errno.EXDEV and rp_source.issym():
-                    # On Linux, ZFS and quota project raise errno.EXDEV
-                    # Invalid cross-device link
-                    rp_source.conn.os.symlink(rp_source.readlink(), rp_dest.path)
-                    rp_source.conn.os.unlink(rp_source.path)
+                if error.errno == errno.EXDEV and (
+                    rp_source.issym() or rp_source.isfifo()
+                ):
+                    # On Linux, FS may not implement rename for symlink or fifo. e.g.: ZFS
+                    # Fallback to copy
+                    copy(rp_source, rp_dest)
+                    rp_source.delete()
+                    return
                 elif error.errno == errno.EEXIST:
                     # On Windows, files can't be renamed on top of an existing file
                     rp_source.conn.os.chmod(rp_dest.path, 0o700)

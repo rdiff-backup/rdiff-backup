@@ -7,7 +7,9 @@ import pickle
 import sys
 import time
 import unittest
+import errno
 
+import unittest.mock
 import commontest as comtst
 import fileset
 
@@ -483,6 +485,28 @@ class FileCopying(RPathTest):
             self.assertTrue(self.dest.lstat())
             self.assertTrue(rpath.cmp(rp, self.dest))
             self.assertTrue(rpath.cmp(self.dest, rp))
+            self.dest.delete()
+
+    @unittest.mock.patch("os.rename", side_effect=OSError(errno.EXDEV, "strerror"))
+    @unittest.skipIf(os.name == "nt", "Symlinks And Fifo not supported under Windows")
+    def testRenameCrossDeviceLink(self, mock_rename):
+        # Create fifo
+        fifo = rpath.RPath(self.lc, self.mainprefix, ("fifo",))
+        if fifo.lstat():
+            fifo.delete()
+        os.mkfifo(fifo.path)
+        fifo.setdata()
+        # Create symlink
+        sl = rpath.RPath(self.lc, self.mainprefix, ("symbolic_link",))
+        if sl.lstat():
+            sl.delete()
+        os.symlink(self.rf.path, sl.path)
+        sl.setdata()
+        # Test rename with EXDEV error.
+        for rp in [fifo, sl]:
+            prev_data = rp.lstat()
+            rpath.rename(rp, self.dest)
+            self.assertEqual(prev_data, self.dest.lstat())
             self.dest.delete()
 
 
