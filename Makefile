@@ -2,7 +2,7 @@
 
 # Currently all steps are run isolated inside a Docker image, but this could
 # be extended to have more options.
-RUN_COMMAND ?= docker run --rm -i -v ${PWD}/..:/build/ -w /build/$(shell basename `pwd`) rdiff-backup-dev:debian-sid
+RUN_COMMAND ?= podman run --rm -i -v ${PWD}/..:/build/ -w /build/$(shell basename `pwd`) rdiff-backup-dev:debian-sid
 
 # Define SUDO=sudo if you don't want to run the whole thing as root
 # we set SUDO="sudo -E env PATH=$PATH" if we want to keep the whole environment
@@ -13,7 +13,7 @@ all: clean container test build
 test: test-static test-runtime
 
 check:
-	@command -v rdiff >/dev/null && echo "rdiff is installed" || { echo "Error: rdiff is not installed"; exit 1; }
+	${RUN_COMMAND} bash -c 'command -v rdiff >/dev/null && echo "rdiff is installed" || { echo "Error: rdiff is not installed"; exit 1; }'
 
 test-static:
 	${RUN_COMMAND} tox -c tox.ini -e check-static
@@ -49,7 +49,7 @@ dist_deb:
 
 container:
 	# Build development image
-	docker build --pull --tag rdiff-backup-dev:debian-sid .
+	podman build --tag rdiff-backup-dev:debian-sid .
 
 clean:
 	${RUN_COMMAND} rm -rf .tox/ MANIFEST build/ testing/__pycache__/ dist/

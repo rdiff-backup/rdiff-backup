@@ -19,6 +19,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     apt-get install -y --no-install-recommends \
     librsync-dev \
     python3-all-dev \
+    python3-build \
     python3-pylibacl \
     python3-yaml \
     python3-pyxattr \
