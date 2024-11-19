@@ -24,6 +24,7 @@ import subprocess
 import sys
 import time
 import traceback
+import errno
 
 from rdiff_backup import (
     iterfile,
@@ -486,7 +487,12 @@ class PipeConnection(LowLevelPipeConnection):
             self._put(arg, req_num)
         result = self._get_response(req_num)
         self.unused_request_numbers.add(req_num)
-        if isinstance(result, Exception):
+        if isinstance(result, OSError) and getattr(result, "errno_str", False):
+            # OSError code are specific to each platform.
+            # Let convert the errno to current platform.
+            result.errno = getattr(errno, result.errno_str, -result.errno)
+            raise result
+        elif isinstance(result, Exception):
             raise result
         elif isinstance(result, SystemExit):
             raise result
@@ -576,19 +582,24 @@ class PipeConnection(LowLevelPipeConnection):
 
     def _extract_exception(self):
         """Return active exception"""
-        if robust.is_routine_fatal(sys.exc_info()[1]):
+        result = sys.exc_info()[1]
+        # OSError code are specific to the platform. Send back errno as string.
+        if isinstance(result, OSError) and result.errno:
+            result.errno_str = errno.errorcode.get(result.errno, "EUNKWN")
+            result.errno_orig = result.errno
+        if robust.is_routine_fatal(result):
             raise  # Fatal error--No logging necessary, but connection down
         if log.Log.file_verbosity >= log.INFO or log.Log.term_verbosity >= log.INFO:
             log.Log(
                 "Sending back exception '{ex}' of type {ty} with "
                 "traceback {tb}".format(
-                    ex=sys.exc_info()[1],
+                    ex=result,
                     ty=sys.exc_info()[0],
                     tb="".join(traceback.format_tb(sys.exc_info()[2])),
                 ),
                 log.INFO,
             )
-        return sys.exc_info()[1]
+        return result
 
     def _get_new_req_num(self):
         """Allot a new request number and return it"""
