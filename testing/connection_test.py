@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import unittest
+import errno
 
 import commontest as comtst
 
@@ -186,7 +187,10 @@ class PipeConnectionTest(unittest.TestCase):
 
     def testExceptions(self):
         """Test exceptional results"""
-        self.assertRaises(os.error, self.conn.os.lstat, "asoeut haosetnuhaoseu tn")
+        with self.assertRaises(os.error) as ctx:
+            self.conn.os.lstat("asoeut haosetnuhaoseu tn")
+        self.assertEqual(ctx.exception.errno, errno.ENOENT)
+        self.assertEqual(ctx.exception.errno_str, "ENOENT")
         self.assertRaises(NameError, self.conn.reval, "aoetnsu aoehtnsu")
         self.assertRaises(NameError, self.conn.reval, "aoetnsu.aoehtnsu")
         self.assertEqual(self.conn.pow(2, 3), 8)
