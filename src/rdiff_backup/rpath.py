@@ -42,7 +42,7 @@ import shutil
 import stat
 import tempfile
 import time
-from rdiff_backup import Time, log, C
+from rdiff_backup import C, log, Time
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
 from rdiffbackup.singletons import consts, generics, specifics
@@ -1426,11 +1426,11 @@ class RPath(RORPath):
         return "rdiff-backup.tmp.{idx:d}".format(idx=cls._temp_file_index)
 
     def _debug_consistency(self):
-        """Raise an error if consistency of rp broken
+        """
+        Raise an error if consistency of rp broken
 
         This is useful for debugging when the cache and disk get out
         of sync and you need to find out where it happened.
-
         """
         temptype = self.data["type"]
         self.setdata()

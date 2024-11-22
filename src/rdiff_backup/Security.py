@@ -223,7 +223,6 @@ def _set_allowed_requests(sec_class, sec_level):
         # System
         # "gzip.GzipFile",  # ??? perhaps covered by VirtualFile
         # "open",  # ??? perhaps covered by VirtualFile
-        "sys.stdout.write",
         # API >=300
         "_repo_shadow.RepoShadow.init",
         "_repo_shadow.RepoShadow.check",

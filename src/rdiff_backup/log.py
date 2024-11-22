@@ -108,7 +108,11 @@ class Logger:
         tmpstr = self._format(message, self.term_verbosity, verbosity)
         # if the verbosity is below 9 and the string isn't deemed
         # pre-formatted by newlines (we ignore the last character)
-        if self.file_verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
+        if (
+            verbosity != NONE
+            and self.term_verbosity < DEBUG
+            and "\n" not in tmpstr[:-1]
+        ):
             termfp.write(
                 textwrap.fill(
                     tmpstr,
@@ -178,8 +182,10 @@ class Logger:
         try:
             logging_func(exception_string, verbosity)
         except OSError:
-            print("OS error while trying to log exception!")
-            print(exception_string)
+            sys.stderr.write(
+                "OS error while trying to log exception!\n"
+                "{ex}\n".format(ex=exception_string)
+            )
 
     # @API(Log.set_verbosity, 300)
     def set_verbosity(
@@ -278,7 +284,9 @@ class Logger:
         """Format the message, possibly adding date information"""
         if verbosity <= DEBUG:
             # pre-formatted informative messages are returned as such
-            if msg_verbosity in {NONE, INFO} and "\n" in message[:-1]:
+            if msg_verbosity == NONE or (
+                msg_verbosity == INFO and "\n" in message[:-1]
+            ):
                 return "{msg}\n".format(msg=message)
             else:
                 return "{pre:<9}{msg}\n".format(

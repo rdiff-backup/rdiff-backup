@@ -176,13 +176,14 @@ class CompareAction(actions.BaseAction):
             if parsable:
                 reason_verify_list.append({"reason": report.reason, "path": indexpath})
             else:
-                print("{rr}: {ip}".format(rr=report.reason, ip=indexpath))
+                log.Log("{rr}: {ip}".format(rr=report.reason, ip=indexpath), log.NONE)
 
         if parsable:
-            print(
+            log.Log(
                 yaml.safe_dump(
                     reason_verify_list, explicit_start=True, explicit_end=True
-                )
+                ),
+                log.NONE,
             )
         if not changed_files_found:
             log.Log("No changes found. Directory matches backup data", log.NOTE)

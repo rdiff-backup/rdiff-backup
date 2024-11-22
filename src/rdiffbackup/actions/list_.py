@@ -26,7 +26,7 @@ builtin 'list' class.
 """
 
 import yaml
-from rdiff_backup import statistics, Time
+from rdiff_backup import log, statistics, Time
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.singletons import consts
@@ -146,27 +146,35 @@ class ListAction(actions.BaseAction):
         triples = self.repo.get_increments_sizes()
 
         if self.values["parsable_output"]:
-            print(yaml.safe_dump(triples, explicit_start=True, explicit_end=True))
+            log.Log(
+                yaml.safe_dump(triples, explicit_start=True, explicit_end=True),
+                log.NONE,
+            )
         else:
             stat_obj = statistics.StatsObj()  # used for byte summary string
 
-            print("{: ^24} {: ^17} {: ^17}".format("Time", "Size", "Cumulative size"))
-            print("{:-^24} {:-^17} {:-^17}".format("", "", ""))
+            log.Log(
+                "{: ^24} {: ^17} {: ^17}".format("Time", "Size", "Cumulative size"),
+                log.NONE,
+            )
+            log.Log("{:-^24} {:-^17} {:-^17}".format("", "", ""), log.NONE)
             # print the normal increments then the mirror
             for triple in triples[:-1]:
-                print(
+                log.Log(
                     "{: <24} {: >17} {: >17}".format(
                         Time.timetopretty(triple["time"]),
                         stat_obj.get_byte_summary_string(triple["size"]),
                         stat_obj.get_byte_summary_string(triple["total_size"]),
-                    )
+                    ),
+                    log.NONE,
                 )
-            print(
+            log.Log(
                 "{: <24} {: >17} {: >17}  (current mirror)".format(
                     Time.timetopretty(triples[-1]["time"]),
                     stat_obj.get_byte_summary_string(triples[-1]["size"]),
                     stat_obj.get_byte_summary_string(triples[-1]["total_size"]),
-                )
+                ),
+                log.NONE,
             )
         return consts.RET_CODE_OK
 
@@ -176,17 +184,21 @@ class ListAction(actions.BaseAction):
         """
         incs = self.repo.get_increments()
         if self.values["parsable_output"]:
-            print(yaml.safe_dump(incs, explicit_start=True, explicit_end=True))
+            log.Log(
+                yaml.safe_dump(incs, explicit_start=True, explicit_end=True), log.NONE
+            )
         else:
-            print("Found {ni} increments:".format(ni=len(incs) - 1))
+            log.Log("Found {ni} increments:".format(ni=len(incs) - 1), log.NONE)
             for inc in incs[:-1]:
-                print(
+                log.Log(
                     "    {ib}   {ti}".format(
                         ib=inc["base"], ti=Time.timetopretty(inc["time"])
-                    )
+                    ),
+                    log.NONE,
                 )
-            print(
-                "Current mirror: {ti}".format(ti=Time.timetopretty(incs[-1]["time"]))
+            log.Log(
+                "Current mirror: {ti}".format(ti=Time.timetopretty(incs[-1]["time"])),
+                log.NONE,
             )  # time of the mirror
         return consts.RET_CODE_OK
 
@@ -194,14 +206,14 @@ class ListAction(actions.BaseAction):
         """List all the files under rp that have changed since restoretime"""
         rorp_iter = self.repo.list_files_changed_since(self.action_time)
         for rorp in rorp_iter:
-            print(str(rorp))  # this is a hack to transfer information
+            log.Log(str(rorp), log.NONE)  # this is a hack to transfer information
         return consts.RET_CODE_OK
 
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
         rorp_iter = self.repo.list_files_at_time(self.action_time)
         for rorp in rorp_iter:
-            print(str(rorp))  # this is a hack to transfer information
+            log.Log(str(rorp), log.NONE)  # this is a hack to transfer information
         return consts.RET_CODE_OK
 
 

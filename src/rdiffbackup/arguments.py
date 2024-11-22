@@ -137,6 +137,6 @@ if __name__ == "__main__":
         disc_actions,
     )
     action_object = disc_actions[values.action](values)
-    action_object.print_values()
+    action_object.debug_values()
     # in real life, the action_object would then do the action for which
     # it's been created

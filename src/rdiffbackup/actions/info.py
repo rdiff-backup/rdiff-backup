@@ -24,6 +24,7 @@ for documenting an issue.
 
 import yaml
 
+from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.singletons import consts
 
@@ -48,7 +49,10 @@ class InfoAction(actions.BaseAction):
             return ret_code
 
         runtime_info = self.get_runtime_info(parsed=self.values)
-        print(yaml.safe_dump(runtime_info, explicit_start=True, explicit_end=True))
+        log.Log(
+            yaml.safe_dump(runtime_info, explicit_start=True, explicit_end=True),
+            log.NONE,
+        )
         return ret_code
 
 
