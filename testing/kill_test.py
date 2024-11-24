@@ -119,6 +119,11 @@ class ProcessFuncs(unittest.TestCase):
         else:
             print("---------------------- PID %d took too long to die" % (subp.pid,))
         if subp and subp.returncode is None:  # just to be sure nothing is left
+            print("========== terminating PID %d" % (subp.pid,))
+            subp.terminate()
+            time.sleep(wait_step)
+        if subp and subp.returncode is None:  # just to be sure nothing is left
+            print("========== killing PID %d" % (subp.pid,))
             subp.kill()
 
     def create_killtest_dirs(self):
