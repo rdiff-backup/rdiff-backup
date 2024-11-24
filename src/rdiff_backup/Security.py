@@ -347,6 +347,7 @@ def _set_allowed_requests(sec_class, sec_level):
                 "specifics.set_api_version",
                 # API >= 300
                 "log.Log.set_verbosity",  # FIXME can we pipe this through?
+                "log.Log.set_parsable",
             ]
         )
     return requests
