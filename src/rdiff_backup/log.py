@@ -67,6 +67,8 @@ class Logger:
         # if something wrong happens during initialization, we want to know
         self.file_verbosity: Verbosity = NONE
         self.term_verbosity: Verbosity = WARNING
+        # output is human readable by default, not parsable
+        self.parsable: bool = False
 
     def __call__(self, message, verbosity):
         """
@@ -107,8 +109,14 @@ class Logger:
 
         tmpstr = self._format(message, self.term_verbosity, verbosity)
         # if the verbosity is below 9 and the string isn't deemed
-        # pre-formatted by newlines (we ignore the last character)
-        if self.file_verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
+        # pre-formatted by newlines (we ignore the last character),
+        # and neither verbosity is none, nor output is required to be parasable
+        if (
+            verbosity != NONE
+            and not self.parsable
+            and self.term_verbosity < DEBUG
+            and "\n" not in tmpstr[:-1]
+        ):
             termfp.write(
                 textwrap.fill(
                     tmpstr,
@@ -178,8 +186,10 @@ class Logger:
         try:
             logging_func(exception_string, verbosity)
         except OSError:
-            print("OS error while trying to log exception!")
-            print(exception_string)
+            sys.stderr.write(
+                "OS error while trying to log exception!\n"
+                "{ex}\n".format(ex=exception_string)
+            )
 
     # @API(Log.set_verbosity, 300)
     def set_verbosity(
@@ -207,6 +217,15 @@ class Logger:
         else:
             self.file_verbosity = tmp_verbosity
             return consts.RET_CODE_OK
+
+    # @API(Log.set_parsable, 300)
+    def set_parsable(self, parsable: bool) -> int:
+        """
+        Function to set if the output logged should be parsable or not.
+        Not parsable means more human readable.
+        """
+        self.parsable = parsable
+        return consts.RET_CODE_OK
 
     def open_logfile(self, log_rp):
         """Inform all connections of an open logfile.
@@ -278,7 +297,9 @@ class Logger:
         """Format the message, possibly adding date information"""
         if verbosity <= DEBUG:
             # pre-formatted informative messages are returned as such
-            if msg_verbosity in {NONE, INFO} and "\n" in message[:-1]:
+            if msg_verbosity == NONE or (
+                msg_verbosity == INFO and "\n" in message[:-1]
+            ):
                 return "{msg}\n".format(msg=message)
             else:
                 return "{pre:<9}{msg}\n".format(

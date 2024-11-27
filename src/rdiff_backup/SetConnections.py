@@ -510,6 +510,7 @@ def _init_connection_routing(conn, conn_number, remote_cmd):
 def _init_connection_settings(conn):
     """Tell new conn about log settings and updated globals"""
     conn.log.Log.set_verbosity(log.Log.file_verbosity, log.Log.term_verbosity)
+    conn.log.Log.set_parsable(log.Log.parsable)
     generics.dispatch_settings(conn)
 
 

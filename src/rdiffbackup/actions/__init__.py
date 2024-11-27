@@ -521,7 +521,7 @@ class BaseAction:
 
         return False
 
-    def print_values(self, explicit=True):
+    def debug_values(self, explicit=True):
         """
         Debug output method
         """

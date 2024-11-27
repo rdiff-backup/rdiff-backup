@@ -25,7 +25,7 @@ import re
 import subprocess
 import sys
 
-from rdiff_backup import robust, rpath, Time
+from rdiff_backup import log, robust, rpath, Time
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
@@ -69,14 +69,14 @@ def parse_args():
         elif opt == "--quiet":
             quiet = True
         elif opt == "-h" or opt == "--help":
-            usage(0)
+            usage(log.NONE)
         elif opt == "-V" or opt == "--version":
-            version(0)
+            version(log.NONE)
         else:
-            usage(1)
+            usage(log.ERROR)
 
     if len(args) != 1:
-        usage(1)
+        usage(log.ERROR)
 
     data_dir = rpath.RPath(
         specifics.local_connection,
@@ -87,9 +87,8 @@ def parse_args():
 
 
 def usage(rc):
-    sys.stderr.write(
-        """
-Usage: {cmd}
+    log.Log(
+        """Usage: {cmd}
        [--begin-time <time>] [--end-time <time>]
        [--minimum-ratio <float>] [--null-separator]
        [--help|-h] [-V|--version]
@@ -98,13 +97,14 @@ Usage: {cmd}
 See the rdiff-backup-statistics man page for more information.
 """.format(
             cmd=sys.argv[0]
-        )
+        ),
+        rc,
     )
     sys.exit(rc)
 
 
 def version(rc):
-    print("{cmd} {ver}".format(cmd=sys.argv[0], ver=specifics.version))
+    log.Log("{cmd} {ver}".format(cmd=sys.argv[0], ver=specifics.version), log.NONE)
     sys.exit(rc)
 
 
@@ -158,7 +158,7 @@ class StatisticsRPaths:
 
 
 def print_session_statistics(stat_rpaths):
-    print("Session statistics:")
+    log.Log("Session statistics:", log.NONE)
     os_system(
         [b"rdiff-backup", b"calculate"] + [inc.path for inc in stat_rpaths.session_rps]
     )
@@ -253,10 +253,13 @@ class FileStatisticsTree:
         def print_line(fs, val):
             percentage = float(val) / fs_func(self.fs_root) * 100
             path = fs.nametuple and b"/".join(fs.nametuple) or b"."
-            print("%s (%02.1f%%)" % (path.decode(errors="replace"), percentage))
+            log.Log(
+                "%s (%02.1f%%)" % (path.decode(errors="replace"), percentage),
+                log.NONE,
+            )
 
         s = "Top directories by %s (percent of total)" % (label,)
-        print("\n%s\n%s" % (s, ("-" * len(s))))
+        log.Log("\n%s\n%s" % (s, ("-" * len(s))), log.NONE)
         top_fs_pair_list = self.get_top_fs(fs_func)
         top_fs_pair_list.sort(key=lambda pair: pair[1], reverse=1)
         for fs, val in top_fs_pair_list:
@@ -544,11 +547,13 @@ def sum_fst(rp_pairs):
     global quiet
     n = len(rp_pairs)
     if not quiet:
-        print("Processing statistics from session 1 of %d" % (n,))
+        log.Log("Processing statistics from session 1 of %d" % (n,), log.NONE)
     total_fst = make_fst(*rp_pairs[0])
     for i in range(1, n):
         if not quiet:
-            print("Processing statistics from session %d of %d" % (i + 1, n))
+            log.Log(
+                "Processing statistics from session %d of %d" % (i + 1, n), log.NONE
+            )
         session_rp, filestat_rp = rp_pairs[i]
         fst = make_fst(session_rp, filestat_rp)
         total_fst += fst
@@ -596,10 +601,10 @@ def main():
     except SystemExit:
         raise
     except KeyboardInterrupt:
-        print("User abort")
+        log.Log("User abort", log.ERROR)
     except (Exception, KeyboardInterrupt) as exc:
         if robust.catch_error(exc):
-            print(exc)
+            log.Log(exc, log.ERROR)
         else:
             raise
 

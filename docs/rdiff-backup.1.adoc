@@ -94,6 +94,7 @@ This affects the expected format of the files specified by the *--{include|exclu
 --parsable-output::
 If set, rdiff-backup's output will be tailored for easy parsing by computers, instead of convenience for humans.
 Currently this only applies when listing increments using the *list increments* action, where the time will be given in seconds since the epoch.
+Also log lines are then kept in one single line instead of being formatted according to the width of the terminal.
 
 --remote-schema _remoteschema_::
 Specify an alternate method of connecting to a remote computer.

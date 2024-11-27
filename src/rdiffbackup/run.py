@@ -165,7 +165,7 @@ def _system_setup(arglist):
     # we need verbosity set properly asap
     ret_val = log.Log.set_verbosity(
         arglist.get("verbosity"), arglist.get("terminal_verbosity")
-    )
+    ) | log.Log.set_parsable(arglist.get("parsable_output"))
     if ret_val & consts.RET_CODE_ERR:
         return ret_val
     if arglist.get("api_version") is not None:  # FIXME catch also env variable?
