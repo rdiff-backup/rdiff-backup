@@ -74,7 +74,9 @@ class ProcessFuncs(unittest.TestCase):
 
         if wait:
             print("Waiting for ", arglist)
-            return subprocess.call(arglist)
+            retcode = subprocess.call(arglist)
+            print("Returned with code ", retcode)
+            return retcode
         else:
             subp = subprocess.Popen(arglist)
             print("Running ", arglist, " PID: ", subp.pid)
@@ -258,6 +260,7 @@ class KillTest(ProcessFuncs):
             self.exec_and_kill(
                 min_max_time_pair, curtime, input_rp.path, Local.rpout.path
             )
+            time.sleep(1)
             result = self.mark_incomplete(curtime, Local.rpout)
             self.assertEqual(
                 self.exec_rb(None, True, "regress", Local.rpout.path),
