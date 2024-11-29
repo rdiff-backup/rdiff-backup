@@ -290,7 +290,6 @@ def _set_allowed_requests(sec_class, sec_level):
                 "log.ErrorLog.open",
                 "log.ErrorLog.write_if_open",
                 "log.Log.close_logfile_local",
-                "log.Log.open_logfile_local",
                 "statistics.record_error",
                 # API >= 201
                 "_repo_shadow.RepoShadow.close_statistics",
