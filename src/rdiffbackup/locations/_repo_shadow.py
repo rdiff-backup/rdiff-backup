@@ -1375,8 +1375,8 @@ class RepoShadow(location.LocationShadow):
         """
         try:  # the target repository must be writable
             logfile = cls._data_dir.append(cls._values["action"] + ".log")
-            log.Log.open_logfile(logfile)
-        except (log.LoggerError, Security.Violation) as exc:
+            log.Log.open_logfile(logfile.open("ab"))
+        except (OSError, Security.Violation) as exc:
             log.Log(
                 "Unable to open logfile '{lf}' due to '{ex}'".format(
                     lf=logfile, ex=exc

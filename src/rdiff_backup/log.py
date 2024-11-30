@@ -54,8 +54,20 @@ _LOG_PREFIX: dict[Verbosity, str] = {
 }
 
 
-class LoggerError(Exception):
-    pass
+class LogWriter(typing.Protocol):
+    """Protocol representing a subset of io.BufferedWriter methods"""
+
+    def write(self, buffer: bytes) -> int:
+        """Write a buffer of bytes to the log, returns the number of written bytes"""
+        ...
+
+    def flush(self) -> None:
+        """Flush the log"""
+        ...
+
+    def close(self) -> None:
+        """Close the log"""
+        ...
 
 
 class Logger:
@@ -95,8 +107,8 @@ class Logger:
         if self.log_file_open:
             if self.log_file_local:
                 tmpstr = self._format(message, self.file_verbosity, verbosity)
-                self.logfp.write(_to_bytes(tmpstr))
-                self.logfp.flush()
+                self.log_writer.write(_to_bytes(tmpstr))
+                self.log_writer.flush()
             else:
                 self.log_file_conn.log.Log.log_to_file(message, verbosity)
 
@@ -227,20 +239,18 @@ class Logger:
         self.parsable = parsable
         return consts.RET_CODE_OK
 
-    def open_logfile(self, log_rp):
+    def open_logfile(self, log_writer: LogWriter):
         """
         Inform all connections of an open logfile on the current connection.
 
         log_rp.conn will write to the file, and the others will pass
         write commands off to it.
         """
-        assert (
-            log_rp.conn is specifics.local_connection
-        ), "Action only foreseen locally and not over {conn}".format(conn=log_rp.conn)
         assert not self.log_file_open, "Can't open an already opened logfile"
-        self._open_logfile_local(log_rp)
+        self.log_writer = log_writer
+        self.log_file_local = True
         for conn in specifics.connections:
-            conn.log.Log.open_logfile_allconn(specifics.local_connection)
+            conn.log.Log.open_logfile_allconn(specifics.local_connection)  # type: ignore
 
     # @API(Log.open_logfile_allconn, 200)
     def open_logfile_allconn(self, log_file_conn):
@@ -248,39 +258,18 @@ class Logger:
         self.log_file_open = True
         self.log_file_conn = log_file_conn
 
-    def _open_logfile_local(self, log_rp):
-        """Open logfile locally"""
-        try:
-            self.logfp = log_rp.open("ab")
-        except OSError as exc:
-            raise LoggerError(
-                "Unable to open logfile {lf} due to "
-                "exception '{ex}'".format(lf=log_rp, ex=exc)
-            )
-        self.log_file_local = True
-
     def close_logfile(self):
-        """Close logfile and inform all connections"""
+        """Close logfile locally and inform all connections"""
         if self.log_file_open:
             for conn in specifics.connections:
                 conn.log.Log.close_logfile_allconn()
-            self.log_file_conn.log.Log.close_logfile_local()
+            self.log_writer.close()
+            self.log_file_local = False
 
     # @API(Log.close_logfile_allconn, 200)
     def close_logfile_allconn(self):
         """Run on every connection"""
         self.log_file_open = False
-
-    # @API(Log.close_logfile_local, 200)
-    def close_logfile_local(self):
-        """Run by logging connection - close logfile"""
-        assert (
-            self.log_file_conn is specifics.local_connection
-        ), "Action only foreseen locally and not over {lc}".format(
-            lc=self.log_file_conn
-        )
-        self.logfp.close()
-        self.log_file_local = False
 
     def _exception_to_string(self):
         """Return string version of current exception"""
