@@ -78,6 +78,9 @@ class Connection:
     def __bool__(self):
         return True
 
+    def __getattr__(self, name: str) -> typing.Any:
+        pass  # abstract method
+
     @classmethod
     def import_modules(cls):
         """

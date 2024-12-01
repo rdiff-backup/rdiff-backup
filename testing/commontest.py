@@ -270,13 +270,13 @@ def InternalBackup(
     acls=None,
     force=False,
 ):
-    """Backup src to dest internally
+    """
+    Backup src to dest internally
 
     This is like rdiff_backup but instead of running a separate
     rdiff-backup script, use the separate *.py files.  This way the
     script doesn't have to be rebuild constantly, and stacktraces have
     correct line/file references.
-
     """
     args = []
     if current_time is not None:
@@ -373,6 +373,8 @@ def reset_connections():
     """Reset some global connection information"""
     Security._security_level = "override"
     specifics.is_backup_writer = None
+    log.Log.close_logfile()
+    log.ErrorLog.close_logfile()
     # reset the connection status
     specifics.local_connection.conn_number = 0
     specifics.connections = [specifics.local_connection]
