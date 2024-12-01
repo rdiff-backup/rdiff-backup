@@ -96,21 +96,20 @@ class Logger:
                 "You can only log bytes or str, and not {lt}".format(lt=type(message))
             )
 
-        if verbosity <= self.file_verbosity:
-            self.log_to_file(message, verbosity)
+        if verbosity <= self.file_verbosity and self.log_file_open:
+            if self.log_file_local:
+                self.log_to_file(message, verbosity)
+            else:
+                self.log_file_conn.log.Log.log_to_file(message, verbosity)
         if verbosity <= self.term_verbosity:
             self.log_to_term(message, verbosity)
 
     # @API(Log.log_to_file, 200)
     def log_to_file(self, message, verbosity=None):
         """Write the message to the log file, if possible"""
-        if self.log_file_open:
-            if self.log_file_local:
-                tmpstr = self._format(message, self.file_verbosity, verbosity)
-                self.log_writer.write(_to_bytes(tmpstr))
-                self.log_writer.flush()
-            else:
-                self.log_file_conn.log.Log.log_to_file(message, verbosity)
+        tmpstr = self._format(message, self.file_verbosity, verbosity)
+        self.log_writer.write(_to_bytes(tmpstr))
+        self.log_writer.flush()
 
     def log_to_term(self, message, verbosity):
         """Write message to stdout/stderr"""
@@ -259,7 +258,7 @@ class Logger:
         self.log_file_conn = log_file_conn
 
     def close_logfile(self):
-        """Close logfile locally and inform all connections"""
+        """Close logfile locally if necessary and inform all connections"""
         if self.log_file_open:
             for conn in specifics.connections:
                 conn.log.Log.close_logfile_allconn()
@@ -341,7 +340,7 @@ class Logger:
 Log = Logger()
 
 
-class ErrorLog:
+class ErrorLogger:
     """
     Log each recoverable error in error_log file
 
@@ -352,52 +351,65 @@ class ErrorLog:
     created.  See the error policy file for more info.
     """
 
-    _log_fileobj = None
+    def __init__(self) -> None:
+        self.log_file_open: bool = False
+        self.log_file_local: bool = False
 
-    @classmethod
-    def open(cls, data_dir, time_string, compress=True):
-        """Open the error log, prepare for writing"""
-        assert not cls._log_fileobj, "Log already open, can't be reopened"
-
-        base_rp = data_dir.append("error_log.%s.data" % time_string)
-        if compress:  # FIXME extract MaybeGzip from rpath and make it utils?
-            from rdiff_backup import rpath
-
-            cls._log_fileobj = rpath.MaybeGzip(base_rp)
+    def __call__(self, error_type, rp, exc):
+        """Write the message to the log file, if possible"""
+        if self.log_file_open:
+            if self.log_file_local:
+                self.log_to_file(error_type, rp, exc)
+            else:
+                self.log_file_conn.log.ErrorLog.log_to_file(error_type, rp, exc)
         else:
-            cls._log_fileobj = base_rp.open("wb", compress=0)
+            Log(self._get_log_string(error_type, rp, exc), WARNING)
 
-    @classmethod
-    # @API(ErrorLog.isopen, 200)
-    def isopen(cls):
-        """True if the error log file is currently open"""
-        if specifics.is_backup_writer or not generics.backup_writer:
-            return cls._log_fileobj is not None
+    def open_logfile(self, log_writer: LogWriter):
+        """
+        Inform all connections of an open logfile on the current connection.
+
+        log_rp.conn will write to the file, and the others will pass
+        write commands off to it.
+        """
+        assert not self.log_file_open, "Can't open an already opened logfile"
+        self.log_writer = log_writer
+        self.log_file_local = True
+        for conn in specifics.connections:
+            conn.log.ErrorLog.open_logfile_allconn(specifics.local_connection)  # type: ignore
+
+    # @API(ErrorLog.open_logfile_allconn, 300)
+    def open_logfile_allconn(self, log_file_conn):
+        """Run on all connections to signal log file is open"""
+        self.log_file_open = True
+        self.log_file_conn = log_file_conn
+
+    def close_logfile(self):
+        """Close logfile locally if necessary and inform all connections"""
+        if self.log_file_open:
+            for conn in specifics.connections:
+                conn.log.Log.close_logfile_allconn()
+            self.log_writer.close()
+            self.log_file_local = False
+
+    # @API(ErrorLog.close_logfile_allconn, 300)
+    def close_logfile_allconn(self):
+        """Run on every connection"""
+        self.log_file_open = False
+
+    # @API(ErrorLog.log_to_file, 300)
+    def log_to_file(self, error_type, rp, exc):
+        """Add line to log file indicating error exc with file rp"""
+        logstr = self._get_log_string(error_type, rp, exc)
+        Log(logstr, WARNING)
+        if generics.null_separator:
+            logstr += "\0"
         else:
-            return generics.backup_writer.log.ErrorLog.isopen()
+            logstr = re.sub("\n", " ", logstr)
+            logstr += "\n"
+        self.log_writer.write(_to_bytes(logstr))
 
-    @classmethod
-    # @API(ErrorLog.write_if_open, 200)
-    def write_if_open(cls, error_type, rp, exc):
-        """Call cls._write(...) if error log open, only log otherwise"""
-        if not specifics.is_backup_writer and generics.backup_writer:
-            return generics.backup_writer.log.ErrorLog.write_if_open(
-                error_type, rp, exc
-            )
-        if cls.isopen():
-            cls._write(error_type, rp, exc)
-        else:
-            Log(cls._get_log_string(error_type, rp, exc), WARNING)
-
-    @classmethod
-    def close(cls):
-        """Close the error log file"""
-        if cls.isopen():
-            cls._log_fileobj.close()
-            cls._log_fileobj = None
-
-    @classmethod
-    def _get_log_string(cls, error_type, rp, exc):
+    def _get_log_string(self, error_type, rp, exc):
         """Return log string to put in error log"""
         assert (
             error_type == "ListError"
@@ -406,17 +418,8 @@ class ErrorLog:
         ), "Unknown error type {et}".format(et=error_type)
         return "{et}: '{rp}' {ex}".format(et=error_type, rp=rp, ex=exc)
 
-    @classmethod
-    def _write(cls, error_type, rp, exc):
-        """Add line to log file indicating error exc with file rp"""
-        logstr = cls._get_log_string(error_type, rp, exc)
-        Log(logstr, WARNING)
-        if generics.null_separator:
-            logstr += "\0"
-        else:
-            logstr = re.sub("\n", " ", logstr)
-            logstr += "\n"
-        cls._log_fileobj.write(_to_bytes(logstr))
+
+ErrorLog = ErrorLogger()
 
 
 def _to_bytes(logline, encoding=LOGFILE_ENCODING):

@@ -229,6 +229,9 @@ def _set_allowed_requests(sec_class, sec_level):
         "_repo_shadow.RepoShadow.setup",
         "_repo_shadow.RepoShadow.setup_finish",
         "_repo_shadow.RepoShadow.exit",
+        "log.ErrorLog.open_logfile_allconn",
+        "log.ErrorLog.close_logfile_allconn",
+        "log.ErrorLog.log_to_file",
     }
     if (
         sec_level == "read-only"
@@ -286,9 +289,6 @@ def _set_allowed_requests(sec_class, sec_level):
         requests.update(
             [
                 "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
-                "log.ErrorLog.isopen",
-                "log.ErrorLog.open",
-                "log.ErrorLog.write_if_open",
                 "statistics.record_error",
                 # API >= 201
                 "_repo_shadow.RepoShadow.close_statistics",

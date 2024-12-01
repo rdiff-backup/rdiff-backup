@@ -82,7 +82,7 @@ def get_error_handler(error_type):
     """
 
     def error_handler(exc, rp, *args):
-        log.ErrorLog.write_if_open(error_type, rp, exc)
+        log.ErrorLog(error_type, rp, exc)
         return 0
 
     return error_handler
