@@ -19,8 +19,7 @@
 """Manage logging, displaying and recording messages with required verbosity"""
 
 import datetime
-import os  # needed to grab verbosity as environment variable
-import re
+import os
 import shutil
 import sys
 import textwrap
@@ -30,7 +29,7 @@ import traceback
 from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
 
-if typing.TYPE_CHECKING:  # for type checking only
+if typing.TYPE_CHECKING:  # pragma: no cover
     from rdiff_backup import connection
 
 # type definitions
@@ -64,7 +63,7 @@ LOCAL: typing.Final[LogType] = 1
 NOFILE: typing.Final[LogType] = 2
 
 
-class LogWriter(typing.Protocol):
+class LogWriter(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedWriter methods"""
 
     def write(self, buffer: bytes) -> int:
@@ -101,11 +100,6 @@ class Logger:
         """
         if verbosity > self.file_verbosity and verbosity > self.term_verbosity:
             return
-
-        if not isinstance(message, (bytes, str)):
-            raise TypeError(
-                "You can only log bytes or str, and not {lt}".format(lt=type(message))
-            )
 
         if verbosity <= self.file_verbosity and self.log_file_open:
             if self.log_file_local:
@@ -257,7 +251,8 @@ class Logger:
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
         self.log_file_local = True
-        for conn in specifics.connections:
+        self.log_file_open = True
+        for conn in specifics.connections[1:]:
             conn.log.Log.open_logfile_local(specifics.local_connection)
 
     # @API(Log.open_logfile_local, 300)
@@ -348,9 +343,6 @@ class Logger:
             raise ValueError
 
 
-Log = Logger()
-
-
 class ErrorLogger:
     """
     Log each recoverable error in error_log file
@@ -387,7 +379,8 @@ class ErrorLogger:
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
         self.log_file_local = True
-        for conn in specifics.connections:
+        self.log_file_open = True
+        for conn in specifics.connections[1:]:
             conn.log.ErrorLog.open_logfile_local(specifics.local_connection)
 
     # @API(ErrorLog.open_logfile_local, 300)
@@ -418,8 +411,8 @@ class ErrorLogger:
         Log(logstr, WARNING)
         if generics.null_separator:
             logstr += "\0"
-        else:
-            logstr = re.sub("\n", " ", logstr)
+        else:  # we want to keep everything on one single line
+            logstr = logstr.replace("\n", " ")
             logstr += "\n"
         self.log_writer.write(safestr.to_bytes(logstr))
 
@@ -430,4 +423,6 @@ class ErrorLogger:
         return "{et}: '{rp}' {ex}".format(et=error_type, rp=rp, ex=exc)
 
 
+# Create singletons
+Log = Logger()
 ErrorLog = ErrorLogger()

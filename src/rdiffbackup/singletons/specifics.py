@@ -29,7 +29,7 @@ from importlib import metadata
 
 from rdiff_backup import log
 
-if typing.TYPE_CHECKING:  # for type checking only
+if typing.TYPE_CHECKING:  # pragma: no cover
     from rdiff_backup import connection
 
 # The current version of rdiff-backup

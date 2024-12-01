@@ -26,7 +26,7 @@ import typing
 
 from rdiffbackup.singletons import specifics
 
-if typing.TYPE_CHECKING:  # for type checking only
+if typing.TYPE_CHECKING:  # pragma: no cover
     import re
     from rdiff_backup import connection
 
@@ -162,7 +162,7 @@ def set(setting_name: str, value: typing.Any) -> None:
     # if there are no connections yet, only set locally
     if specifics.connection_dict:
         for conn in specifics.connection_dict.values():
-            conn.generics.set_local(setting_name, value)  # type: ignore
+            conn.generics.set_local(setting_name, value)
     else:
         globals()[setting_name] = value
 
@@ -173,7 +173,7 @@ def dispatch_settings(conn: "connection.Connection") -> None:
     to the (assumed new) given connection.
     """
     for setting_name in changed_settings:
-        conn.generics.set_local(setting_name, get(setting_name))  # type: ignore
+        conn.generics.set_local(setting_name, get(setting_name))
 
 
 # @API(set_local, 200)

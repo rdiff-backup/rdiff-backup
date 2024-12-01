@@ -7,7 +7,6 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - renumber verbosities to avoid "holes" between 0 and 9
 - replace log verbosity with IntEnum
 - replace return codes with IntFlag
-- split logging mechanism between front-end and back-end (writing to file, which is specific to the repository format)
 - replace own Logger implementation with standard one (in the background)
 - extend runtime info to also check locations and output file system information
 - set api version to 300 (or 290-299 to start with)
