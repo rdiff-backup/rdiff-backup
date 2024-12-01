@@ -26,12 +26,12 @@ import sys
 import textwrap
 import typing
 import traceback
+
 from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.utils import safestr
 
 if typing.TYPE_CHECKING:  # for type checking only
     from rdiff_backup import connection
-
-LOGFILE_ENCODING: typing.Final[str] = "utf-8"
 
 # type definitions
 Verbosity = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # : typing.TypeAlias
@@ -119,7 +119,7 @@ class Logger:
     def log_to_file(self, message: str, verbosity: Verbosity) -> None:
         """Write the message to the log file, if possible"""
         tmpstr = self._format(message, self.file_verbosity, verbosity)
-        self.log_writer.write(_to_bytes(tmpstr))
+        self.log_writer.write(safestr.to_bytes(tmpstr))
         self.log_writer.flush()
 
     def log_to_term(self, message: str, verbosity: Verbosity) -> None:
@@ -421,7 +421,7 @@ class ErrorLogger:
         else:
             logstr = re.sub("\n", " ", logstr)
             logstr += "\n"
-        self.log_writer.write(_to_bytes(logstr))
+        self.log_writer.write(safestr.to_bytes(logstr))
 
     def _get_log_string(
         self, error_type: ErrorType, rp: typing.Any, exc: BaseException
@@ -431,10 +431,3 @@ class ErrorLogger:
 
 
 ErrorLog = ErrorLogger()
-
-
-def _to_bytes(logline: str, encoding: str = LOGFILE_ENCODING) -> bytes:
-    """
-    Convert string into bytes for logging into file.
-    """
-    return logline.encode(encoding, "backslashreplace")
