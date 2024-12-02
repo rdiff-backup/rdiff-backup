@@ -6,7 +6,7 @@ import io
 import unittest
 
 from rdiff_backup import log
-from rdiffbackup.singletons import consts, generics
+from rdiffbackup.singletons import consts, generics, specifics
 
 
 class LogTest(unittest.TestCase):
@@ -56,6 +56,7 @@ class LogTest(unittest.TestCase):
 
     def test_log_open_logfile(self):
         """test that log strings are properly written to log writer"""
+        specifics.set("is_backup_writer", True)
         testlog = log.Logger()
         logbuffer = io.BytesIO()
         testlog.open_logfile(logbuffer)
@@ -69,6 +70,7 @@ class LogTest(unittest.TestCase):
 
     def test_errorlog_open_logfile(self):
         """test that error log strings are properly written to log writer"""
+        specifics.set("is_backup_writer", True)
         testlog = log.ErrorLogger()
         logbuffer = io.BytesIO()
         testlog.open_logfile(logbuffer)

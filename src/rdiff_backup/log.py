@@ -23,14 +23,11 @@ import os
 import shutil
 import sys
 import textwrap
-import typing
 import traceback
+import typing
 
 from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import safestr
-
-if typing.TYPE_CHECKING:  # pragma: no cover
-    from rdiff_backup import connection
 
 # type definitions
 Verbosity = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # : typing.TypeAlias
@@ -83,9 +80,7 @@ class Logger:
     """All functions which deal with logging"""
 
     log_writer: LogWriter
-    log_file_conn: "connection.Connection"
     log_file_open: bool = False  # is the logfile open?
-    log_file_local: bool = False  # is the logfile locally stored?
     # if something wrong happens during initialization, we want to know
     file_verbosity: Verbosity = NONE
     term_verbosity: Verbosity = WARNING
@@ -102,10 +97,10 @@ class Logger:
             return
 
         if verbosity <= self.file_verbosity and self.log_file_open:
-            if self.log_file_local:
+            if specifics.is_backup_writer:
                 self.log_to_file(message, verbosity)
-            else:
-                self.log_file_conn.log.Log.log_to_file(message, verbosity)
+            elif generics.backup_writer:
+                generics.backup_writer.log.Log.log_to_file(message, verbosity)
         if verbosity <= self.term_verbosity:
             self.log_to_term(message, verbosity)
 
@@ -250,16 +245,14 @@ class Logger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
-        self.log_file_local = True
         self.log_file_open = True
         for conn in specifics.connections[1:]:
-            conn.log.Log.open_logfile_local(specifics.local_connection)
+            conn.log.Log.open_logfile_local()
 
     # @API(Log.open_logfile_local, 300)
-    def open_logfile_local(self, log_file_conn: "connection.Connection") -> None:
+    def open_logfile_local(self) -> None:
         """Run on all connections to signal log file is open"""
         self.log_file_open = True
-        self.log_file_conn = log_file_conn
 
     def close_logfile(self) -> None:
         """Close logfile locally if necessary and inform all connections"""
@@ -267,7 +260,6 @@ class Logger:
             for conn in specifics.connections:
                 conn.log.Log.close_logfile_local()
             self.log_writer.close()
-            self.log_file_local = False
 
     # @API(Log.close_logfile_local, 300)
     def close_logfile_local(self) -> None:
@@ -356,16 +348,14 @@ class ErrorLogger:
 
     log_writer: LogWriter
     log_file_open: bool = False  # is the logfile open?
-    log_file_local: bool = False  # is the logfile locally stored?
-    log_file_conn: "connection.Connection"
 
     def __call__(self, error_type: ErrorType, rp: typing.Any, exc: BaseException):
         """Write the message to the log file, if possible"""
         if self.log_file_open:
-            if self.log_file_local:
+            if specifics.is_backup_writer:
                 self.log_to_file(error_type, rp, exc)
-            else:
-                self.log_file_conn.log.ErrorLog.log_to_file(error_type, rp, exc)
+            elif generics.backup_writer:
+                generics.backup_writer.log.ErrorLog.log_to_file(error_type, rp, exc)
         else:
             Log(self._get_log_string(error_type, rp, exc), WARNING)
 
@@ -378,16 +368,14 @@ class ErrorLogger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
-        self.log_file_local = True
         self.log_file_open = True
         for conn in specifics.connections[1:]:
-            conn.log.ErrorLog.open_logfile_local(specifics.local_connection)
+            conn.log.ErrorLog.open_logfile_local()
 
     # @API(ErrorLog.open_logfile_local, 300)
-    def open_logfile_local(self, log_file_conn: "connection.Connection") -> None:
+    def open_logfile_local(self) -> None:
         """Run on all connections to signal log file is open"""
         self.log_file_open = True
-        self.log_file_conn = log_file_conn
 
     def close_logfile(self) -> None:
         """Close logfile locally if necessary and inform all connections"""
@@ -395,7 +383,6 @@ class ErrorLogger:
             for conn in specifics.connections:
                 conn.log.ErrorLog.close_logfile_local()
             self.log_writer.close()
-            self.log_file_local = False
 
     # @API(ErrorLog.close_logfile_local, 300)
     def close_logfile_local(self) -> None:
