@@ -251,7 +251,8 @@ class Logger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
-        for conn in specifics.connections:
+        self.log_file_open = True  # this simplifies unit tests
+        for conn in specifics.connections[1:]:
             conn.log.Log.open_logfile_local()
 
     # @API(Log.open_logfile_local, 300)
@@ -262,9 +263,10 @@ class Logger:
     def close_logfile(self) -> None:
         """Close logfile locally if necessary and inform all connections"""
         if self.log_file_open:
-            for conn in specifics.connections:
+            for conn in specifics.connections[1:]:
                 conn.log.Log.close_logfile_local()
             self.log_writer.close()
+            self.log_file_open = False  # this simplifies unit tests
 
     # @API(Log.close_logfile_local, 300)
     def close_logfile_local(self) -> None:
@@ -373,7 +375,8 @@ class ErrorLogger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
-        for conn in specifics.connections:
+        self.log_file_open = True  # this simplifies unit tests
+        for conn in specifics.connections[1:]:
             conn.log.ErrorLog.open_logfile_local()
 
     # @API(ErrorLog.open_logfile_local, 300)
@@ -384,9 +387,10 @@ class ErrorLogger:
     def close_logfile(self) -> None:
         """Close logfile locally if necessary and inform all connections"""
         if self.log_file_open:
-            for conn in specifics.connections:
+            for conn in specifics.connections[1:]:
                 conn.log.ErrorLog.close_logfile_local()
             self.log_writer.close()
+            self.log_file_open = False  # this simplifies unit tests
 
     # @API(ErrorLog.close_logfile_local, 300)
     def close_logfile_local(self) -> None:
