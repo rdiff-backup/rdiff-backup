@@ -156,6 +156,8 @@ class Logger:
             result_repr = repr(result)
         else:
             result_repr = str(result)
+        if self.parsable:  # keep everything on one line
+            result_repr = result_repr.replace("\n", " | ")
         # TODO shorten the result to a max size of 720 chars with ellipsis if needed
         # result_repr = result_repr[:720] + (result_repr[720:] and '[...]')  # noqa: E265
         if specifics.server:
@@ -171,6 +173,8 @@ class Logger:
 
     def FatalError(self, message: str, return_code: int = 1) -> None:
         """Log a fatal error and exit"""
+        if self.parsable:  # keep everything on one line
+            message = message.replace("\n", " | ")
         self.log_to_term("Fatal Error: {em}".format(em=message), ERROR)
         sys.exit(return_code)
 
@@ -192,6 +196,8 @@ class Logger:
                 return
 
         exception_string = self._exception_to_string()
+        if self.parsable:  # keep everything on one line
+            exception_string = exception_string.replace("\n", " | ")
         try:
             logging_func(exception_string, verbosity)
         except OSError:
@@ -245,8 +251,7 @@ class Logger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
-        self.log_file_open = True
-        for conn in specifics.connections[1:]:
+        for conn in specifics.connections:
             conn.log.Log.open_logfile_local()
 
     # @API(Log.open_logfile_local, 300)
@@ -368,8 +373,7 @@ class ErrorLogger:
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
         self.log_writer = log_writer
-        self.log_file_open = True
-        for conn in specifics.connections[1:]:
+        for conn in specifics.connections:
             conn.log.ErrorLog.open_logfile_local()
 
     # @API(ErrorLog.open_logfile_local, 300)
