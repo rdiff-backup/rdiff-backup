@@ -7,5 +7,8 @@ python -m venv --upgrade --upgrade-deps ${VENV}
 source ${VENV}/bin/activate
 pip install -r requirements.txt
 
+# just for convenience
+pip install powerline-status  # avoid warnings when using vim
+
 # this last command installs the currently developed version, repeat as needed!
 pip install .
