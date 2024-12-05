@@ -63,19 +63,19 @@ class StatsObjTest(unittest.TestCase):
             tail,
             """ElapsedTime 1.00 (1 second)
 SourceFiles 1
-SourceFileSize 2 (2 bytes)
+SourceFileSize 2 (2 B)
 MirrorFiles 13
-MirrorFileSize 14 (14 bytes)
+MirrorFileSize 14 (14 B)
 NewFiles 3
-NewFileSize 4 (4 bytes)
+NewFileSize 4 (4 B)
 DeletedFiles 5
-DeletedFileSize 6 (6 bytes)
+DeletedFileSize 6 (6 B)
 ChangedFiles 7
-ChangedSourceSize 8 (8 bytes)
-ChangedMirrorSize 9 (9 bytes)
+ChangedSourceSize 8 (8 B)
+ChangedMirrorSize 9 (9 B)
 IncrementFiles 15
-IncrementFileSize 10 (10 bytes)
-TotalDestinationSizeChange 7 (7 bytes)
+IncrementFileSize 10 (10 B)
+TotalDestinationSizeChange 7 (7 B)
 """,
         )
 
@@ -95,18 +95,6 @@ TotalDestinationSizeChange 7 (7 bytes)
         self.assertEqual(
             statline, "file\\x20name\\x20with\\x20spaces 1 2 13 14 3 4 5 6 7 8 9 15 10"
         )
-
-    def test_byte_summary(self):
-        """Test conversion of bytes to strings like 7.23MB"""
-        s = statistics.StatsObj()
-        f = s.get_byte_summary_string
-        self.assertEqual(f(1), "1 byte")
-        self.assertEqual(f(234.34), "234 bytes")
-        self.assertEqual(f(2048), "2.00 KB")
-        self.assertEqual(f(3502243), "3.34 MB")
-        self.assertEqual(f(314992230), "300 MB")
-        self.assertEqual(f(36874871216), "34.3 GB")
-        self.assertEqual(f(3775986812573450), "3434 TB")
 
     def test_init_stats(self):
         """Test setting stat object from string"""

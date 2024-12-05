@@ -27,7 +27,7 @@ import traceback
 import typing
 
 from rdiffbackup.singletons import consts, generics, specifics
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 # type definitions
 Verbosity = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # : typing.TypeAlias
@@ -108,7 +108,7 @@ class Logger:
     def log_to_file(self, message: str, verbosity: Verbosity) -> None:
         """Write the message to the log file, if possible"""
         tmpstr = self._format(message, self.file_verbosity, verbosity)
-        self.log_writer.write(safestr.to_bytes(tmpstr))
+        self.log_writer.write(convert.to_safe_bytes(tmpstr))
         self.log_writer.flush()
 
     def log_to_term(self, message: str, verbosity: Verbosity) -> None:
@@ -409,7 +409,7 @@ class ErrorLogger:
         else:  # we want to keep everything on one single line
             logstr = logstr.replace("\n", " ")
             logstr += "\n"
-        self.log_writer.write(safestr.to_bytes(logstr))
+        self.log_writer.write(convert.to_safe_bytes(logstr))
 
     def _get_log_string(
         self, error_type: ErrorType, rp: typing.Any, exc: BaseException

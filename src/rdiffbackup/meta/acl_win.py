@@ -18,10 +18,11 @@
 # 02110-1301, USA
 
 import os
+
 from rdiff_backup import C, rorpiter
 from rdiffbackup import meta
 from rdiffbackup.singletons import generics, log, specifics
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 try:
     from win32security import (
@@ -217,7 +218,9 @@ class ACL:
         lines = acl_str.splitlines()
         if len(lines) != 2 or not lines[0][:8] == b"# file: ":
             raise meta.ParsingError(
-                "Bad record beginning: '{br}'".format(br=safestr.to_str(lines[0][:8]))
+                "Bad record beginning: '{br}'".format(
+                    br=convert.to_safe_str(lines[0][:8])
+                )
             )
         filename = lines[0][8:]
         if filename == b".":

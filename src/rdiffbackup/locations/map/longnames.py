@@ -38,8 +38,9 @@ it later.
 """
 
 import errno
+
 from rdiffbackup.singletons import log
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 _long_name_dir = b"long_filename_data"
 _long_name_rootrp = None
@@ -193,7 +194,7 @@ def update_rf(rf, rorp, mirror_root, rf_class):
         """
         log.Log(
             "Restoring with increment base {ib} for file {rp}".format(
-                ib=safestr.to_str(inc_base), rp=rf
+                ib=convert.to_safe_str(inc_base), rp=rf
             ),
             log.DEBUG,
         )

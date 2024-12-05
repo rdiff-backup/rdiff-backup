@@ -30,9 +30,10 @@ handle that error.)
 
 import os
 import re
+
 from rdiff_backup import rpath
 from rdiffbackup.singletons import consts, generics, log, specifics
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 
 class QuotingException(Exception):
@@ -205,11 +206,13 @@ def _unquote_single(match):
     """
     if not len(match.group()) == 4:
         raise QuotingException(
-            "Quoted group wrong size: '{qg}'".format(qg=safestr.to_str(match.group()))
+            "Quoted group wrong size: '{qg}'".format(
+                qg=convert.to_safe_str(match.group())
+            )
         )
     try:
         return os.fsencode(chr(int(match.group()[1:])))
     except ValueError:
         raise QuotingException(
-            "Quoted out of range: '{qg}'".format(qg=safestr.to_str(match.group()))
+            "Quoted out of range: '{qg}'".format(qg=convert.to_safe_str(match.group()))
         )

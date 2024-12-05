@@ -29,7 +29,7 @@ import re
 import subprocess
 from rdiff_backup import connection, rpath
 from rdiffbackup.singletons import consts, generics, log, specifics
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 # This is a list of remote commands used to start the connections.
 # The first is None because it is the local connection.
@@ -306,7 +306,7 @@ def _fill_schema(host_info, cmd_schema):
             )
     except (TypeError, KeyError):
         log.Log.FatalError(
-            "Invalid remote schema: {rs}".format(rs=safestr.to_str(cmd_schema))
+            "Invalid remote schema: {rs}".format(rs=convert.to_safe_str(cmd_schema))
         )
 
 
@@ -322,7 +322,8 @@ def _init_connection(remote_cmd):
         return specifics.local_connection
 
     log.Log(
-        "Executing remote command {rc}".format(rc=safestr.to_str(remote_cmd)), log.INFO
+        "Executing remote command {rc}".format(rc=convert.to_safe_str(remote_cmd)),
+        log.INFO,
     )
     # Windows doesn't support bytes for command string
     if os.name == "nt":
@@ -373,7 +374,7 @@ installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version ({lv})
 """.format(
-                ex=exception, rc=safestr.to_str(remote_cmd), lv=specifics.version
+                ex=exception, rc=convert.to_safe_str(remote_cmd), lv=specifics.version
             ),
             log.ERROR,
         )
@@ -387,8 +388,8 @@ Please make sure that nothing is printed (e.g., by your login shell) when this
 command executes. Try running this command: {co}
 
 which should only print out the text: rdiff-backup <version>""".format(
-                rc=safestr.to_str(remote_cmd),
-                co=safestr.to_str(remote_cmd.replace(b"--server", b"--version")),
+                rc=convert.to_safe_str(remote_cmd),
+                co=convert.to_safe_str(remote_cmd.replace(b"--server", b"--version")),
             ),
             log.ERROR,
         )
