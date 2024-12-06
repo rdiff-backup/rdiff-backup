@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
 """
-Simple function to safely transform bytes and other objects to string
+Simple functions to safely transform bytes and other objects to string and vice-versa
 """
 
 
@@ -27,3 +27,10 @@ def to_str(something):
         return str(something, errors="replace")
     else:
         return str(something)
+
+
+def to_bytes(something: str, encoding: str = "utf-8") -> bytes:
+    """
+    Convert string into bytes in a safe way
+    """
+    return something.encode(encoding=encoding, errors="backslashreplace")

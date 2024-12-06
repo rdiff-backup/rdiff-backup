@@ -82,7 +82,7 @@ def get_error_handler(error_type):
     """
 
     def error_handler(exc, rp, *args):
-        log.ErrorLog.write_if_open(error_type, rp, exc)
+        log.ErrorLog(error_type, rp, exc)
         return 0
 
     return error_handler
@@ -119,9 +119,9 @@ def check_common_error(error_handler, function, args=[]):
             else:
                 return None
         if is_routine_fatal(exc):
-            log.Log.exception(1, log.INFO)
+            log.Log.exception(log.LOCAL, log.INFO)
         else:
-            log.Log.exception(1, log.WARNING)
+            log.Log.exception(log.LOCAL, log.WARNING)
         raise
 
 

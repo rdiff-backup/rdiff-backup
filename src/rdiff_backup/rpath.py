@@ -1972,7 +1972,7 @@ def setdata_local(rp):
             # symlinks, so we would anyway try to chmod the file pointed at,
             # not the symlink itself
             rp.data["type"] = None
-            log.ErrorLog.write_if_open(
+            log.ErrorLog(
                 "ListError",
                 rp,
                 OSError("[Errno n/a] Ignoring strange unreadable symlink"),

@@ -225,7 +225,7 @@ class Select:
         """
 
         def error_handler(exc, filename):
-            log.ErrorLog.write_if_open("ListError", rpath.index + (filename,), exc)
+            log.ErrorLog("ListError", rpath.index + (filename,), exc)
             return None
 
         def diryield(rpath):
@@ -288,7 +288,7 @@ class Select:
         """List directory rpath with error logging and sorting entries"""
 
         def error_handler(exc):
-            log.ErrorLog.write_if_open("ListError", dir_rp, exc)
+            log.ErrorLog("ListError", dir_rp, exc)
             return []
 
         dir_listing = robust.check_common_error(error_handler, dir_rp.listdir)

@@ -2,10 +2,11 @@
 Test the logging functionality
 """
 
+import io
 import unittest
 
 from rdiff_backup import log
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, generics, specifics
 
 
 class LogTest(unittest.TestCase):
@@ -52,6 +53,36 @@ class LogTest(unittest.TestCase):
         # nothing changes even if only the 2nd value is wrong
         self.assertEqual(testlog.file_verbosity, log.DEBUG)
         self.assertEqual(testlog.term_verbosity, log.WARNING)
+
+    def test_log_open_logfile(self):
+        """test that log strings are properly written to log writer"""
+        specifics.set("is_backup_writer", True)
+        testlog = log.Logger()
+        logbuffer = io.BytesIO()
+        testlog.open_logfile(logbuffer)
+        testlog.set_verbosity(log.WARNING, log.NONE)
+        testlog("Something fishy", log.WARNING)
+        self.assertEqual(logbuffer.getvalue(), b"WARNING: Something fishy\n")
+        testlog("All is good", log.NONE)
+        self.assertEqual(
+            logbuffer.getvalue(), b"WARNING: Something fishy\nAll is good\n"
+        )
+
+    def test_errorlog_open_logfile(self):
+        """test that error log strings are properly written to log writer"""
+        specifics.set("is_backup_writer", True)
+        testlog = log.ErrorLogger()
+        logbuffer = io.BytesIO()
+        testlog.open_logfile(logbuffer)
+        testlog("ListError", "Something\nfishy", Exception("xyz"))
+        self.assertEqual(logbuffer.getvalue(), b"ListError: 'Something fishy' xyz\n")
+        generics.set("null_separator", True)
+        testlog("UpdateError", "Swimming\nagain", Exception("abc"))
+        self.assertEqual(
+            logbuffer.getvalue(),
+            b"ListError: 'Something fishy' xyz\n"
+            b"UpdateError: 'Swimming\nagain' abc\0",
+        )
 
 
 if __name__ == "__main__":

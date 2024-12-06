@@ -19,29 +19,31 @@
 """Manage logging, displaying and recording messages with required verbosity"""
 
 import datetime
-import os  # needed to grab verbosity as environment variable
-import re
+import os
 import shutil
 import sys
 import textwrap
-import typing
 import traceback
-from rdiffbackup.singletons import consts, generics, specifics
+import typing
 
-LOGFILE_ENCODING = "utf-8"
+from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.utils import safestr
 
 # type definitions
 Verbosity = typing.Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # : typing.TypeAlias
 InputVerbosity = typing.Union[int, str]  # : typing.TypeAlias
+LogType = typing.Literal[0, 1, 2]  # : typing.TypeAlias
+# Error type for recoverable single file errors
+ErrorType = typing.Literal["ListError", "UpdateError", "SpecialFileError"]
 
 # we need to define constants
-NONE: Verbosity = 0  # are always output as-is on stdout
-ERROR: Verbosity = 1
-WARNING: Verbosity = 2
-NOTE: Verbosity = 3
-INFO: Verbosity = 5
-DEBUG: Verbosity = 8
-TIMESTAMP: Verbosity = 9  # for adding the timestamp
+NONE: typing.Final[Verbosity] = 0  # are always output as-is on stdout
+ERROR: typing.Final[Verbosity] = 1
+WARNING: typing.Final[Verbosity] = 2
+NOTE: typing.Final[Verbosity] = 3
+INFO: typing.Final[Verbosity] = 5
+DEBUG: typing.Final[Verbosity] = 8
+TIMESTAMP: typing.Final[Verbosity] = 9  # for adding the timestamp
 
 # mapping from severity to prefix (must be less than 9 characters)
 _LOG_PREFIX: dict[Verbosity, str] = {
@@ -53,24 +55,39 @@ _LOG_PREFIX: dict[Verbosity, str] = {
     DEBUG: "DEBUG:",
 }
 
+NORMAL: typing.Final[LogType] = 0
+LOCAL: typing.Final[LogType] = 1
+NOFILE: typing.Final[LogType] = 2
 
-class LoggerError(Exception):
-    pass
+
+class LogWriter(typing.Protocol):  # pragma: no cover
+    """Protocol representing a subset of io.BufferedWriter methods"""
+
+    def write(self, buffer: bytes) -> int:
+        """Write a buffer of bytes to the log, returns the number of written bytes"""
+        ...
+
+    def flush(self) -> None:
+        """Flush the log"""
+        ...
+
+    def close(self) -> None:
+        """Close the log"""
+        ...
 
 
 class Logger:
     """All functions which deal with logging"""
 
-    def __init__(self) -> None:
-        self.log_file_open = None
-        self.log_file_local = None
-        # if something wrong happens during initialization, we want to know
-        self.file_verbosity: Verbosity = NONE
-        self.term_verbosity: Verbosity = WARNING
-        # output is human readable by default, not parsable
-        self.parsable: bool = False
+    log_writer: LogWriter
+    log_file_open: bool = False  # is the logfile open?
+    # if something wrong happens during initialization, we want to know
+    file_verbosity: Verbosity = NONE
+    term_verbosity: Verbosity = WARNING
+    # output is human readable by default, not parsable
+    parsable: bool = False
 
-    def __call__(self, message, verbosity):
+    def __call__(self, message: str, verbosity: Verbosity) -> None:
         """
         Log message that has verbosity importance
 
@@ -79,28 +96,22 @@ class Logger:
         if verbosity > self.file_verbosity and verbosity > self.term_verbosity:
             return
 
-        if not isinstance(message, (bytes, str)):
-            raise TypeError(
-                "You can only log bytes or str, and not {lt}".format(lt=type(message))
-            )
-
-        if verbosity <= self.file_verbosity:
-            self.log_to_file(message, verbosity)
+        if verbosity <= self.file_verbosity and self.log_file_open:
+            if specifics.is_backup_writer:
+                self.log_to_file(message, verbosity)
+            elif generics.backup_writer:
+                generics.backup_writer.log.Log.log_to_file(message, verbosity)
         if verbosity <= self.term_verbosity:
             self.log_to_term(message, verbosity)
 
     # @API(Log.log_to_file, 200)
-    def log_to_file(self, message, verbosity=None):
+    def log_to_file(self, message: str, verbosity: Verbosity) -> None:
         """Write the message to the log file, if possible"""
-        if self.log_file_open:
-            if self.log_file_local:
-                tmpstr = self._format(message, self.file_verbosity, verbosity)
-                self.logfp.write(_to_bytes(tmpstr))
-                self.logfp.flush()
-            else:
-                self.log_file_conn.log.Log.log_to_file(message, verbosity)
+        tmpstr = self._format(message, self.file_verbosity, verbosity)
+        self.log_writer.write(safestr.to_bytes(tmpstr))
+        self.log_writer.flush()
 
-    def log_to_term(self, message, verbosity):
+    def log_to_term(self, message: str, verbosity: Verbosity) -> None:
         """Write message to stdout/stderr"""
         if verbosity in {ERROR, WARNING} or specifics.server:
             termfp = sys.stderr
@@ -130,7 +141,7 @@ class Logger:
         else:
             termfp.write(tmpstr)
 
-    def conn(self, direction, result, req_num):
+    def conn(self, direction: str, result: typing.Any, req_num: int) -> None:
         """Log some data on the connection
 
         The main worry with this function is that something in here
@@ -145,7 +156,9 @@ class Logger:
             result_repr = repr(result)
         else:
             result_repr = str(result)
-        # shorten the result to a max size of 720 chars with ellipsis if needed
+        if self.parsable:  # keep everything on one line
+            result_repr = result_repr.replace("\n", " | ")
+        # TODO shorten the result to a max size of 720 chars with ellipsis if needed
         # result_repr = result_repr[:720] + (result_repr[720:] and '[...]')  # noqa: E265
         if specifics.server:
             conn_str = "Server"
@@ -158,24 +171,24 @@ class Logger:
             DEBUG,
         )
 
-    def FatalError(self, message, return_code=1):
+    def FatalError(self, message: str, return_code: int = 1) -> None:
         """Log a fatal error and exit"""
+        if self.parsable:  # keep everything on one line
+            message = message.replace("\n", " | ")
         self.log_to_term("Fatal Error: {em}".format(em=message), ERROR)
         sys.exit(return_code)
 
-    def exception(self, only_terminal=0, verbosity=INFO):
-        """Log an exception and traceback
-
-        If only_terminal is zero, log normally.
-        If it is 1, then only log to disk if log file is local
-        If it is 2, don't log to disk at all.
+    def exception(
+        self, log_type: LogType = NORMAL, verbosity: Verbosity = INFO
+    ) -> None:
         """
-        assert only_terminal in (
-            0,
-            1,
-            2,
-        ), "Variable only_terminal '{ot}' must be one of [012]".format(ot=only_terminal)
-        if only_terminal == 0 or (only_terminal == 1 and self.log_file_open):
+        Log an exception and traceback
+
+        If log_type is zero, log normally.
+        If it is 1, then only log to file if log file is local
+        If it is 2, don't log to file at all.
+        """
+        if log_type == NORMAL or (log_type == LOCAL and self.log_file_open):
             logging_func = self.__call__
         else:
             logging_func = self.log_to_term
@@ -183,6 +196,8 @@ class Logger:
                 return
 
         exception_string = self._exception_to_string()
+        if self.parsable:  # keep everything on one line
+            exception_string = exception_string.replace("\n", " | ")
         try:
             logging_func(exception_string, verbosity)
         except OSError:
@@ -195,7 +210,7 @@ class Logger:
     def set_verbosity(
         self,
         file_verbosity: InputVerbosity,
-        term_verbosity: typing.Union[InputVerbosity, None] = None,
+        term_verbosity: typing.Optional[InputVerbosity] = None,
     ) -> int:
         """
         Set verbosity levels, logfile and terminal.  Takes numbers or strings.
@@ -227,63 +242,38 @@ class Logger:
         self.parsable = parsable
         return consts.RET_CODE_OK
 
-    def open_logfile(self, log_rp):
-        """Inform all connections of an open logfile.
+    def open_logfile(self, log_writer: LogWriter) -> None:
+        """
+        Inform all connections of an open logfile on the current connection.
 
         log_rp.conn will write to the file, and the others will pass
         write commands off to it.
-
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
-        log_rp.conn.log.Log.open_logfile_local(log_rp)
-        for conn in specifics.connections:
-            conn.log.Log.open_logfile_allconn(log_rp.conn)
+        self.log_writer = log_writer
+        self.log_file_open = True  # this simplifies unit tests
+        for conn in specifics.connections[1:]:
+            conn.log.Log.open_logfile_local()
 
-    # @API(Log.open_logfile_allconn, 200)
-    def open_logfile_allconn(self, log_file_conn):
+    # @API(Log.open_logfile_local, 300)
+    def open_logfile_local(self) -> None:
         """Run on all connections to signal log file is open"""
-        self.log_file_open = 1
-        self.log_file_conn = log_file_conn
+        self.log_file_open = True
 
-    # @API(Log.open_logfile_local, 200)
-    def open_logfile_local(self, log_rp):
-        """Open logfile locally - should only be run on one connection"""
-        assert (
-            log_rp.conn is specifics.local_connection
-        ), "Action only foreseen locally and not over {conn}".format(conn=log_rp.conn)
-        try:
-            self.logfp = log_rp.open("ab")
-        except OSError as exc:
-            raise LoggerError(
-                "Unable to open logfile {lf} due to "
-                "exception '{ex}'".format(lf=log_rp, ex=exc)
-            )
-        self.log_file_local = 1
-
-    def close_logfile(self):
-        """Close logfile and inform all connections"""
+    def close_logfile(self) -> None:
+        """Close logfile locally if necessary and inform all connections"""
         if self.log_file_open:
-            for conn in specifics.connections:
-                conn.log.Log.close_logfile_allconn()
-            self.log_file_conn.log.Log.close_logfile_local()
+            for conn in specifics.connections[1:]:
+                conn.log.Log.close_logfile_local()
+            self.log_writer.close()
+            self.log_file_open = False  # this simplifies unit tests
 
-    # @API(Log.close_logfile_allconn, 200)
-    def close_logfile_allconn(self):
+    # @API(Log.close_logfile_local, 300)
+    def close_logfile_local(self) -> None:
         """Run on every connection"""
-        self.log_file_open = None
+        self.log_file_open = False
 
-    # @API(Log.close_logfile_local, 200)
-    def close_logfile_local(self):
-        """Run by logging connection - close logfile"""
-        assert (
-            self.log_file_conn is specifics.local_connection
-        ), "Action only foreseen locally and not over {lc}".format(
-            lc=self.log_file_conn
-        )
-        self.logfp.close()
-        self.log_file_local = None
-
-    def _exception_to_string(self):
+    def _exception_to_string(self) -> str:
         """Return string version of current exception"""
         type, value, tb = sys.exc_info()
         s = "Exception '%s' raised of class '%s':\n%s" % (
@@ -293,7 +283,9 @@ class Logger:
         )
         return s
 
-    def _format(self, message, verbosity, msg_verbosity):
+    def _format(
+        self, message: str, verbosity: Verbosity, msg_verbosity: Verbosity
+    ) -> str:
         """Format the message, possibly adding date information"""
         if verbosity <= DEBUG:
             # pre-formatted informative messages are returned as such
@@ -350,10 +342,7 @@ class Logger:
             raise ValueError
 
 
-Log = Logger()
-
-
-class ErrorLog:
+class ErrorLogger:
     """
     Log each recoverable error in error_log file
 
@@ -364,79 +353,71 @@ class ErrorLog:
     created.  See the error policy file for more info.
     """
 
-    _log_fileobj = None
+    log_writer: LogWriter
+    log_file_open: bool = False  # is the logfile open?
 
-    @classmethod
-    def open(cls, data_dir, time_string, compress=True):
-        """Open the error log, prepare for writing"""
-        assert not cls._log_fileobj, "Log already open, can't be reopened"
-
-        base_rp = data_dir.append("error_log.%s.data" % time_string)
-        if compress:  # FIXME extract MaybeGzip from rpath and make it utils?
-            from rdiff_backup import rpath
-
-            cls._log_fileobj = rpath.MaybeGzip(base_rp)
+    def __call__(self, error_type: ErrorType, rp: typing.Any, exc: BaseException):
+        """Write the message to the log file, if possible"""
+        if self.log_file_open:
+            if specifics.is_backup_writer:
+                self.log_to_file(error_type, rp, exc)
+            elif generics.backup_writer:
+                generics.backup_writer.log.ErrorLog.log_to_file(error_type, rp, exc)
         else:
-            cls._log_fileobj = base_rp.open("wb", compress=0)
+            Log(self._get_log_string(error_type, rp, exc), WARNING)
 
-    @classmethod
-    # @API(ErrorLog.isopen, 200)
-    def isopen(cls):
-        """True if the error log file is currently open"""
-        if specifics.is_backup_writer or not generics.backup_writer:
-            return cls._log_fileobj is not None
-        else:
-            return generics.backup_writer.log.ErrorLog.isopen()
+    def open_logfile(self, log_writer: LogWriter) -> None:
+        """
+        Inform all connections of an open logfile on the current connection.
 
-    @classmethod
-    # @API(ErrorLog.write_if_open, 200)
-    def write_if_open(cls, error_type, rp, exc):
-        """Call cls._write(...) if error log open, only log otherwise"""
-        if not specifics.is_backup_writer and generics.backup_writer:
-            return generics.backup_writer.log.ErrorLog.write_if_open(
-                error_type, rp, exc
-            )
-        if cls.isopen():
-            cls._write(error_type, rp, exc)
-        else:
-            Log(cls._get_log_string(error_type, rp, exc), WARNING)
+        log_rp.conn will write to the file, and the others will pass
+        write commands off to it.
+        """
+        assert not self.log_file_open, "Can't open an already opened logfile"
+        self.log_writer = log_writer
+        self.log_file_open = True  # this simplifies unit tests
+        for conn in specifics.connections[1:]:
+            conn.log.ErrorLog.open_logfile_local()
 
-    @classmethod
-    def close(cls):
-        """Close the error log file"""
-        if cls.isopen():
-            cls._log_fileobj.close()
-            cls._log_fileobj = None
+    # @API(ErrorLog.open_logfile_local, 300)
+    def open_logfile_local(self) -> None:
+        """Run on all connections to signal log file is open"""
+        self.log_file_open = True
 
-    @classmethod
-    def _get_log_string(cls, error_type, rp, exc):
-        """Return log string to put in error log"""
-        assert (
-            error_type == "ListError"
-            or error_type == "UpdateError"
-            or error_type == "SpecialFileError"
-        ), "Unknown error type {et}".format(et=error_type)
-        return "{et}: '{rp}' {ex}".format(et=error_type, rp=rp, ex=exc)
+    def close_logfile(self) -> None:
+        """Close logfile locally if necessary and inform all connections"""
+        if self.log_file_open:
+            for conn in specifics.connections[1:]:
+                conn.log.ErrorLog.close_logfile_local()
+            self.log_writer.close()
+            self.log_file_open = False  # this simplifies unit tests
 
-    @classmethod
-    def _write(cls, error_type, rp, exc):
+    # @API(ErrorLog.close_logfile_local, 300)
+    def close_logfile_local(self) -> None:
+        """Run on every connection"""
+        self.log_file_open = False
+
+    # @API(ErrorLog.log_to_file, 300)
+    def log_to_file(
+        self, error_type: ErrorType, rp: typing.Any, exc: BaseException
+    ) -> None:
         """Add line to log file indicating error exc with file rp"""
-        logstr = cls._get_log_string(error_type, rp, exc)
+        logstr = self._get_log_string(error_type, rp, exc)
         Log(logstr, WARNING)
         if generics.null_separator:
             logstr += "\0"
-        else:
-            logstr = re.sub("\n", " ", logstr)
+        else:  # we want to keep everything on one single line
+            logstr = logstr.replace("\n", " ")
             logstr += "\n"
-        cls._log_fileobj.write(_to_bytes(logstr))
+        self.log_writer.write(safestr.to_bytes(logstr))
+
+    def _get_log_string(
+        self, error_type: ErrorType, rp: typing.Any, exc: BaseException
+    ) -> str:
+        """Return log string to put in error log"""
+        return "{et}: '{rp}' {ex}".format(et=error_type, rp=rp, ex=exc)
 
 
-def _to_bytes(logline, encoding=LOGFILE_ENCODING):
-    """
-    Convert string into bytes for logging into file.
-    """
-    assert logline, "There must be a text to encode"
-    assert isinstance(logline, str), "Text to encode must be str and not {lt}".format(
-        lt=type(logline)
-    )
-    return logline.encode(encoding, "backslashreplace")
+# Create singletons
+Log = Logger()
+ErrorLog = ErrorLogger()

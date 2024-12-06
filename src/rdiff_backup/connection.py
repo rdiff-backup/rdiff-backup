@@ -18,13 +18,14 @@
 # 02110-1301, USA
 """Support code for remote execution and data transfer"""
 
+import errno
 import importlib
 import pickle
 import subprocess
 import sys
 import time
 import traceback
-import errno
+import typing
 
 from rdiff_backup import (
     iterfile,
@@ -76,6 +77,9 @@ class Connection:
 
     def __bool__(self):
         return True
+
+    def __getattr__(self, name: str) -> typing.Any:
+        pass  # abstract method
 
     @classmethod
     def import_modules(cls):
@@ -165,7 +169,7 @@ class LocalConnection(Connection):
         super().__init__()
         self.conn_number = 0  # changed by SetConnections for server
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> typing.Any:
         if name in self.globals:
             return self.globals[name]
         elif isinstance(__builtins__, dict):
@@ -462,7 +466,7 @@ class PipeConnection(LowLevelPipeConnection):
         else:
             return str(self)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> typing.Any:
         """Intercept attributes to allow for . invocation"""
         return EmulateCallable(self, name)
 
@@ -641,7 +645,7 @@ class RedirectedConnection(Connection):
     def __str__(self):
         return "RedirectedConnection %d,%d" % (self.conn_number, self.routing_number)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> typing.Any:
         return EmulateCallableRedirected(self.conn_number, self.routing_conn, name)
 
 
@@ -655,7 +659,7 @@ class EmulateCallable:
     def __call__(self, *args):
         return self.connection.reval(*(self.call_name,) + args)
 
-    def __getattr__(self, attr_name):
+    def __getattr__(self, attr_name: str) -> typing.Any:
         return EmulateCallable(self.connection, "%s.%s" % (self.call_name, attr_name))
 
 
@@ -671,7 +675,7 @@ class EmulateCallableRedirected:
             *("RedirectedRun", self.conn_number, self.call_name) + args
         )
 
-    def __getattr__(self, attr_name):
+    def __getattr__(self, attr_name: str) -> typing.Any:
         return EmulateCallableRedirected(
             self.conn_number, self.routing_conn, "%s.%s" % (self.call_name, attr_name)
         )

@@ -215,8 +215,6 @@ def _set_allowed_requests(sec_class, sec_level):
         "VirtualFile.readfromid",  # connection.VirtualFile.readfromid
         "VirtualFile.closebyid",  # connection.VirtualFile.closebyid
         "specifics.get",
-        "log.Log.open_logfile_allconn",
-        "log.Log.close_logfile_allconn",
         "log.Log.log_to_file",
         "robust.install_signal_handlers",
         "SetConnections.add_redirected_conn",
@@ -229,6 +227,11 @@ def _set_allowed_requests(sec_class, sec_level):
         "_repo_shadow.RepoShadow.setup",
         "_repo_shadow.RepoShadow.setup_finish",
         "_repo_shadow.RepoShadow.exit",
+        "log.Log.open_logfile_local",
+        "log.Log.close_logfile_local",
+        "log.ErrorLog.open_logfile_local",
+        "log.ErrorLog.close_logfile_local",
+        "log.ErrorLog.log_to_file",
     }
     if (
         sec_level == "read-only"
@@ -286,11 +289,6 @@ def _set_allowed_requests(sec_class, sec_level):
         requests.update(
             [
                 "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
-                "log.ErrorLog.isopen",
-                "log.ErrorLog.open",
-                "log.ErrorLog.write_if_open",
-                "log.Log.close_logfile_local",
-                "log.Log.open_logfile_local",
                 "statistics.record_error",
                 # API >= 201
                 "_repo_shadow.RepoShadow.close_statistics",

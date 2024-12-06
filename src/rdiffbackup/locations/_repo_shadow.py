@@ -143,7 +143,6 @@ class RepoShadow(location.LocationShadow):
         cls._restore_time = None
         cls._regress_time = None
         cls._unsuccessful_backup_time = None
-        cls._logging_to_file = None
 
         return (cls._base_dir, cls._ref_index, cls._ref_type)
 
@@ -240,21 +239,26 @@ class RepoShadow(location.LocationShadow):
         if cls._must_be_writable:
             if log.Log.file_verbosity > 0:
                 cls._open_logfile()
-            # FIXME the logic shouldn't be dependent on the action's name
-            if cls._values["action"] == "backup":
-                log.ErrorLog.open(
-                    data_dir=cls._data_dir,
-                    time_string=Time.getcurtimestr(),
-                    compress=cls._values["compression"],
+            # The logic shouldn't be dependent on the action's name but if someone
+            # wants to create an action using the ErrorLog they'll have to give it a
+            # name containing 'backup'
+            if "backup" in cls._values["action"]:
+                base_rp = cls._data_dir.append(
+                    "error_log.%s.data" % Time.getcurtimestr()
                 )
+                if cls._values["compression"]:
+                    # FIXME extract MaybeGzip from rpath and make it utils?
+                    log_writer = rpath.MaybeGzip(base_rp)
+                else:
+                    log_writer = base_rp.open("wb", compress=0)
+                log.ErrorLog.open_logfile(log_writer)
 
     # @API(RepoShadow.exit, 300)
     @classmethod
     def exit(cls):
         cls._unlock()
-        log.ErrorLog.close()
-        if cls._logging_to_file:
-            log.Log.close_logfile()
+        log.ErrorLog.close_logfile()
+        log.Log.close_logfile()
 
     # @API(RepoShadow.get_sigs, 201)
     @classmethod
@@ -1375,8 +1379,8 @@ class RepoShadow(location.LocationShadow):
         """
         try:  # the target repository must be writable
             logfile = cls._data_dir.append(cls._values["action"] + ".log")
-            log.Log.open_logfile(logfile)
-        except (log.LoggerError, Security.Violation) as exc:
+            log.Log.open_logfile(logfile.open("ab"))
+        except (OSError, Security.Violation) as exc:
             log.Log(
                 "Unable to open logfile '{lf}' due to '{ex}'".format(
                     lf=logfile, ex=exc
@@ -1385,7 +1389,6 @@ class RepoShadow(location.LocationShadow):
             )
             return consts.RET_CODE_ERR
         else:
-            cls._logging_to_file = True
             return consts.RET_CODE_OK
 
     @classmethod
