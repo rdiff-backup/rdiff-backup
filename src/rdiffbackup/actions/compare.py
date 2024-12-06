@@ -24,10 +24,9 @@ Comparaison can be done using metadata, file content or hashes.
 """
 
 import yaml
-from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, log, specifics
 
 
 class CompareAction(actions.BaseAction):

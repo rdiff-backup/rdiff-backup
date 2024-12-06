@@ -27,7 +27,7 @@ import typing
 import yaml
 from importlib import metadata
 
-from rdiff_backup import log
+from rdiffbackup.singletons import log
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from rdiff_backup import connection

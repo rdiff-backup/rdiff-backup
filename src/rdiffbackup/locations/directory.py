@@ -24,9 +24,8 @@ This plug-in tests that all remote locations are properly reachable and
 usable for a back-up.
 """
 
-from rdiff_backup import log
 from rdiffbackup.locations import fs_abilities, location
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, log, specifics
 
 
 class ReadDir(location.Location):

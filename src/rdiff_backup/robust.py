@@ -21,8 +21,8 @@
 import errno
 import signal
 import zlib
-from rdiff_backup import librsync, C, rpath, log, connection
-from rdiffbackup.singletons import generics
+from rdiff_backup import librsync, C, rpath, connection
+from rdiffbackup.singletons import generics, log
 
 
 # Those are the signals we want to catch because they relate to conditions

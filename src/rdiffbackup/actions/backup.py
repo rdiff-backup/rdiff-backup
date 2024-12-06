@@ -23,10 +23,10 @@ A built-in rdiff-backup action plug-in to backup a source to a target directory.
 
 import time
 
-from rdiff_backup import log, Time
+from rdiff_backup import Time
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 
 
 class BackupAction(actions.BaseAction):

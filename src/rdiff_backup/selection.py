@@ -25,8 +25,8 @@ documentation on what this code does can be found on the man page.
 
 import os
 import re
-from rdiff_backup import log, robust, rorpiter, rpath
-from rdiffbackup.singletons import generics
+from rdiff_backup import robust, rorpiter, rpath
+from rdiffbackup.singletons import generics, log
 from rdiffbackup.utils import safestr
 
 

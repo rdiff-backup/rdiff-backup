@@ -24,9 +24,8 @@ for documenting an issue.
 
 import yaml
 
-from rdiff_backup import log
 from rdiffbackup import actions
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 
 
 class InfoAction(actions.BaseAction):

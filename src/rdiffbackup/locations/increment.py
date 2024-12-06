@@ -20,8 +20,8 @@
 
 import os
 import re
-from rdiff_backup import log, Rdiff, robust, rpath, statistics, Time
-from rdiffbackup.singletons import consts, specifics
+from rdiff_backup import Rdiff, robust, rpath, statistics, Time
+from rdiffbackup.singletons import consts, log, specifics
 
 compression = True
 not_compressed_regexp = None

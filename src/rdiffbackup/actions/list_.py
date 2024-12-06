@@ -26,10 +26,10 @@ builtin 'list' class.
 """
 
 import yaml
-from rdiff_backup import log, statistics, Time
+from rdiff_backup import statistics, Time
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 

@@ -29,8 +29,8 @@ import platform
 import sys
 import tempfile
 import yaml
-from rdiff_backup import log, Security, SetConnections, Time
-from rdiffbackup.singletons import consts, specifics
+from rdiff_backup import Security, SetConnections, Time
+from rdiffbackup.singletons import consts, log, specifics
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
 # The default regexp for not compressing those files

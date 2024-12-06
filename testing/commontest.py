@@ -12,7 +12,6 @@ import subprocess
 
 from rdiff_backup import (
     hash,
-    log,
     rorpiter,
     rpath,
     Security,
@@ -21,7 +20,7 @@ from rdiff_backup import (
 from rdiffbackup import run
 from rdiffbackup.meta import ea, acl_posix
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
-from rdiffbackup.singletons import generics, specifics
+from rdiffbackup.singletons import generics, log, specifics
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
