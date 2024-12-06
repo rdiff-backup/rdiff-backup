@@ -88,7 +88,6 @@ skips = ["B301", "B101"]
 [tool.mypy]
 files = [
 	"src/rdiffbackup/singletons/",
-	"src/rdiff_backup/log.py",
 ]
 ignore_missing_imports = true
 ignore_errors = true
@@ -96,6 +95,5 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
 	"rdiffbackup.singletons.*",
-	"rdiff_backup.log",
 ]
 ignore_errors = false

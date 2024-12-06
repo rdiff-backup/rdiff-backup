@@ -22,7 +22,8 @@ Base module for any metadata class to derive from.
 
 import re
 
-from rdiff_backup import C, log
+from rdiff_backup import C
+from rdiffbackup.singletons import log
 
 
 class ParsingError(Exception):

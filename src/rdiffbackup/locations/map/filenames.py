@@ -30,8 +30,8 @@ handle that error.)
 
 import os
 import re
-from rdiff_backup import log, rpath
-from rdiffbackup.singletons import consts, generics, specifics
+from rdiff_backup import rpath
+from rdiffbackup.singletons import consts, generics, log, specifics
 from rdiffbackup.utils import safestr
 
 

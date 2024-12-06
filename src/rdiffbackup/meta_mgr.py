@@ -22,10 +22,10 @@ store and retrieve different types of metadata.
 """
 
 import os
-from rdiff_backup import log, rpath, Time, rorpiter
-from rdiffbackup.singletons import generics
-from rdiffbackup.utils import plugins
+from rdiff_backup import rorpiter, rpath, Time
 import rdiffbackup.meta
+from rdiffbackup.singletons import generics, log
+from rdiffbackup.utils import plugins
 
 
 class CombinedWriter:

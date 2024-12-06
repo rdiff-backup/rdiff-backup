@@ -22,9 +22,9 @@ A built-in rdiff-backup action plug-in to calculate average across multiple
 statistics files.
 """
 
-from rdiff_backup import log, statistics
+from rdiff_backup import statistics
 from rdiffbackup import actions
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 
 
 class CalculateAction(actions.BaseAction):

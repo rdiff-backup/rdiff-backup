@@ -22,10 +22,9 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
-from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 

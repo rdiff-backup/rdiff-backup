@@ -5,8 +5,7 @@ Test the logging functionality
 import io
 import unittest
 
-from rdiff_backup import log
-from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.singletons import consts, generics, log, specifics
 
 
 class LogTest(unittest.TestCase):

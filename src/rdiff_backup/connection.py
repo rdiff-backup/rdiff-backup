@@ -29,13 +29,12 @@ import typing
 
 from rdiff_backup import (
     iterfile,
-    log,
     robust,
     rpath,
     Security,
 )
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, log, specifics
 
 
 class ConnectionError(Exception):
@@ -101,7 +100,6 @@ class Connection:
             # "increment": "rdiff_backup.increment",
             # "iterfile": "rdiff_backup.iterfile",
             # "librsync": "rdiff_backup.librsync",
-            "log": "rdiff_backup.log",
             # "Rdiff": "rdiff_backup.Rdiff",
             "robust": "rdiff_backup.robust",
             # "rorpiter": "rdiff_backup.rorpiter",
@@ -116,6 +114,7 @@ class Connection:
             "map_filenames": "rdiffbackup.locations.map.filenames",
             "consts": "rdiffbackup.singletons.consts",
             "generics": "rdiffbackup.singletons.generics",
+            "log": "rdiffbackup.singletons.log",
             "specifics": "rdiffbackup.singletons.specifics",
         }
         for name, module in modules.items():

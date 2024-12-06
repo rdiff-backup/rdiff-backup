@@ -42,10 +42,10 @@ import shutil
 import stat
 import tempfile
 import time
-from rdiff_backup import C, log, Time
+from rdiff_backup import C, Time
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
-from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.singletons import consts, generics, log, specifics
 from rdiffbackup.utils import usrgrp
 
 try:

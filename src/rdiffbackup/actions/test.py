@@ -24,9 +24,9 @@ This plug-in tests that all remote locations are properly reachable and
 usable for a back-up.
 """
 
-from rdiff_backup import log, SetConnections
+from rdiff_backup import SetConnections
 from rdiffbackup import actions
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 
 
 class TestAction(actions.BaseAction):

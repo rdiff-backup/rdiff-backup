@@ -27,8 +27,8 @@ the related connections.
 import os
 import re
 import subprocess
-from rdiff_backup import connection, log, rpath
-from rdiffbackup.singletons import consts, generics, specifics
+from rdiff_backup import connection, rpath
+from rdiffbackup.singletons import consts, generics, log, specifics
 from rdiffbackup.utils import safestr
 
 # This is a list of remote commands used to start the connections.

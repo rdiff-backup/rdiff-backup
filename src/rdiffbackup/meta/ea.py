@@ -37,9 +37,9 @@ except ImportError:
     except ImportError:
         pass
 
-from rdiff_backup import C, log, rorpiter
+from rdiff_backup import C, rorpiter
 from rdiffbackup import meta
-from rdiffbackup.singletons import generics, specifics
+from rdiffbackup.singletons import generics, log, specifics
 from rdiffbackup.utils import safestr
 
 

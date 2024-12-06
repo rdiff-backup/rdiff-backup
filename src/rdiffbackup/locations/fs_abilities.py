@@ -28,10 +28,10 @@ FSAbilities object describing it.
 
 import errno
 import os
-from rdiff_backup import log, robust, selection, Time
+from rdiff_backup import robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.singletons import consts, generics, log, specifics
 
 
 class FSAbilities:

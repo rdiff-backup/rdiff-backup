@@ -25,9 +25,9 @@ import re
 import subprocess
 import sys
 
-from rdiff_backup import log, robust, rpath, Time
+from rdiff_backup import robust, rpath, Time
 from rdiffbackup.locations.map import filenames as map_filenames
-from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.singletons import consts, generics, log, specifics
 from rdiffbackup.utils import safestr
 
 data_dir = None  # directory where statistics are written

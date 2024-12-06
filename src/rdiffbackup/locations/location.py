@@ -24,10 +24,9 @@ All those classes should be considered abstract and not instantiated directly.
 """
 
 import os
-from rdiff_backup import log
 from rdiffbackup.locations import fs_abilities
 from rdiffbackup.locations.map import owners as map_owners
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 
 
 class Location:

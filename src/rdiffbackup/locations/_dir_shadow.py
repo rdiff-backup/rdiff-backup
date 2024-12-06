@@ -29,7 +29,6 @@ import os
 from rdiff_backup import (
     hash,
     iterfile,
-    log,
     Rdiff,
     robust,
     rorpiter,
@@ -38,7 +37,7 @@ from rdiff_backup import (
 )
 from rdiffbackup.locations import location
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, log, specifics
 
 # ### COPIED FROM BACKUP ####
 

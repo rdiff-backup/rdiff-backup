@@ -24,9 +24,8 @@ so that they can be used for e.g. bash completion
 
 import argparse
 
-from rdiff_backup import log
 from rdiffbackup import actions, actions_mgr, arguments
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, log, specifics
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 

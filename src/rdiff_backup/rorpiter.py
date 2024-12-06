@@ -28,7 +28,7 @@ files), where files is the number of files attached (usually 1 or
 """
 
 import collections
-from rdiff_backup import log
+from rdiffbackup.singletons import log
 
 
 class IndexedTuple(collections.UserList):

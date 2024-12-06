@@ -55,9 +55,9 @@ field names and values.
 
 import re
 import binascii
-from rdiff_backup import log, rpath
+from rdiff_backup import rpath
 from rdiffbackup import meta
-from rdiffbackup.singletons import generics
+from rdiffbackup.singletons import generics, log
 from rdiffbackup.utils import quoting
 
 

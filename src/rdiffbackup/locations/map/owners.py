@@ -29,7 +29,7 @@ connection to the users/groups on the other.  The _user_map and _group_map
 objects should only be used on the destination.
 """
 
-from rdiff_backup import log
+from rdiffbackup.singletons import log
 from rdiffbackup.utils import usrgrp
 
 # The following two variables are set by init_users_mapping resp.

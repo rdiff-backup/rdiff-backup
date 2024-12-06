@@ -20,9 +20,8 @@
 
 import os
 import sys
-from rdiff_backup import log
 from rdiffbackup import arguments, actions_mgr
-from rdiffbackup.singletons import consts, generics, specifics
+from rdiffbackup.singletons import consts, generics, log, specifics
 
 if os.name == "nt":
     import msvcrt

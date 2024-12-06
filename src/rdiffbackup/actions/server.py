@@ -24,9 +24,9 @@ A built-in rdiff-backup action plug-in to start a remote server process.
 import os
 import sys
 
-from rdiff_backup import connection, log, Security
+from rdiff_backup import connection, Security
 from rdiffbackup import actions
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, log, specifics
 
 
 class ServerAction(actions.BaseAction):

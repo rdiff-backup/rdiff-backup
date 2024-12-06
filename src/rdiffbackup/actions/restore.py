@@ -22,10 +22,9 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import log
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
-from rdiffbackup.singletons import consts
+from rdiffbackup.singletons import consts, log
 
 
 class RestoreAction(actions.BaseAction):
