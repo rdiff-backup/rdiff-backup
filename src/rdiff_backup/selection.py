@@ -25,9 +25,10 @@ documentation on what this code does can be found on the man page.
 
 import os
 import re
+
 from rdiff_backup import robust, rorpiter, rpath
 from rdiffbackup.singletons import generics, log
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 
 class SelectError(Exception):
@@ -729,7 +730,7 @@ probably isn't what you meant""".format(
         if b"" in glob_parts[1:-1]:  # "" OK if comes first or last, as in /foo/
             raise GlobbingError(
                 "Consecutive '/'s found in globbing string {gs}".format(
-                    gs=safestr.to_str(glob_str)
+                    gs=convert.to_safe_str(glob_str)
                 )
             )
 

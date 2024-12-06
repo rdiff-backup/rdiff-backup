@@ -40,7 +40,7 @@ except ImportError:
 from rdiff_backup import C, rorpiter
 from rdiffbackup import meta
 from rdiffbackup.singletons import generics, log, specifics
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 
 class ExtendedAttributes:
@@ -271,7 +271,7 @@ class ExtendedAttributesFile(meta.FlatFile):
         """Update a rorp iter by adding the information from ea_iter"""
         for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
             assert rorp, "Missing rorp for EA index '{eaidx}'.".format(
-                eaidx=map(safestr.to_str, ea.index)
+                eaidx=map(convert.to_safe_str, ea.index)
             )
             if not ea:
                 ea = get_meta_object(rorp.index)

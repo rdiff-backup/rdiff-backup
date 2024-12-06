@@ -26,10 +26,12 @@ builtin 'list' class.
 """
 
 import yaml
-from rdiff_backup import statistics, Time
+
+from rdiff_backup import Time
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.singletons import consts, log
+from rdiffbackup.utils import convert
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
@@ -151,8 +153,6 @@ class ListAction(actions.BaseAction):
                 log.NONE,
             )
         else:
-            stat_obj = statistics.StatsObj()  # used for byte summary string
-
             log.Log(
                 "{: ^24} {: ^17} {: ^17}".format("Time", "Size", "Cumulative size"),
                 log.NONE,
@@ -163,16 +163,16 @@ class ListAction(actions.BaseAction):
                 log.Log(
                     "{: <24} {: >17} {: >17}".format(
                         Time.timetopretty(triple["time"]),
-                        stat_obj.get_byte_summary_string(triple["size"]),
-                        stat_obj.get_byte_summary_string(triple["total_size"]),
+                        convert.to_human_size_str(triple["size"]),
+                        convert.to_human_size_str(triple["total_size"]),
                     ),
                     log.NONE,
                 )
             log.Log(
                 "{: <24} {: >17} {: >17}  (current mirror)".format(
                     Time.timetopretty(triples[-1]["time"]),
-                    stat_obj.get_byte_summary_string(triples[-1]["size"]),
-                    stat_obj.get_byte_summary_string(triples[-1]["total_size"]),
+                    convert.to_human_size_str(triples[-1]["size"]),
+                    convert.to_human_size_str(triples[-1]["total_size"]),
                 ),
                 log.NONE,
             )

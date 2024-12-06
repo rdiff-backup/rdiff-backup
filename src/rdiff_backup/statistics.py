@@ -23,7 +23,7 @@ from functools import reduce
 from rdiff_backup import Time
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import generics, log
-from rdiffbackup.utils import quoting
+from rdiffbackup.utils import convert, quoting
 
 
 _active_statfileobj = None
@@ -73,14 +73,6 @@ class StatsObj:
         ("IncrementFileSize", 1),
     )
 
-    # This is used in get_byte_summary_string below
-    _byte_abbrev_list = (
-        (1024 * 1024 * 1024 * 1024, "TB"),
-        (1024 * 1024 * 1024, "GB"),
-        (1024 * 1024, "MB"),
-        (1024, "KB"),
-    )
-
     def __init__(self):
         """Set attributes to None"""
         for attr in self._stat_attrs:
@@ -93,33 +85,6 @@ class StatsObj:
     def set_stat(self, attr, value):
         """Set attribute to given value"""
         self.__dict__[attr] = value
-
-    def get_byte_summary_string(self, byte_count):
-        """Turn byte count into human readable string like "7.23GB" """
-        if byte_count < 0:
-            sign = "-"
-            byte_count = -byte_count
-        else:
-            sign = ""
-
-        for abbrev_bytes, abbrev_string in self._byte_abbrev_list:
-            if byte_count >= abbrev_bytes:
-                # Now get 3 significant figures
-                abbrev_count = float(byte_count) / abbrev_bytes
-                if abbrev_count >= 100:
-                    precision = 0
-                elif abbrev_count >= 10:
-                    precision = 1
-                else:
-                    precision = 2
-                return (
-                    "%s%%.%df %s" % (sign, precision, abbrev_string) % (abbrev_count,)
-                )
-        byte_count = round(byte_count)
-        if byte_count == 1:
-            return sign + "1 byte"
-        else:
-            return "%s%d bytes" % (sign, byte_count)
 
     def get_stats_logstring(self, title):
         """Like _get_stats_string, but add header and footer"""
@@ -241,7 +206,7 @@ class StatsObj:
             if val is None:
                 return ""
             if in_bytes:
-                return "%s %s (%s)\n" % (attr, val, self.get_byte_summary_string(val))
+                return "%s %s (%s)\n" % (attr, val, convert.to_human_size_str(val))
             else:
                 return "%s %s\n" % (attr, val)
 
@@ -254,7 +219,7 @@ class StatsObj:
         if tdsc is not None:
             misc_string += "TotalDestinationSizeChange %s (%s)\n" % (
                 tdsc,
-                self.get_byte_summary_string(tdsc),
+                convert.to_human_size_str(tdsc),
             )
         if self.Errors is not None:
             misc_string += "Errors %d\n" % self.Errors

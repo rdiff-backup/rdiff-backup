@@ -50,7 +50,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.singletons import consts, generics, log, specifics
-from rdiffbackup.utils import locking, simpleps
+from rdiffbackup.utils import convert, locking, simpleps
 
 # ### COPIED FROM BACKUP ####
 
@@ -1214,11 +1214,10 @@ class RepoShadow(location.LocationShadow):
             sizes = [
                 triple["size"] for triple in triples if triple["time"] in times_in_secs
             ]
-            stat_obj = statistics.StatsObj()  # used for byte summary string
 
             def format_time_and_size(time, size):
                 return "{: <24} {: >17}".format(
-                    Time.timetopretty(time), stat_obj.get_byte_summary_string(size)
+                    Time.timetopretty(time), convert.to_human_size_str(size)
                 )
 
             pretty_times_map = map(format_time_and_size, times_in_secs, sizes)

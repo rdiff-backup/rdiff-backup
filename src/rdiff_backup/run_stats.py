@@ -28,7 +28,7 @@ import sys
 from rdiff_backup import robust, rpath, Time
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, log, specifics
-from rdiffbackup.utils import safestr
+from rdiffbackup.utils import convert
 
 data_dir = None  # directory where statistics are written
 begin_time = None  # Parse statistics at or after this time...
@@ -111,7 +111,7 @@ def version(rc):
 def os_system(cmd):
     sys.stdout.flush()
     if subprocess.call(cmd):
-        sys.exit("Error running command '{rc}'".format(rc=safestr.to_str(cmd)))
+        sys.exit("Error running command '{rc}'".format(rc=convert.to_safe_str(cmd)))
 
 
 class StatisticsRPaths:
@@ -329,7 +329,7 @@ def _yield_fs_objs(filestatsobj):
         match = r.match(line)
         if not match:
             sys.stderr.write(
-                "Error parsing line: '{li}'\n".format(li=safestr.to_str(line))
+                "Error parsing line: '{li}'\n".format(li=convert.to_safe_str(line))
             )
             continue
 
