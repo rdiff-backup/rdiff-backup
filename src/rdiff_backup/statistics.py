@@ -18,8 +18,10 @@
 # 02110-1301, USA
 """Generate and process aggregated backup information"""
 
+import functools
 import time
-from functools import reduce
+import typing
+
 from rdiff_backup import Time
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import generics, log
@@ -27,6 +29,55 @@ from rdiffbackup.utils import convert, quoting
 
 
 _active_statfileobj = None
+
+
+class StatsWriter(typing.Protocol):  # pragma: no cover
+    """Protocol representing a subset of io.BufferedWriter methods"""
+
+    def write(self, buffer: str) -> int:
+        """Write a string buffer to the stats, returns the number of written bytes"""
+        ...
+
+    def close(self) -> None:
+        """Close the stats writer"""
+        ...
+
+
+class StatsReader(typing.Protocol):  # pragma: no cover
+    """Protocol representing a subset of io.BufferedReader methods"""
+
+    def read(self) -> str:
+        """Read a string from the file and return it"""
+        ...
+
+    def close(self) -> None:
+        """Close the stats reader"""
+        ...
+
+
+class FileStatsWriter(typing.Protocol):  # pragma: no cover
+    """Protocol representing a subset of io.BufferedWriter methods"""
+
+    def write(self, buffer: bytes) -> int:
+        """Write a bytes buffer to the stats, returns the number of written bytes"""
+        ...
+
+    def close(self) -> None:
+        """Close the stats writer"""
+        ...
+
+
+# TODO need to update and refine based on run_stats
+class FileStatsReader(typing.Protocol):  # pragma: no cover
+    """Protocol representing a subset of io.BufferedReader methods"""
+
+    def readline(self) -> bytes:
+        """Read a line of bytes from the file and return it"""
+        ...
+
+    def close(self) -> None:
+        """Close the stats reader"""
+        ...
 
 
 class StatsException(Exception):
@@ -126,24 +177,19 @@ class StatsObj:
         return self
 
     def _get_total_dest_size_change(self):
-        """Return total destination size change
+        """
+        Return total destination size change
 
         This represents the total change in the size of the
         rdiff-backup destination directory.
-
         """
         addvals = [self.NewFileSize, self.ChangedSourceSize, self.IncrementFileSize]
         subtractvals = [self.DeletedFileSize, self.ChangedMirrorSize]
-        for val in addvals + subtractvals:
-            if val is None:
-                result = None
-                break
+        # if any value is None, the result is also None, else it's calculated
+        if any(v is None for v in addvals + subtractvals):
+            result = None
         else:
-
-            def addlist(somelist):
-                return reduce(lambda x, y: x + y, somelist)
-
-            result = addlist(addvals) - addlist(subtractvals)
+            result = sum(addvals) - sum(subtractvals)
         self.TotalDestinationSizeChange = result
         return result
 
