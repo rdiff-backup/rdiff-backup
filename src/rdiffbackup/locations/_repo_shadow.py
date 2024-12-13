@@ -556,8 +556,8 @@ class RepoShadow(location.LocationShadow):
             collated,
             consts.PIPELINE_MAX_LENGTH * 4,
             baserp,
-            cls._data_dir,
-            cls._values.get("file_statistics"),
+            cls._open_stats_file(),
+            cls._values.get("null_separator") and b"\0" or b"\n",
         )
         # pipeline len adds some leeway over just*3 (to and from and back)
 
@@ -1398,6 +1398,21 @@ class RepoShadow(location.LocationShadow):
         path = src_rorp and str(src_rorp) or str(mir_rorp)
         log.Log("Successfully compared path {pa}".format(pa=path), log.INFO)
 
+    @classmethod
+    def _open_stats_file(cls):
+        if not cls._values["file_statistics"]:
+            return None
+        stats_rp = increment.get_increment(
+            cls._data_dir.append(b"file_statistics"),
+            cls._values["compression"] and "data.gz" or "data",
+            Time.getcurtime(),
+        )
+        if stats_rp.lstat():
+            log.Log.FatalError(
+                "Statistics File '{sf}' shouldn't be existing".format(sf=stats_rp)
+            )
+        return stats_rp.open("wb", compress=cls._values["compression"])
+
     # ### COPIED FROM REGRESS ####
 
     # @API(RepoShadow.needs_regress, 201)
@@ -1971,18 +1986,16 @@ class _CacheCollatedPostProcess:
     """
 
     def __init__(
-        self, collated_iter, cache_size, dest_root_rp, data_rp, file_statistics
+        self, collated_iter, cache_size, dest_root_rp, stats_writer, separator
     ):
         """Initialize new CCWP."""
         self.iter = collated_iter  # generates (source_rorp, dest_rorp) pairs
         self.cache_size = cache_size
         self.dest_root_rp = dest_root_rp
-        self.data_rp = data_rp
-        self.file_statistics = file_statistics
-
+        self.stats_writer = stats_writer
         self.statfileobj = statistics.init_statfileobj()
-        if self.file_statistics:
-            statistics.FileStats.init(self.data_rp)
+        if self.stats_writer:
+            statistics.FileStats.open_stats_file(stats_writer, separator)
         self.metawriter = meta_mgr.get_meta_manager().get_writer()
 
         # the following should map indices to lists
@@ -2225,8 +2238,8 @@ class _CacheCollatedPostProcess:
 
         if metadata_rorp and metadata_rorp.lstat():
             self.metawriter.write_object(metadata_rorp)
-        if self.file_statistics:
-            statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
+        if self.stats_writer:
+            statistics.FileStats.add_stats(source_rorp, dest_rorp, changed, inc)
 
     def _reset_dir_perms(self, current_index):
         """Reset the permissions of directories when we have left them"""

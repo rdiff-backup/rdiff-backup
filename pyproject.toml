@@ -89,6 +89,7 @@ skips = ["B301", "B101"]
 files = [
 	"src/rdiffbackup/singletons/",
 	"src/rdiffbackup/utils/convert.py",
+	"src/rdiff_backup/statistics.py",
 ]
 ignore_missing_imports = true
 ignore_errors = true
@@ -97,5 +98,6 @@ ignore_errors = true
 module = [
 	"rdiffbackup.singletons.*",
 	"rdiffbackup.utils.convert",
+	"rdiff_backup.statistics",
 ]
 ignore_errors = false

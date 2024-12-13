@@ -18,17 +18,18 @@
 # 02110-1301, USA
 """Generate and process aggregated backup information"""
 
-import functools
 import time
 import typing
 
 from rdiff_backup import Time
 from rdiffbackup.locations import increment
-from rdiffbackup.singletons import generics, log
+from rdiffbackup.singletons import log
 from rdiffbackup.utils import convert, quoting
 
-
 _active_statfileobj = None
+
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from rdiff_backup import rpath
 
 
 class StatsWriter(typing.Protocol):  # pragma: no cover
@@ -370,64 +371,67 @@ class StatFileObj(StatsObj):
         self.EndTime = end_time
 
 
-class FileStats:
-    """Keep track of less detailed stats on file-by-file basis"""
+class FileStatsTracker:
+    """
+    Keep track of less detailed stats on file-by-file basis.
+    Because the object is only used by the repository, we don't need to handle
+    the client/server complexity.
+    """
 
-    _fileobj, _rp = None, None
-    _line_sep = None
+    _fileobj: typing.Optional[FileStatsWriter] = None
+    _line_sep: bytes = b"\n"
+    _line_buffer: list[bytes] = []
 
-    @classmethod
-    def init(cls, data_dir):
+    def open_stats_file(self, stats_writer: FileStatsWriter, separator: bytes) -> None:
         """Open file stats object and prepare to write"""
-        assert not (cls._fileobj or cls._rp), "FileStats has already been initialized."
-        rpbase = data_dir.append(b"file_statistics")
-        suffix = generics.compression and "data.gz" or "data"
-        cls._rp = increment.get_increment(rpbase, suffix, Time.getcurtime())
-        assert not cls._rp.lstat(), "Path '{rp}' shouldn't be existing.".format(
-            rp=cls._rp
-        )
-        cls._fileobj = cls._rp.open("wb", compress=generics.compression)
+        assert not self._fileobj, "FileStats has already been initialized."
+        self._fileobj = stats_writer
+        self._line_sep = separator
+        self._write_header()
 
-        cls._line_sep = generics.null_separator and b"\0" or b"\n"
-        cls._write_docstring()
-        cls._line_buffer = []
-
-    @classmethod
-    def update(cls, source_rorp, dest_rorp, changed, inc):
+    def add_stats(
+        self,
+        source_rorp: typing.Optional["rpath.RORPath"],
+        dest_rorp: typing.Optional["rpath.RORPath"],
+        changed: bool,
+        inc: typing.Optional["rpath.RORPath"],
+    ) -> None:
         """Update file stats with given information"""
         if source_rorp:
             filename = source_rorp.get_indexpath()
         else:
+            assert dest_rorp, (
+                "At least one of source {sp} or destination {dp} "
+                "must be defined".format(sp=source_rorp, dp=dest_rorp)
+            )
             filename = dest_rorp.get_indexpath()
         filename = quoting.quote_path(filename)
 
-        size_list = list(map(cls._get_size, [source_rorp, dest_rorp, inc]))
+        size_list = list(map(self._get_size, [source_rorp, dest_rorp, inc]))
         line = b" ".join([filename, str(changed).encode()] + size_list)
-        cls._line_buffer.append(line)
-        if len(cls._line_buffer) >= 100:
-            cls._write_buffer()
+        self._line_buffer.append(line)
+        if len(self._line_buffer) >= 100:
+            self._write_buffer()
 
-    @classmethod
-    def close(cls):
+    def close(self) -> None:
         """Close file stats file"""
-        assert cls._fileobj, "FileStats hasn't been properly initialized."
-        if cls._line_buffer:
-            cls._write_buffer()
-        cls._fileobj.close()
-        cls._fileobj = cls._rp = None
+        assert self._fileobj, "FileStats hasn't been properly initialized."
+        if self._line_buffer:
+            self._write_buffer()
+        self._fileobj.close()
+        self._fileobj = None
 
-    @classmethod
-    def _write_docstring(cls):
+    def _write_header(self) -> None:
         """Write the first line (a documentation string) into file"""
-        cls._fileobj.write(b"# Format of each line in file statistics file:")
-        cls._fileobj.write(cls._line_sep)
-        cls._fileobj.write(
+        assert self._fileobj, "FileStats hasn't been properly initialized."
+        self._fileobj.write(b"# Format of each line in file statistics file:")
+        self._fileobj.write(self._line_sep)
+        self._fileobj.write(
             b"# Filename Changed SourceSize MirrorSize "
-            b"IncrementSize" + cls._line_sep
+            b"IncrementSize" + self._line_sep
         )
 
-    @classmethod
-    def _get_size(cls, rorp):
+    def _get_size(self, rorp: typing.Optional["rpath.RORPath"]) -> bytes:
         """Return the size of rorp as bytes, or "NA" if not a regular file"""
         if not rorp:
             return b"NA"
@@ -436,20 +440,22 @@ class FileStats:
         else:
             return b"0"
 
-    @classmethod
-    def _write_buffer(cls):
-        """Write buffer to file because buffer is full
+    # FIXME: actually this class shouldn't know anything about the underlying file
+    # implementation, gzip or not gzip, and the StatsFileWriter should handle it
+    # transparently as a wrapper to the underlying implementation
+    def _write_buffer(self) -> None:
+        """
+        Write buffer to file because buffer is full
 
         The buffer part is necessary because the GzipFile.write()
         method seems fairly slow.
-
         """
         assert (
-            cls._line_buffer and cls._fileobj
+            self._line_buffer and self._fileobj
         ), "FileStats hasn't been properly initialized."
-        cls._line_buffer.append(b"")  # have join add _line_sep to end also
-        cls._fileobj.write(cls._line_sep.join(cls._line_buffer))
-        cls._line_buffer = []
+        self._line_buffer.append(b"")  # have join add _line_sep to end also
+        self._fileobj.write(self._line_sep.join(self._line_buffer))
+        self._line_buffer = []
 
 
 def init_statfileobj():
@@ -499,3 +505,6 @@ def print_active_stats(end_time=None):
     _active_statfileobj.finish(end_time)
     statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
     log.Log(statmsg, log.NONE)
+
+
+FileStats = FileStatsTracker()
