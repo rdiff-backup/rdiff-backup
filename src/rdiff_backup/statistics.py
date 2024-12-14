@@ -381,6 +381,7 @@ class FileStatsTracker:
     _fileobj: typing.Optional[FileStatsWriter] = None
     _line_sep: bytes = b"\n"
     _line_buffer: list[bytes] = []
+    _header: bytes = b""
 
     def open_stats_file(self, stats_writer: FileStatsWriter, separator: bytes) -> None:
         """Open file stats object and prepare to write"""
@@ -424,12 +425,15 @@ class FileStatsTracker:
     def _write_header(self) -> None:
         """Write the first line (a documentation string) into file"""
         assert self._fileobj, "FileStats hasn't been properly initialized."
-        self._fileobj.write(b"# Format of each line in file statistics file:")
-        self._fileobj.write(self._line_sep)
-        self._fileobj.write(
-            b"# Filename Changed SourceSize MirrorSize "
-            b"IncrementSize" + self._line_sep
+        # we keep a copy of the header to simplify testing
+        self._header = self._line_sep.join(
+            (
+                b"# Format of each line in file statistics file:",
+                b"# Filename Changed SourceSize MirrorSize IncrementSize",
+                b"",  # for a final line separator
+            )
         )
+        self._fileobj.write(self._header)
 
     def _get_size(self, rorp: typing.Optional["rpath.RORPath"]) -> bytes:
         """Return the size of rorp as bytes, or "NA" if not a regular file"""

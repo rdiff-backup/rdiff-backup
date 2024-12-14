@@ -3,6 +3,7 @@ Test the statistics function of rdiff-backup
 """
 
 import os
+import io
 import time
 import unittest
 
@@ -240,6 +241,29 @@ class IncStatTest(unittest.TestCase):
         self.assertLess(root_stats.ChangedMirrorSize, 420000)
         self.assertLess(10, root_stats.IncrementFileSize)
         self.assertLess(root_stats.IncrementFileSize, 30000)
+
+
+class FileStatsTrackerTest(unittest.TestCase):
+    """Test FileStatsTracker class"""
+
+    def test_filestats_tracker_write(self):
+        """Test the tracking of file statistics"""
+        tracker = statistics.FileStatsTracker()
+        writer = io.BytesIO()
+        tracker.open_stats_file(writer, b"|")
+        compare_str = tracker._header
+        self.assertEqual(writer.getvalue(), compare_str)
+        src = rpath.RORPath(["s", "r", "c"], {"size": 1234, "type": "reg"})
+        dst = rpath.RORPath(["d", "s", "t"], {"size": 2468, "type": "reg"})
+        inc1 = rpath.RORPath(["i", "n", "c"], {"size": 999, "type": "reg"})
+        inc2 = rpath.RORPath(["i", "n", "c"], {"size": 999, "type": "sym"})
+        tracker.add_stats(src, dst, True, inc1)
+        compare_str += b"s/r/c True 1234 2468 999|"
+        tracker.add_stats(None, dst, False, inc2)
+        compare_str += b"d/s/t False NA 2468 0|"
+        tracker._write_buffer()  # kind of flush
+        self.assertEqual(writer.getvalue(), compare_str)
+        tracker.close()
 
 
 if __name__ == "__main__":
