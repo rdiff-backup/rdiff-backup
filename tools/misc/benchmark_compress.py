@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # a script to benchmark different ways to compress files
 # A typical result with default values looks like this:
-# $ ./tools/misc/benchmark_compress.py 
+# $ ./tools/misc/benchmark_compress.py
 # DIRECT UNBUFFERED N/A 0.17925615100011782
 # DIRECT BUFFERED N/A 0.1017055429992979
 # GZIP UNBUFFERED 9 0.652450399999907
@@ -10,15 +10,16 @@
 # BZ2 BUFFERED 9 14.793156550000276
 # LZMA UNBUFFERED 6 3.715828219999821
 # LZMA BUFFERED 6 2.684497156999896
-# $ ll /tmp/*buffered*
-# 99900 Dec 15 09:23 /tmp/buffered
-#   480 Dec 15 09:23 /tmp/buffered.gz
-#   282 Dec 15 09:24 /tmp/buffered.bz2
-#   248 Dec 15 09:24 /tmp/buffered.xz
-# 99900 Dec 15 09:23 /tmp/unbuffered
-#   482 Dec 15 09:23 /tmp/unbuffered.gz
-#   282 Dec 15 09:24 /tmp/unbuffered.bz2
-#   248 Dec 15 09:24 /tmp/unbuffered.xz
+# $ ll tmp-*buffered*
+# 99900 Dec 15 09:23 tmp-buffered
+#   480 Dec 15 09:23 tmp-buffered.gz
+#   282 Dec 15 09:24 tmp-buffered.bz2
+#   248 Dec 15 09:24 tmp-buffered.xz
+# 99900 Dec 15 09:23 tmp-unbuffered
+#   482 Dec 15 09:23 tmp-unbuffered.gz
+#   282 Dec 15 09:24 tmp-unbuffered.bz2
+#   248 Dec 15 09:24 tmp-unbuffered.xz
+# $ rm tmp-*buffered*
 
 import bz2
 import gzip
@@ -35,14 +36,14 @@ LZMA_PRESET = 6  # 0-9, default is 6
 
 
 def write_direct_unbuffered():
-    file = open("/tmp/unbuffered", mode="wb")
+    file = open("tmp-unbuffered", mode="wb")
     for i in range(0, LINES):
         file.write(LINE)
     file.close()
 
 
 def write_direct_buffered():
-    file = open("/tmp/buffered", mode="wb")
+    file = open("tmp-buffered", mode="wb")
     buffer = []
     for i in range(0, LINES):
         buffer.append(LINE)
@@ -51,14 +52,14 @@ def write_direct_buffered():
 
 
 def write_gzip_unbuffered():
-    file = gzip.GzipFile("/tmp/unbuffered.gz", compresslevel=GZIP_COMPRESS, mode="wb")
+    file = gzip.GzipFile("tmp-unbuffered.gz", compresslevel=GZIP_COMPRESS, mode="wb")
     for i in range(0, LINES):
         file.write(LINE)
     file.close()
 
 
 def write_gzip_buffered():
-    file = gzip.GzipFile("/tmp/buffered.gz", compresslevel=GZIP_COMPRESS, mode="wb")
+    file = gzip.GzipFile("tmp-buffered.gz", compresslevel=GZIP_COMPRESS, mode="wb")
     buffer = []
     for i in range(0, LINES):
         buffer.append(LINE)
@@ -67,14 +68,14 @@ def write_gzip_buffered():
 
 
 def write_bz2_unbuffered():
-    file = bz2.BZ2File("/tmp/unbuffered.bz2", mode="wb", compresslevel=BZ2_COMPRESS)
+    file = bz2.BZ2File("tmp-unbuffered.bz2", mode="wb", compresslevel=BZ2_COMPRESS)
     for i in range(0, LINES):
         file.write(LINE)
     file.close()
 
 
 def write_bz2_buffered():
-    file = bz2.BZ2File("/tmp/buffered.bz2", mode="wb", compresslevel=BZ2_COMPRESS)
+    file = bz2.BZ2File("tmp-buffered.bz2", mode="wb", compresslevel=BZ2_COMPRESS)
     buffer = []
     for i in range(0, LINES):
         buffer.append(LINE)
@@ -83,14 +84,14 @@ def write_bz2_buffered():
 
 
 def write_lzma_unbuffered():
-    file = lzma.LZMAFile("/tmp/unbuffered.xz", mode="wb", preset=LZMA_PRESET)
+    file = lzma.LZMAFile("tmp-unbuffered.xz", mode="wb", preset=LZMA_PRESET)
     for i in range(0, LINES):
         file.write(LINE)
     file.close()
 
 
 def write_lzma_buffered():
-    file = lzma.LZMAFile("/tmp/buffered.xz", mode="wb", preset=LZMA_PRESET)
+    file = lzma.LZMAFile("tmp-buffered.xz", mode="wb", preset=LZMA_PRESET)
     buffer = []
     for i in range(0, LINES):
         buffer.append(LINE)

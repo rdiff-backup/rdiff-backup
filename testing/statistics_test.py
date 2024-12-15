@@ -251,7 +251,8 @@ class FileStatsTrackerTest(unittest.TestCase):
         tracker = statistics.FileStatsTracker()
         writer = io.BytesIO()
         tracker.open_stats_file(writer, b"|")
-        compare_str = tracker._header
+        compare_str = b"|".join(tracker._HEADER) + b"|"
+        tracker.flush()  # we need to flush before we can compare
         self.assertEqual(writer.getvalue(), compare_str)
         src = rpath.RORPath(["s", "r", "c"], {"size": 1234, "type": "reg"})
         dst = rpath.RORPath(["d", "s", "t"], {"size": 2468, "type": "reg"})
@@ -261,7 +262,7 @@ class FileStatsTrackerTest(unittest.TestCase):
         compare_str += b"s/r/c True 1234 2468 999|"
         tracker.add_stats(None, dst, False, inc2)
         compare_str += b"d/s/t False NA 2468 0|"
-        tracker._write_buffer()  # kind of flush
+        tracker.flush()  # we need to flush before we can compare
         self.assertEqual(writer.getvalue(), compare_str)
         tracker.close()
 

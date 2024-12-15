@@ -24,7 +24,7 @@ import typing
 from rdiff_backup import Time
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import log
-from rdiffbackup.utils import convert, quoting
+from rdiffbackup.utils import convert, buffer, quoting
 
 _active_statfileobj = None
 
@@ -41,6 +41,10 @@ class StatsWriter(typing.Protocol):  # pragma: no cover
 
     def close(self) -> None:
         """Close the stats writer"""
+        ...
+
+    def flush(self) -> None:
+        """Flush the stats writer"""
         ...
 
 
@@ -65,6 +69,10 @@ class FileStatsWriter(typing.Protocol):  # pragma: no cover
 
     def close(self) -> None:
         """Close the stats writer"""
+        ...
+
+    def flush(self) -> None:
+        """Flush the stats writer"""
         ...
 
 
@@ -379,16 +387,20 @@ class FileStatsTracker:
     """
 
     _fileobj: typing.Optional[FileStatsWriter] = None
-    _line_sep: bytes = b"\n"
     _line_buffer: list[bytes] = []
-    _header: bytes = b""
+    _HEADER: typing.Final[tuple[bytes, bytes]] = (
+        b"# Format of each line in file statistics file:",
+        b"# Filename Changed SourceSize MirrorSize IncrementSize",
+    )
 
     def open_stats_file(self, stats_writer: FileStatsWriter, separator: bytes) -> None:
         """Open file stats object and prepare to write"""
         assert not self._fileobj, "FileStats has already been initialized."
-        self._fileobj = stats_writer
-        self._line_sep = separator
-        self._write_header()
+        self._fileobj = typing.cast(
+            FileStatsWriter, buffer.LinesBuffer(stats_writer, separator)
+        )
+        for line in self._HEADER:
+            self._fileobj.write(line)
 
     def add_stats(
         self,
@@ -410,30 +422,19 @@ class FileStatsTracker:
 
         size_list = list(map(self._get_size, [source_rorp, dest_rorp, inc]))
         line = b" ".join([filename, str(changed).encode()] + size_list)
-        self._line_buffer.append(line)
-        if len(self._line_buffer) >= 100:
-            self._write_buffer()
+        assert self._fileobj, "FileStats hasn't been properly initialized."
+        self._fileobj.write(line)
 
     def close(self) -> None:
         """Close file stats file"""
         assert self._fileobj, "FileStats hasn't been properly initialized."
-        if self._line_buffer:
-            self._write_buffer()
         self._fileobj.close()
         self._fileobj = None
 
-    def _write_header(self) -> None:
-        """Write the first line (a documentation string) into file"""
+    def flush(self) -> None:
+        """Flushing the underlying IO object, needed mostly for tests"""
         assert self._fileobj, "FileStats hasn't been properly initialized."
-        # we keep a copy of the header to simplify testing
-        self._header = self._line_sep.join(
-            (
-                b"# Format of each line in file statistics file:",
-                b"# Filename Changed SourceSize MirrorSize IncrementSize",
-                b"",  # for a final line separator
-            )
-        )
-        self._fileobj.write(self._header)
+        self._fileobj.flush()
 
     def _get_size(self, rorp: typing.Optional["rpath.RORPath"]) -> bytes:
         """Return the size of rorp as bytes, or "NA" if not a regular file"""
@@ -443,23 +444,6 @@ class FileStatsTracker:
             return str(rorp.getsize()).encode()
         else:
             return b"0"
-
-    # FIXME: actually this class shouldn't know anything about the underlying file
-    # implementation, gzip or not gzip, and the StatsFileWriter should handle it
-    # transparently as a wrapper to the underlying implementation
-    def _write_buffer(self) -> None:
-        """
-        Write buffer to file because buffer is full
-
-        The buffer part is necessary because the GzipFile.write()
-        method seems fairly slow.
-        """
-        assert (
-            self._line_buffer and self._fileobj
-        ), "FileStats hasn't been properly initialized."
-        self._line_buffer.append(b"")  # have join add _line_sep to end also
-        self._fileobj.write(self._line_sep.join(self._line_buffer))
-        self._line_buffer = []
 
 
 def init_statfileobj():

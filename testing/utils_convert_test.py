@@ -1,5 +1,5 @@
 """
-Test the simpleps alternative implementation
+Test the convert utils module
 """
 
 import unittest
