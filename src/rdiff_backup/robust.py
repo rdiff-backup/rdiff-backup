@@ -21,8 +21,8 @@
 import errno
 import signal
 import zlib
-from rdiff_backup import librsync, C, rpath, connection
-from rdiffbackup.singletons import generics, log
+from rdiff_backup import C, connection, librsync, rpath, statistics
+from rdiffbackup.singletons import log
 
 
 # Those are the signals we want to catch because they relate to conditions
@@ -112,8 +112,7 @@ def check_common_error(error_handler, function, args=[]):
     except (Exception, KeyboardInterrupt, SystemExit) as exc:
         if catch_error(exc):
             log.Log.exception()
-            if generics.backup_writer is not None:
-                generics.backup_writer.statistics.record_error()
+            statistics.SessionStats.add_error()
             if error_handler:
                 return error_handler(exc, *args)
             else:

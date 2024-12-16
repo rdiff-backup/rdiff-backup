@@ -70,7 +70,7 @@ def make_increment(new, mirror, incpref, inc_time=None):
         incrp = _make_diff_increment(new, mirror, incpref, inc_time)
     else:
         incrp = _make_snapshot_increment(mirror, incpref, inc_time)
-    statistics.process_increment(incrp)
+    statistics.SessionStats.add_increment(incrp)
     return incrp
 
 

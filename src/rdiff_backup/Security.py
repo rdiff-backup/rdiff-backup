@@ -289,7 +289,6 @@ def _set_allowed_requests(sec_class, sec_level):
         requests.update(
             [
                 "VirtualFile.writetoid",  # connection.VirtualFile.writetoid
-                "statistics.record_error",
                 # API >= 201
                 "_repo_shadow.RepoShadow.close_statistics",
                 "_repo_shadow.RepoShadow.get_sigs",
@@ -297,6 +296,8 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_repo_shadow.RepoShadow.remove_current_mirror",
                 "_repo_shadow.RepoShadow.set_config",
                 "_repo_shadow.RepoShadow.touch_current_mirror",
+                # API >= 300
+                "statistics.SessionsStats.add_error_local",
             ]
         )
     if sec_level == "read-write":

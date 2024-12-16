@@ -22,8 +22,7 @@ import time
 import typing
 
 from rdiff_backup import Time
-from rdiffbackup.locations import increment
-from rdiffbackup.singletons import log
+from rdiffbackup.singletons import generics, specifics
 from rdiffbackup.utils import convert, buffer, quoting
 
 _active_statfileobj = None
@@ -32,7 +31,7 @@ if typing.TYPE_CHECKING:  # pragma: no cover
     from rdiff_backup import rpath
 
 
-class StatsWriter(typing.Protocol):  # pragma: no cover
+class SessionStatsWriter(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedWriter methods"""
 
     def write(self, buffer: str) -> int:
@@ -48,7 +47,7 @@ class StatsWriter(typing.Protocol):  # pragma: no cover
         ...
 
 
-class StatsReader(typing.Protocol):  # pragma: no cover
+class SessionStatsReader(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedReader methods"""
 
     def read(self) -> str:
@@ -93,7 +92,7 @@ class StatsException(Exception):
     pass
 
 
-class StatsObj:
+class SessionStatsCalc:
     """Contains various statistics, provide string conversion functions"""
 
     _stat_file_attrs = (
@@ -146,30 +145,28 @@ class StatsObj:
         """Set attribute to given value"""
         self.__dict__[attr] = value
 
-    def get_stats_logstring(self, title):
+    def get_stats_as_string(self, title: str = "Session statistics") -> str:
         """Like _get_stats_string, but add header and footer"""
         header = "--------------[ %s ]--------------" % title
         footer = "-" * len(header)
         return "%s\n%s%s\n" % (header, self._get_stats_string(), footer)
 
-    def write_stats_to_rp(self, rp):
+    def write_stats(self, fp: SessionStatsWriter):
         """Write statistics string to given rpath"""
-        fp = rp.open("w")  # statistics are a text file
         fp.write(self._get_stats_string())
         fp.close()
 
-    def read_stats_from_rp(self, rp):
+    def read_stats(self, fp: SessionStatsReader):
         """Set statistics from rpath, return self for convenience"""
-        fp = rp.open("r")  # statistics are a text file
         self._set_stats_from_string(fp.read())
         fp.close()
         return self
 
-    def set_to_average(self, statobj_list):
-        """Set self's attributes to average of those in statobj_list"""
+    def calc_average(self, sess_stats_list: list[typing.Self]):
+        """Set self's attributes to average of those in sess_stats_list"""
         for attr in self._stat_attrs:
             self.set_stat(attr, 0)
-        for statobj in statobj_list:
+        for statobj in sess_stats_list:
             for attr in self._stat_attrs:
                 if statobj.get_stat(attr) is None:
                     self.set_stat(attr, None)
@@ -182,7 +179,7 @@ class StatsObj:
 
         for attr in self._stat_attrs:
             if self.get_stat(attr) is not None:
-                self.set_stat(attr, self.get_stat(attr) / float(len(statobj_list)))
+                self.set_stat(attr, self.get_stat(attr) / float(len(sess_stats_list)))
         return self
 
     def _get_total_dest_size_change(self):
@@ -312,24 +309,24 @@ class StatsObj:
     def _stats_equal(self, s):
         """Return true if s has same statistics as self"""
         assert isinstance(
-            s, StatsObj
-        ), "Can only compare with StatsObj not {stype}.".format(stype=type(s))
+            s, SessionStatsCalc
+        ), "Can only compare with SessionStatsCalc not {stype}.".format(stype=type(s))
         for attr in self._stat_file_attrs:
             if self.get_stat(attr) != s.get_stat(attr):
                 return None
         return 1
 
 
-class StatFileObj(StatsObj):
-    """Build on StatsObj, add functions for processing files"""
+class SessionStatsTracker(SessionStatsCalc):
+    """Build on SessionStatsCalc, add functions for processing files"""
 
     def __init__(self, start_time=None):
         """StatFileObj initializer - zero out file attributes"""
-        StatsObj.__init__(self)
+        super().__init__()
         for attr in self._stat_file_attrs:
             self.set_stat(attr, 0)
         if start_time is None:
-            start_time = Time.getcurtime()
+            start_time = Time.getcurtime() or time.time()
         self.StartTime = start_time
         self.Errors = 0
 
@@ -370,6 +367,14 @@ class StatFileObj(StatsObj):
 
     def add_error(self):
         """Increment error stat by 1"""
+        if specifics.is_backup_writer:
+            self.add_error_local()
+        elif generics.backup_writer:
+            generics.backup_writer.statistics.SessionStats.add_error_local()
+
+    # @API(SessionStats.add_error_local, 300)
+    def add_error_local(self):
+        """Record error on active statfileobj, if there is one"""
         self.Errors += 1
 
     def finish(self, end_time=None):
@@ -446,53 +451,10 @@ class FileStatsTracker:
             return b"0"
 
 
-def init_statfileobj():
-    """Return new stat file object, record as active stat object"""
-    global _active_statfileobj
-    assert not _active_statfileobj, "Can't set an already set stats object."
-    _active_statfileobj = StatFileObj()
-    return _active_statfileobj
+def reset_statistics():
+    global SessionStats, FileStats
+    SessionStats = SessionStatsTracker()
+    FileStats = FileStatsTracker()
 
 
-def get_active_statfileobj():
-    """Return active stat file object if it exists"""
-    if _active_statfileobj:
-        return _active_statfileobj
-    else:
-        return None
-
-
-# @API(record_error, 200)
-def record_error():
-    """Record error on active statfileobj, if there is one"""
-    if _active_statfileobj:
-        _active_statfileobj.add_error()
-
-
-def process_increment(inc_rorp):
-    """Add statistics of increment rp incrp if there is active statfile"""
-    if _active_statfileobj:
-        _active_statfileobj.add_increment(inc_rorp)
-
-
-def write_active_statfileobj(data_dir, end_time=None):
-    """Write active StatFileObj object to session statistics file"""
-    global _active_statfileobj
-    assert _active_statfileobj, "Stats object must be set before writing."
-    rp_base = data_dir.append(b"session_statistics")
-    session_stats_rp = increment.get_increment(rp_base, "data", Time.getcurtime())
-    _active_statfileobj.finish(end_time)
-    _active_statfileobj.write_stats_to_rp(session_stats_rp)
-    _active_statfileobj = None
-
-
-def print_active_stats(end_time=None):
-    """Print statistics of active statobj to stdout and log"""
-    global _active_statfileobj
-    assert _active_statfileobj, "Stats object must be set before printing."
-    _active_statfileobj.finish(end_time)
-    statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
-    log.Log(statmsg, log.NONE)
-
-
-FileStats = FileStatsTracker()
+reset_statistics()

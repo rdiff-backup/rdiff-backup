@@ -707,11 +707,15 @@ class RepoShadow(location.LocationShadow):
         rdiff-backup is run is used (set by passing in time.time() from that
         system). Use at end of session.
         """
+        statistics.SessionStats.finish(end_time)
+        stats_rp = increment.get_increment(
+            cls._data_dir.append(b"session_statistics"), "data", Time.getcurtime()
+        )
+        statistics.SessionStats.write_stats(stats_rp.open("w"))
         if cls._values.get("print_statistics"):
-            statistics.print_active_stats(end_time)
+            log.Log(statistics.SessionStats.get_stats_as_string(), log.NONE)
         if cls._values.get("file_statistics"):
             statistics.FileStats.close()
-        statistics.write_active_statfileobj(cls._data_dir, end_time)
 
     # ### COPIED FROM RESTORE ####
 
@@ -1993,7 +1997,6 @@ class _CacheCollatedPostProcess:
         self.cache_size = cache_size
         self.dest_root_rp = dest_root_rp
         self.stats_writer = stats_writer
-        self.statfileobj = statistics.init_statfileobj()
         if self.stats_writer:
             statistics.FileStats.open_stats_file(stats_writer, separator)
         self.metawriter = meta_mgr.get_meta_manager().get_writer()
@@ -2224,9 +2227,9 @@ class _CacheCollatedPostProcess:
 
         if not changed or success:
             if source_rorp:
-                self.statfileobj.add_source_file(source_rorp)
+                statistics.SessionStats.add_source_file(source_rorp)
             if dest_rorp:
-                self.statfileobj.add_dest_file(dest_rorp)
+                statistics.SessionStats.add_dest_file(dest_rorp)
         if success == 0:
             metadata_rorp = dest_rorp
         elif success == 1:
@@ -2234,7 +2237,7 @@ class _CacheCollatedPostProcess:
         else:
             metadata_rorp = None  # in case deleted because of ListError
         if success == 1 or success == 2:
-            self.statfileobj.add_changed(source_rorp, dest_rorp)
+            statistics.SessionStats.add_changed(source_rorp, dest_rorp)
 
         if metadata_rorp and metadata_rorp.lstat():
             self.metawriter.write_object(metadata_rorp)
@@ -2280,9 +2283,6 @@ class _RepoPatchITRB(rorpiter.ITRBranch):
             "local connection {lconn}.".format(
                 conn=basis_root_rp.conn, lconn=specifics.local_connection
             )
-        )
-        self.statfileobj = (
-            statistics.get_active_statfileobj() or statistics.StatFileObj()
         )
         self.dir_replacement, self.dir_update = None, None
         self.CCPP = CCPP

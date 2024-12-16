@@ -15,8 +15,8 @@ from rdiffbackup.singletons import generics, specifics
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
-class StatsObjTest(unittest.TestCase):
-    """Test StatsObj class"""
+class SessionStatsCalcTest(unittest.TestCase):
+    """Test SessionStatsCalc class"""
 
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
 
@@ -40,17 +40,17 @@ class StatsObjTest(unittest.TestCase):
 
     def test_get_stats(self):
         """Test reading and writing stat objects"""
-        s = statistics.StatsObj()
+        s = statistics.SessionStatsCalc()
         self.assertIsNone(s.get_stat("SourceFiles"))
         self.set_obj(s)
         self.assertEqual(s.get_stat("SourceFiles"), 1)
 
-        s1 = statistics.StatFileObj()
+        s1 = statistics.SessionStatsTracker()
         self.assertEqual(s1.get_stat("SourceFiles"), 0)
 
     def test_get_stats_string(self):
         """Test conversion of stat object into string"""
-        s = statistics.StatsObj()
+        s = statistics.SessionStatsCalc()
         stats_string = s._get_stats_string()
         self.assertEqual(stats_string, "")
 
@@ -82,7 +82,7 @@ TotalDestinationSizeChange 7 (7 B)
 
     def test_line_string(self):
         """Test conversion to a single line"""
-        s = statistics.StatsObj()
+        s = statistics.SessionStatsCalc()
         self.set_obj(s)
         statline = s._get_stats_line(("sample", "index", "w", "new\nline"))
         self.assertEqual(
@@ -99,7 +99,7 @@ TotalDestinationSizeChange 7 (7 B)
 
     def test_init_stats(self):
         """Test setting stat object from string"""
-        s = statistics.StatsObj()
+        s = statistics.SessionStatsCalc()
         s._set_stats_from_string("NewFiles 3 hello there")
         for attr in s._stat_attrs:
             if attr == "NewFiles":
@@ -107,11 +107,11 @@ TotalDestinationSizeChange 7 (7 B)
             else:
                 self.assertIsNone(s.get_stat(attr))
 
-        s1 = statistics.StatsObj()
+        s1 = statistics.SessionStatsCalc()
         self.set_obj(s1)
         self.assertFalse(s1._stats_equal(s))
 
-        s2 = statistics.StatsObj()
+        s2 = statistics.SessionStatsCalc()
         s2._set_stats_from_string(s1._get_stats_string())
         self.assertTrue(s1._stats_equal(s2))
 
@@ -122,18 +122,18 @@ TotalDestinationSizeChange 7 (7 B)
         )
         if rp.lstat():
             rp.delete()
-        s = statistics.StatsObj()
+        s = statistics.SessionStatsCalc()
         self.set_obj(s)
-        s.write_stats_to_rp(rp)
+        s.write_stats(rp.open("w"))
 
-        s2 = statistics.StatsObj()
+        s2 = statistics.SessionStatsCalc()
         self.assertFalse(s2._stats_equal(s))
-        s2.read_stats_from_rp(rp)
+        s2.read_stats(rp.open("r"))
         self.assertTrue(s2._stats_equal(s))
 
     def testAverage(self):
         """Test making an average statsobj"""
-        s1 = statistics.StatsObj()
+        s1 = statistics.SessionStatsCalc()
         s1.StartTime = 5
         s1.EndTime = 10
         s1.ElapsedTime = 5
@@ -141,7 +141,7 @@ TotalDestinationSizeChange 7 (7 B)
         s1.SourceFiles = 100
         s1.NewFileSize = 4
 
-        s2 = statistics.StatsObj()
+        s2 = statistics.SessionStatsCalc()
         s2.StartTime = 25
         s2.EndTime = 35
         s2.ElapsedTime = 10
@@ -149,7 +149,7 @@ TotalDestinationSizeChange 7 (7 B)
         s2.SourceFiles = 50
         s2.DeletedFiles = 0
 
-        s3 = statistics.StatsObj().set_to_average([s1, s2])
+        s3 = statistics.SessionStatsCalc().calc_average([s1, s2])
         self.assertIsNone(s3.StartTime)
         self.assertIsNone(s3.EndTime)
         self.assertEqual(s3.ElapsedTime, 7.5)
@@ -216,13 +216,13 @@ class IncStatTest(unittest.TestCase):
 
         incs = sorti(rbdir.append("session_statistics").get_incfiles_list())
         self.assertEqual(len(incs), 2)
-        s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
+        s2 = statistics.SessionStatsCalc().read_stats(incs[0].open("r"))
         self.assertEqual(s2.SourceFiles, 7)
         self.assertLessEqual(700000, s2.SourceFileSize)
         self.assertLess(s2.SourceFileSize, 750000)
         self.stats_check_initial(s2)
 
-        root_stats = statistics.StatsObj().read_stats_from_rp(incs[1])
+        root_stats = statistics.SessionStatsCalc().read_stats(incs[1].open("r"))
         self.assertEqual(root_stats.SourceFiles, 7)
         self.assertLessEqual(550000, root_stats.SourceFileSize)
         self.assertLess(root_stats.SourceFileSize, 570000)
