@@ -50,7 +50,7 @@ class SessionStatsWriter(typing.Protocol):  # pragma: no cover
 class SessionStatsReader(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedReader methods"""
 
-    def read(self) -> str:
+    def read(self, size: int = -1) -> str:
         """Read a string from the file and return it"""
         ...
 
@@ -79,8 +79,8 @@ class FileStatsWriter(typing.Protocol):  # pragma: no cover
 class FileStatsReader(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedReader methods"""
 
-    def readline(self) -> bytes:
-        """Read a line of bytes from the file and return it"""
+    def __iter__(self) -> bytes:
+        """Iterate over the input"""
         ...
 
     def close(self) -> None:

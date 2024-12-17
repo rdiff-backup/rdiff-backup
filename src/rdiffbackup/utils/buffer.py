@@ -22,8 +22,10 @@ Classes to improve performance of an opened file by buffering lines
 
 import typing
 
+Line = typing.TypeVar("Line", str, bytes)
 
-class LinesBuffer:
+
+class LinesBuffer(typing.Generic[Line]):
     """
     Iterate lines like a normal filelike descriptor
 
@@ -32,19 +34,19 @@ class LinesBuffer:
 
     blocksize: int = 65536
     max_lines: int = 100
-    buffer: list[typing.AnyStr]
+    buffer: list[Line]
     at_end: bool = False
-    separator: typing.AnyStr
-    _rest: typing.Optional[typing.AnyStr] = None
+    separator: Line
+    _rest: typing.Optional[Line] = None
 
-    def __init__(self, filedesc, separator: typing.AnyStr):
+    def __init__(self, filedesc, separator: Line) -> None:
         """Initialize with file descriptor and line separator"""
         self.filedesc = filedesc
         self.separator = separator
         # we need to initialize anew with each instance or the buffer is shared
         self.buffer = []
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterable[Line]:
         """Yield the lines in self.filedesc"""
         while self.buffer or not self.at_end:
             if self.buffer:
@@ -63,14 +65,14 @@ class LinesBuffer:
             self.buffer = []
         self.filedesc.flush()
 
-    def write(self, line: typing.AnyStr) -> None:
+    def write(self, line: Line) -> None:
         self.buffer.append(line)
         if len(self.buffer) >= self.max_lines:
             self.flush()
 
     def _replenish_buffer(self) -> None:
         """Read next block from filedesc, split and add to buffer list"""
-        block = self.filedesc.read(self.blocksize)
+        block: Line = self.filedesc.read(self.blocksize)
         # most of the complexity is due to the fact that a line might be split
         # between two blocks
         if block:

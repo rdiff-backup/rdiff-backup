@@ -88,6 +88,7 @@ skips = ["B301", "B101"]
 [tool.mypy]
 files = [
 	"src/rdiffbackup/singletons/",
+	"src/rdiffbackup/utils/buffer.py",
 	"src/rdiffbackup/utils/convert.py",
 	"src/rdiff_backup/statistics.py",
 ]
@@ -97,6 +98,7 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
 	"rdiffbackup.singletons.*",
+	"rdiffbackup.utils.buffer",
 	"rdiffbackup.utils.convert",
 	"rdiff_backup.statistics",
 ]
