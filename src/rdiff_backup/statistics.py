@@ -117,31 +117,31 @@ class SessionStatsCalc:
     # Below, the second value in each pair is true iff the value
     # indicates a number of bytes
     _stat_file_pairs = (
-        ("SourceFiles", None),
-        ("SourceFileSize", 1),
-        ("MirrorFiles", None),
-        ("MirrorFileSize", 1),
-        ("NewFiles", None),
-        ("NewFileSize", 1),
-        ("DeletedFiles", None),
-        ("DeletedFileSize", 1),
-        ("ChangedFiles", None),
-        ("ChangedSourceSize", 1),
-        ("ChangedMirrorSize", 1),
-        ("IncrementFiles", None),
-        ("IncrementFileSize", 1),
+        ("SourceFiles", False),
+        ("SourceFileSize", True),
+        ("MirrorFiles", False),
+        ("MirrorFileSize", True),
+        ("NewFiles", False),
+        ("NewFileSize", True),
+        ("DeletedFiles", False),
+        ("DeletedFileSize", True),
+        ("ChangedFiles", False),
+        ("ChangedSourceSize", True),
+        ("ChangedMirrorSize", True),
+        ("IncrementFiles", False),
+        ("IncrementFileSize", True),
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Set attributes to None"""
         for attr in self._stat_attrs:
             self.__dict__[attr] = None
 
-    def get_stat(self, attribute):
+    def get_stat(self, attribute: str) -> typing.Any:
         """Get a statistic"""
         return self.__dict__[attribute]
 
-    def set_stat(self, attr, value):
+    def set_stat(self, attr: str, value: typing.Any) -> None:
         """Set attribute to given value"""
         self.__dict__[attr] = value
 
@@ -151,18 +151,18 @@ class SessionStatsCalc:
         footer = "-" * len(header)
         return "%s\n%s%s\n" % (header, self._get_stats_string(), footer)
 
-    def write_stats(self, fp: SessionStatsWriter):
+    def write_stats(self, fp: SessionStatsWriter) -> None:
         """Write statistics string to given rpath"""
         fp.write(self._get_stats_string())
         fp.close()
 
-    def read_stats(self, fp: SessionStatsReader):
+    def read_stats(self, fp: SessionStatsReader) -> typing.Self:
         """Set statistics from rpath, return self for convenience"""
         self._set_stats_from_string(fp.read())
         fp.close()
         return self
 
-    def calc_average(self, sess_stats_list: list[typing.Self]):
+    def calc_average(self, sess_stats_list: list[typing.Self]) -> typing.Self:
         """Set self's attributes to average of those in sess_stats_list"""
         for attr in self._stat_attrs:
             self.set_stat(attr, 0)
@@ -182,7 +182,7 @@ class SessionStatsCalc:
                 self.set_stat(attr, self.get_stat(attr) / float(len(sess_stats_list)))
         return self
 
-    def _get_total_dest_size_change(self):
+    def _get_total_dest_size_change(self) -> typing.Optional[int]:
         """
         Return total destination size change
 
@@ -199,7 +199,7 @@ class SessionStatsCalc:
         self.TotalDestinationSizeChange = result
         return result
 
-    def _get_stats_line(self, index, quote_filename=1):
+    def _get_stats_line(self, index: list[str], quote_filename: bool = True):
         """TEST: Return one line abbreviated version of full stats string"""
         file_attrs = [str(self.get_stat(attr)) for attr in self._stat_file_attrs]
         if not index:
@@ -217,7 +217,7 @@ class SessionStatsCalc:
             + file_attrs
         )
 
-    def _get_stats_string(self):
+    def _get_stats_string(self) -> str:
         """Return extended string printing out statistics"""
         return "%s%s%s" % (
             self._get_timestats_string(),
@@ -225,7 +225,7 @@ class SessionStatsCalc:
             self._get_miscstats_string(),
         )
 
-    def _get_timestats_string(self):
+    def _get_timestats_string(self) -> str:
         """Return portion of statistics string dealing with time"""
         timelist = []
         if self.StartTime is not None:
@@ -248,13 +248,13 @@ class SessionStatsCalc:
             )
         return "".join(timelist)
 
-    def _get_filestats_string(self):
+    def _get_filestats_string(self) -> str:
         """Return portion of statistics string about files and bytes"""
 
-        def fileline(stat_file_pair):
+        def fileline(stat_file_pair: tuple[str, bool]):
             """Return zero or one line of the string"""
             attr, in_bytes = stat_file_pair
-            val = self.get_stat(attr)
+            val: typing.Optional[int] = self.get_stat(attr)
             if val is None:
                 return ""
             if in_bytes:
@@ -264,10 +264,10 @@ class SessionStatsCalc:
 
         return "".join(map(fileline, self._stat_file_pairs))
 
-    def _get_miscstats_string(self):
+    def _get_miscstats_string(self) -> str:
         """Return portion of extended stat string about misc attributes"""
-        misc_string = ""
-        tdsc = self._get_total_dest_size_change()
+        misc_string: str = ""
+        tdsc: int = self._get_total_dest_size_change()
         if tdsc is not None:
             misc_string += "TotalDestinationSizeChange %s (%s)\n" % (
                 tdsc,
@@ -277,10 +277,10 @@ class SessionStatsCalc:
             misc_string += "Errors %d\n" % self.Errors
         return misc_string
 
-    def _set_stats_from_string(self, s):
+    def _set_stats_from_string(self, s: str) -> typing.Self:
         """Initialize attributes from string, return self for convenience"""
 
-        def error(line):
+        def error(line: str):
             raise StatsException("Bad line '%s'" % line)
 
         for line in s.split("\n"):
@@ -306,21 +306,21 @@ class SessionStatsCalc:
                 error(line)
         return self
 
-    def _stats_equal(self, s):
+    def _stats_equal(self, s: typing.Self) -> bool:
         """Return true if s has same statistics as self"""
         assert isinstance(
             s, SessionStatsCalc
         ), "Can only compare with SessionStatsCalc not {stype}.".format(stype=type(s))
         for attr in self._stat_file_attrs:
             if self.get_stat(attr) != s.get_stat(attr):
-                return None
-        return 1
+                return False
+        return True
 
 
 class SessionStatsTracker(SessionStatsCalc):
     """Build on SessionStatsCalc, add functions for processing files"""
 
-    def __init__(self, start_time=None):
+    def __init__(self, start_time: typing.Optional(int) = None) -> None:
         """StatFileObj initializer - zero out file attributes"""
         super().__init__()
         for attr in self._stat_file_attrs:
