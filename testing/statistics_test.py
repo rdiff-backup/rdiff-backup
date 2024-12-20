@@ -41,12 +41,12 @@ class SessionStatsCalcTest(unittest.TestCase):
     def test_get_stats(self):
         """Test reading and writing stat objects"""
         s = statistics.SessionStatsCalc()
-        self.assertIsNone(s.get_stat("SourceFiles"))
+        self.assertIsNone(s.SourceFiles)
         self.set_obj(s)
-        self.assertEqual(s.get_stat("SourceFiles"), 1)
+        self.assertEqual(s.SourceFiles, 1)
 
         s1 = statistics.SessionStatsTracker()
-        self.assertEqual(s1.get_stat("SourceFiles"), 0)
+        self.assertEqual(s1.SourceFiles, 0)
 
     def test_get_stats_string(self):
         """Test conversion of stat object into string"""
@@ -103,9 +103,9 @@ TotalDestinationSizeChange 7 (7 B)
         s._set_stats_from_string("NewFiles 3 hello there")
         for attr in s._stat_attrs:
             if attr == "NewFiles":
-                self.assertEqual(s.get_stat(attr), 3)
+                self.assertEqual(s.__getattribute__(attr), 3)
             else:
-                self.assertIsNone(s.get_stat(attr))
+                self.assertIsNone(s.__getattribute__(attr))
 
         s1 = statistics.SessionStatsCalc()
         self.set_obj(s1)
@@ -131,7 +131,30 @@ TotalDestinationSizeChange 7 (7 B)
         s2.read_stats(rp.open("r"))
         self.assertTrue(s2._stats_equal(s))
 
-    def testAverage(self):
+    def test_read_stats(self):
+        """Test handling of badly formatted statistics"""
+        stats_fd = io.StringIO("OnePart")
+        with self.assertRaises(statistics.StatsException):
+            stats = statistics.SessionStatsCalc()
+            stats.read_stats(stats_fd)
+        stats_fd = io.StringIO("OnePart SomeValue")
+        with self.assertRaises(statistics.StatsException):
+            stats = statistics.SessionStatsCalc()
+            stats.read_stats(stats_fd)
+        stats_fd = io.StringIO("Errors SomeValue")
+        with self.assertRaises(statistics.StatsException):
+            stats = statistics.SessionStatsCalc()
+            stats.read_stats(stats_fd)
+        stats_fd = io.StringIO("Errors 123")
+        stats = statistics.SessionStatsCalc()
+        stats.read_stats(stats_fd)
+        self.assertEqual(stats.Errors, 123)
+        stats_fd = io.StringIO("Errors 12.3")
+        stats = statistics.SessionStatsCalc()
+        stats.read_stats(stats_fd)
+        self.assertEqual(stats.Errors, 12.3)
+
+    def test_average(self):
         """Test making an average statsobj"""
         s1 = statistics.SessionStatsCalc()
         s1.StartTime = 5
@@ -157,6 +180,28 @@ TotalDestinationSizeChange 7 (7 B)
         self.assertIsNone(s3.NewFileSize)
         self.assertEqual(s3.ChangedFiles, 1.5)
         self.assertEqual(s3.SourceFiles, 75)
+
+    def test_session_stats_time(self):
+        """Make sure start and end time are correctly set"""
+        # Else old time could be used as start time
+        generics.set("current_time", None)
+        generics.set("current_time_string", None)
+
+        start_time_1 = time.time()
+        stats = statistics.SessionStatsTracker()
+        start_time_2 = time.time()
+        self.assertLessEqual(start_time_1, stats.StartTime)
+        self.assertGreaterEqual(start_time_2, stats.StartTime)
+        end_time_1 = time.time()
+        stats.finish()
+        end_time_2 = time.time()
+        self.assertLessEqual(end_time_1, stats.EndTime)
+        self.assertGreaterEqual(end_time_2, stats.EndTime)
+
+        stats = statistics.SessionStatsTracker(10_000)
+        stats.finish(20_000)
+        self.assertEqual(stats.StartTime, 10_000)
+        self.assertEqual(stats.EndTime, 20_000)
 
 
 class IncStatTest(unittest.TestCase):
@@ -184,7 +229,7 @@ class IncStatTest(unittest.TestCase):
         self.assertEqual(s.DeletedFileSize, 0)
         self.assertEqual(s.IncrementFileSize, 0)
 
-    def testStatistics(self):
+    def test_statistics(self):
         """
         Test the writing of statistics
 

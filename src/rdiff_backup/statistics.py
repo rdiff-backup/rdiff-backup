@@ -30,6 +30,16 @@ _active_statfileobj = None
 if typing.TYPE_CHECKING:  # pragma: no cover
     from rdiff_backup import rpath
 
+# workaround until we don't need to support Python lower than 3.11
+try:
+    from typing import Self  # type: ignore
+except ImportError:
+    try:
+        from typing_extensions import Self
+    except (ModuleNotFoundError, ImportError):
+        # it works because Self is only used in one class
+        Self = typing.TypeVar("Self", bound="SessionStatsCalc")  # type: ignore
+
 
 class SessionStatsWriter(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedWriter methods"""
@@ -152,14 +162,6 @@ class SessionStatsCalc:
         ("IncrementFileSize", True),
     )
 
-    def get_stat(self, attribute: str) -> typing.Any:
-        """Get a statistic"""
-        return self.__dict__[attribute]
-
-    def set_stat(self, attr: str, value: typing.Any) -> None:
-        """Set attribute to given value"""
-        self.__dict__[attr] = value
-
     def get_stats_as_string(self, title: str = "Session statistics") -> str:
         """Like _get_stats_string, but add header and footer"""
         header = "--------------[ %s ]--------------" % title
@@ -171,30 +173,35 @@ class SessionStatsCalc:
         fp.write(self._get_stats_string())
         fp.close()
 
-    def read_stats(self, fp: SessionStatsReader) -> typing.Self:
+    def read_stats(self, fp: SessionStatsReader) -> Self:
         """Set statistics from rpath, return self for convenience"""
         self._set_stats_from_string(fp.read())
         fp.close()
         return self
 
-    def calc_average(self, sess_stats_list: list[typing.Self]) -> typing.Self:
+    def calc_average(self, sess_stats_list: list[Self]) -> Self:
         """Set self's attributes to average of those in sess_stats_list"""
         for attr in self._stat_attrs:
-            self.set_stat(attr, 0)
+            self.__setattr__(attr, 0)
         for statobj in sess_stats_list:
             for attr in self._stat_attrs:
-                if statobj.get_stat(attr) is None:
-                    self.set_stat(attr, None)
-                elif self.get_stat(attr) is not None:
-                    self.set_stat(attr, statobj.get_stat(attr) + self.get_stat(attr))
+                if statobj.__getattribute__(attr) is None:
+                    self.__setattr__(attr, None)
+                elif self.__getattribute__(attr) is not None:
+                    self.__setattr__(
+                        attr,
+                        statobj.__getattribute__(attr) + self.__getattribute__(attr),
+                    )
 
-        # Don't compute average starting/stopping time
+        # Never compute average starting/stopping time
         self.StartTime = None
         self.EndTime = None
 
+        count = float(len(sess_stats_list))
         for attr in self._stat_attrs:
-            if self.get_stat(attr) is not None:
-                self.set_stat(attr, self.get_stat(attr) / float(len(sess_stats_list)))
+            value = self.__getattribute__(attr)
+            if value is not None:
+                self.__setattr__(attr, value / count)
         return self
 
     def _get_total_dest_size_change(self) -> typing.Optional[float]:
@@ -210,6 +217,8 @@ class SessionStatsCalc:
         if any(v is None for v in addvals + subtractvals):
             result = None
         else:
+            # we need the casting to make mypy happy as it doesn't grok that the
+            # above "any" makes sure that only numbers remain in the lists
             result = sum(typing.cast(list[float], addvals)) - sum(
                 typing.cast(list[float], subtractvals)
             )
@@ -218,7 +227,9 @@ class SessionStatsCalc:
 
     def _get_stats_line(self, index: list[str], quote_filename: bool = True):
         """TEST: Return one line abbreviated version of full stats string"""
-        file_attrs = [str(self.get_stat(attr)) for attr in self._stat_file_attrs]
+        file_attrs = [
+            str(self.__getattribute__(attr)) for attr in self._stat_file_attrs
+        ]
         if not index:
             filename = "."
         else:
@@ -270,7 +281,7 @@ class SessionStatsCalc:
         def fileline(stat_file_pair: tuple[str, bool]):
             """Return zero or one line of the string"""
             attr, in_bytes = stat_file_pair
-            val: typing.Optional[float] = self.get_stat(attr)
+            val: typing.Optional[float] = self.__getattribute__(attr)
             if val is None:
                 return ""
             if in_bytes:
@@ -293,7 +304,7 @@ class SessionStatsCalc:
             misc_string += "Errors %d\n" % self.Errors
         return misc_string
 
-    def _set_stats_from_string(self, s: str) -> typing.Self:
+    def _set_stats_from_string(self, s: str) -> Self:
         """Initialize attributes from string, return self for convenience"""
 
         def error(line: str):
@@ -309,26 +320,22 @@ class SessionStatsCalc:
             if attr not in self._stat_attrs:
                 error(line)
             try:
-                try:
-                    val1 = int(value_string)
-                except ValueError:
-                    val1 = None
-                val2 = float(value_string)
-                if val1 == val2:
-                    self.set_stat(attr, val1)  # use integer val
+                val = float(value_string)
+                if val.is_integer():
+                    self.__setattr__(attr, int(val))  # use integer val
                 else:
-                    self.set_stat(attr, val2)  # use float
+                    self.__setattr__(attr, val)  # use float
             except ValueError:
                 error(line)
         return self
 
-    def _stats_equal(self, s: typing.Self) -> bool:
+    def _stats_equal(self, s: Self) -> bool:
         """Return true if s has same statistics as self"""
         assert isinstance(
             s, SessionStatsCalc
         ), "Can only compare with SessionStatsCalc not {stype}.".format(stype=type(s))
         for attr in self._stat_file_attrs:
-            if self.get_stat(attr) != s.get_stat(attr):
+            if self.__getattribute__(attr) != s.__getattribute__(attr):
                 return False
         return True
 
@@ -340,10 +347,11 @@ class SessionStatsTracker(SessionStatsCalc):
         """StatFileObj initializer - zero out file attributes"""
         super().__init__()
         for attr in self._stat_file_attrs:
-            self.set_stat(attr, 0)
+            self.__setattr__(attr, 0)
         if start_time is None:
-            start_time = Time.getcurtime() or time.time()
-        self.StartTime = start_time
+            self.StartTime = Time.getcurtime() or time.time()
+        else:
+            self.StartTime = start_time
         self.Errors = 0
 
     def add_source_file(self, src_rorp):
@@ -396,8 +404,9 @@ class SessionStatsTracker(SessionStatsCalc):
     def finish(self, end_time=None):
         """Record end time and set other stats"""
         if end_time is None:
-            end_time = time.time()
-        self.EndTime = end_time
+            self.EndTime = time.time()
+        else:
+            self.EndTime = end_time
 
 
 class FileStatsTracker:

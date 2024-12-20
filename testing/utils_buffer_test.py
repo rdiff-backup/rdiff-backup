@@ -22,7 +22,7 @@ class UtilsBufferTest(unittest.TestCase):
         write_lines.flush()
         read_io = io.StringIO(write_io.getvalue().decode())
         read_lines = buffer.LinesBuffer(read_io, "|")
-        for x, y in zip(read_lines, range(0, 65535), strict=True):
+        for x, y in zip(read_lines, range(0, 65535)):  # add , strict=True once >=3.10
             self.assertEqual(int(x), y)
 
 
