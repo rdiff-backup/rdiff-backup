@@ -33,12 +33,12 @@ except ImportError:
 # ----------- "Private" section - don't use outside usrgrp -----------
 
 # Used to cache by uid2uname and gid2gname below
-_uid2uname = {}
-_gid2gname = {}
+_uid2uname: dict[int, str] = {}
+_gid2gname: dict[int, str] = {}
 
 # Used to cache by uname2uid and gname2gid below
-_uname2uid = {}
-_gname2gid = {}
+_uname2uid: dict[str, int] = {}
+_gname2gid: dict[str, int] = {}
 
 
 def uid2uname(uid):
