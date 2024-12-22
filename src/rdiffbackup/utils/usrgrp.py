@@ -24,6 +24,8 @@ gids, and possibly vice-versa.  So maintain a separate dictionary for
 this.
 """
 
+import typing
+
 try:
     import pwd
     import grp
@@ -33,15 +35,15 @@ except ImportError:
 # ----------- "Private" section - don't use outside usrgrp -----------
 
 # Used to cache by uid2uname and gid2gname below
-_uid2uname: dict[int, str] = {}
-_gid2gname: dict[int, str] = {}
+_uid2uname: dict[int, typing.Optional[str]] = {}
+_gid2gname: dict[int, typing.Optional[str]] = {}
 
 # Used to cache by uname2uid and gname2gid below
-_uname2uid: dict[str, int] = {}
-_gname2gid: dict[str, int] = {}
+_uname2uid: dict[str, typing.Optional[int]] = {}
+_gname2gid: dict[str, typing.Optional[int]] = {}
 
 
-def uid2uname(uid):
+def uid2uname(uid: int) -> typing.Optional[str]:
     """
     Given uid, return uname from passwd file, or None if cannot find
     """
@@ -57,7 +59,7 @@ def uid2uname(uid):
         return uname
 
 
-def gid2gname(gid):
+def gid2gname(gid: int) -> typing.Optional[str]:
     """
     Given gid, return group name from group file or None if cannot find
     """
@@ -73,7 +75,7 @@ def gid2gname(gid):
         return gname
 
 
-def uname2uid(uname):
+def uname2uid(uname: str) -> typing.Optional[int]:
     """
     Given uname, return uid or None if cannot find
     """
@@ -89,7 +91,7 @@ def uname2uid(uname):
         return uid
 
 
-def gname2gid(gname):
+def gname2gid(gname: str) -> typing.Optional[int]:
     """
     Given gname, return gid or None if cannot find
     """

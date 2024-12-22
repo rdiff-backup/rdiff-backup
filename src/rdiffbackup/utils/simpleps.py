@@ -22,9 +22,10 @@ and also because, under Windows, it doesn't act as always expected.
 """
 import os
 import subprocess
+import typing
 
 
-def _get_pid_name_psutil(pid):
+def _get_pid_name_psutil(pid: typing.Union[int, str]) -> typing.Optional[str]:
     """
     Internal function to return the process name of a pid
 
@@ -41,16 +42,16 @@ def _get_pid_name_psutil(pid):
         return proc.name()
 
 
-def _get_pid_name_ps(pid):
+def _get_pid_name_ps(pid: typing.Union[int, str]) -> typing.Optional[str]:
     """
     Internal function to return the process name of a pid
 
     The function uses the ps utility or tasklist (under Windows)
     """
     if os.name == "nt":
-        cmd = ("tasklist", "/nh", "/fi", "pid eq {pp}".format(pp=pid))
+        cmd = ["tasklist", "/nh", "/fi", "pid eq {pp}".format(pp=pid)]
     else:
-        cmd = ("ps", "-p", str(pid), "-o", "comm=,pid=")
+        cmd = ["ps", "-p", str(pid), "-o", "comm=,pid="]
     output = (
         subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False
@@ -66,6 +67,7 @@ def _get_pid_name_ps(pid):
 
 # depending if psutil is installed or not, we have another implementation
 # of get_pid_name
+get_pid_name: typing.Callable[[typing.Union[int, str]], typing.Optional[str]]
 try:
     import psutil
 
