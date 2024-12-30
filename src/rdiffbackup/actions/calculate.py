@@ -61,14 +61,14 @@ class CalculateAction(actions.BaseAction):
         if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
-        statobjs = [
-            statistics.StatsObj().read_stats_from_rp(loc)
+        sess_stats = [
+            statistics.SessionStatsCalc().read_stats(loc.open("r"))
             for loc in self.connected_locations
         ]
         if self.values["method"] == "average":  # there is no other right now
-            calc_stats = statistics.StatsObj().set_to_average(statobjs)
+            calc_stats = statistics.SessionStatsCalc().calc_average(sess_stats)
         log.Log(
-            calc_stats.get_stats_logstring(
+            calc_stats.get_stats_as_string(
                 "Average of %d stat files" % len(self.connected_locations)
             ),
             log.NONE,

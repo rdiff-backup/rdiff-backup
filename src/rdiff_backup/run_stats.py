@@ -28,7 +28,7 @@ import sys
 from rdiff_backup import robust, rpath, Time
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, log, specifics
-from rdiffbackup.utils import convert
+from rdiffbackup.utils import buffer, convert
 
 data_dir = None  # directory where statistics are written
 begin_time = None  # Parse statistics at or after this time...
@@ -267,18 +267,23 @@ class FileStatisticsTree:
 
 
 def make_fst(session_rp, filestat_rp):
-    """Construct FileStatisticsTree given session and file stat rps
+    """
+    Construct FileStatisticsTree given session and file stat rps
 
     We would like a full tree, but this in general will take too much
     memory.  Instead we will build a tree that has only the
     files/directories with some stat exceeding the min ratio.
-
     """
     cutoff_fs = _get_cutoff_fs(_get_ss_dict(session_rp))
-    filestat_fileobj = ReadlineBuffer(filestat_rp)
+    if filestat_rp.isincfile():
+        tmp_fileobj = filestat_rp.open("rb", filestat_rp.isinccompressed())
+    else:
+        tmp_fileobj = filestat_rp.open("rb")
+    filestat_fileobj = buffer.LinesBuffer(tmp_fileobj, separator)
     accumulated_iter = _accumulate_fs(_yield_fs_objs(filestat_fileobj))
     important_iter = filter(lambda fs: fs >= cutoff_fs, accumulated_iter)
     trimmed_tree = _make_root_tree(important_iter)
+    # TODO close the filestat_fileobj before returning?
     return FileStatisticsTree(cutoff_fs, trimmed_tree)
 
 
@@ -497,49 +502,6 @@ class FileStat:
         self.sourcesize -= other.sourcesize
         self.incsize -= other.incsize
         return self
-
-
-class ReadlineBuffer:
-    """Iterate lines like a normal filelike obj
-
-    Use this because gzip doesn't provide any buffering, so readline()
-    is very slow.
-
-    """
-
-    blocksize = 65536
-
-    def __init__(self, rp):
-        """Initialize with rpath"""
-        self.buffer = [b""]
-        self.at_end = 0
-
-        if rp.isincfile():
-            self.fileobj = rp.open("rb", rp.isinccompressed())
-        else:
-            self.fileobj = rp.open("rb")
-
-    def __iter__(self):
-        """Yield the lines in self.fileobj"""
-        while self.buffer or not self.at_end:
-            if len(self.buffer) > 1:
-                yield self.buffer.pop(0)
-            elif not self.at_end:
-                self.addtobuffer()
-            else:
-                last = self.buffer.pop()
-                if last:
-                    yield last
-
-    def addtobuffer(self):
-        """Read next block from fileobj, split and add to bufferlist"""
-        block = self.fileobj.read(self.blocksize)
-        if block:
-            split = block.split(separator)
-            self.buffer[0] += split[0]
-            self.buffer.extend(split[1:])
-        else:
-            self.at_end = 1
 
 
 def sum_fst(rp_pairs):
