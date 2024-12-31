@@ -23,9 +23,15 @@ A module to handle plugins
 
 import importlib
 import pkgutil
+import typing
+
+if typing.TYPE_CHECKING:
+    import types
 
 
-def get_discovered_plugins(namespace, prefix):
+def get_discovered_plugins(
+    namespace: "types.ModuleType", prefix: str
+) -> dict[str, object]:
     """
     discover and return plugins with the given prefix or in the namespace
 
@@ -33,7 +39,7 @@ def get_discovered_plugins(namespace, prefix):
     the class returned by get_plugin_class() as value.
     """
     # we discover first potential 3rd party plugins, based on name
-    discovered_modules = {
+    discovered_modules: dict[str, "types.ModuleType"] = {
         name: importlib.import_module(name)
         for finder, name, ispkg in pkgutil.iter_modules()
         if name.startswith(prefix)
@@ -44,7 +50,7 @@ def get_discovered_plugins(namespace, prefix):
     )
 
     # then we create the dictionary of {name: Class}
-    discovered_plugins = {
+    discovered_plugins: dict[str, object] = {
         plugin.get_plugin_class().get_name(): plugin.get_plugin_class()
         for plugin in discovered_modules.values()
     }
@@ -52,7 +58,7 @@ def get_discovered_plugins(namespace, prefix):
     return discovered_plugins
 
 
-def _iter_namespace(nsp):
+def _iter_namespace(nsp: "types.ModuleType") -> typing.Iterator[str]:
     """
     Return an iterator of names of modules found in a specific namespace.
 
@@ -63,7 +69,7 @@ def _iter_namespace(nsp):
     # returned name an absolute name instead of a relative one. This allows
     # import_module to work without having to do additional modification to
     # the name.
-    prefix = nsp.__name__ + "."
+    prefix: str = nsp.__name__ + "."
     for pkg in pkgutil.iter_modules(nsp.__path__, prefix):
         yield pkg[1]  # pkg is (finder, name, ispkg)
     # special handling when the package is bundled with PyInstaller
