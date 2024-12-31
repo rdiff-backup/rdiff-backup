@@ -33,7 +33,7 @@ if typing.TYPE_CHECKING:  # pragma: no cover
 # workaround until we don't need to support Python lower than 3.11
 try:
     from typing import Self  # type: ignore
-except ImportError:
+except ImportError:  # pragma: no cover
     try:
         from typing_extensions import Self
     except (ModuleNotFoundError, ImportError):
@@ -394,7 +394,7 @@ class SessionStatsTracker(SessionStatsCalc):
         if specifics.is_backup_writer:
             self.add_error_local()
         elif generics.backup_writer:
-            generics.backup_writer.statistics.SessionStats.add_error_local()
+            generics.backup_writer.stats.SessionStats.add_error_local()
 
     # @API(SessionStats.add_error_local, 300)
     def add_error_local(self):

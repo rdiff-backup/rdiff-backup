@@ -297,7 +297,7 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_repo_shadow.RepoShadow.set_config",
                 "_repo_shadow.RepoShadow.touch_current_mirror",
                 # API >= 300
-                "statistics.SessionsStats.add_error_local",
+                "stats.SessionsStats.add_error_local",
             ]
         )
     if sec_level == "read-write":

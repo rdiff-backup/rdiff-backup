@@ -16,12 +16,11 @@ from rdiff_backup import (
     rpath,
     Security,
     selection,
-    statistics,
 )
 from rdiffbackup import run
 from rdiffbackup.meta import ea, acl_posix
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
-from rdiffbackup.singletons import generics, log, specifics
+from rdiffbackup.singletons import generics, log, specifics, stats
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
@@ -386,7 +385,7 @@ def reset_connections():
     # EAs and ACLs support
     generics.set("eas_active", None)
     generics.set("acls_active", None)
-    statistics.reset_statistics()
+    stats.reset_statistics()
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):

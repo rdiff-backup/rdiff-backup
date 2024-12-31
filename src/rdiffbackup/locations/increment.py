@@ -20,8 +20,8 @@
 
 import os
 import re
-from rdiff_backup import Rdiff, robust, rpath, statistics, Time
-from rdiffbackup.singletons import consts, log, specifics
+from rdiff_backup import Rdiff, robust, rpath, Time
+from rdiffbackup.singletons import consts, log, specifics, stats
 
 compression = True
 not_compressed_regexp = None
@@ -70,7 +70,7 @@ def make_increment(new, mirror, incpref, inc_time=None):
         incrp = _make_diff_increment(new, mirror, incpref, inc_time)
     else:
         incrp = _make_snapshot_increment(mirror, incpref, inc_time)
-    statistics.SessionStats.add_increment(incrp)
+    stats.SessionStats.add_increment(incrp)
     return incrp
 
 
