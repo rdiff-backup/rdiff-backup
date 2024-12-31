@@ -22,10 +22,11 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
+import argparse
+
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.singletons import consts, log
-from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
 class RemoveAction(actions.BaseAction):
@@ -48,7 +49,7 @@ class RemoveAction(actions.BaseAction):
         )
         entity_parsers["increments"].add_argument(
             "--size",
-            action=BooleanOptionalAction,
+            action=argparse.BooleanOptionalAction,
             default=False,
             help="also output size of each increment (might take longer)",
         )

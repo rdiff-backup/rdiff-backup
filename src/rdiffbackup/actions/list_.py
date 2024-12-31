@@ -25,6 +25,7 @@ The module is named with an underscore at the end to avoid overwriting the
 builtin 'list' class.
 """
 
+import argparse
 import yaml
 
 from rdiff_backup import Time
@@ -32,7 +33,6 @@ from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.singletons import consts, log
 from rdiffbackup.utils import convert
-from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
 class ListAction(actions.BaseAction):
@@ -68,7 +68,7 @@ class ListAction(actions.BaseAction):
         )
         entity_parsers["increments"].add_argument(
             "--size",
-            action=BooleanOptionalAction,
+            action=argparse.BooleanOptionalAction,
             default=False,
             help="also output size of each increment (might take longer)",
         )

@@ -31,7 +31,7 @@ import tempfile
 import yaml
 from rdiff_backup import Security, SetConnections, Time
 from rdiffbackup.singletons import consts, log, specifics
-from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
+from rdiffbackup.utils import argopts
 
 # The default regexp for not compressing those files
 DEFAULT_NOT_COMPRESSED_REGEXP = (
@@ -67,7 +67,7 @@ COMMON_PARSER.add_argument(
 COMMON_PARSER.add_argument(
     "--fsync",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)",
 )
 COMMON_PARSER.add_argument(
@@ -100,7 +100,7 @@ COMMON_PARSER.add_argument(
 COMMON_PARSER.add_argument(
     "--ssh-compression",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[opt] use SSH without compression with default remote-schema",
 )
 COMMON_PARSER.add_argument(
@@ -138,98 +138,98 @@ SELECTION_PARSER = argparse.ArgumentParser(
 )
 SELECTION_PARSER.add_argument(
     "--SELECT",
-    action=SelectAction,
+    action=argopts.SelectAction,
     metavar="GLOB",
     help="[sub] SELECT files according to glob pattern",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-device-files",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     default=True,
     help="[sub] SELECT device files",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-fifos",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     default=True,
     help="[sub] SELECT fifo files",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-filelist",
-    action=SelectAction,
+    action=argopts.SelectAction,
     metavar="LIST_FILE",
     help="[sub] SELECT files according to list in given file",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-filelist-stdin",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     help="[sub] SELECT files according to list from standard input",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-symbolic-links",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     default=True,
     help="[sub] SELECT symbolic links",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-sockets",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     default=True,
     help="[sub] SELECT socket files",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-globbing-filelist",
-    action=SelectAction,
+    action=argopts.SelectAction,
     metavar="GLOBS_FILE",
     help="[sub] SELECT files according to glob list in given file",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-globbing-filelist-stdin",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     help="[sub] SELECT files according to glob list from standard input",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-other-filesystems",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     default=True,
     help="[sub] SELECT files from other file systems than the source one",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-regexp",
-    action=SelectAction,
+    action=argopts.SelectAction,
     metavar="REGEXP",
     help="[sub] SELECT files according to regexp pattern",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-if-present",
-    action=SelectAction,
+    action=argopts.SelectAction,
     metavar="FILENAME",
     help="[sub] SELECT directory if it contains the given file",
 )
 SELECTION_PARSER.add_argument(
     "--SELECT-special-files",
-    action=SelectAction,
+    action=argopts.SelectAction,
     type=bool,
     default=True,
     help="[sub] SELECT all device, fifo, socket files, and symbolic links",
 )
 SELECTION_PARSER.add_argument(
     "--max-file-size",
-    action=SelectAction,
+    action=argopts.SelectAction,
     metavar="SIZE",
     type=int,
     help="[sub] exclude files larger than given size in bytes",
 )
 SELECTION_PARSER.add_argument(
     "--min-file-size",
-    action=SelectAction,
+    action=argopts.SelectAction,
     metavar="SIZE",
     type=int,
     help="[sub] exclude files smaller than given size in bytes",
@@ -241,37 +241,37 @@ FILESYSTEM_PARSER = argparse.ArgumentParser(
 FILESYSTEM_PARSER.add_argument(
     "--acls",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] handle (or not) Access Control Lists",
 )
 FILESYSTEM_PARSER.add_argument(
     "--carbonfile",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] handle (or not) carbon files on MacOS X",
 )
 FILESYSTEM_PARSER.add_argument(
     "--compare-inode",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] compare (or not) inodes to decide if hard-linked files have changed",
 )
 FILESYSTEM_PARSER.add_argument(
     "--eas",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] handle (or not) Extended Attributes",
 )
 FILESYSTEM_PARSER.add_argument(
     "--hard-links",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] preserve (or not) hard links.",
 )
 FILESYSTEM_PARSER.add_argument(
     "--resource-forks",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] preserve (or not) resource forks on MacOS X.",
 )
 FILESYSTEM_PARSER.add_argument(
@@ -295,7 +295,7 @@ COMPRESSION_PARSER = argparse.ArgumentParser(
 COMPRESSION_PARSER.add_argument(
     "--compression",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] compress (or not) snapshot and diff files",
 )
 COMPRESSION_PARSER.add_argument(
@@ -330,13 +330,13 @@ STATISTICS_PARSER = argparse.ArgumentParser(
 STATISTICS_PARSER.add_argument(
     "--file-statistics",
     default=True,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] do (or not) generate statistics file during backup",
 )
 STATISTICS_PARSER.add_argument(
     "--print-statistics",
     default=False,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     help="[sub] print (or not) statistics after a successful backup",
 )
 

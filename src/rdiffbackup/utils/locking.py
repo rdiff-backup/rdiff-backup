@@ -25,6 +25,7 @@ Portable locking utilities, defining lock and unlock functions
 # https://www.oreilly.com/library/view/python-cookbook/0596001673/ch04s25.html
 
 import os
+import typing
 
 # needs win32all to work on Windows
 if os.name == "nt":
@@ -37,7 +38,7 @@ if os.name == "nt":
     LOCK_NB = win32con.LOCKFILE_FAIL_IMMEDIATELY
     __overlapped = pywintypes.OVERLAPPED()
 
-    def lock(file, flags):
+    def lock(file: typing.IO, flags: int) -> None:
         hfile = win32file._get_osfhandle(file.fileno())
         try:
             win32file.LockFileEx(hfile, flags, 0, 0xFFFF0000, __overlapped)
@@ -47,7 +48,7 @@ if os.name == "nt":
             else:
                 raise
 
-    def unlock(file):
+    def unlock(file: typing.IO) -> None:
         hfile = win32file._get_osfhandle(file.fileno())
         win32file.UnlockFileEx(hfile, 0, 0xFFFF0000, __overlapped)
 
@@ -55,10 +56,10 @@ elif os.name == "posix":
     from fcntl import LOCK_EX, LOCK_SH, LOCK_NB  # noqa: F401 implicitly used
     import fcntl
 
-    def lock(file, flags):
+    def lock(file: typing.IO, flags: int) -> None:
         fcntl.flock(file, flags)
 
-    def unlock(file):
+    def unlock(file: typing.IO) -> None:
         fcntl.flock(file, fcntl.LOCK_UN | fcntl.LOCK_NB)
 
 else:  # pragma: no cover  # we will never test on other platforms

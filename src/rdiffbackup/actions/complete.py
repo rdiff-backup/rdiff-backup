@@ -26,7 +26,6 @@ import argparse
 
 from rdiffbackup import actions, actions_mgr, arguments
 from rdiffbackup.singletons import consts, log, specifics
-from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
 class CompleteAction(actions.BaseAction):
@@ -50,7 +49,7 @@ class CompleteAction(actions.BaseAction):
         subparser.add_argument(
             "--unique",
             default=True,
-            action=BooleanOptionalAction,
+            action=argparse.BooleanOptionalAction,
             help="Only output options which haven't been entered yet",
         )
         subparser.add_argument(

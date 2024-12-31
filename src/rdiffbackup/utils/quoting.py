@@ -27,7 +27,7 @@ _CHARS_TO_QUOTE = re.compile(b"\\n|\\\\")
 _CHARS_TO_UNQUOTE = re.compile(b"\\\\n|\\\\\\\\")
 
 
-def quote_path(path_string):
+def quote_path(path_string: bytes) -> bytes:
     """
     Return quoted version of path_string
 
@@ -36,7 +36,7 @@ def quote_path(path_string):
     left the way it is.
     """
 
-    def replacement_func(match_obj):
+    def replacement_func(match_obj: re.Match) -> bytes:
         """This is called on the match obj of any char that needs quoting"""
         char = match_obj.group(0)
         if char == b"\n":
@@ -49,12 +49,12 @@ def quote_path(path_string):
     return _CHARS_TO_QUOTE.sub(replacement_func, path_string)
 
 
-def unquote_path(quoted_string):
+def unquote_path(quoted_string: bytes) -> bytes:
     """
     Reverse what was done by quote_path
     """
 
-    def replacement_func(match_obj):
+    def replacement_func(match_obj: re.Match) -> bytes:
         """Unquote match obj of two character sequence"""
         two_chars = match_obj.group(0)
         if two_chars == b"\\n":
