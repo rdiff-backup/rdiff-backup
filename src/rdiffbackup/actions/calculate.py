@@ -22,9 +22,8 @@ A built-in rdiff-backup action plug-in to calculate average across multiple
 statistics files.
 """
 
-from rdiff_backup import statistics
 from rdiffbackup import actions
-from rdiffbackup.singletons import consts, log
+from rdiffbackup.singletons import consts, log, stats
 
 
 class CalculateAction(actions.BaseAction):
@@ -62,11 +61,11 @@ class CalculateAction(actions.BaseAction):
             return ret_code
 
         sess_stats = [
-            statistics.SessionStatsCalc().read_stats(loc.open("r"))
+            stats.SessionStatsCalc().read_stats(loc.open("r"))
             for loc in self.connected_locations
         ]
         if self.values["method"] == "average":  # there is no other right now
-            calc_stats = statistics.SessionStatsCalc().calc_average(sess_stats)
+            calc_stats = stats.SessionStatsCalc().calc_average(sess_stats)
         log.Log(
             calc_stats.get_stats_as_string(
                 "Average of %d stat files" % len(self.connected_locations)

@@ -106,7 +106,6 @@ class Connection:
             "rpath": "rdiff_backup.rpath",
             "SetConnections": "rdiff_backup.SetConnections",
             # "selection": "rdiff_backup.selection",
-            "statistics": "rdiff_backup.statistics",
             # "Security": "rdiff_backup.Security",
             # "Time": "rdiff_backup.Time",
             "_dir_shadow": "rdiffbackup.locations._dir_shadow",
@@ -116,6 +115,7 @@ class Connection:
             "generics": "rdiffbackup.singletons.generics",
             "log": "rdiffbackup.singletons.log",
             "specifics": "rdiffbackup.singletons.specifics",
+            "stats": "rdiffbackup.singletons.stats",
         }
         for name, module in modules.items():
             cls.globals[name] = importlib.import_module(module)
