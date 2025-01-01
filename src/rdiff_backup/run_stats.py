@@ -160,7 +160,7 @@ class StatisticsRPaths:
 def print_session_statistics(stat_rpaths):
     log.Log("Session statistics:", log.NONE)
     os_system(
-        [b"rdiff-backup", b"calculate"] + [inc.path for inc in stat_rpaths.session_rps]
+        [b"rdiff-backup", b"calculate", b"average"] + [inc.path for inc in stat_rpaths.session_rps]
     )
 
 
