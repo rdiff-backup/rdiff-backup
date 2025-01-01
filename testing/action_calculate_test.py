@@ -118,12 +118,11 @@ class ActionCalculateTest(unittest.TestCase):
                 *session_stats,
                 ("--api-version", "201"),
                 b"calculate",
-                (),
+                ("average",),
                 return_stdout=True,
             ),
             rb"^-*\[ Average of 2 stat files ",
         )
-        # there is only one method (average) so the result is the same actually
         self.assertRegex(
             comtst.rdiff_backup_action(
                 True,
@@ -131,7 +130,7 @@ class ActionCalculateTest(unittest.TestCase):
                 *session_stats,
                 ("--api-version", "201"),
                 b"calculate",
-                ("--method", "average"),
+                ("average",),
                 return_stdout=True,
             ),
             rb"Errors 0",

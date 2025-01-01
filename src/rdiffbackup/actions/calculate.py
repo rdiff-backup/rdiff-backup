@@ -37,17 +37,32 @@ class CalculateAction(actions.BaseAction):
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
-        subparser.add_argument(
-            "--method",
-            choices=["average"],
-            default="average",
-            help="what to calculate from the different session statistics",
-        )
-        subparser.add_argument(
+        entity_parsers = cls._get_subparsers(subparser, "method", "average", "statistics")
+        entity_parsers["average"].add_argument(
             "locations",
             metavar="STATISTIC_FILE",
             nargs="+",
             help="locations of the session statistic files to calculate from",
+        )
+        entity_parsers["statistics"].add_argument(
+            "--begin-time", "--begin",
+            help="Date/time string when to start calculating",
+        )
+        entity_parsers["statistics"].add_argument(
+            "--end-time", "--end",
+            help="Date/time string when to stop calculating",
+        )
+        entity_parsers["statistics"].add_argument(
+            "--minimum-ratio",
+            type=float,
+            default=0.05,
+            help="When to consider a file based on changes ratio (default 0.05)",
+        )
+        entity_parsers["statistics"].add_argument(
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs="+",
+            help="locations of repositories to create statistics for",
         )
         return subparser
 
