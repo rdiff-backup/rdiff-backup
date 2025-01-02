@@ -22,6 +22,7 @@ A built-in rdiff-backup action plug-in to calculate average across multiple
 statistics files.
 """
 
+from rdiff_backup import Time
 from rdiffbackup import actions
 from rdiffbackup.singletons import consts, log, stats
 
@@ -37,7 +38,9 @@ class CalculateAction(actions.BaseAction):
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
-        entity_parsers = cls._get_subparsers(subparser, "method", "average", "statistics")
+        entity_parsers = cls._get_subparsers(
+            subparser, "method", "average", "statistics"
+        )
         entity_parsers["average"].add_argument(
             "locations",
             metavar="STATISTIC_FILE",
@@ -45,11 +48,13 @@ class CalculateAction(actions.BaseAction):
             help="locations of the session statistic files to calculate from",
         )
         entity_parsers["statistics"].add_argument(
-            "--begin-time", "--begin",
+            "--begin-time",
+            "--begin",
             help="Date/time string when to start calculating",
         )
         entity_parsers["statistics"].add_argument(
-            "--end-time", "--end",
+            "--end-time",
+            "--end",
             help="Date/time string when to stop calculating",
         )
         entity_parsers["statistics"].add_argument(
@@ -61,10 +66,37 @@ class CalculateAction(actions.BaseAction):
         entity_parsers["statistics"].add_argument(
             "locations",
             metavar="[[USER@]SERVER::]PATH",
-            nargs="+",
-            help="locations of repositories to create statistics for",
+            nargs=1,
+            help="location of a repository to create statistics for",
         )
         return subparser
+
+    def pre_check(self):
+        """
+        Validate that the values are correct
+        """
+        ret_code = super().run()
+
+        if self.values["method"] == "statistics":
+            try:
+                if self.values["begin_time"] is not None:
+                    self.values["begin_time"] = Time.genstrtotime(
+                        self.values["begin_time"]
+                    )
+                if self.values["end_time"] is not None:
+                    self.values["end_time"] = Time.genstrtotime(self.values["end_time"])
+            except Time.TimeException as exc:
+                log.Log(
+                    "Begin or end date/time has wrong format: {ex}".format(ex=exc),
+                    log.ERROR,
+                )
+                ret_code |= consts.RET_CODE_ERR
+
+            if self.values["minimum_ratio"] < 0 or self.values["minimum_ratio"] > 1:
+                log.Log("The minimum ratio must be between 0 and 1", log.ERROR)
+                ret_code |= consts.RET_CODE_ERR
+
+        return ret_code
 
     def run(self):
         """
@@ -75,20 +107,30 @@ class CalculateAction(actions.BaseAction):
         if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
+        if self.values["method"] == "average":
+            return ret_code | self._calculate_average(self.connected_locations)
+        elif self.values["method"] == "statistics":
+            return ret_code | self._calculate_statistics(self.connected_locations[0])
+
+        return ret_code
+
+    def _calculate_average(self, session_stats_files):
         sess_stats = [
             stats.SessionStatsCalc().read_stats(loc.open("r"))
-            for loc in self.connected_locations
+            for loc in session_stats_files
         ]
-        if self.values["method"] == "average":  # there is no other right now
-            calc_stats = stats.SessionStatsCalc().calc_average(sess_stats)
+        calc_stats = stats.SessionStatsCalc().calc_average(sess_stats)
         log.Log(
             calc_stats.get_stats_as_string(
-                "Average of %d stat files" % len(self.connected_locations)
+                "Average of %d stat files" % len(session_stats_files)
             ),
             log.NONE,
         )
+        return consts.RET_CODE_OK
 
-        return ret_code
+    def _calculate_statistics(self, repository):
+        log.Log("STATISTICS TODO", log.ERROR)  # TODO
+        return consts.RET_CODE_OK
 
 
 def get_plugin_class():
