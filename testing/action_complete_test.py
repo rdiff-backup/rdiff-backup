@@ -110,6 +110,19 @@ class ActionCompleteTest(unittest.TestCase):
         )
         self.assertTrue(full_output.startswith(b"--"))
         self.assertTrue(full_output.endswith(b"::file::\n"))
+        # try with a command accepting a variable number of files
+        full_output = comtst.rdiff_backup_action(
+            True,
+            True,
+            None,
+            None,
+            ("--api-version", "201"),
+            b"complete",
+            ("--cword", "2", "--", "rdiff-backup", "test", ""),
+            return_stdout=True,
+        )
+        self.assertTrue(full_output.startswith(b"-h"))
+        self.assertTrue(full_output.endswith(b"::file::\n"))
 
         full_output = comtst.rdiff_backup_action(
             True,
