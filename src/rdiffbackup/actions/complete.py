@@ -229,7 +229,8 @@ class CompleteAction(actions.BaseAction):
             not is_matched
             and "locations" in args
             and (
-                args["locations"].nargs == "*"
+                args["locations"].nargs in {"*", "+"}
+                or (args["locations"].nargs == "?" and cword >= (len(words) - 1))
                 or cword >= (len(words) - args["locations"].nargs)
             )
         ):
