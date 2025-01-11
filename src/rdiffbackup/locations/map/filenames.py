@@ -31,7 +31,7 @@ handle that error.)
 import os
 import re
 
-from rdiff_backup import rpath
+from rdiffbackup.locations import increment
 from rdiffbackup.singletons import consts, generics, log, specifics
 from rdiffbackup.utils import convert
 
@@ -40,7 +40,7 @@ class QuotingException(Exception):
     pass
 
 
-class QuotedRPath(rpath.RPath):
+class QuotedRPath(increment.StoredRPath):
     """
     RPath where the filename is quoted version of index
 
@@ -90,13 +90,13 @@ class QuotedRPath(rpath.RPath):
         """
         if not self.index:  # consider the last component as quoted
             dirname, basename = self.dirsplit()
-            temp_rp = rpath.RPath(self.conn, dirname, (basename,))
+            temp_rp = increment.StoredRPath(self.conn, dirname, (basename,))
             result = temp_rp.isincfile()
             if result:
                 self.inc_basestr = unquote(temp_rp.inc_basestr)
                 self.inc_timestr = unquote(temp_rp.inc_timestr)
         else:
-            result = rpath.RPath.isincfile(self)
+            result = super().isincfile()
         return result
 
     def dirsplit(self):

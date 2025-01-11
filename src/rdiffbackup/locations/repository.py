@@ -54,13 +54,15 @@ class Repo(location.Location):
             self._shadow = _repo_shadow.RepoShadow
         else:
             self._shadow = orig_path.conn._repo_shadow.RepoShadow
-        (self.base_dir, self.ref_index, self.ref_type) = self._shadow.init(
-            orig_path,
-            values,
-            must_be_writable,
-            must_exist,
-            can_be_sub_path,
-            check_time,
+        (self.orig_path, self.base_dir, self.ref_index, self.ref_type) = (
+            self._shadow.init(
+                orig_path,
+                values,
+                must_be_writable,
+                must_exist,
+                can_be_sub_path,
+                check_time,
+            )
         )
         self.must_be_writable = must_be_writable
         self.must_exist = must_exist

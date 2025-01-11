@@ -29,3 +29,4 @@ As I go through a major rewrite and see things I don't like, or would like to im
 - get rid of compression as generics variable, replacing with usage of values.
 - replace null_separator with something like line_separator, directly having the character
 - remove references to API 201 from tests
+- avoid circural import via robust and connection when importing locations.increment

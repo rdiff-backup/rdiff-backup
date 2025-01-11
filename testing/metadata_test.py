@@ -12,6 +12,7 @@ import fileset
 
 from rdiff_backup import rpath, selection
 from rdiffbackup import meta_mgr
+from rdiffbackup.locations import increment
 from rdiffbackup.meta import stdattr
 from rdiffbackup.singletons import specifics
 from rdiffbackup.utils import quoting
@@ -21,7 +22,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class MetadataTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
-    out_rp = rpath.RPath(specifics.local_connection, out_dir)
+    out_rp = increment.StoredRPath(specifics.local_connection, out_dir)
 
     def testQuote(self):
         """Test quoting and unquoting"""
@@ -285,16 +286,16 @@ class MetadataTest(unittest.TestCase):
 
         comtst.re_init_rpath_dir(self.out_rp)
         man = meta_mgr.PatchDiffMan(self.out_rp)
-        inc1 = rpath.RPath(
+        inc1 = increment.StoredRPath(
             specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment1")
         )
-        inc2 = rpath.RPath(
+        inc2 = increment.StoredRPath(
             specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment2")
         )
-        inc3 = rpath.RPath(
+        inc3 = increment.StoredRPath(
             specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment3")
         )
-        inc4 = rpath.RPath(
+        inc4 = increment.StoredRPath(
             specifics.local_connection, os.path.join(comtst.old_test_dir, b"increment4")
         )
         write_dir_to_meta(man, inc1, 10000)

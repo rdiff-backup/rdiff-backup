@@ -102,14 +102,14 @@ class RepoShadow(location.LocationShadow):
     ):
         # if the base_dir can be a sub-file, we need to identify the actual
         # base directory of the repository
-        cls._orig_path = orig_path
+        cls._orig_path = increment.StoredRPath.get_copy(orig_path)
         if can_be_sub_path:
-            (base_dir, ref_index, ref_type) = cls._get_repository_dirs(orig_path)
+            (base_dir, ref_index, ref_type) = cls._get_repository_dirs(cls._orig_path)
             cls._base_dir = base_dir
             cls._ref_index = ref_index
             cls._ref_type = ref_type
         else:
-            cls._base_dir = orig_path
+            cls._base_dir = cls._orig_path
             cls._ref_index = ()
             cls._ref_type = None
         cls._data_dir = cls._base_dir.append_path(b"rdiff-backup-data")
@@ -120,7 +120,7 @@ class RepoShadow(location.LocationShadow):
                 # nothing to save, the user must first give a correct path
                 log.Log.FatalError(
                     "Something was wrong with the given path '{gp}'".format(
-                        gp=orig_path
+                        gp=cls._orig_path
                     )
                 )
             else:
@@ -142,7 +142,7 @@ class RepoShadow(location.LocationShadow):
         cls._regress_time = None
         cls._unsuccessful_backup_time = None
 
-        return (cls._base_dir, cls._ref_index, cls._ref_type)
+        return (cls._orig_path, cls._base_dir, cls._ref_index, cls._ref_type)
 
     # @API(RepoShadow.check, 300)  # inherited
 
@@ -491,7 +491,9 @@ class RepoShadow(location.LocationShadow):
                     )
                     return (orig_path, (), None)
                 # base_dir is the directory above the data directory
-                base_dir = rpath.RPath(orig_path.conn, b"/".join(path_list[:data_idx]))
+                base_dir = increment.StoredRPath(
+                    orig_path.conn, b"/".join(path_list[:data_idx])
+                )
                 return (base_dir, tuple(base_index), "inc")
         else:
             # rpath is either the base directory itself or a sub-dir of it

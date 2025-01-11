@@ -11,6 +11,7 @@ import commontest as comtst
 import fileset
 
 from rdiff_backup import robust, rpath, selection, Time
+from rdiffbackup.locations import increment
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, log, specifics
 
@@ -512,7 +513,7 @@ class FinalMisc(PathSetter):
             None,
             extra_options=(b"remove", b"increments", b"--older-than", b"20000"),
         )
-        rbdir = Local.rpout.append("rdiff-backup-data")
+        rbdir = increment.StoredRPath.get_copy(Local.rpout.append("rdiff-backup-data"))
         for inc in self.get_all_increments(rbdir):
             self.assertGreaterEqual(inc.getinctime(), 20000)
 
@@ -533,7 +534,7 @@ class FinalMisc(PathSetter):
                 b"1B",
             ),
         )
-        rbdir = Local.rpout.append("rdiff-backup-data")
+        rbdir = increment.StoredRPath.get_copy(Local.rpout.append("rdiff-backup-data"))
         for inc in self.get_all_increments(rbdir):
             self.assertGreaterEqual(inc.getinctime(), 30000)
 
@@ -554,7 +555,7 @@ class FinalMisc(PathSetter):
                 b"now",
             ),
         )
-        rbdir = Local.rpout.append("rdiff-backup-data")
+        rbdir = increment.StoredRPath.get_copy(Local.rpout.append("rdiff-backup-data"))
 
         has_cur_mirror, has_metadata = 0, 0
         for inc in self.get_all_increments(rbdir):
@@ -603,7 +604,7 @@ class FinalMisc(PathSetter):
             None,
             extra_options=(b"remove", b"increments", b"--older-than", b"20000"),
         )
-        rbdir = Local.rpout.append("rdiff-backup-data")
+        rbdir = increment.StoredRPath.get_copy(Local.rpout.append("rdiff-backup-data"))
         for inc in self.get_all_increments(rbdir):
             self.assertGreaterEqual(inc.getinctime(), 20000)
 
@@ -680,7 +681,7 @@ class FinalSelection(PathSetter):
         )
 
         # Test selective restoring
-        mirror_rp = rpath.RPath(specifics.local_connection, out_rel)
+        mirror_rp = increment.StoredRPath(specifics.local_connection, out_rel)
         restore_filename = comtst.get_increment_rp(mirror_rp, 10000).path
 
         comtst.rdiff_backup(

@@ -11,6 +11,7 @@ import fileset
 
 from rdiff_backup import rpath, selection
 from rdiffbackup.meta import stdattr
+from rdiffbackup.locations import increment
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.singletons import generics, specifics
 
@@ -239,7 +240,7 @@ class HardlinkTest(unittest.TestCase):
         )
 
         # validate that hashes and link counts are correctly saved in metadata
-        meta_prefix = rpath.RPath(
+        meta_prefix = increment.StoredRPath(
             specifics.local_connection,
             os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
         )
@@ -344,7 +345,7 @@ class HardlinkTest(unittest.TestCase):
         )
 
         # validate that hashes and link counts are correctly saved in metadata
-        meta_prefix = rpath.RPath(
+        meta_prefix = increment.StoredRPath(
             specifics.local_connection,
             os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
         )
