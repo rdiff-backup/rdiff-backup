@@ -18,7 +18,7 @@ lc = specifics.local_connection
 
 
 def getrp(ending):
-    return rpath.RPath(
+    return increment.StoredRPath(
         lc, os.path.join(comtst.old_test_dir, b"various_file_types", ending)
     )
 
@@ -30,7 +30,7 @@ exec1 = getrp(b"executable")
 sym = getrp(b"symbolic_link")
 nothing = getrp(b"nothing")
 
-target = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"out"))
+target = increment.StoredRPath(lc, os.path.join(TEST_BASE_DIR, b"out"))
 out2 = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"out2"))
 out_gz = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"out.gz"))
 
@@ -43,7 +43,7 @@ else:
 t_diff = os.path.join(TEST_BASE_DIR, b"out.%s.diff" % prevtimestr)
 
 
-class inctest(unittest.TestCase):
+class IncrementTest(unittest.TestCase):
     """Test the incrementRP function"""
 
     def setUp(self):
@@ -163,6 +163,43 @@ class inctest(unittest.TestCase):
         rp.delete()
         out2.delete()
         out_gz.delete()
+
+    def test_parse_increment_name(self):
+        """Test parsing multiple name combinations"""
+        increment_names = {
+            b"a.b.gz": None,  # too short
+            b"a.b": None,
+            b"a.b.c.gz": None,  # wrong extension
+            b"a.b.c": None,
+            b"a.b.missing.gz": None,  # wrong time string
+            b"a.b.data": None,
+            b"a.1970-01-01T03:46:40+01:00.missing.gz": (  # happy path
+                True,
+                b"1970-01-01T03:46:40+01:00",
+                b"missing",
+                b"a",
+            ),
+            b"a.1970-01-01T03:46:40-01:00.data": (
+                False,
+                b"1970-01-01T03:46:40-01:00",
+                b"data",
+                b"a",
+            ),
+            b"a.b.c.1970-01-01T03:46:40+00:00.dir.gz": (  # with superfluous dots
+                True,
+                b"1970-01-01T03:46:40+00:00",
+                b"dir",
+                b"a.b.c",
+            ),
+            b"a.b.c.1970-01-01T03:46:40-05:30.snapshot": (
+                False,
+                b"1970-01-01T03:46:40-05:30",
+                b"snapshot",
+                b"a.b.c",
+            ),
+        }
+        for inc_name, output in increment_names.items():
+            self.assertEqual(increment._parse_increment_name(inc_name), output)
 
 
 if __name__ == "__main__":

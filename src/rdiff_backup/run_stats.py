@@ -25,7 +25,8 @@ import re
 import subprocess
 import sys
 
-from rdiff_backup import robust, rpath, Time
+from rdiff_backup import robust, Time
+from rdiffbackup.locations import increment
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, log, specifics
 from rdiffbackup.utils import buffer, convert
@@ -78,7 +79,7 @@ def parse_args():
     if len(args) != 1:
         usage(log.ERROR)
 
-    data_dir = rpath.RPath(
+    data_dir = increment.StoredRPath(
         specifics.local_connection,
         os.path.join(os.fsencode(args[0]), b"rdiff-backup-data"),
     )

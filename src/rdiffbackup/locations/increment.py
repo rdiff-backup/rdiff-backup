@@ -20,11 +20,87 @@
 
 import os
 import re
-from rdiff_backup import Rdiff, robust, rpath, Time
+from rdiff_backup import Rdiff, rpath, Time
 from rdiffbackup.singletons import consts, log, specifics, stats
 
 compression = True
 not_compressed_regexp = None
+
+
+class StoredRPath(rpath.RPath):
+
+    def get_incfiles_list(self):
+        """
+        Returns list of increments whose name starts like the current file
+        """
+        dirname, basename = self.dirsplit()
+        parent_dir = self.__class__(self.conn, dirname, ())
+        if not parent_dir.isdir():
+            return []  # inc directory not created yet
+
+        inc_list = []
+        for filename in parent_dir.listdir():
+            inc_info = _parse_increment_name(filename)
+            if inc_info and inc_info[3] == basename:
+                inc = parent_dir.append(filename)
+                assert (
+                    inc.isincfile()
+                ), "Path '{irp!r}' must be an increment file".format(irp=inc)
+                inc_list.append(inc)
+        return inc_list
+
+    def isincfile(self):
+        """
+        Return true if path looks like an increment file
+
+        Also sets various inc information used by the *inc* functions.
+        """
+        if self.index:
+            basename = self.index[-1]
+        else:
+            basename = self.base
+
+        inc_info = _parse_increment_name(basename)
+
+        if inc_info:
+            (
+                self.inc_compressed,
+                self.inc_timestr,
+                self.inc_type,
+                self.inc_basestr,
+            ) = inc_info
+            return True
+        else:
+            return False
+
+    def isinccompressed(self):
+        """Return true if inc file is compressed"""
+        return self.inc_compressed
+
+    def getinctype(self):
+        """Return type of an increment file"""
+        return self.inc_type
+
+    def getinctime(self):
+        """Return time in seconds of an increment file"""
+        return Time.bytestotime(self.inc_timestr)
+
+    def getincbase(self):
+        """Return the base filename of an increment file in rp form"""
+        if self.index:
+            return self.__class__(
+                self.conn, self.base, self.index[:-1] + (self.inc_basestr,)
+            )
+        else:
+            return self.__class__(self.conn, self.inc_basestr)
+
+    def getincbase_bname(self):
+        """Return the base filename as bytes of an increment file"""
+        rp = self.getincbase()
+        if rp.index:
+            return rp.index[-1]
+        else:
+            return rp.dirsplit()[1]
 
 
 def init(compression_value=True, not_compressed_regexp_str=None):
@@ -103,6 +179,30 @@ def get_increment(rp, typestr, inc_time):
 # === Internal functions ===
 
 
+def _parse_increment_name(basename):
+    """Returns None or tuple of (is_compressed, timestr, type, and basename)"""
+    dotsplit = basename.split(b".")
+    if dotsplit[-1] == b"gz":
+        compressed = True
+        if len(dotsplit) < 4:
+            return None
+        timestring, ext = dotsplit[-3:-1]
+    else:
+        compressed = False
+        if len(dotsplit) < 3:
+            return None
+        timestring, ext = dotsplit[-2:]
+    if ext not in {b"snapshot", b"dir", b"missing", b"diff", b"data"}:
+        return None
+    if Time.bytestotime(timestring) is None:
+        return None
+    if compressed:
+        basestr = b".".join(dotsplit[:-3])
+    else:
+        basestr = b".".join(dotsplit[:-2])
+    return (compressed, timestring, ext, basestr)
+
+
 def _make_missing_increment(incpref, inc_time):
     """Signify that mirror file was missing"""
     incrp = get_increment(incpref, "missing", inc_time)
@@ -128,6 +228,9 @@ def _make_snapshot_increment(mirror, incpref, inc_time):
         snapshotrp = get_increment(incpref, b"snapshot", inc_time)
 
     if mirror.isspecial():  # check for errors when creating special increments
+        # FIXME delayed import necessary to avoid a circular dependency
+        from rdiff_backup import robust
+
         eh = robust.get_error_handler("SpecialFileError")
         if (
             robust.check_common_error(

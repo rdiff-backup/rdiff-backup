@@ -10,6 +10,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import rpath
+from rdiffbackup.locations import increment
 from rdiffbackup.singletons import generics, specifics, stats
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
@@ -117,7 +118,7 @@ TotalDestinationSizeChange 7 (7 B)
 
     def test_write_rp(self):
         """Test reading and writing of statistics object"""
-        rp = rpath.RPath(
+        rp = increment.StoredRPath(
             specifics.local_connection, os.path.join(TEST_BASE_DIR, b"statstest")
         )
         if rp.lstat():
@@ -255,7 +256,7 @@ class IncStatTest(unittest.TestCase):
             int(time.time()) + 1,
         )
 
-        rbdir = rpath.RPath(
+        rbdir = increment.StoredRPath(
             specifics.local_connection, os.path.join(self.out_dir, b"rdiff-backup-data")
         )
 
