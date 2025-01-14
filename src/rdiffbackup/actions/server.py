@@ -36,7 +36,10 @@ class ServerAction(actions.BaseAction):
 
     name = "server"
     security = "server"
-    parent_parsers = [actions.RESTRICT_PARSER]
+    parent_parsers = [
+        actions.RESTRICT_PARSER,
+        actions.COMPRESSION_PARSER,
+    ]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
