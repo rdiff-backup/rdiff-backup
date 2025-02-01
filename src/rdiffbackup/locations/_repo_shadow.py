@@ -1142,6 +1142,35 @@ class RepoShadow(location.LocationShadow):
 
         return sorted(triples, key=lambda x: x["time"])
 
+    # @API(RepoShadow.get_statistics, 300)
+    @classmethod
+    def get_statistics(cls, begin=None, end=None, ratio=0):
+        """Get a structure representing session and file statistics"""
+        session_stats = cls._data_dir.append("session_statistics").get_incfiles_list(
+            begin, end, sort_list=True
+        )
+        file_stats = cls._data_dir.append("file_statistics").get_incfiles_list(
+            begin, end, sort_list=True
+        )
+        common_stats = cls._get_combined_pairs(session_stats, file_stats)
+        if not common_stats:  # no common date/time for statistics
+            return common_stats
+        #TODO to be continued...
+
+    def _get_combined_pairs(cls, incs1_list, incs2_list):
+        """Return list of matched increments pairs by same date/time"""
+        incs1_dict = {}
+        for inc in incs1_list:
+            incs1_dict[inc.getinctime()] = inc
+        incs2_dict = {}
+        for inc in incs2_list:
+            incs2_dict[inc.getinctime()] = inc
+
+        common_keys = sorted(incs1_dict.keys() & incs2_dict.keys())
+        inc_pairs = [(incs1_dict[x], incs2_dict[x]) for x in common_keys]
+
+        return inc_pairs
+
     # ### COPIED FROM MANAGE ####
 
     # @API(RepoShadow.remove_increments, 300)

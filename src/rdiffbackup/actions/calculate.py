@@ -129,6 +129,21 @@ class CalculateAction(actions.BaseAction):
         return consts.RET_CODE_OK
 
     def _calculate_statistics(self, repository):
+        statistics = repository.get_statistics(
+            self.values["begin_time"],
+            self.values.["end_time"],
+            self.values.["minimum_ratio"],
+        )
+        if not statistics:
+            if statistics is None:
+                log.Log("Something went wrong while gathering statistics", log.ERROR)
+                return consts.RET_CODE_ERR
+            else:
+                log.Log(
+                    "No statistics could be gathered within the given range",
+                    log.WARNING,
+                )
+                return consts.RET_CODE_WARN
         log.Log("STATISTICS TODO", log.ERROR)  # TODO
         return consts.RET_CODE_OK
 

@@ -29,7 +29,7 @@ not_compressed_regexp = None
 
 class StoredRPath(rpath.RPath):
 
-    def get_incfiles_list(self):
+    def get_incfiles_list(self, begin=None, end=None, sort_list=False):
         """
         Returns list of increments whose name starts like the current file
         """
@@ -40,14 +40,16 @@ class StoredRPath(rpath.RPath):
 
         inc_list = []
         for filename in parent_dir.listdir():
-            inc_info = _parse_increment_name(filename)
-            if inc_info and inc_info[3] == basename:
-                inc = parent_dir.append(filename)
-                assert (
-                    inc.isincfile()
-                ), "Path '{irp!r}' must be an increment file".format(irp=inc)
-                inc_list.append(inc)
-        return inc_list
+            if inc.isincfile():
+                if (
+                    (begin is None or begin <= inc.inc_time)
+                    and (end is None or inc.inc_time <= end)
+                ):
+                    inc_list.append(inc)
+        if sort_list:
+            return sorted(inc_list, key=lambda i: i.inc_time)
+        else:
+            return inc_list
 
     def isincfile(self):
         """
@@ -66,6 +68,7 @@ class StoredRPath(rpath.RPath):
             (
                 self.inc_compressed,
                 self.inc_timestr,
+                self.inc_time,
                 self.inc_type,
                 self.inc_basestr,
             ) = inc_info
@@ -83,7 +86,7 @@ class StoredRPath(rpath.RPath):
 
     def getinctime(self):
         """Return time in seconds of an increment file"""
-        return Time.bytestotime(self.inc_timestr)
+        return self.inc_time
 
     def getincbase(self):
         """Return the base filename of an increment file in rp form"""
@@ -180,7 +183,9 @@ def get_increment(rp, typestr, inc_time):
 
 
 def _parse_increment_name(basename):
-    """Returns None or tuple of (is_compressed, timestr, type, and basename)"""
+    """
+    Returns None or tuple of (is_compressed, timestr, timeepoch, type, and basename)
+    """
     dotsplit = basename.split(b".")
     if dotsplit[-1] == b"gz":
         compressed = True
@@ -194,13 +199,14 @@ def _parse_increment_name(basename):
         timestring, ext = dotsplit[-2:]
     if ext not in {b"snapshot", b"dir", b"missing", b"diff", b"data"}:
         return None
-    if Time.bytestotime(timestring) is None:
+    timeepoch = Time.bytestotime(timestring)
+    if timeepoch is None:
         return None
     if compressed:
         basestr = b".".join(dotsplit[:-3])
     else:
         basestr = b".".join(dotsplit[:-2])
-    return (compressed, timestring, ext, basestr)
+    return (compressed, timestring, timeepoch, ext, basestr)
 
 
 def _make_missing_increment(incpref, inc_time):

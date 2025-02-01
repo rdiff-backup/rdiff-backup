@@ -232,6 +232,12 @@ class Repo(location.Location):
         """
         return self._shadow.get_increments_sizes()
 
+    def get_statistics(self, begin, end, ratio):
+        """
+        Shadow function for RepoShadow.get_statistics
+        """
+        return self._shadow.get_statistics(begin, end, ratio)
+
     def get_parsed_time(self, timestr):
         """
         Shadow function for RepoShadow.get_parsed_time
