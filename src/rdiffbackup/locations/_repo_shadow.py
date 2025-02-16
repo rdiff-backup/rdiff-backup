@@ -1155,7 +1155,11 @@ class RepoShadow(location.LocationShadow):
         common_stats = cls._get_combined_pairs(session_stats, file_stats)
         if not common_stats:  # no common date/time for statistics
             return common_stats
-        #TODO to be continued...
+        session_stats = cls._get_session_average([x[0] for x in common_stats])
+        file_stats_list = list(map(cls._get_file_stats, common_stats))
+        # small trick to calculate the sum without having a zero equivalent
+        file_stats_sum = sum(file_stats_list[1:], file_stats_list[0])
+        return (session_stats, file_stats_sum)  #or something like this...
 
     def _get_combined_pairs(cls, incs1_list, incs2_list):
         """Return list of matched increments pairs by same date/time"""
@@ -1170,6 +1174,17 @@ class RepoShadow(location.LocationShadow):
         inc_pairs = [(incs1_dict[x], incs2_dict[x]) for x in common_keys]
 
         return inc_pairs
+
+    def _get_session_average(cls, session_stats_files):
+        sess_stats = [
+            stats.SessionStatsCalc().read_stats(loc.open("r"))
+            for loc in session_stats_files
+        ]
+        calc_stats = stats.SessionStatsCalc().calc_average(sess_stats)
+        return calc_stats
+
+    def _get_file_stats(cls, stats_pair):
+        session_stats, file_stats = stats_pair
 
     # ### COPIED FROM MANAGE ####
 
