@@ -206,6 +206,7 @@ class Select:
             "exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
             "exclude-sockets": (self._sockets_get_sf, Select.EXCLUDE),
             "exclude-fifos": (self._fifos_get_sf, Select.EXCLUDE),
+            "exclude-unreadable": (self._unreadable_get_sf, Select.EXCLUDE),
             "exclude-other-filesystems": (
                 self._other_filesystems_get_sf,
                 Select.EXCLUDE,
@@ -592,6 +593,20 @@ probably isn't what you meant""".format(
     def _fifos_get_sf(self, include):
         """Return a selection function matching all fifos"""
         return self._gen_get_sf(rpath.RORPath.isfifo, include, "fifo files")
+
+    def _unreadable_get_sf(self, include):
+        """Return a selection function matching unreadable files."""
+
+        def sel_func(rp):
+            if not rp.readable():
+                return include
+            else:
+                return None
+
+        sel_func.exclude = not include
+        sel_func.name = (include and "include" or "exclude") + " unreadable files"
+        sel_func.check_filename = False
+        return sel_func
 
     def _special_get_sf(self, include):
         """Return sel function matching sockets, symlinks, sockets, devs"""
