@@ -42,3 +42,6 @@ mprofile_*.dat
 
 # Ignore virtualenv
 .venv
+
+# Ignore compiled modules
+src/rdiff_backup/*.so
