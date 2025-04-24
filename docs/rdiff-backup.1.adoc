@@ -351,6 +351,8 @@ This doesn't apply recursively though so that the _filename_ must be present in 
 
 --min-file-size _sizeinbytes_:: Exclude files that are smaller than the given size in bytes.
 
+--exclude-unreadable:: Exclude files that are not readable by rdiff-backup based on their ACLs, to avoid permission errors during backup.
+
 == STATISTICS OPTIONS
 
 --file-statistics, --no-file-statistics::
