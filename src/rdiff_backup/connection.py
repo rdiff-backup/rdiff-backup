@@ -590,6 +590,9 @@ class PipeConnection(LowLevelPipeConnection):
         if isinstance(result, OSError) and result.errno:
             result.errno_str = errno.errorcode.get(result.errno, "EUNKWN")
             result.errno_orig = result.errno
+            result.strerror = (
+                f"[original: Errno {result.errno} {result.errno_str}] {result.strerror}"
+            )
         if robust.is_routine_fatal(result):
             raise  # Fatal error--No logging necessary, but connection down
         if log.Log.file_verbosity >= log.INFO or log.Log.term_verbosity >= log.INFO:
