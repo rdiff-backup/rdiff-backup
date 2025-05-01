@@ -23,7 +23,7 @@ class ActionCompareTest(unittest.TestCase):
         self.from1_struct = {
             "from1": {
                 "contents": {
-                    "fileChanged": {"content": "initial"},
+                    "fileChanged\udcff": {"content": "initial"},
                     "fileOld": {},
                     "fileUnchanged": {"content": "unchanged"},
                 }
@@ -33,7 +33,7 @@ class ActionCompareTest(unittest.TestCase):
         self.from2_struct = {
             "from2": {
                 "contents": {
-                    "fileChanged": {"content": "modified"},
+                    "fileChanged\udcff": {"content": "modified"},
                     "fileNew": {},
                     "fileUnchanged": {"content": "unchanged"},
                 }
@@ -43,7 +43,7 @@ class ActionCompareTest(unittest.TestCase):
         self.from3_struct = {
             "from3": {
                 "contents": {
-                    "fileChanged": {"content": "samesize"},
+                    "fileChanged\udcff": {"content": "samesize"},
                     "fileNew": {},
                     "fileUnchanged": {"content": "unchanged"},
                 }
@@ -170,7 +170,7 @@ class ActionCompareTest(unittest.TestCase):
                 return_stdout=True,
             ),
             b"""---
-- path: fileChanged
+- path: "fileChanged\\uDCFF"
   reason: metadata the same, data changed
 ...
 
@@ -215,7 +215,7 @@ class ActionCompareTest(unittest.TestCase):
                 return_stdout=True,
             ),
             b"""---
-- path: fileChanged
+- path: "fileChanged\\uDCFF"
   reason: metadata the same, data changed
 ...
 
