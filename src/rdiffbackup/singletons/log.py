@@ -128,7 +128,7 @@ class Logger:
             and self.term_verbosity < DEBUG
             and "\n" not in tmpstr[:-1]
         ):
-            termfp.write(
+            tmpstr = (
                 textwrap.fill(
                     tmpstr,
                     subsequent_indent=" " * 9,
@@ -138,7 +138,14 @@ class Logger:
                 )
                 + "\n"
             )
-        else:
+        try:
+            termfp.write(tmpstr)
+        except UnicodeEncodeError:
+            # In case the terminal output is not configured with surrogateescape
+            # Enforce use of backslashreplace errors to avoid fatal error.
+            tmpstr = tmpstr.encode(errors="surrogateescape").decode(
+                errors="backslashreplace"
+            )
             termfp.write(tmpstr)
 
     def conn(self, direction: str, result: typing.Any, req_num: int) -> None:
