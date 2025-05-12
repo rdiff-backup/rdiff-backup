@@ -369,7 +369,10 @@ If you want to use a different timezone than UTC, you can refer to the https://d
 If you've done something wrong in your last back-up, you have potentially two solutions to get rid of it.
 If you've backed-up a file or directory you shouldn't have backed-up, you can remove it again using `rdiff-backup-delete <repo>/<file-or-dir>`;
 beware that _all_ files, including all earlier versions, will be removed without any question back!
-If the situation is more complicated, you might want to have a look at https://www.timedicer.co.uk/programs/help/rdiff-backup-regress.sh.php[rdiff-backup-regress] which completely removes the last made backup, but beware that regression takes a long time.
+
+If the situation is more complicated, you might want to do a regression. On version 2.2.0 (December 2022) and later, you can use the command xref:rdiff-backup.1.adoc[`rdiff-backup regress`] with the `--force` option.
+
+For earlier versions (before version 2.2), have a look at https://www.timedicer.co.uk/programs/help/rdiff-b.ackup-regress.sh.php[rdiff-backup-regress] which completely removes the last made backup, but beware that regression takes a long time.
 Note that we made a copy of this nice utility, placed under `tools/misc` in our Git repo, just to be sure it doesn't get lost.
 
 == Backup on my file-system XYZ fails, can you support it?
