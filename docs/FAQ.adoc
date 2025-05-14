@@ -134,11 +134,6 @@ You will wind up with only one file (!) since HFS+ doesn't distinguish between t
 Therefore, when rdiff-backup copies files from case-sensitive to case-insensitive filesystems, it escapes the uppercase characters (eg, "M" is replaced with ";077", and "F" with ";070") so that no filename conflicts occur.
 Upon restore (from the Mac backup server to the Linux system), the filenames are unquoted and you will get "MyFile" back.
 
-== My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?
-
-The only official way to remove files from an rdiff-backup repository is by letting them expire using the --remove-older-than option.
-Deleting increments from the rdiff-backup-data directory will prevent you from recovering those files, but shouldn't prevent the rest of the repository from being restored.
-
 == Does rdiff-backup work under Solaris?
 
 There may be a problem with rdiff-backup and Solaris' libthread.
@@ -364,9 +359,10 @@ On Unix, for UTC, simply set `TZ=UTC` in your shell, or prepend ``TZ=UTC `` to t
 On Windows, set the `TZ` environment variable with the `set TZ=UTC` command in the `Cmd.exe` command interpreter (or in a batch script), or with `$env:TZ='UTC'` in PowerShell.
 If you want to use a different timezone than UTC, you can refer to the https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/tzset#remarks[`_tzset` CRT documentation] which describes in detail the format Windows expects for the value of the `TZ` variable.
 
-== I've done a blunder in my last backup, how to roll-back?
+== I've done a blunder in my last backup, how to roll-back? _Or_ my backup set contains some files that I just realized I don't want/need backed up. How do I remove them from the backup volume to save space?
 
 If you've done something wrong in your last back-up, you have potentially two solutions to get rid of it.
+
 If you've backed-up a file or directory you shouldn't have backed-up, you can remove it again using `rdiff-backup-delete <repo>/<file-or-dir>`;
 beware that _all_ files, including all earlier versions, will be removed without any question back!
 
