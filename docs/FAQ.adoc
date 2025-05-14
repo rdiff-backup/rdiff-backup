@@ -405,8 +405,8 @@ CAUTION: remember that you can't change the quoting once a backup repository has
 
 == How to work around the limitation to mix file selection and sub-path restore?
 
-Since rdiff-backup 2.1+, a command like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo/subdir myrestore/subdir` isn't possible anymore, because it could lead to https://github.com/rdiff-backup/rdiff-backup/issues/463[data loss].
-Such calls are anyway equivalent to something like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo myrestore`.
+Since rdiff-backup 2.1+, a command like `+rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo/subdir myrestore/subdir+` isn't possible anymore, because it could lead to https://github.com/rdiff-backup/rdiff-backup/issues/463[data loss].
+Such calls are anyway equivalent to something like `+rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo myrestore+`.
 This means that the new limitation doesn't imply a loss in feature, it only enforces a new approach without risk of losing data.
 
 == How can I integrate the rdiff-backup functionality in my own program?
@@ -484,9 +484,9 @@ If this is not possible, you can create a new bigger partition using a _similar_
 
 If this is also not an option, and you have nothing else outside of the repository that you can move away (or remove), then you can try to remove the following files:
 
-- `/mnt/bak/rdiff-backup-data/*.log`
-- `/mnt/bak/rdiff-backup-data/error_log*`
-- `/mnt/bak/rdiff-backup-data/*_statistics.*`
+- `+/mnt/bak/rdiff-backup-data/*.log+`
+- `+/mnt/bak/rdiff-backup-data/error_log*+`
+- `+/mnt/bak/rdiff-backup-data/*_statistics.*+`
 
 === Recovering
 
