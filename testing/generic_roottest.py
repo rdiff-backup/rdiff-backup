@@ -426,7 +426,6 @@ class NonRoot(BaseRootTest):
         return rp, sp
 
     def backup(self, input_rp, output_rp, time):
-        global user
         backup_cmd = b"%s --current-time %i backup --no-compare-inode %b %b" % (
             comtst.RBBin,
             time,

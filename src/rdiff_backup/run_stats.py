@@ -506,7 +506,6 @@ class FileStat:
 
 def sum_fst(rp_pairs):
     """Add the file statistics given as list of (session_rp, file_rp) pairs"""
-    global quiet
     n = len(rp_pairs)
     if not quiet:
         log.Log("Processing statistics from session 1 of %d" % (n,), log.NONE)
