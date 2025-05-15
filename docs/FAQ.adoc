@@ -346,7 +346,7 @@ For more information on this approach, see this mailing list post: https://lists
 
 == What does "`AssertionError: Bad index order`" mean?
 
-If rdiff-backup fails with the message `AssertionError: Bad index order`," it could be because the files in a directory have changed while rdiff-backup is running.
+If rdiff-backup fails with the message `AssertionError: Bad index order`, it could be because the files in a directory have changed while rdiff-backup is running.
 Possible ways of dealing with this situation include implementing filesystem snapshots using the volume manager, excluding the offending directory, or suspending the process that is changing the directory.
 After the text "Bad index order", the error message will indicate which files have caused the problem.
 
