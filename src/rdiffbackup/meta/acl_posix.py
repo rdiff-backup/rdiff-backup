@@ -493,7 +493,6 @@ def _list_to_acl(entry_list, map_names=1):
 
     def warn_drop(name):
         """Warn about acl with name getting dropped"""
-        global dropped_acl_names
         if generics.never_drop_acls:
             log.Log.FatalError(
                 "--never-drop-acls specified but cannot map "
