@@ -108,15 +108,15 @@ Under both Linux and Mac OS X, smbfs seems to be working quite well.
 However, it has a 2 GB file limit and is deprecated on Linux.
 CIFS users sometimes experience one of these common errors:
 
- ** rdiff-backup fails to run, printing an exception about "`assert not upper_a.lstat()`" failing.
-This can be resolved by unmounting the share, running the following command as root:\ `$ echo 0 > /proc/fs/cifs/LookupCacheEnabled`\ and then remounting the CIFS share.\ \
+ ** rdiff-backup fails to run, printing an exception about `assert not upper_a.lstat()` failing.
+This can be resolved by unmounting the share, running the following command as root: `$ echo 0 > /proc/fs/cifs/LookupCacheEnabled` and then remounting the CIFS share.
  ** If filenames in the mirror directory have some characters transformed to a '?' instead of remaining the expected Unicode character, you will need to adjust the `iocharset=` mount option.
 This happens because the server is using a codepage with only partial Unicode support and is not translating characters correctly.
 See the mount.cifs man page for more information.
 Using smbfs can also improve this situation since it has both an `iocharset=` and a `codepage=` option.
  ** If you have trouble with filenames containing a colon ':', or another reserved Windows character, try using the `mapchars` option to the CIFS mount.
 At least one user has reported success when using this option while mounting a NAS system via CIFS.
-See the mount.cifs man page for more information.\ \
+See the mount.cifs man page for more information.
  ** Other CIFS mount options which may be helpful include `nocase`, `directio`, and `sfu`.
 Also, try changing the value of `/proc/fs/cifs/LinuxExtensionsEnabled` (requires remount).
 A user with a DroboShare reported that `-o mapchars,nocase,directio` worked for that NAS appliance.
@@ -133,11 +133,6 @@ Imagine you have a Linux directory with two files, "bar" and "BAR", and you copy
 You will wind up with only one file (!) since HFS+ doesn't distinguish between the names, and the second file copied will overwrite the first.
 Therefore, when rdiff-backup copies files from case-sensitive to case-insensitive filesystems, it escapes the uppercase characters (eg, "M" is replaced with ";077", and "F" with ";070") so that no filename conflicts occur.
 Upon restore (from the Mac backup server to the Linux system), the filenames are unquoted and you will get "MyFile" back.
-
-== My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?
-
-The only official way to remove files from an rdiff-backup repository is by letting them expire using the --remove-older-than option.
-Deleting increments from the rdiff-backup-data directory will prevent you from recovering those files, but shouldn't prevent the rest of the repository from being restored.
 
 == Does rdiff-backup work under Solaris?
 
@@ -335,9 +330,9 @@ Simply add `/sw/bin` to your path manually, or copy rdiff-backup to a directory 
 
 == What does "`tuple index out of range`" mean?
 
-If you see the error "`tuple index out of range`" after running a command like:\ \ `$ rdiff-backup -l /path/to/backup/rdiff-backup-data/`\ \ then the solution is to simply remove the extra "rdiff-backup-data" from the end of the path.
+If you see the error `tuple index out of range` after running a command like: `$ rdiff-backup -l /path/to/backup/rdiff-backup-data/` then the solution is to simply remove the extra "rdiff-backup-data" from the end of the path.
 The list increments option, and others like it, take the path to the repository, not the path to the rdiff-backup-data directory.
-In the above example, you should run again with:\ \ `$ rdiff-backup -l /path/to/backup`\ \ If you get this error message for an unrelated reason, try contacting the mailing list.
+In the above example, you should run again with: `$ rdiff-backup -l /path/to/backup`. If you get this error message for an unrelated reason, try contacting the mailing list.
 
 == What does "`IO Error: CRC check failed`" mean?
 
@@ -346,12 +341,12 @@ Possible causes of this error include an incomplete gzip operation, and hardware
 A brute-force way to recover from this error is to remove the rdiff-backup-data directory.
 However, this will remove all of your past increments.
 A better approach may be to delete the particular file that is causing the problem.
-A command like:\ \ `$ find rdiff-backup-data -type f -name \*.gz -print0 | xargs -0r gzip --test`\ \ will find the failing file.
+A command like: `$ find rdiff-backup-data -type f -name \*.gz -print0 | xargs -0r gzip --test` will find the failing file.
 For more information on this approach, see this mailing list post: https://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html.
 
 == What does "`AssertionError: Bad index order`" mean?
 
-If rdiff-backup fails with the message "`AssertionError: Bad index order`," it could be because the files in a directory have changed while rdiff-backup is running.
+If rdiff-backup fails with the message `AssertionError: Bad index order`, it could be because the files in a directory have changed while rdiff-backup is running.
 Possible ways of dealing with this situation include implementing filesystem snapshots using the volume manager, excluding the offending directory, or suspending the process that is changing the directory.
 After the text "Bad index order", the error message will indicate which files have caused the problem.
 
@@ -364,12 +359,16 @@ On Unix, for UTC, simply set `TZ=UTC` in your shell, or prepend ``TZ=UTC `` to t
 On Windows, set the `TZ` environment variable with the `set TZ=UTC` command in the `Cmd.exe` command interpreter (or in a batch script), or with `$env:TZ='UTC'` in PowerShell.
 If you want to use a different timezone than UTC, you can refer to the https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/tzset#remarks[`_tzset` CRT documentation] which describes in detail the format Windows expects for the value of the `TZ` variable.
 
-== I've done a blunder in my last backup, how to roll-back?
+== I've done a blunder in my last backup, how to roll-back? _Or_ my backup set contains some files that I just realized I don't want/need backed up. How do I remove them from the backup volume to save space?
 
 If you've done something wrong in your last back-up, you have potentially two solutions to get rid of it.
+
 If you've backed-up a file or directory you shouldn't have backed-up, you can remove it again using `rdiff-backup-delete <repo>/<file-or-dir>`;
 beware that _all_ files, including all earlier versions, will be removed without any question back!
-If the situation is more complicated, you might want to have a look at https://www.timedicer.co.uk/programs/help/rdiff-backup-regress.sh.php[rdiff-backup-regress] which completely removes the last made backup, but beware that regression takes a long time.
+
+If the situation is more complicated, you might want to do a regression. On version 2.2.0 (December 2022) and later, you can use the command xref:rdiff-backup.1.adoc[`rdiff-backup regress`] with the `--force` option.
+
+For earlier versions (before version 2.2), have a look at https://www.timedicer.co.uk/programs/help/rdiff-b.ackup-regress.sh.php[rdiff-backup-regress] which completely removes the last made backup, but beware that regression takes a long time.
 Note that we made a copy of this nice utility, placed under `tools/misc` in our Git repo, just to be sure it doesn't get lost.
 
 == Backup on my file-system XYZ fails, can you support it?
@@ -402,8 +401,8 @@ CAUTION: remember that you can't change the quoting once a backup repository has
 
 == How to work around the limitation to mix file selection and sub-path restore?
 
-Since rdiff-backup 2.1+, a command like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo/subdir myrestore/subdir` isn't possible anymore, because it could lead to https://github.com/rdiff-backup/rdiff-backup/issues/463[data loss].
-Such calls are anyway equivalent to something like `rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo myrestore`.
+Since rdiff-backup 2.1+, a command like `+rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo/subdir myrestore/subdir+` isn't possible anymore, because it could lead to https://github.com/rdiff-backup/rdiff-backup/issues/463[data loss].
+Such calls are anyway equivalent to something like `+rdiff-backup restore --include myrestore/subdir/somefile --exclude '**' myrepo myrestore+`.
 This means that the new limitation doesn't imply a loss in feature, it only enforces a new approach without risk of losing data.
 
 == How can I integrate the rdiff-backup functionality in my own program?
@@ -481,9 +480,9 @@ If this is not possible, you can create a new bigger partition using a _similar_
 
 If this is also not an option, and you have nothing else outside of the repository that you can move away (or remove), then you can try to remove the following files:
 
-- `/mnt/bak/rdiff-backup-data/*.log`
-- `/mnt/bak/rdiff-backup-data/error_log*`
-- `/mnt/bak/rdiff-backup-data/*_statistics.*`
+- `+/mnt/bak/rdiff-backup-data/*.log+`
+- `+/mnt/bak/rdiff-backup-data/error_log*+`
+- `+/mnt/bak/rdiff-backup-data/*_statistics.*+`
 
 === Recovering
 

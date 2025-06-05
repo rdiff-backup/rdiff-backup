@@ -17,7 +17,7 @@ It can either be a simple directory from which to backup, or to which to restore
 A location has a base_dir represented by an _rpath.RPath_ object.
 
 NOTE: an idea could be to make Location a child class of rpath.RPath, so that it represents its own `base_dir`.
-An alternative idea could to use `__getattr__` to delegate attributes to `base_dir`...
+An alternative idea could to use `+__getattr__+` to delegate attributes to `base_dir`...
 The author of those lines is still thinking about pros and cons of these options.
 
 The ultimate idea would be to have all client/server communications go through the location because, at the end, it's what is present remotely, and the whole actions only act against those locations, potentially transferring data from one location to the next.

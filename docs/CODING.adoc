@@ -24,7 +24,7 @@ double quotes but states that triple-quoted strings should use double quotes "to
 * we call items any definition of class, function, member, variable, etc...
 * private items are pre-fixed with an underscore
 * public items are to be defined before private ones.
-Pre-defined functions (generally pre- and post-fixed with two underscores, like `__init__`) are defined before all others.
+Pre-defined functions (generally pre- and post-fixed with two underscores, like `+__init__+`) are defined before all others.
 * the order should be logical (e.g.
 called functions after calling ones) rather than lexical.
 * in class definitions, variables are defined before class methods, before instance methods (each in the order defined above).
@@ -62,7 +62,7 @@ NOTE: one of the main driver for the above recommendations is the possibility to
 == BYTES VS. STR
 
 * Paths and commands are expressed in bytes to avoid issues with cross-platform encoding conversion, any function manipulating such things must return bytes.
-* Only methods creating a Path/Command object (`__init__` and similar) might accept strings as input and convert them internally to bytes.
+* Only methods creating a Path/Command object (`+__init__+` and similar) might accept strings as input and convert them internally to bytes.
 Other functions must make sure that they don't accept strings as input (this is one of the few reasons to use asserts).
 * Any conversion between strings and bytes happens with `os.fsencode/fsdecode`.
 * Messages are to be expressed in strings (log, errors, etc).

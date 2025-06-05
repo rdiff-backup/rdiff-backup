@@ -8,7 +8,9 @@ RUN_COMMAND ?= docker run --rm -i -v ${PWD}/..:/build/ -w /build/$(shell basenam
 # we set SUDO="sudo -E env PATH=$PATH" if we want to keep the whole environment
 SUDO ?=
 
-all: clean container test build
+.NOTPARALLEL: all test-misc
+
+all: container clean test build
 
 test: test-static test-runtime
 
@@ -37,7 +39,7 @@ test-runtime-slow: test-runtime-files
 	@echo "=== Long running performance tests ==="
 	${RUN_COMMAND} tox -c tox_slow.ini -e py
 
-test-misc: clean build test-static test-runtime-slow
+test-misc: container clean build test-static test-runtime-slow
 
 build:
 	# Build rdiff-backup (assumes src/ is in directory 'rdiff-backup' and

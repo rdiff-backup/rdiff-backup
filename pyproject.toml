@@ -19,7 +19,6 @@ classifiers = [
 	'Environment :: Console',
 	'Intended Audience :: End Users/Desktop',
 	'Intended Audience :: System Administrators',
-	'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
 	'Natural Language :: English',
 	'Operating System :: POSIX :: Linux',
 	'Operating System :: POSIX',  # generic because users reported FreeBSD to work

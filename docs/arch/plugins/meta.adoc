@@ -52,7 +52,7 @@ Also note that the carbon files and resource forks attributes are also still han
 
 * the class method `cls.join_iter()` (not required to be implemented by the main class), allows to intermangle an iterator of `RORPath` objects with the corresponding iterator of metadata.
 This allows to handle all metadata in one iterator.
-* the class can be instantiated (through the `__init__` class), effectively opening the underlying metadata-file.
+* the class can be instantiated (through the `+__init__+` class), effectively opening the underlying metadata-file.
 * the method `self.write_object()` can then be used to write an object representing the metadata.
 The metadata-class is also defined within the plugin-module but must be stable because it is transferred through the connection!
 * the method `self.get_objects()` returns an iterator of objects read from the underlying file.

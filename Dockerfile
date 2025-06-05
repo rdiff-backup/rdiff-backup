@@ -1,9 +1,9 @@
 # rdiff-backup build environment (for developers)
 FROM debian:sid
 
-# General Debian build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
-    apt-get install -y --no-install-recommends \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+# General Debian build dependencies
     devscripts \
     equivs \
     curl \
@@ -12,21 +12,15 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     git-buildpackage \
     pristine-tar \
     dh-python \
-    build-essential
-
+    build-essential \
 # Build dependencies specific for rdiff-backup
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
-    apt-get install -y --no-install-recommends \
     librsync-dev \
     python3-all-dev \
     python3-pylibacl \
     python3-yaml \
     python3-pyxattr \
-    asciidoctor
-
+    asciidoctor \
 # Build dependencies specific for rdiff-backup development and testing
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
-    apt-get install -y --no-install-recommends \
     tox \
     rdiff \
     python3-setuptools-scm \
@@ -36,8 +30,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     rsync
 
 # Tests require that there is a regular user
-ENV RDIFF_TEST_UID 1000
-ENV RDIFF_TEST_USER testuser
-ENV RDIFF_TEST_GROUP testuser
+ENV RDIFF_TEST_UID=1000
+ENV RDIFF_TEST_USER=testuser
+ENV RDIFF_TEST_GROUP=testuser
 
 RUN useradd -ms /bin/bash --uid ${RDIFF_TEST_UID} ${RDIFF_TEST_USER}
