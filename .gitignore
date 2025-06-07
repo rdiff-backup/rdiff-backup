@@ -39,3 +39,9 @@ mprofile_*.dat
 
 # Ignore Windows artefacts
 *.dll
+
+# Ignore virtualenv
+.venv
+
+# Ignore compiled modules
+src/rdiff_backup/*.so
