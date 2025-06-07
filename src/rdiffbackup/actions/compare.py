@@ -171,7 +171,7 @@ class CompareAction(actions.BaseAction):
         for report in report_iter:
             changed_files_found += 1
             indexpath = report.index and b"/".join(report.index) or b"."
-            indexpath = indexpath.decode(errors="replace")
+            indexpath = indexpath.decode(errors="surrogateescape")
             if parsable:
                 reason_verify_list.append({"reason": report.reason, "path": indexpath})
             else:
