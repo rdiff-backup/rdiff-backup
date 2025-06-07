@@ -39,13 +39,13 @@ The Action class has the following interface, in addition to the generic plugin 
 A security class of `None` is only applicable to actions without client/server context (e.g.
 `info`).
 * the class method `cls.add_action_subparser(sub_handler)` returns a subparser as returned by argparse's `sub_handler.add_parser` function, so that the sub-options of the action can be parsed by the `rdiffbackup.arguments.parse` function.
-* the method `self.__init__(args, log, errlog)` initializes the class as object, based on the namespace returned by argparse, a Log and an ErrorLog object.
+* the method `+self.__init__(args, log, errlog)+` initializes the class as object, based on the namespace returned by argparse, a Log and an ErrorLog object.
 * the method `self.pre_check()` just validates that the arguments passed were correct, beyond what argparse could do, and shouldn't try to connect yet to any remote location.
 A return value unequal 0 means an error, which can be used as exit code.
 * the method `self.connect()` returns a https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers[context manager object] which can be used in a `with action.connect() as conn_act:` construct.
 It is expected that the action object itself is the context manager, but it isn't absolutely necessary (but the default implementation offered by the BaseAction).
-The returned class must hence have two methods `self.__enter__()` and `self.__exit__(self, exc_type, exc_value, traceback)` (closing the connections).
-Again, it is expected that the runtime context object returned by `__enter__` is the same action object (aka `return self`), but it isn't an obligation.
+The returned class must hence have two methods `+self.__enter__()+` and `+self.__exit__(self, exc_type, exc_value, traceback)+` (closing the connections).
+Again, it is expected that the runtime context object returned by `+__enter__+` is the same action object (aka `return self`), but it isn't an obligation.
 +
 This context object has the following interface, usable through the connection(s) started by `connect()`:
 
@@ -59,7 +59,7 @@ It returns 0 in case of success, else an integer to be used as exit code.
 It might return 0 in case of success, else an integer to be used as exit code.
 It is the only function that might exit directly instead, even though it isn't the recommended approach (but a matter of fact for most existing actions).
 
-NOTE: the context object doesn't need a "cleanup" action as clean-up is to   be done as part of the `__exit__` method provided by the context manager.
+NOTE: the context object doesn't need a "cleanup" action as clean-up is to   be done as part of the `+__exit__+` method provided by the context manager.
 
 Of course, action classes inheriting from the BaseAction class don't need to define all aspects themselves, making the life of plug-in developers easier.
 
