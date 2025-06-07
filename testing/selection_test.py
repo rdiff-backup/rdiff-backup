@@ -655,6 +655,15 @@ rdiff-backup_testfiles/select**/2
                 ],
                 [(), ("Users",)],
             )
+            self.root = rpath.RPath(specifics.local_connection, "C:/")
+            self.ParseTest(
+                [
+                    ("exclude", b"*:/Users/*"),
+                    ("include", b"C:/Users"),
+                    ("exclude", b"C:/"),
+                ],
+                [(), ("Users",)],
+            )
         else:
             self.root = rpath.RPath(specifics.local_connection, "/")
             self.ParseTest(

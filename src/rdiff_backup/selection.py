@@ -191,6 +191,7 @@ class Select:
             "exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
             "exclude-sockets": (self._sockets_get_sf, Select.EXCLUDE),
             "exclude-fifos": (self._fifos_get_sf, Select.EXCLUDE),
+            "exclude-unreadable": (self._unreadable_get_sf, Select.EXCLUDE),
             "exclude-other-filesystems": (
                 self._other_filesystems_get_sf,
                 Select.EXCLUDE,
@@ -569,6 +570,19 @@ probably isn't what you meant""".format(
         """Return a selection function matching all fifos"""
         return self._gen_get_sf(rpath.RORPath.isfifo, include, "fifo files")
 
+    def _unreadable_get_sf(self, include):
+        """Return a selection function matching unreadable files."""
+
+        def sel_func(rp):
+            if not rp.readable():
+                return include
+            else:
+                return None
+
+        sel_func.exclude = not include
+        sel_func.name = (include and "include" or "exclude") + " unreadable files"
+        return sel_func
+
     def _special_get_sf(self, include):
         """Return sel function matching sockets, symlinks, sockets, devs"""
 
@@ -737,7 +751,7 @@ probably isn't what you meant""".format(
         prefixes = [b"/".join(glob_parts[: i + 1]) for i in range(len(glob_parts))]
         # we must make exception for root "/", or "X:/" under Windows,
         # only dirs to end in slash
-        if prefixes[0] == b"" or re.fullmatch(b"[a-zA-Z]:", prefixes[0]):
+        if prefixes[0] == b"" or re.fullmatch(b"[a-zA-Z*]:", prefixes[0]):
             prefixes[0] += b"/"
         return list(map(self._glob_to_re, prefixes))
 
