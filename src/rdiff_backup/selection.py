@@ -737,7 +737,7 @@ probably isn't what you meant""".format(
         prefixes = [b"/".join(glob_parts[: i + 1]) for i in range(len(glob_parts))]
         # we must make exception for root "/", or "X:/" under Windows,
         # only dirs to end in slash
-        if prefixes[0] == b"" or re.fullmatch(b"[a-zA-Z]:", prefixes[0]):
+        if prefixes[0] == b"" or re.fullmatch(b"[a-zA-Z*]:", prefixes[0]):
             prefixes[0] += b"/"
         return list(map(self._glob_to_re, prefixes))
 
