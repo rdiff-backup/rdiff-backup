@@ -1,0 +1,148 @@
+= rdiff-backup: {page-name}
+:page-name: macOS Development Guide
+:pp: {plus}{plus}
+:sectnums:
+:toc: macro
+
+link:.[Home,role="button round"] // *{page-name}*
+
+'''''
+
+toc::[]
+
+Some notes for developers and contributors willing to help with rdiff-backup development on macOS, or simply compile rdiff-backup from source code.
+
+== Pre-requisites
+
+Here is the list of components required to develop or compile rdiff-backup on macOS.
+
+=== Installing Python on macOS
+
+On macOS, you have two main options for installing Python.
+
+NOTE: The `universal2` format allows a single binary to run natively on both x86_64 (Intel) and arm64 (Apple Silicon M1,M2,M3) architectures. This is especially helpful when distributing Python scripts or applications across various Mac environments. https://en.wikipedia.org/wiki/Universal_binary#Universal_2
+
+==== Option 1: Download from the Official Python Website (recommended)
+
+Visit the official Python downloads page for macOS:
+
+https://www.python.org/downloads/macos/
+
+- Choose the installer labeled `macOS 64-bit universal2 installer`.
+- This version includes support for both Intel and Apple Silicon processors.
+- It installs Python under `/usr/local/bin/python3` (you may need to update your PATH).
+
+==== Option 2: Install via Homebrew
+
+If you use Homebrew, you can install Python with:
+
+On macOS, you have two main options to install Python:
+
+- Install via Homebrew: `brew install python`
+
+==== Verify that Python was installed correctly:
+
+[source,shell]
+----
+which python3
+python3 --version
+----
+
+=== Install Required Build Tools
+
+You may need the following tools for building native libraries:
+
+[source,shell]
+----
+xcode-select --install
+----
+
+=== Build and Install librsync from Source
+
+1. Clone or download the librsync source from GitHub:  
+   https://github.com/rdiff-backup/librsync
+
+2. Build and install it:
+
+[source,shell]
+----
+wget https://github.com/librsync/librsync/releases/download/v2.3.4/librsync-2.3.4.tar.gz
+tar zxvf librsync-2.3.4.tar.gz
+cd librsync
+cmake .
+make
+sudo make install
+----
+
+This should install `librsync` in `/usr/local/lib` and headers in `/usr/local/include`.
+
+To confirm installation:
+
+[source,shell]
+----
+ls /usr/local/lib | grep rsync
+----
+
+== Build, Test and Package rdiff-backup
+
+Now you can clone and set up the rdiff-backup source tree:
+
+[source,shell]
+----
+git clone https://github.com/rdiff-backup/rdiff-backup
+cd rdiff-backup
+----
+
+=== Create and Activate Virtual Environment
+
+[source,shell]
+----
+python3 -m venv .venv
+source .venv/bin/activate
+----
+
+Ensure you're using the virtual environment's Python, verify that `python3` is within the venv folder:
+
+[source,shell]
+----
+which python3
+----
+
+=== Set Library Path (for dynamic linker)
+
+[source,shell]
+----
+export DYLD_LIBRARY_PATH=/usr/local/lib
+----
+
+=== Install Dependencies and Editable Package
+
+[source,shell]
+----
+pip install -e .
+----
+
+This installs rdiff-backup in editable mode along with development dependencies.
+
+=== Run Tests
+
+[source,shell]
+----
+make test
+----
+
+=== Build the Package
+
+To build a source distribution and wheel:
+
+[source,shell]
+----
+pyproject-build
+----
+
+Artifacts will be created in the `dist/` directory.
+
+== Troubleshooting
+
+- If Python cannot find `librsync`, make sure `DYLD_LIBRARY_PATH` is exported properly.
+- Use `otool -L dist/rdiff-backup` to inspect dynamic library dependencies.
