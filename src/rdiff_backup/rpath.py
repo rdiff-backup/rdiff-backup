@@ -197,7 +197,7 @@ class RORPath:
 
         For instance, if the index is ("a", "b"), return "'a/b'".
         """
-        return self.get_indexpath().decode(errors="replace")
+        return self.get_indexpath().decode(errors="surrogateescape")
 
     def __getstate__(self):
         """Return picklable state
