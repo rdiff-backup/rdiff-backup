@@ -490,10 +490,10 @@ class PipeConnection(LowLevelPipeConnection):
             self._put(arg, req_num)
         result = self._get_response(req_num)
         self.unused_request_numbers.add(req_num)
-        if isinstance(result, OSError) and getattr(result, "errno_str", False):
+        if isinstance(result, OSError) and hasattr(result, "errno_str"):
             # OSError code are specific to each platform.
             # Let convert the errno to current platform.
-            result.errno = getattr(errno, result.errno_str, -result.errno)
+            result.errno = getattr(errno, result.errno_str, result.errno)
             raise result
         elif isinstance(result, Exception):
             raise result
@@ -589,7 +589,9 @@ class PipeConnection(LowLevelPipeConnection):
         # OSError code are specific to the platform. Send back errno as string.
         if isinstance(result, OSError) and result.errno:
             result.errno_str = errno.errorcode.get(result.errno, "EUNKWN")
-            result.errno_orig = result.errno
+            result.strerror = "[original: Errno {re} {rs}] {st}".format(
+                re=result.errno, rs=result.errno_str, st=result.strerror
+            )
         if robust.is_routine_fatal(result):
             raise  # Fatal error--No logging necessary, but connection down
         if log.Log.file_verbosity >= log.INFO or log.Log.term_verbosity >= log.INFO:
