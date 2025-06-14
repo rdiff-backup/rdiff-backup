@@ -39,6 +39,7 @@ Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remo
 
 * xref:DEVELOP.adoc[Developer documentation]
 ** xref:Windows-DEVELOP.adoc[Windows specific Developer documentation]
+** xref:MacOS-DEVELOP.adoc[macOS specific Developer documentation]
 * xref:CODING.adoc[Coding conventions]
 * xref:DOCUMENTATION.adoc[Documentation guidelines]
 * link:./api[Client-server API documentation] (i.e. when used over SSH), with repository format changelog
