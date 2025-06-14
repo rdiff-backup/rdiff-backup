@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v2
+        uses: actions/configure-pages@v5
       - name: install dependencies and call Jekyll
         run: |
           sudo gem install bundler
@@ -45,7 +45,7 @@ jobs:
 #          source: ./docs
 #          destination: ./docs/_site
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs/_site
 
@@ -59,4 +59,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
