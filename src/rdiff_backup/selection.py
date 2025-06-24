@@ -113,8 +113,23 @@ class Select:
         usually self.select_default.  Returns self.iter just for convenience.
         """
         self.rpath.setdata()  # this may have changed since Select init
-        select_iter = self._iterate_rpath(self.rpath, self.select_default)
+        select_iter = self._iterate_rpath(self.rpath)
         return select_iter
+
+    def _select_filename(self, rp):
+        """Run through the selection functions based only on filename and return dominant val 0/1/2"""
+        scanned = 0  # 0, by default, or 2 if prev sel func scanned rp
+        for sf in self.selection_functions:
+            if not sf.check_filename and not sf.exclude:
+                return 1
+            result = sf(rp)
+            if result == 1:
+                return 1
+            elif result == 0:
+                return scanned
+            elif result == 2:
+                scanned = 2
+        return 1
 
     def select_default(self, rp):
         """Run through the selection functions and return dominant val 0/1/2"""
@@ -191,6 +206,7 @@ class Select:
             "exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
             "exclude-sockets": (self._sockets_get_sf, Select.EXCLUDE),
             "exclude-fifos": (self._fifos_get_sf, Select.EXCLUDE),
+            "exclude-unreadable": (self._unreadable_get_sf, Select.EXCLUDE),
             "exclude-other-filesystems": (
                 self._other_filesystems_get_sf,
                 Select.EXCLUDE,
@@ -217,12 +233,9 @@ class Select:
             "include-globbing-filelist": Select.INCLUDE,
         }
 
-    def _iterate_rpath(self, rpath, sel_func):
+    def _iterate_rpath(self, rpath):
         """
         Return iterator yielding rpaths in rpath
-
-        sel_func is the selection function to use on the rpaths.
-        It is usually self.Select.
         """
 
         def error_handler(exc, filename):
@@ -235,14 +248,20 @@ class Select:
 
             Returns (rpath, num) where num == 0 means rpath should be
             generated normally, num == 1 means the rpath is a directory
-            and should be included iff something inside is included.
+            and should be included if something inside is included.
             """
             for filename in self._listdir_sorted(rpath):
+                # First check if path is excluded by filename to reduce io calls
+                new_rorpath = rpath.new_index_empty(rpath.index + (filename,))
+                s = self._select_filename(new_rorpath)
+                if s == 0:
+                    continue
+                # If filename is not excluded, run all selection functions.
                 new_rpath = robust.check_common_error(
                     error_handler, rpath.append, (filename,)
                 )
                 if new_rpath and new_rpath.lstat():
-                    s = sel_func(new_rpath)
+                    s = self.select_default(new_rpath)
                     if s == 1:
                         yield (new_rpath, 0)
                     elif s == 2 and new_rpath.isdir():
@@ -364,6 +383,8 @@ probably isn't what you meant""".format(
 
         selection_function.exclude = something_excluded or inc_default == Select.EXCLUDE
         selection_function.name = "Filelist: " + list_name
+        # Exclude this function from _select_filename because it's not idempotent.
+        selection_function.check_filename = False
         return selection_function
 
     def _filelist_read(self, list_content, include, list_name):
@@ -489,6 +510,7 @@ probably isn't what you meant""".format(
 
         sel_func.exclude = not include
         sel_func.name = "Match other filesystems"
+        sel_func.check_filename = False
         return sel_func
 
     def _regexp_get_sf(self, regexp_string, include):
@@ -513,6 +535,7 @@ probably isn't what you meant""".format(
 
         sel_func.exclude = not include
         sel_func.name = "Regular expression: %s" % regexp_string
+        sel_func.check_filename = True
         return sel_func
 
     def _presence_get_sf(self, presence_filename, include):
@@ -534,6 +557,7 @@ probably isn't what you meant""".format(
 
         sel_func.exclude = not include
         sel_func.name = "Presence file: %s" % presence_filename
+        sel_func.check_filename = False
         return sel_func
 
     def _gen_get_sf(self, pred, include, name):
@@ -551,6 +575,7 @@ probably isn't what you meant""".format(
 
         sel_func.exclude = not include
         sel_func.name = (include and "include " or "exclude ") + name
+        sel_func.check_filename = False
         return sel_func
 
     def _devfiles_get_sf(self, include):
@@ -569,6 +594,20 @@ probably isn't what you meant""".format(
         """Return a selection function matching all fifos"""
         return self._gen_get_sf(rpath.RORPath.isfifo, include, "fifo files")
 
+    def _unreadable_get_sf(self, include):
+        """Return a selection function matching unreadable files."""
+
+        def sel_func(rp):
+            if not rp.readable():
+                return include
+            else:
+                return None
+
+        sel_func.exclude = not include
+        sel_func.name = (include and "include" or "exclude") + " unreadable files"
+        sel_func.check_filename = False
+        return sel_func
+
     def _special_get_sf(self, include):
         """Return sel function matching sockets, symlinks, sockets, devs"""
 
@@ -580,6 +619,7 @@ probably isn't what you meant""".format(
 
         sel_func.exclude = not include
         sel_func.name = (include and "include" or "exclude") + " special files"
+        sel_func.check_filename = False
         return sel_func
 
     def _size_get_sf(self, sizestr, min_max):
@@ -604,6 +644,7 @@ probably isn't what you meant""".format(
 
         sel_func.exclude = True  # min/max-file-size are exclusions
         sel_func.name = "%s size %d" % (min_max and "Maximum" or "Minimum", size)
+        sel_func.check_filename = False
         return sel_func
 
     def _glob_get_sf(self, glob_str, include):
@@ -627,6 +668,7 @@ probably isn't what you meant""".format(
             include and "include" or "exclude",
             glob_str,
         )
+        sel_func.check_filename = True
         return sel_func
 
     def _glob_get_filename_sf(self, filename, include):
@@ -662,6 +704,7 @@ probably isn't what you meant""".format(
             sel_func = exclude_sel_func
         sel_func.exclude = not include
         sel_func.name = "Tuple select %s" % (tuple,)
+        sel_func.check_filename = True
         return sel_func
 
     def _glob_get_normal_sf(self, glob_str, include):
