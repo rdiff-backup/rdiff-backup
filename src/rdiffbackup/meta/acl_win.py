@@ -101,29 +101,10 @@ class ACL:
 
         try:
             sd = GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
-        except (OSError, pywintypes.error) as exc:
-            log.Log(
-                "Unable to read ACL from path {pa} due to "
-                "exception '{ex}'".format(pa=rp, ex=exc),
-                log.INFO,
-            )
-            return
 
-        if skip_inherit_only:
-            # skip the inherit_only aces
-            acl = sd.GetSecurityDescriptorDacl()
-            if acl:
-                n = acl.GetAceCount()
-                # traverse the ACL in reverse, so the indices stay correct
-                while n:
-                    n -= 1
-                    ace_flags = acl.GetAce(n)[0][1]
-                    if ace_flags & INHERIT_ONLY_ACE:
-                        acl.DeleteAce(n)
-            sd.SetSecurityDescriptorDacl(1, acl, 0)
-
-            if ACL.flags & SACL_SECURITY_INFORMATION:
-                acl = sd.GetSecurityDescriptorSacl()
+            if skip_inherit_only:
+                # skip the inherit_only aces
+                acl = sd.GetSecurityDescriptorDacl()
                 if acl:
                     n = acl.GetAceCount()
                     # traverse the ACL in reverse, so the indices stay correct
@@ -132,15 +113,34 @@ class ACL:
                         ace_flags = acl.GetAce(n)[0][1]
                         if ace_flags & INHERIT_ONLY_ACE:
                             acl.DeleteAce(n)
-                    sd.SetSecurityDescriptorSacl(1, acl, 0)
+                sd.SetSecurityDescriptorDacl(1, acl, 0)
 
-        if not sd.GetSecurityDescriptorDacl():
-            sd.SetSecurityDescriptorDacl(0, None, 0)
-        if (
-            ACL.flags & SACL_SECURITY_INFORMATION
-        ) and not sd.GetSecurityDescriptorSacl():
-            sd.SetSecurityDescriptorSacl(0, None, 0)
+                if ACL.flags & SACL_SECURITY_INFORMATION:
+                    acl = sd.GetSecurityDescriptorSacl()
+                    if acl:
+                        n = acl.GetAceCount()
+                        # traverse the ACL in reverse, so the indices stay correct
+                        while n:
+                            n -= 1
+                            ace_flags = acl.GetAce(n)[0][1]
+                            if ace_flags & INHERIT_ONLY_ACE:
+                                acl.DeleteAce(n)
+                        sd.SetSecurityDescriptorSacl(1, acl, 0)
 
+            if not sd.GetSecurityDescriptorDacl():
+                sd.SetSecurityDescriptorDacl(0, None, 0)
+            if (
+                ACL.flags & SACL_SECURITY_INFORMATION
+            ) and not sd.GetSecurityDescriptorSacl():
+                sd.SetSecurityDescriptorSacl(0, None, 0)
+        except (OSError, pywintypes.error, NotImplementedError) as exc:
+            # NotImplementedError are raised by GetACE(): Ace type 9 is not supported yet
+            log.Log(
+                "Unable to read ACL from path {pa} due to "
+                "exception '{ex}'".format(pa=rp, ex=exc),
+                log.INFO,
+            )
+            return
         try:
             self.__acl = ConvertSecurityDescriptorToStringSecurityDescriptor(
                 sd, SDDL_REVISION_1, ACL.flags
