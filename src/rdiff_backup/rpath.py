@@ -46,7 +46,7 @@ from rdiff_backup import C, Time
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
 from rdiffbackup.singletons import consts, generics, log, specifics
-from rdiffbackup.utils import usrgrp
+from rdiffbackup.utils import convert, usrgrp
 
 try:
     import win32api
@@ -197,7 +197,7 @@ class RORPath:
 
         For instance, if the index is ("a", "b"), return "'a/b'".
         """
-        return self.get_indexpath().decode(errors="replace")
+        return convert.to_safe_str(self.get_indexpath())
 
     def __getstate__(self):
         """Return picklable state
@@ -412,7 +412,7 @@ class RORPath:
 
         For instance, if the index is (b"a", b"b"), return ("a", "b")
         """
-        return tuple(map(lambda f: f.decode(errors="replace"), self.index))
+        return tuple(map(lambda f: convert.to_safe_str(f), self.index))
 
     def get_indexpath(self):
         """Return path of index portion
@@ -717,9 +717,9 @@ class RPath(RORPath):
             if isinstance(somepath, str):
                 return somepath
             else:
-                return somepath.decode(errors="replace")
+                return convert.to_safe_str(somepath)
         else:
-            return self.path.decode(errors="replace")
+            return convert.to_safe_str(self.path)
 
     def __getstate__(self):
         """Return picklable state

@@ -1051,7 +1051,7 @@ class RepoShadow(location.LocationShadow):
             {
                 "time": inc.getinctime(),
                 "type": cls._get_inc_type(inc),
-                "base": inc.dirsplit()[1].decode(errors="replace"),
+                "base": convert.to_safe_str(inc.dirsplit()[1]),
             }
             for inc in incs_list
         ]
@@ -1062,7 +1062,7 @@ class RepoShadow(location.LocationShadow):
             {
                 "time": mirror_time,
                 "type": cls._get_file_type(cls._ref_path),
-                "base": cls._ref_path.dirsplit()[1].decode(errors="replace"),
+                "base": convert.to_safe_str(cls._ref_path.dirsplit()[1]),
             }
         )
 

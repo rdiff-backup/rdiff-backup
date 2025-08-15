@@ -254,7 +254,7 @@ class FileStatisticsTree:
             percentage = float(val) / fs_func(self.fs_root) * 100
             path = fs.nametuple and b"/".join(fs.nametuple) or b"."
             log.Log(
-                "%s (%02.1f%%)" % (path.decode(errors="replace"), percentage),
+                "%s (%02.1f%%)" % (convert.to_safe_str(path), percentage),
                 log.NONE,
             )
 

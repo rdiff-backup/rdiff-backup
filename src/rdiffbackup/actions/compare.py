@@ -27,6 +27,7 @@ import yaml
 from rdiffbackup import actions
 from rdiffbackup.locations import directory, repository
 from rdiffbackup.singletons import consts, log, specifics
+from rdiffbackup.utils import convert
 
 
 class CompareAction(actions.BaseAction):
@@ -171,7 +172,7 @@ class CompareAction(actions.BaseAction):
         for report in report_iter:
             changed_files_found += 1
             indexpath = report.index and b"/".join(report.index) or b"."
-            indexpath = indexpath.decode(errors="replace")
+            indexpath = convert.to_safe_str(indexpath)
             if parsable:
                 reason_verify_list.append({"reason": report.reason, "path": indexpath})
             else:

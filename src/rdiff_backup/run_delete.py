@@ -35,6 +35,7 @@ import struct
 import subprocess
 import sys
 
+from rdiffbackup.utils import convert
 
 # List of suffixes for increments
 SUFFIXES = [
@@ -47,20 +48,6 @@ SUFFIXES = [
     b".dir",
     b".diff",
 ]
-
-
-def _bytes(value):
-    if isinstance(value, bytes):
-        return value
-    else:
-        return value.encode("utf8", errors="surrogateescape")
-
-
-def _str(value):
-    if isinstance(value, str):
-        return value
-    else:
-        return value.decode("utf-8", errors="replace")
 
 
 # Check if gzip is available.
@@ -114,7 +101,9 @@ def _open(fn, mode):
 
     # When available, open file using subprocess gzip for better performance
     if "r" in mode:
-        proc = subprocess.Popen([_bytes(_GZIP), b"-cd", fn], stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            [convert.to_safe_bytes(_GZIP), b"-cd", fn], stdout=subprocess.PIPE
+        )
         return WrapClose(proc.stdout, proc)
     else:  # wb
         proc = subprocess.Popen([_GZIP], stdin=subprocess.PIPE, stdout=open(fn, mode))
@@ -177,7 +166,7 @@ def _parse_options():
     #    _print_usage('fatal: path must refer to an existing file or directory')
 
     # Check the repository, root dir must be at least one level up
-    full_path = os.path.abspath(_bytes(args[0]))
+    full_path = os.path.abspath(convert.to_safe_bytes(args[0]))
     root_dir = os.path.dirname(full_path)
 
     # we need to make sure we won't try to remove rdiff-backup-data or a file
@@ -247,7 +236,10 @@ def _remove_from_metadata(repopath, file, dry_run):
     else:
         return
 
-    print("removing entries `%s` from %s" % (_str(repopath.relpath), _str(file)))
+    print(
+        "removing entries `%s` from %s"
+        % (convert.to_safe_str(repopath.relpath), convert.to_safe_str(file))
+    )
     input = _open(file, "rb")
     tmp_file = os.path.join(os.path.dirname(file), b".tmp." + os.path.basename(file))
     output = _open(tmp_file, "wb")
@@ -293,7 +285,7 @@ def _remove_increments(path, dry_run):
             file = os.path.join(dir, p)
             if not os.path.isdir(file) and fn == _filename_from_increment(p):
                 # Remove the increment entry
-                print("deleting increments `%s`" % (_str(file),))
+                print("deleting increments `%s`" % (convert.to_safe_str(file),))
                 if not dry_run:
                     os.remove(file)
 
@@ -454,7 +446,10 @@ def main():
         sys.exit("failed to acquire repository lock. A backup may be running.")
 
     # Check if the repository is "locked"
-    print("start deleting path `%s` from repository %s" % (_str(relpath), _str(root)))
+    print(
+        "start deleting path `%s` from repository %s"
+        % (convert.to_safe_str(relpath), convert.to_safe_str(root))
+    )
     if dry_run:
         print("running in dry-run mode")
 
@@ -463,7 +458,9 @@ def main():
     for f in os.listdir(dir):
         _remove_from_metadata(repopath, os.path.join(dir, f), dry_run)
 
-    print("deleting directory `%s` recursively" % (_str(repopath.abspath),))
+    print(
+        "deleting directory `%s` recursively" % (convert.to_safe_str(repopath.abspath),)
+    )
     _rmtree(repopath.abspath, dry_run)
 
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
