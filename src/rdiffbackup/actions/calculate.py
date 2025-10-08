@@ -24,6 +24,7 @@ statistics files.
 
 from rdiff_backup import Time
 from rdiffbackup import actions
+from rdiffbackup.locations import repository
 from rdiffbackup.singletons import consts, log, stats
 
 
@@ -98,6 +99,17 @@ class CalculateAction(actions.BaseAction):
 
         return ret_code
 
+    def connect(self):
+        conn_value = super().connect()
+        if conn_value.is_connection_ok() and self.values["method"] == "statistics":
+            self.repo = repository.Repo(
+                self.connected_locations[0],
+                self.values,
+                must_be_writable=False,
+                must_exist=True,
+            )
+        return conn_value
+
     def run(self):
         """
         Print out the calculation of the given statistics files, according
@@ -110,7 +122,7 @@ class CalculateAction(actions.BaseAction):
         if self.values["method"] == "average":
             return ret_code | self._calculate_average(self.connected_locations)
         elif self.values["method"] == "statistics":
-            return ret_code | self._calculate_statistics(self.connected_locations[0])
+            return ret_code | self._calculate_statistics(self.repo)
 
         return ret_code
 
@@ -131,8 +143,8 @@ class CalculateAction(actions.BaseAction):
     def _calculate_statistics(self, repository):
         statistics = repository.get_statistics(
             self.values["begin_time"],
-            self.values.["end_time"],
-            self.values.["minimum_ratio"],
+            self.values["end_time"],
+            self.values["minimum_ratio"],
         )
         if not statistics:
             if statistics is None:
@@ -144,7 +156,7 @@ class CalculateAction(actions.BaseAction):
                     log.WARNING,
                 )
                 return consts.RET_CODE_WARN
-        log.Log("STATISTICS TODO", log.ERROR)  # TODO
+        log.Log("STATISTICS TODO", log.ERROR)  #TODO
         return consts.RET_CODE_OK
 
 

@@ -1161,6 +1161,7 @@ class RepoShadow(location.LocationShadow):
         file_stats_sum = sum(file_stats_list[1:], file_stats_list[0])
         return (session_stats, file_stats_sum)  #or something like this...
 
+    @classmethod
     def _get_combined_pairs(cls, incs1_list, incs2_list):
         """Return list of matched increments pairs by same date/time"""
         incs1_dict = {}
@@ -1175,6 +1176,7 @@ class RepoShadow(location.LocationShadow):
 
         return inc_pairs
 
+    @classmethod
     def _get_session_average(cls, session_stats_files):
         sess_stats = [
             stats.SessionStatsCalc().read_stats(loc.open("r"))
@@ -1185,6 +1187,7 @@ class RepoShadow(location.LocationShadow):
 
     def _get_file_stats(cls, stats_pair):
         session_stats, file_stats = stats_pair
+        #TODO
 
     # ### COPIED FROM MANAGE ####
 
