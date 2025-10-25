@@ -1155,11 +1155,9 @@ class RepoShadow(location.LocationShadow):
         common_stats = cls._get_combined_pairs(session_stats, file_stats)
         if not common_stats:  # no common date/time for statistics
             return common_stats
-        session_stats = cls._get_session_average([x[0] for x in common_stats])
-        file_stats_list = list(map(cls._get_file_stats, common_stats))
-        # small trick to calculate the sum without having a zero equivalent
-        file_stats_sum = sum(file_stats_list[1:], file_stats_list[0])
-        return (session_stats, file_stats_sum)  #or something like this...
+        session_stats_avg = cls._get_session_average([x[0] for x in common_stats])
+        file_stats_sum = cls._get_files_sum([x[1] for x in common_stats])
+        return (session_stats_avg, file_stats_sum)  #or something like this...
 
     @classmethod
     def _get_combined_pairs(cls, incs1_list, incs2_list):
@@ -1185,9 +1183,15 @@ class RepoShadow(location.LocationShadow):
         calc_stats = stats.SessionStatsCalc().calc_average(sess_stats)
         return calc_stats
 
-    def _get_file_stats(cls, stats_pair):
-        session_stats, file_stats = stats_pair
-        #TODO
+    @classmethod
+    def _get_files_sum(cls, file_stats_files):
+        file_stats = [
+            stats.FileStatsCalc().read_stats(loc.open("r"))
+            for loc in file_stats_files
+        ]
+        # Trick to get a sum without having a zero value
+        file_stats_sum = sum(file_stats[1:], file_stats[0])
+        return file_stats_sum
 
     # ### COPIED FROM MANAGE ####
 

@@ -40,13 +40,14 @@ class StoredRPath(rpath.RPath):
 
         inc_list = []
         for filename in parent_dir.listdir():
-            inc = parent_dir.append(filename)
-            if inc.isincfile():
-                if (
-                    (begin is None or begin <= inc.inc_time)
-                    and (end is None or inc.inc_time <= end)
-                ):
-                    inc_list.append(inc)
+            if filename.startswith(basename):
+                inc = parent_dir.append(filename)
+                if inc.isincfile():
+                    if (
+                        (begin is None or begin <= inc.inc_time)
+                        and (end is None or inc.inc_time <= end)
+                    ):
+                        inc_list.append(inc)
         if sort_list:
             return sorted(inc_list, key=lambda i: i.inc_time)
         else:
