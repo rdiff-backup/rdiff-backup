@@ -104,7 +104,7 @@ class Connection:
             "generics": "rdiffbackup.singletons.generics",
             "log": "rdiffbackup.singletons.log",
             "specifics": "rdiffbackup.singletons.specifics",
-            "stats": "rdiffbackup.singletons.stats",
+            "sstats": "rdiffbackup.singletons.sstats",
         }
         for name, module in modules.items():
             cls.globals[name] = importlib.import_module(module)

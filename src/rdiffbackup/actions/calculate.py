@@ -25,7 +25,7 @@ statistics files.
 from rdiff_backup import Time
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
-from rdiffbackup.singletons import consts, log, stats
+from rdiffbackup.singletons import consts, log, sstats
 
 
 class CalculateAction(actions.BaseAction):
@@ -128,10 +128,10 @@ class CalculateAction(actions.BaseAction):
 
     def _calculate_average(self, session_stats_files):
         sess_stats = [
-            stats.SessionStatsCalc().read_stats(loc.open("r"))
+            sstats.SessionStatsCalc().read_stats(loc.open("r"))
             for loc in session_stats_files
         ]
-        calc_stats = stats.SessionStatsCalc().calc_average(sess_stats)
+        calc_stats = sstats.SessionStatsCalc().calc_average(sess_stats)
         log.Log(
             calc_stats.get_stats_as_string(
                 "Average of %d stat files" % len(session_stats_files)

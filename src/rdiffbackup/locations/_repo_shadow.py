@@ -48,7 +48,7 @@ from rdiffbackup.locations import fs_abilities, increment, location
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
-from rdiffbackup.singletons import consts, generics, log, specifics, stats
+from rdiffbackup.singletons import consts, fstats, generics, log, specifics, sstats
 from rdiffbackup.utils import convert, locking, simpleps
 
 # ### COPIED FROM BACKUP ####
@@ -708,15 +708,15 @@ class RepoShadow(location.LocationShadow):
         rdiff-backup is run is used (set by passing in time.time() from that
         system). Use at end of session.
         """
-        stats.SessionStats.finish(end_time)
+        sstats.SessionStats.finish(end_time)
         stats_rp = increment.get_increment(
             cls._data_dir.append(b"session_statistics"), "data", Time.getcurtime()
         )
-        stats.SessionStats.write_stats(stats_rp.open("w"))
+        sstats.SessionStats.write_stats(stats_rp.open("w"))
         if cls._values.get("print_statistics"):
-            log.Log(stats.SessionStats.get_stats_as_string(), log.NONE)
+            log.Log(sstats.SessionStats.get_stats_as_string(), log.NONE)
         if cls._values.get("file_statistics"):
-            stats.FileStats.close()
+            fstats.FileStats.close()
 
     # ### COPIED FROM RESTORE ####
 
@@ -1177,16 +1177,16 @@ class RepoShadow(location.LocationShadow):
     @classmethod
     def _get_session_average(cls, session_stats_files):
         sess_stats = [
-            stats.SessionStatsCalc().read_stats(loc.open("r"))
+            sstats.SessionStatsCalc().read_stats(loc.open("r"))
             for loc in session_stats_files
         ]
-        calc_stats = stats.SessionStatsCalc().calc_average(sess_stats)
+        calc_stats = sstats.SessionStatsCalc().calc_average(sess_stats)
         return calc_stats
 
     @classmethod
     def _get_files_sum(cls, file_stats_files):
         file_stats = [
-            stats.FileStatsCalc().read_stats(loc.open("r"))
+            fstats.FileStatsCalc().read_stats(loc.open("r"))
             for loc in file_stats_files
         ]
         # Trick to get a sum without having a zero value
@@ -2050,7 +2050,7 @@ class _CacheCollatedPostProcess:
         self.dest_root_rp = dest_root_rp
         self.stats_writer = stats_writer
         if self.stats_writer:
-            stats.FileStats.open_stats_file(stats_writer, separator)
+            fstats.FileStats.open_stats_file(stats_writer, separator)
         self.metawriter = meta_mgr.get_meta_manager().get_writer()
 
         # the following should map indices to lists
@@ -2279,9 +2279,9 @@ class _CacheCollatedPostProcess:
 
         if not changed or success:
             if source_rorp:
-                stats.SessionStats.add_source_file(source_rorp)
+                sstats.SessionStats.add_source_file(source_rorp)
             if dest_rorp:
-                stats.SessionStats.add_dest_file(dest_rorp)
+                sstats.SessionStats.add_dest_file(dest_rorp)
         if success == 0:
             metadata_rorp = dest_rorp
         elif success == 1:
@@ -2289,12 +2289,12 @@ class _CacheCollatedPostProcess:
         else:
             metadata_rorp = None  # in case deleted because of ListError
         if success == 1 or success == 2:
-            stats.SessionStats.add_changed(source_rorp, dest_rorp)
+            sstats.SessionStats.add_changed(source_rorp, dest_rorp)
 
         if metadata_rorp and metadata_rorp.lstat():
             self.metawriter.write_object(metadata_rorp)
         if self.stats_writer:
-            stats.FileStats.add_stats(source_rorp, dest_rorp, changed, inc)
+            fstats.FileStats.add_stats(source_rorp, dest_rorp, changed, inc)
 
     def _reset_dir_perms(self, current_index):
         """Reset the permissions of directories when we have left them"""
