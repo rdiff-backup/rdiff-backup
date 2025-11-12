@@ -96,6 +96,8 @@ class SessionStatsCalc:
     EndTime: typing.Optional[float] = None
     ElapsedTime: typing.Optional[float] = None
 
+    Count: int = 1
+
     _stat_file_attrs = (
         "SourceFiles",
         "SourceFileSize",
@@ -168,7 +170,8 @@ class SessionStatsCalc:
         self.StartTime = None
         self.EndTime = None
 
-        count = float(len(sess_stats_list))
+        self.Count = len(sess_stats_list)
+        count = float(self.Count)
         for attr in self._stat_attrs:
             value = self.__getattribute__(attr)
             if value is not None:

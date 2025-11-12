@@ -134,7 +134,7 @@ class CalculateAction(actions.BaseAction):
         calc_stats = sstats.SessionStatsCalc().calc_average(sess_stats)
         log.Log(
             calc_stats.get_stats_as_string(
-                "Average of %d stat files" % len(session_stats_files)
+                "Average of {ssc} stat files".format(ssc=calc_stats.Count)
             ),
             log.NONE,
         )
@@ -156,6 +156,12 @@ class CalculateAction(actions.BaseAction):
                     log.WARNING,
                 )
                 return consts.RET_CODE_WARN
+        log.Log(
+            statistics[0].get_stats_as_string(
+                "Average of {ssc} stat files".format(ssc=statistics[0].Count)
+            ),
+            log.NONE,
+        )
         log.Log("STATISTICS TODO", log.ERROR)  #TODO
         return consts.RET_CODE_OK
 
