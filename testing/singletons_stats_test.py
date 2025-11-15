@@ -140,7 +140,7 @@ TotalDestinationSizeChange 7 (7 B)
             some_stats.read_stats(stats_fd)
         stats_fd = io.StringIO("OnePart SomeValue")
         with self.assertRaises(sstats.StatsException):
-            some_stats = ssstats.SessionStatsCalc()
+            some_stats = sstats.SessionStatsCalc()
             some_stats.read_stats(stats_fd)
         stats_fd = io.StringIO("Errors SomeValue")
         with self.assertRaises(sstats.StatsException):

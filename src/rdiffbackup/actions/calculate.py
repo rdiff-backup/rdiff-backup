@@ -162,7 +162,7 @@ class CalculateAction(actions.BaseAction):
             ),
             log.NONE,
         )
-        log.Log("STATISTICS TODO", log.ERROR)  #TODO
+        log.Log("STATISTICS TODO", log.ERROR)  # TODO
         return consts.RET_CODE_OK
 
 

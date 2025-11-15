@@ -23,12 +23,9 @@ import typing
 
 from rdiff_backup import Time
 from rdiffbackup.singletons import generics, specifics
-from rdiffbackup.utils import convert, buffer, quoting
+from rdiffbackup.utils import convert
 
 _active_statfileobj = None
-
-if typing.TYPE_CHECKING:  # pragma: no cover
-    from rdiff_backup import rpath
 
 # workaround until we don't need to support Python lower than 3.11
 try:
@@ -178,33 +175,23 @@ class SessionStatsCalc:
                 self.__setattr__(attr, value / count)
         return self
 
-    def get_cutoff(self, min_ratio: float) -> (float, float, float):
+    def get_cutoff(self, min_ratio: float) -> typing.Tuple[float, float, float]:
         """
         Return tuple with absolute cutoffs
 
         Any FileStat object that is bigger than the result in any
         aspect will be considered "important".
         """
+        # If the statistics have been loaded, they should all be numbers
+        assert (
+            isinstance(self.NewFiles, float)
+            and isinstance(self.ChangedFiles, float)
+            and isinstance(self.NewFiles, float)
+            and isinstance(self.SourceFileSize, float)
+            and isinstance(self.IncrementFileSize, float)
+        )
         return (
             min_ratio * (self.NewFiles + self.ChangedFiles + self.NewFiles),
-            min_ratio * self.SourceFileSize,
-            min_ratio * self.IncrementFileSize,
-        )
-
-    def _get_total_dest_size_change(self) -> typing.Optional[float]:
-        """
-        Return total destination size change
-
-        This represents the total change in the size of the
-        rdiff-backup destination directory.
-        """
-        addvals = [self.NewFileSize, self.ChangedSourceSize, self.IncrementFileSize]
-        subtractvals = [self.DeletedFileSize, self.ChangedMirrorSize]
-        # if any value is None, the result is also None, else it's calculated
-        if any(v is None for v in addvals + subtractvals):
-            result = None
-        else:
-            # we need the casting to make mypy happy as it doesn't grok that the
             min_ratio * self.SourceFileSize,
             min_ratio * self.IncrementFileSize,
         )

@@ -1159,7 +1159,7 @@ class RepoShadow(location.LocationShadow):
             [x[0] for x in common_stats], min_ratio
         )
         file_stats_sum = cls._get_files_sum([x[1] for x in common_stats], cutoffs)
-        return (session_stats_avg, file_stats_sum)  #or something like this...
+        return (session_stats_avg, file_stats_sum)  # or something like this...
 
     @classmethod
     def _get_combined_pairs(cls, incs1_list, incs2_list):
@@ -1188,8 +1188,12 @@ class RepoShadow(location.LocationShadow):
 
     @classmethod
     def _get_files_sum(cls, file_stats_files, cutoffs):
-        file_stats = [  #TODO add cutoffs to the mix...
-            fstats.FileStatsCalc().read_stats(loc.open("r"), cutoff)
+        file_stats = [
+            fstats.make_fst(
+                loc.open("r"),
+                cutoff,
+                cls._values.get("null_separator") and b"\0" or b"\n",
+            )
             for loc, cutoff in zip(file_stats_files, cutoffs)
         ]
         # Trick to get a sum without having a zero value
