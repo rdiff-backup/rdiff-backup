@@ -1144,7 +1144,7 @@ class RepoShadow(location.LocationShadow):
 
     # @API(RepoShadow.get_statistics, 300)
     @classmethod
-    def get_statistics(cls, begin=None, end=None, ratio=0):
+    def get_statistics(cls, begin=None, end=None, min_ratio=0):
         """Get a structure representing session and file statistics"""
         session_stats = cls._data_dir.append("session_statistics").get_incfiles_list(
             begin, end, sort_list=True
@@ -1155,8 +1155,10 @@ class RepoShadow(location.LocationShadow):
         common_stats = cls._get_combined_pairs(session_stats, file_stats)
         if not common_stats:  # no common date/time for statistics
             return common_stats
-        session_stats_avg = cls._get_session_average([x[0] for x in common_stats])
-        file_stats_sum = cls._get_files_sum([x[1] for x in common_stats])
+        session_stats_avg, cutoffs = cls._get_session_average(
+            [x[0] for x in common_stats], min_ratio
+        )
+        file_stats_sum = cls._get_files_sum([x[1] for x in common_stats], cutoffs)
         return (session_stats_avg, file_stats_sum)  #or something like this...
 
     @classmethod
@@ -1175,19 +1177,20 @@ class RepoShadow(location.LocationShadow):
         return inc_pairs
 
     @classmethod
-    def _get_session_average(cls, session_stats_files):
+    def _get_session_average(cls, session_stats_files, min_ratio=0):
         sess_stats = [
             sstats.SessionStatsCalc().read_stats(loc.open("r"))
             for loc in session_stats_files
         ]
         calc_stats = sstats.SessionStatsCalc().calc_average(sess_stats)
-        return calc_stats
+        cutoffs = [ss.get_cutoff(min_ratio) for ss in sess_stats]
+        return calc_stats, cutoffs
 
     @classmethod
-    def _get_files_sum(cls, file_stats_files):
-        file_stats = [
-            fstats.FileStatsCalc().read_stats(loc.open("r"))
-            for loc in file_stats_files
+    def _get_files_sum(cls, file_stats_files, cutoffs):
+        file_stats = [  #TODO add cutoffs to the mix...
+            fstats.FileStatsCalc().read_stats(loc.open("r"), cutoff)
+            for loc, cutoff in zip(file_stats_files, cutoffs)
         ]
         # Trick to get a sum without having a zero value
         file_stats_sum = sum(file_stats[1:], file_stats[0])
