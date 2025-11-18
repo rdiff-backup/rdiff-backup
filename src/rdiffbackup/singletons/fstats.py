@@ -149,6 +149,12 @@ class FileStatisticsTree:
         self.merge_tree(self.fs_root, other.fs_root)
         return self
 
+    def __add__(self, other):
+        """Add cutoffs, and merge the other's fs_root"""
+        new_fst = self.__class__(self.cutoff_fs, self.fs_root)
+        new_fst += other
+        return new_fst
+
     def merge_tree(self, myfs, otherfs):
         """Add other_fs's tree to one of my fs trees"""
         if myfs.nametuple != otherfs.nametuple:
@@ -338,7 +344,7 @@ def _make_root_tree(fs_iter):
     try:
         fs = next(fs_iter)
     except StopIteration:
-        sys.exit("No files in iterator")
+        return None
 
     while fs.nametuple != ():
         fs = _make_tree_one_level(fs_iter, fs)

@@ -162,7 +162,9 @@ class CalculateAction(actions.BaseAction):
             ),
             log.NONE,
         )
-        log.Log("STATISTICS TODO", log.ERROR)  # TODO
+        statistics[1].print_top_dirs("source size", lambda fs: fs.sourcesize)
+        statistics[1].print_top_dirs("increment size", lambda fs: fs.incsize)
+        statistics[1].print_top_dirs("number of files changed", lambda fs: fs.changed)
         return consts.RET_CODE_OK
 
 

@@ -183,13 +183,11 @@ class SessionStatsCalc:
         aspect will be considered "important".
         """
         # If the statistics have been loaded, they should all be numbers
-        assert (
-            isinstance(self.NewFiles, float)
-            and isinstance(self.ChangedFiles, float)
-            and isinstance(self.NewFiles, float)
-            and isinstance(self.SourceFileSize, float)
-            and isinstance(self.IncrementFileSize, float)
-        )
+        assert isinstance(self.NewFiles, (float, int))
+        assert isinstance(self.ChangedFiles, (float, int))
+        assert isinstance(self.NewFiles, (float, int))
+        assert isinstance(self.SourceFileSize, (float, int))
+        assert isinstance(self.IncrementFileSize, (float, int))
         return (
             min_ratio * (self.NewFiles + self.ChangedFiles + self.NewFiles),
             min_ratio * self.SourceFileSize,
