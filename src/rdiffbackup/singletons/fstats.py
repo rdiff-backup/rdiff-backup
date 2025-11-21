@@ -224,23 +224,21 @@ class FileStatisticsTree:
 
         return helper(self.fs_root)[0]
 
-    def print_top_dirs(self, label, fs_func):
+    def get_stats_as_string(self, label, fs_func):
         """Print the top directories in sorted order"""
 
-        def print_line(fs, val):
+        def get_line(fs, val):
             percentage = float(val) / fs_func(self.fs_root) * 100
             path = fs.nametuple and b"/".join(fs.nametuple) or b"."
-            log.Log(
-                "%s (%02.1f%%)" % (convert.to_safe_str(path), percentage),
-                log.NONE,
-            )
+            return "%s (%02.1f%%)" % (convert.to_safe_str(path), percentage)
 
-        s = "Top directories by %s (percent of total)" % (label,)
-        log.Log("\n%s\n%s" % (s, ("-" * len(s))), log.NONE)
+        s = ["Top directories by {lb} (percent of total)".format(lb=label)]
+        s.append("-" * len(s[0]))
         top_fs_pair_list = self.get_top_fs(fs_func)
         top_fs_pair_list.sort(key=lambda pair: pair[1], reverse=1)
         for fs, val in top_fs_pair_list:
-            print_line(fs, val)
+            s.append(get_line(fs, val))
+        return "\n" + "\n".join(s)
 
 
 def make_fst(filestat_reader, cutoff, separator: bytes):

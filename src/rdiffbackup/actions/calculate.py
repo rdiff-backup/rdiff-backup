@@ -162,9 +162,12 @@ class CalculateAction(actions.BaseAction):
             ),
             log.NONE,
         )
-        statistics[1].print_top_dirs("source size", lambda fs: fs.sourcesize)
-        statistics[1].print_top_dirs("increment size", lambda fs: fs.incsize)
-        statistics[1].print_top_dirs("number of files changed", lambda fs: fs.changed)
+        for name, func in [
+            ("source size", lambda fs: fs.sourcesize)
+            ("increment size", lambda fs: fs.incsize)
+            ("number of files changed", lambda fs: fs.changed)
+        ]:
+            log.Log(statistics[1].get_stats_as_string(name, func), log.NONE)
         return consts.RET_CODE_OK
 
 
