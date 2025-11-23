@@ -22,7 +22,6 @@ import re
 import sys
 import typing
 
-from rdiffbackup.singletons import log
 from rdiffbackup.utils import convert, buffer, quoting
 
 _active_statfileobj = None

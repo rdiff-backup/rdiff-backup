@@ -163,9 +163,9 @@ class CalculateAction(actions.BaseAction):
             log.NONE,
         )
         for name, func in [
-            ("source size", lambda fs: fs.sourcesize)
-            ("increment size", lambda fs: fs.incsize)
-            ("number of files changed", lambda fs: fs.changed)
+            ("source size", lambda fs: fs.sourcesize),
+            ("increment size", lambda fs: fs.incsize),
+            ("number of files changed", lambda fs: fs.changed),
         ]:
             log.Log(statistics[1].get_stats_as_string(name, func), log.NONE)
         return consts.RET_CODE_OK
