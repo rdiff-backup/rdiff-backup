@@ -176,24 +176,28 @@ class IncrementTest(unittest.TestCase):
             b"a.1970-01-01T03:46:40+01:00.missing.gz": (  # happy path
                 True,
                 b"1970-01-01T03:46:40+01:00",
+                10_000,
                 b"missing",
                 b"a",
             ),
             b"a.1970-01-01T03:46:40-01:00.data": (
                 False,
                 b"1970-01-01T03:46:40-01:00",
+                17_200,
                 b"data",
                 b"a",
             ),
             b"a.b.c.1970-01-01T03:46:40+00:00.dir.gz": (  # with superfluous dots
                 True,
                 b"1970-01-01T03:46:40+00:00",
+                13_600,
                 b"dir",
                 b"a.b.c",
             ),
             b"a.b.c.1970-01-01T03:46:40-05:30.snapshot": (
                 False,
                 b"1970-01-01T03:46:40-05:30",
+                29_800,
                 b"snapshot",
                 b"a.b.c",
             ),

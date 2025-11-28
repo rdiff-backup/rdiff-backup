@@ -2827,7 +2827,7 @@ class _RestoreFile:
             inc_time = inc.getinctime()
             if inc_time >= self._restore_time:
                 incpairs.append((inc_time, inc))
-        incpairs.sort()
+        incpairs.sort()  # this relies on no time being the same!
         return [pair[1] for pair in incpairs]
 
     def get_attribs(self):

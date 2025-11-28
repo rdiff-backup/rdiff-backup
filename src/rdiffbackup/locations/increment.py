@@ -40,9 +40,9 @@ class StoredRPath(rpath.RPath):
 
         inc_list = []
         for filename in parent_dir.listdir():
-            if filename.startswith(basename):
+            if filename.startswith(basename):  # just a quick check
                 inc = parent_dir.append(filename)
-                if inc.isincfile():
+                if inc.isincfile() and inc.getincbase().path == self.path:
                     if (begin is None or begin <= inc.inc_time) and (
                         end is None or inc.inc_time <= end
                     ):
