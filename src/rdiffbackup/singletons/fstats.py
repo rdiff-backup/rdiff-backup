@@ -19,9 +19,9 @@
 """Generate and process aggregated backup files information"""
 
 import re
-import sys
 import typing
 
+from rdiffbackup.singletons import log
 from rdiffbackup.utils import convert, buffer, quoting
 
 _active_statfileobj = None
@@ -50,7 +50,7 @@ class FileStatsWriter(typing.Protocol):  # pragma: no cover
 class FileStatsReader(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedReader methods"""
 
-    def __iter__(self) -> bytes:
+    def __iter__(self) -> typing.Generator[bytes]:
         """Iterate over the input"""
         ...
 
@@ -134,27 +134,105 @@ def reset_statistics():
 reset_statistics()
 
 
-class FileStatisticsTree:
+class FileStat:
+    """
+    Hold the information in one line of file_statistics
+
+    However, unlike file_statistics, a File can have subdirectories
+    under it.  In that case, the information should be cumulative.
+    """
+
+    def __init__(
+        self,
+        nametuple: typing.Tuple[bytes, ...],
+        changed: int,
+        sourcesize: int,
+        incsize: int,
+    ):
+        self.nametuple = nametuple
+        self.changed = changed
+        self.sourcesize, self.incsize = sourcesize, incsize
+        self.children: list[FileStat] = []
+
+    def add_child(self, child: FileStat):
+        self += child
+
+    def is_subdir(self, parent) -> bool:
+        """Return True if self is an eventual subdir of parent"""
+        return self.nametuple[: len(parent.nametuple)] == parent.nametuple
+
+    def is_child(self, parent) -> bool:
+        """Return True if self is an immediate child of parent"""
+        if not self.nametuple:
+            return False
+        return self.nametuple[:-1] == parent.nametuple
+
+    def is_brother(self, brother) -> bool:
+        """Return True if self is in same directory as brother"""
+        if not self.nametuple or not brother.nametuple:
+            return False
+        return self.nametuple[:-1] == brother.nametuple[:-1]
+
+    def __str__(self) -> str:
+        return "%s %s %s %s" % (
+            self.nametuple,
+            self.changed,
+            self.sourcesize,
+            self.incsize,
+        )
+
+    def __eq__(self, other) -> bool:
+        return (
+            isinstance(other, self.__class__)
+            and self.changed == other.changed
+            and self.sourcesize == other.sourcesize
+            and self.incsize == other.incsize
+        )
+
+    def __ge__(self, other) -> bool:
+        """Note the 'or' -- this relation is not a well ordering"""
+        return isinstance(other, self.__class__) and (
+            self.changed >= other.changed
+            or self.sourcesize >= other.sourcesize
+            or self.incsize >= other.incsize
+        )
+
+    def __iadd__(self, other: FileStat) -> FileStat:
+        """Add values of other to self"""
+        self.changed += other.changed
+        self.sourcesize += other.sourcesize
+        self.incsize += other.incsize
+        return self
+
+    def __isub__(self, other: FileStat) -> FileStat:
+        """Subtract values of other from self"""
+        self.changed -= other.changed
+        self.sourcesize -= other.sourcesize
+        self.incsize -= other.incsize
+        return self
+
+
+class FileStatsTree:
     """Holds a tree of important files/directories, along with cutoffs"""
 
-    def __init__(self, cutoff_fs, fs_root):
+    def __init__(self, cutoff_fs: FileStat, fs_root: FileStat):
         """Initialize with FileStat cutoff object, and root of tree"""
         self.cutoff_fs = cutoff_fs
         self.fs_root = fs_root
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: FileStatsTree) -> FileStatsTree:
         """Add cutoffs, and merge the other's fs_root"""
         self.cutoff_fs += other.cutoff_fs
         self.merge_tree(self.fs_root, other.fs_root)
         return self
 
-    def __add__(self, other):
+    def __add__(self, other: FileStatsTree) -> FileStatsTree:
         """Add cutoffs, and merge the other's fs_root"""
         new_fst = self.__class__(self.cutoff_fs, self.fs_root)
         new_fst += other
         return new_fst
 
-    def merge_tree(self, myfs, otherfs):
+    def merge_tree(self, myfs: FileStat, otherfs: FileStat) -> None:
         """Add other_fs's tree to one of my fs trees"""
         if myfs.nametuple != otherfs.nametuple:
             raise RuntimeError(
@@ -191,7 +269,9 @@ class FileStatisticsTree:
                 raise RuntimeError("Either of both childs should have been defined.")
         myfs += otherfs
 
-    def get_top_fs(self, fs_func):
+    def get_top_fs(
+        self, fs_func: typing.Callable[[FileStat], int]
+    ) -> list[tuple[FileStat, int]]:
         """Process the FileStat tree and find everything above the cutoff
 
         fs_func will be used to evaluate cutoff_fs and those in the
@@ -203,7 +283,9 @@ class FileStatisticsTree:
         """
         abs_cutoff = fs_func(self.cutoff_fs)
 
-        def helper(subtree):
+        def helper(
+            subtree: FileStat
+        ) -> tuple[list[tuple[FileStat, int]], int]:
             """Returns ([list of (top fs, value)], total excluded amount)"""
             subtree_val = fs_func(subtree)
             if subtree_val <= abs_cutoff:
@@ -223,10 +305,12 @@ class FileStatisticsTree:
 
         return helper(self.fs_root)[0]
 
-    def get_stats_as_string(self, label, fs_func):
+    def get_stats_as_string(
+        self, label: str, fs_func: typing.Callable[[FileStat], int]
+    ) -> str:
         """Print the top directories in sorted order"""
 
-        def get_line(fs, val):
+        def get_line(fs: FileStat, val) -> str:
             percentage = float(val) / fs_func(self.fs_root) * 100
             path = fs.nametuple and b"/".join(fs.nametuple) or b"."
             return "%s (%02.1f%%)" % (convert.to_safe_str(path), percentage)
@@ -234,30 +318,41 @@ class FileStatisticsTree:
         s = ["Top directories by {lb} (percent of total)".format(lb=label)]
         s.append("-" * len(s[0]))
         top_fs_pair_list = self.get_top_fs(fs_func)
-        top_fs_pair_list.sort(key=lambda pair: pair[1], reverse=1)
+        top_fs_pair_list.sort(key=lambda pair: pair[1], reverse=True)
         for fs, val in top_fs_pair_list:
             s.append(get_line(fs, val))
         return "\n" + "\n".join(s)
 
 
-def make_fst(filestat_reader, cutoff, separator: bytes):
+def make_fst(
+    filestat_reader: FileStatsReader,
+    cutoff: typing.Tuple[int, int, int],
+    separator: bytes,
+) -> FileStatsTree:
     """
-    Construct FileStatisticsTree given session and file stat rps
+    Construct FileStatsTree given session and file stat rps
 
     We would like a full tree, but this in general will take too much
     memory.  Instead we will build a tree that has only the
     files/directories with some stat exceeding the min ratio.
     """
     cutoff_fs = FileStat((), *cutoff)
-    filestat_fileobj = buffer.LinesBuffer(filestat_reader, separator)
+    filestat_fileobj = typing.cast(
+        FileStatsReader, buffer.LinesBuffer(filestat_reader, separator)
+    )
     accumulated_iter = _accumulate_fs(_yield_fs_objs(filestat_fileobj, separator))
     important_iter = filter(lambda fs: fs >= cutoff_fs, accumulated_iter)
-    trimmed_tree = _make_root_tree(important_iter)
-    # TODO close the filestat_fileobj before returning?
-    return FileStatisticsTree(cutoff_fs, trimmed_tree)
+    trimmed_tree = _make_root_tree(
+        typing.cast(typing.Generator[FileStat], important_iter)
+    )
+    filestat_fileobj.close()
+    assert trimmed_tree is not None, "Trimmed tree is None, it shouldn't be"
+    return FileStatsTree(cutoff_fs, trimmed_tree)
 
 
-def _yield_fs_objs(filestatsobj, separator):
+def _yield_fs_objs(
+    filestatsobj: FileStatsReader, separator: bytes
+) -> typing.Generator[FileStat]:
     """Iterate FileStats by processing file_statistics fileobj"""
     r = re.compile(
         b"^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) " b"([0-9]+|NA)%b?$" % (separator,)
@@ -267,8 +362,11 @@ def _yield_fs_objs(filestatsobj, separator):
             continue
         match = r.match(line)
         if not match:
-            sys.stderr.write(
-                "Error parsing line: '{li}'\n".format(li=convert.to_safe_str(line))
+            log.Log(
+                "Line parsing failed, ignoring: '{li}'\n".format(
+                    li=convert.to_safe_str(line)
+                ),
+                log.WARNING,
             )
             continue
 
@@ -293,7 +391,7 @@ def _yield_fs_objs(filestatsobj, separator):
         yield FileStat(nametuple, int(match.group(2)), sourcesize, incsize)
 
 
-def _accumulate_fs(fs_iter):
+def _accumulate_fs(fs_iter: typing.Generator[FileStat]) -> typing.Generator[FileStat]:
     """Yield the FileStat objects in fs_iter, but with total statistics
 
     In fs_iter, the statistics of directories FileStats only apply
@@ -306,6 +404,7 @@ def _accumulate_fs(fs_iter):
     it was too slow in python.
 
     """
+    fs: typing.Optional[FileStat]
     root = next(fs_iter)
     if root.nametuple != ():
         raise RuntimeError(
@@ -336,7 +435,7 @@ def _accumulate_fs(fs_iter):
                 stack[-1].add_child(expired)
 
 
-def _make_root_tree(fs_iter):
+def _make_root_tree(fs_iter: typing.Generator[FileStat]) -> typing.Optional[FileStat]:
     """Like make_tree, but assume fs_iter starts at the root"""
     try:
         fs = next(fs_iter)
@@ -348,7 +447,9 @@ def _make_root_tree(fs_iter):
     return fs
 
 
-def _make_tree_one_level(fs_iter, first_fs):
+def _make_tree_one_level(
+    fs_iter: typing.Generator[FileStat], first_fs: FileStat
+) -> FileStat:
     """Populate a tree of FileStat objects from fs_iter
 
     This function wants the fs_iter in the reverse direction as
@@ -367,72 +468,3 @@ def _make_tree_one_level(fs_iter, first_fs):
             fs = next(fs_iter)
         else:
             fs = _make_tree_one_level(fs_iter, fs)
-
-
-class FileStat:
-    """
-    Hold the information in one line of file_statistics
-
-    However, unlike file_statistics, a File can have subdirectories
-    under it.  In that case, the information should be cumulative.
-    """
-
-    def __init__(self, nametuple, changed, sourcesize, incsize):
-        self.nametuple = nametuple
-        self.changed = changed
-        self.sourcesize, self.incsize = sourcesize, incsize
-        self.children = []
-
-    def add_child(self, child):
-        self += child
-
-    def is_subdir(self, parent):
-        """Return True if self is an eventual subdir of parent"""
-        return self.nametuple[: len(parent.nametuple)] == parent.nametuple
-
-    def is_child(self, parent):
-        """Return True if self is an immediate child of parent"""
-        return self.nametuple and self.nametuple[:-1] == parent.nametuple
-
-    def is_brother(self, brother):
-        """Return True if self is in same directory as brother"""
-        if not self.nametuple or not brother.nametuple:
-            return 0
-        return self.nametuple[:-1] == brother.nametuple[:-1]
-
-    def __str__(self):
-        return "%s %s %s %s" % (
-            self.nametuple,
-            self.changed,
-            self.sourcesize,
-            self.incsize,
-        )
-
-    def __eq__(self, other):
-        return (
-            self.changed == other.changed
-            and self.sourcesize == other.sourcesize
-            and self.incsize == other.incsize
-        )
-
-    def __ge__(self, other):
-        """Note the 'or' -- this relation is not a well ordering"""
-        return (
-            self.changed >= other.changed
-            or self.sourcesize >= other.sourcesize
-            or self.incsize >= other.incsize
-        )
-
-    def __iadd__(self, other):
-        """Add values of other to self"""
-        self.changed += other.changed
-        self.sourcesize += other.sourcesize
-        self.incsize += other.incsize
-        return self
-
-    def __isub__(self, other):
-        """Subtract values of other from self"""
-        self.changed -= other.changed
-        self.sourcesize -= other.sourcesize
-        self.incsize -= other.incsize
-        return self
