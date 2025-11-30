@@ -4,9 +4,9 @@ Test the calculate action with api version >= 201
 
 import glob
 import os
-import shutil
-import subprocess
 import unittest
+
+from rdiffbackup.singletons import consts
 
 import commontest as comtst
 import fileset
@@ -111,39 +111,84 @@ class ActionCalculateTest(unittest.TestCase):
         session_stats = glob.glob(
             os.path.join(self.bak_path, b"rdiff-backup-data", b"session_statistics.*")
         )
-        self.assertRegex(
-            comtst.rdiff_backup_action(
-                True,
-                True,
-                *session_stats,
-                ("--api-version", "201"),
-                b"calculate",
-                ("average",),
-                return_stdout=True,
-            ),
-            rb"^-*\[ Average of 2 stat files ",
+        output = comtst.rdiff_backup_action(
+            True,
+            True,
+            *session_stats,
+            ("--api-version", "201"),
+            b"calculate",
+            ("average",),
+            return_stdout=True,
         )
-        self.assertRegex(
+        self.assertRegex(output, rb"^-*\[ Average of 2 stat files ")
+        self.assertRegex(output, rb"Errors 0")
+
+        output = comtst.rdiff_backup_action(
+            True,
+            True,
+            self.bak_path,
+            None,
+            ("--api-version", "201"),
+            b"calculate",
+            ("statistics",),
+            return_stdout=True,
+        )
+        self.assertRegex(output, rb"^-*\[ Average of 2 stat files ")
+        self.assertRegex(output, rb"Errors 0")
+        self.assertEqual(output.count(b"Top directories by"), 3)
+
+        self.assertEqual(
             comtst.rdiff_backup_action(
                 True,
                 True,
-                *session_stats,
+                self.bak_path,
+                None,
                 ("--api-version", "201"),
                 b"calculate",
-                ("average",),
-                return_stdout=True,
+                ("statistics", "--minimum-ratio", "1.1"),
             ),
-            rb"Errors 0",
+            consts.RET_CODE_ERR,
         )
 
-        # try also rdiff-backup-statistics until we merge functionality into
-        # the calculate plug-in (see #772)
-        rd_stats_bin = os.fsencode(
-            shutil.which("rdiff-backup-statistics") or "rdiff-backup-statistics"
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                True,
+                self.bak_path,
+                None,
+                ("--api-version", "201"),
+                b"calculate",
+                ("statistics", "--begin", "that ain't a time"),
+            ),
+            consts.RET_CODE_ERR,
+        )
+
+        output = comtst.rdiff_backup_action(
+            True,
+            True,
+            self.bak_path,
+            None,
+            ("--api-version", "201"),
+            b"calculate",
+            ("statistics", "--begin", "10000", "--end", "20000"),
+            return_stdout=True,
+        )
+        self.assertRegex(output, rb"^-*\[ Average of 2 stat files ")
+        self.assertRegex(output, rb"Errors 0")
+        self.assertEqual(output.count(b"Top directories by"), 3)
+
+        output = comtst.rdiff_backup_action(
+            True,
+            True,
+            self.bak_path,
+            None,
+            ("--api-version", "201"),
+            b"calculate",
+            ("statistics", "--begin", "11000", "--end", "19000"),
+            return_stderr=True,
         )
         self.assertRegex(
-            subprocess.check_output([rd_stats_bin, self.bak_path]),
-            b"^Processing statistics from",
+            output, rb"No statistics could be gathered within the given range"
         )
 
         # all tests were successful
