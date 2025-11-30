@@ -313,5 +313,30 @@ class FileStatsTrackerTest(unittest.TestCase):
         tracker.close()
 
 
+class FileStatsTest(unittest.TestCase):
+    """Different file statistics tests"""
+
+    def test_filestat(self):
+        """Test FileStat class"""
+        fs1 = fstats.FileStat((b"a", b"b", b"c"), 1, 20, 300)
+        fs2 = fstats.FileStat((b"a", b"b", b"c", b"d1"), 1, 22, 333)
+        fs3 = fstats.FileStat((b"a", b"b", b"c", b"d2"), 1, 22, 333)
+        fs4 = fstats.FileStat((b"a", b"b", b"c", b"d", b"e"), 1, 22, 333)
+        fs5 = fstats.FileStat((b"x", b"y", b"z"), 1, 20, 300)
+        self.assertTrue(fs2.is_subdir(fs1))
+        self.assertTrue(fs4.is_subdir(fs1))
+        self.assertTrue(fs2.is_child(fs1))
+        self.assertTrue(fs2.is_brother(fs3))
+        self.assertTrue(fs3 == fs2)
+        self.assertTrue(fs3 >= fs1)
+        fs1 += fs5
+        self.assertEqual(str(fs1), "(b'a', b'b', b'c') 2 40 600")
+        fs1 -= fs5
+        self.assertEqual(str(fs1), "(b'a', b'b', b'c') 1 20 300")
+        fs1.add_child(fs2)
+        fs1.add_child(fs3)
+        self.assertEqual(str(fs1), "(b'a', b'b', b'c') 3 64 966")
+
+
 if __name__ == "__main__":
     unittest.main()
