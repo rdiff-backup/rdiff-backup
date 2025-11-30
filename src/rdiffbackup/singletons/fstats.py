@@ -18,6 +18,7 @@
 # 02110-1301, USA
 """Generate and process aggregated backup files information"""
 
+import collections.abc as abc
 import re
 import typing
 
@@ -28,6 +29,16 @@ _active_statfileobj = None
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from rdiff_backup import rpath
+
+# workaround until we don't need to support Python lower than 3.11
+try:
+    from typing import Self  # type: ignore
+except ImportError:  # pragma: no cover
+    try:
+        from typing_extensions import Self
+    except (ModuleNotFoundError, ImportError):
+        # it works because Self is only used in one class
+        Self = typing.TypeVar("Self", "FileStat", "FileStatsTree")  # type: ignore
 
 
 class FileStatsWriter(typing.Protocol):  # pragma: no cover
@@ -49,7 +60,7 @@ class FileStatsWriter(typing.Protocol):  # pragma: no cover
 class FileStatsReader(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedReader methods"""
 
-    def __iter__(self) -> typing.Generator[bytes]:
+    def __iter__(self) -> typing.Generator[bytes, None, None]:
         """Iterate over the input"""
         ...
 
@@ -151,9 +162,9 @@ class FileStat:
         self.nametuple = nametuple
         self.changed = changed
         self.sourcesize, self.incsize = sourcesize, incsize
-        self.children: list[FileStat] = []
+        self.children: list["FileStat"] = []
 
-    def add_child(self, child: FileStat):
+    def add_child(self, child: "FileStat"):
         self += child
 
     def is_subdir(self, parent) -> bool:
@@ -196,14 +207,14 @@ class FileStat:
             or self.incsize >= other.incsize
         )
 
-    def __iadd__(self, other: FileStat) -> FileStat:
+    def __iadd__(self, other: Self) -> Self:
         """Add values of other to self"""
         self.changed += other.changed
         self.sourcesize += other.sourcesize
         self.incsize += other.incsize
         return self
 
-    def __isub__(self, other: FileStat) -> FileStat:
+    def __isub__(self, other: Self) -> Self:
         """Subtract values of other from self"""
         self.changed -= other.changed
         self.sourcesize -= other.sourcesize
@@ -228,7 +239,7 @@ class FileStatsTree:
         filestat_reader: FileStatsReader,
         cutoff: typing.Tuple[int, int, int],
         separator: bytes,
-    ) -> FileStatsTree:
+    ) -> Self:
         """
         Construct FileStatsTree given session and file stat rps
 
@@ -245,19 +256,19 @@ class FileStatsTree:
         )
         important_iter = filter(lambda fs: fs >= cutoff_fs, accumulated_iter)
         trimmed_tree = cls._make_root_tree(
-            typing.cast(typing.Generator[FileStat], important_iter)
+            typing.cast(typing.Generator[FileStat, None, None], important_iter)
         )
         filestat_fileobj.close()
         assert trimmed_tree is not None, "Trimmed tree is None, it shouldn't be"
         return cls(cutoff_fs, trimmed_tree)
 
-    def __iadd__(self, other: FileStatsTree) -> FileStatsTree:
+    def __iadd__(self, other: Self) -> Self:
         """Add cutoffs, and merge the other's fs_root"""
         self.cutoff_fs += other.cutoff_fs
         self.merge_tree(self.fs_root, other.fs_root)
         return self
 
-    def __add__(self, other: FileStatsTree) -> FileStatsTree:
+    def __add__(self, other: Self) -> Self:
         """Add cutoffs, and merge the other's fs_root"""
         new_fst = self.__class__(self.cutoff_fs, self.fs_root)
         new_fst += other
@@ -301,7 +312,7 @@ class FileStatsTree:
         myfs += otherfs
 
     def get_top_fs(
-        self, fs_func: typing.Callable[[FileStat], int]
+        self, fs_func: abc.Callable[[FileStat], int]
     ) -> list[tuple[FileStat, int]]:
         """Process the FileStat tree and find everything above the cutoff
 
@@ -335,7 +346,7 @@ class FileStatsTree:
         return helper(self.fs_root)[0]
 
     def get_stats_as_string(
-        self, label: str, fs_func: typing.Callable[[FileStat], int]
+        self, label: str, fs_func: abc.Callable[[FileStat], int]
     ) -> str:
         """Print the top directories in sorted order"""
 
@@ -355,7 +366,7 @@ class FileStatsTree:
     @staticmethod
     def _yield_fs_objs(
         filestatsobj: FileStatsReader, separator: bytes
-    ) -> typing.Generator[FileStat]:
+    ) -> typing.Generator[FileStat, None, None]:
         """Iterate FileStats by processing file_statistics fileobj"""
         r = re.compile(
             b"^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) ([0-9]+|NA)%b?$" % (separator,)
@@ -395,8 +406,8 @@ class FileStatsTree:
 
     @staticmethod
     def _accumulate_fs(
-        fs_iter: typing.Generator[FileStat],
-    ) -> typing.Generator[FileStat]:
+        fs_iter: typing.Generator[FileStat, None, None],
+    ) -> typing.Generator[FileStat, None, None]:
         """Yield the FileStat objects in fs_iter, but with total statistics
 
         In fs_iter, the statistics of directories FileStats only apply
@@ -441,7 +452,7 @@ class FileStatsTree:
 
     @classmethod
     def _make_root_tree(
-        cls, fs_iter: typing.Generator[FileStat]
+        cls, fs_iter: typing.Generator[FileStat, None, None]
     ) -> typing.Optional[FileStat]:
         """Like make_tree, but assume fs_iter starts at the root"""
         try:
@@ -455,7 +466,7 @@ class FileStatsTree:
 
     @classmethod
     def _make_tree_one_level(
-        cls, fs_iter: typing.Generator[FileStat], first_fs: FileStat
+        cls, fs_iter: typing.Generator[FileStat, None, None], first_fs: FileStat
     ) -> FileStat:
         """Populate a tree of FileStat objects from fs_iter
 

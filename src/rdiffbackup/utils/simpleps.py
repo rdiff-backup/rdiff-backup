@@ -20,6 +20,8 @@
 A wrapper around the psutil library, because it might not be installed,
 and also because, under Windows, it doesn't act as always expected.
 """
+
+import collections.abc as abc
 import os
 import subprocess
 import typing
@@ -67,7 +69,7 @@ def _get_pid_name_ps(pid: typing.Union[int, str]) -> typing.Optional[str]:
 
 # depending if psutil is installed or not, we have another implementation
 # of get_pid_name
-get_pid_name: typing.Callable[[typing.Union[int, str]], typing.Optional[str]]
+get_pid_name: abc.Callable[[typing.Union[int, str]], typing.Optional[str]]
 try:
     import psutil
 
