@@ -130,9 +130,28 @@ This determines how much is written to the log file, and without using *--termin
 
 backup [<<_creation_options,CREATION OPTIONS>>] [<<_compression_options,COMPRESSION OPTIONS>>] [<<_selection_options,SELECTION OPTIONS>>] [<<_filesystem_options,FILESYSTEM OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [<<_statistics_options,STATISTICS OPTIONS>>] _sourcedir_ _targetdir_:: back-up a source directory to a target backup repository.
 
-calculate [--method *average*] _statfile1_ _statfile2_ [...]:: calculate average across multiple statistics files
+calculate *average* _statfile1_ _statfile2_ [...]:: calculate average across multiple statistics files
 
---method *average*;; there is currently only one method and it is the default, but it might change in the future.
+calculate *statistics* [--begin-time _time_] [--end-time _time_] [--minimum-ration _ratio_] _repository_:: reads the matching statistics files in a backup repository and prints some summary statistics to the screen.
+The output has two parts.
+The first is simply an average of the all matching session_statistics files.
+The meaning of these fields is explained in the FAQ included in the package, or online https://rdiff-backup.net/FAQ.html#what_do_the_various_fields_mean_in_the_session_statistics_and_directory_statistics_files[What do the various fields mean in the session statistics and directory statistics files?].
+The second section lists some particularly significant files (including directories).
+These files either contain a lot of data, take up increment space, or contain a lot of changed files.
+All the files that are above the minimum ratio (default 5%) will be listed.
+If a file or directory is listed, its contributions are subtracted from its parent.
+That is why the percentage listed after a directory can be larger than the percentage of its parent.
+Without this, the root directory would always be the largest, and the output would be boring.
+
+--begin-time _time_:: Do not read statistics files older than _time_.
+By default, all statistics files will be read.
+See <<_time_formats,TIME FORMATS>> for details.
+
+--end-time _time_:: Like *--begin-time* but exclude statistics files later than _time_.
+See <<_time_formats,TIME FORMATS>> for details.
+
+--minimum-ratio _ratio_:: Print all directories contributing more than the given ratio to the total.
+The default value is .05, or 5 percent.
 
 complete [--cword _index_] [--unique|--no-unique] *--* _words_ [...]::
 outputs a list of fitting options given already entered parameters.
