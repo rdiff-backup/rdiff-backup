@@ -46,7 +46,6 @@ class FileStatsWriter(typing.Protocol):  # pragma: no cover
         ...
 
 
-# TODO need to update and refine based on run_stats
 class FileStatsReader(typing.Protocol):  # pragma: no cover
     """Protocol representing a subset of io.BufferedReader methods"""
 
@@ -215,10 +214,42 @@ class FileStat:
 class FileStatsTree:
     """Holds a tree of important files/directories, along with cutoffs"""
 
+    cutoff_fs: FileStat
+    fs_root: FileStat
+
     def __init__(self, cutoff_fs: FileStat, fs_root: FileStat):
         """Initialize with FileStat cutoff object, and root of tree"""
         self.cutoff_fs = cutoff_fs
         self.fs_root = fs_root
+
+    @classmethod
+    def make(
+        cls,
+        filestat_reader: FileStatsReader,
+        cutoff: typing.Tuple[int, int, int],
+        separator: bytes,
+    ) -> FileStatsTree:
+        """
+        Construct FileStatsTree given session and file stat rps
+
+        We would like a full tree, but this in general will take too much
+        memory.  Instead we will build a tree that has only the
+        files/directories with some stat exceeding the min ratio.
+        """
+        cutoff_fs = FileStat((), *cutoff)
+        filestat_fileobj = typing.cast(
+            FileStatsReader, buffer.LinesBuffer(filestat_reader, separator)
+        )
+        accumulated_iter = cls._accumulate_fs(
+            cls._yield_fs_objs(filestat_fileobj, separator)
+        )
+        important_iter = filter(lambda fs: fs >= cutoff_fs, accumulated_iter)
+        trimmed_tree = cls._make_root_tree(
+            typing.cast(typing.Generator[FileStat], important_iter)
+        )
+        filestat_fileobj.close()
+        assert trimmed_tree is not None, "Trimmed tree is None, it shouldn't be"
+        return cls(cutoff_fs, trimmed_tree)
 
     def __iadd__(self, other: FileStatsTree) -> FileStatsTree:
         """Add cutoffs, and merge the other's fs_root"""
@@ -283,9 +314,7 @@ class FileStatsTree:
         """
         abs_cutoff = fs_func(self.cutoff_fs)
 
-        def helper(
-            subtree: FileStat
-        ) -> tuple[list[tuple[FileStat, int]], int]:
+        def helper(subtree: FileStat) -> tuple[list[tuple[FileStat, int]], int]:
             """Returns ([list of (top fs, value)], total excluded amount)"""
             subtree_val = fs_func(subtree)
             if subtree_val <= abs_cutoff:
@@ -323,148 +352,126 @@ class FileStatsTree:
             s.append(get_line(fs, val))
         return "\n" + "\n".join(s)
 
-
-def make_fst(
-    filestat_reader: FileStatsReader,
-    cutoff: typing.Tuple[int, int, int],
-    separator: bytes,
-) -> FileStatsTree:
-    """
-    Construct FileStatsTree given session and file stat rps
-
-    We would like a full tree, but this in general will take too much
-    memory.  Instead we will build a tree that has only the
-    files/directories with some stat exceeding the min ratio.
-    """
-    cutoff_fs = FileStat((), *cutoff)
-    filestat_fileobj = typing.cast(
-        FileStatsReader, buffer.LinesBuffer(filestat_reader, separator)
-    )
-    accumulated_iter = _accumulate_fs(_yield_fs_objs(filestat_fileobj, separator))
-    important_iter = filter(lambda fs: fs >= cutoff_fs, accumulated_iter)
-    trimmed_tree = _make_root_tree(
-        typing.cast(typing.Generator[FileStat], important_iter)
-    )
-    filestat_fileobj.close()
-    assert trimmed_tree is not None, "Trimmed tree is None, it shouldn't be"
-    return FileStatsTree(cutoff_fs, trimmed_tree)
-
-
-def _yield_fs_objs(
-    filestatsobj: FileStatsReader, separator: bytes
-) -> typing.Generator[FileStat]:
-    """Iterate FileStats by processing file_statistics fileobj"""
-    r = re.compile(
-        b"^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) " b"([0-9]+|NA)%b?$" % (separator,)
-    )
-    for line in filestatsobj:
-        if line.startswith(b"#"):
-            continue
-        match = r.match(line)
-        if not match:
-            log.Log(
-                "Line parsing failed, ignoring: '{li}'\n".format(
-                    li=convert.to_safe_str(line)
-                ),
-                log.WARNING,
-            )
-            continue
-
-        filename = match.group(1)
-        if filename == b".":
-            nametuple = ()
-        else:
-            nametuple = tuple(filename.split(b"/"))
-
-        sourcesize_str = match.group(3)
-        if sourcesize_str == b"NA":
-            sourcesize = 0
-        else:
-            sourcesize = int(sourcesize_str)
-
-        incsize_str = match.group(5)
-        if incsize_str == b"NA":
-            incsize = 0
-        else:
-            incsize = int(incsize_str)
-
-        yield FileStat(nametuple, int(match.group(2)), sourcesize, incsize)
-
-
-def _accumulate_fs(fs_iter: typing.Generator[FileStat]) -> typing.Generator[FileStat]:
-    """Yield the FileStat objects in fs_iter, but with total statistics
-
-    In fs_iter, the statistics of directories FileStats only apply
-    to themselves.  This will iterate the same FileStats, but
-    directories will include all the files under them.  As a
-    result, the directories will come after the files in them
-    (e.g. '.' will be last.).
-
-    Naturally this would be written recursively, but profiler said
-    it was too slow in python.
-
-    """
-    fs: typing.Optional[FileStat]
-    root = next(fs_iter)
-    if root.nametuple != ():
-        raise RuntimeError(
-            "Name tuple of root should be empty but is {name}.".format(
-                name=root.nametuple
-            )
+    @staticmethod
+    def _yield_fs_objs(
+        filestatsobj: FileStatsReader, separator: bytes
+    ) -> typing.Generator[FileStat]:
+        """Iterate FileStats by processing file_statistics fileobj"""
+        r = re.compile(
+            b"^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) ([0-9]+|NA)%b?$" % (separator,)
         )
-    stack = [root]
-    try:
-        fs = next(fs_iter)
-    except StopIteration:
-        yield root
-        return
+        for line in filestatsobj:
+            if line.startswith(b"#"):
+                continue
+            match = r.match(line)
+            if not match:
+                log.Log(
+                    "Line parsing failed, ignoring: '{li}'\n".format(
+                        li=convert.to_safe_str(line)
+                    ),
+                    log.WARNING,
+                )
+                continue
 
-    while 1:
-        if fs and fs.is_child(stack[-1]):
-            stack.append(fs)
-            try:
-                fs = next(fs_iter)
-            except StopIteration:
-                fs = None
-        else:
-            expired = stack.pop()
-            yield expired
-            if not stack:
-                return
+            filename = match.group(1)
+            if filename == b".":
+                nametuple = ()
             else:
-                stack[-1].add_child(expired)
+                nametuple = tuple(filename.split(b"/"))
 
+            sourcesize_str = match.group(3)
+            if sourcesize_str == b"NA":
+                sourcesize = 0
+            else:
+                sourcesize = int(sourcesize_str)
 
-def _make_root_tree(fs_iter: typing.Generator[FileStat]) -> typing.Optional[FileStat]:
-    """Like make_tree, but assume fs_iter starts at the root"""
-    try:
-        fs = next(fs_iter)
-    except StopIteration:
-        return None
+            incsize_str = match.group(5)
+            if incsize_str == b"NA":
+                incsize = 0
+            else:
+                incsize = int(incsize_str)
 
-    while fs.nametuple != ():
-        fs = _make_tree_one_level(fs_iter, fs)
-    return fs
+            yield FileStat(nametuple, int(match.group(2)), sourcesize, incsize)
 
+    @staticmethod
+    def _accumulate_fs(
+        fs_iter: typing.Generator[FileStat],
+    ) -> typing.Generator[FileStat]:
+        """Yield the FileStat objects in fs_iter, but with total statistics
 
-def _make_tree_one_level(
-    fs_iter: typing.Generator[FileStat], first_fs: FileStat
-) -> FileStat:
-    """Populate a tree of FileStat objects from fs_iter
+        In fs_iter, the statistics of directories FileStats only apply
+        to themselves.  This will iterate the same FileStats, but
+        directories will include all the files under them.  As a
+        result, the directories will come after the files in them
+        (e.g. '.' will be last.).
 
-    This function wants the fs_iter in the reverse direction as
-    usual, with the parent coming directly after all the children.
-    It will return the parent of first_fs.
+        Naturally this would be written recursively, but profiler said
+        it was too slow in python.
 
-    """
-    children = [first_fs]
-    fs = next(fs_iter)
-    while 1:
-        if first_fs.is_child(fs):
-            fs.children = children
-            return fs
-        elif first_fs.is_brother(fs):
-            children.append(fs)
+        """
+        fs: typing.Optional[FileStat]
+        root = next(fs_iter)
+        if root.nametuple != ():
+            raise RuntimeError(
+                "Name tuple of root should be empty but is {name}.".format(
+                    name=root.nametuple
+                )
+            )
+        stack = [root]
+        try:
             fs = next(fs_iter)
-        else:
-            fs = _make_tree_one_level(fs_iter, fs)
+        except StopIteration:
+            yield root
+            return
+
+        while 1:
+            if fs and fs.is_child(stack[-1]):
+                stack.append(fs)
+                try:
+                    fs = next(fs_iter)
+                except StopIteration:
+                    fs = None
+            else:
+                expired = stack.pop()
+                yield expired
+                if not stack:
+                    return
+                else:
+                    stack[-1].add_child(expired)
+
+    @classmethod
+    def _make_root_tree(
+        cls, fs_iter: typing.Generator[FileStat]
+    ) -> typing.Optional[FileStat]:
+        """Like make_tree, but assume fs_iter starts at the root"""
+        try:
+            fs = next(fs_iter)
+        except StopIteration:
+            return None
+
+        while fs.nametuple != ():
+            fs = cls._make_tree_one_level(fs_iter, fs)
+        return fs
+
+    @classmethod
+    def _make_tree_one_level(
+        cls, fs_iter: typing.Generator[FileStat], first_fs: FileStat
+    ) -> FileStat:
+        """Populate a tree of FileStat objects from fs_iter
+
+        This function wants the fs_iter in the reverse direction as
+        usual, with the parent coming directly after all the children.
+        It will return the parent of first_fs.
+
+        """
+        children = [first_fs]
+        fs = next(fs_iter)
+        while 1:
+            if first_fs.is_child(fs):
+                fs.children = children
+                return fs
+            elif first_fs.is_brother(fs):
+                children.append(fs)
+                fs = next(fs_iter)
+            else:
+                fs = cls._make_tree_one_level(fs_iter, fs)

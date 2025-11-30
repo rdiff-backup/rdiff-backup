@@ -1189,7 +1189,7 @@ class RepoShadow(location.LocationShadow):
     @classmethod
     def _get_files_sum(cls, file_stats_files, cutoffs):
         file_stats = [
-            fstats.make_fst(
+            fstats.FileStatsTree.make(
                 loc.open("rb", loc.isinccompressed()),
                 cutoff,
                 cls._values.get("null_separator") and b"\0" or b"\n",
