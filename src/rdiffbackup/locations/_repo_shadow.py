@@ -1242,6 +1242,12 @@ class RepoShadow(location.LocationShadow):
                 rp.delete()
         return consts.RET_CODE_OK
 
+    # @API(RepoShadow.remove_file, 300)
+    @classmethod
+    def remove_file(cls):
+        print(cls._ref_index, cls._ref_path, cls._ref_inc, cls._ref_type, cls._values["dry_run"])
+        return consts.RET_CODE_OK
+
     @classmethod
     def _get_removal_time(cls, time_string, show_sizes):
         """
