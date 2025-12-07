@@ -31,7 +31,7 @@ from rdiffbackup.singletons import consts, log
 
 class RemoveAction(actions.BaseAction):
     """
-    Remove the oldest increments from a backup repository.
+    Remove the oldest increments or a certain file from a backup repository.
     """
 
     name = "remove"
@@ -40,7 +40,7 @@ class RemoveAction(actions.BaseAction):
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
-        entity_parsers = cls._get_subparsers(subparser, "entity", "increments")
+        entity_parsers = cls._get_subparsers(subparser, "entity", "increments", "file")
         entity_parsers["increments"].add_argument(
             "--older-than",
             metavar="TIME",
@@ -59,6 +59,17 @@ class RemoveAction(actions.BaseAction):
             nargs=1,
             help="location of repository to remove increments from",
         )
+        entity_parsers["file"].add_argument(
+            "--dry-run",
+            action="store_true",
+            help="don't remove anything, just check what would be removed",
+        )
+        entity_parsers["file"].add_argument(
+            "locations",
+            metavar="[[USER@]SERVER::]PATH",
+            nargs=1,
+            help="which file to remove",
+        )
         return subparser
 
     def connect(self):
@@ -69,6 +80,7 @@ class RemoveAction(actions.BaseAction):
                 self.values,
                 must_be_writable=True,
                 must_exist=True,
+                can_be_sub_path=(self.values["entity"] == "file"),
             )
         return conn_value
 
@@ -83,7 +95,7 @@ class RemoveAction(actions.BaseAction):
 
         # the source directory must directly point at the base directory of
         # the repository
-        if self.repo.ref_index:
+        if self.values["entity"] == "increments" and self.repo.ref_index:
             log.Log(
                 "Increments for sub-directory '{sd}' cannot be removed "
                 "separately. "
@@ -93,6 +105,27 @@ class RemoveAction(actions.BaseAction):
                 log.ERROR,
             )
             ret_code |= consts.RET_CODE_ERR
+
+        if self.values["entity"] == "file":
+            if not self.repo.ref_index:
+                log.Log(
+                    "File to remove must be within the repository, "
+                    "it can't be the repository itself",
+                    log.ERROR,
+                )
+                ret_code |= consts.RET_CODE_ERR
+            elif b"rdiff-backup-data" in self.repo.ref_index:
+                # FIXME This is knowledge of the internal structure of the repository
+                log.Log(
+                    "File to remove {fr} can't be an increment "
+                    "or a part of the repository structure".format(
+                        fr=self.values["locations"][0]
+                    ),
+                    log.ERROR,
+                )
+                ret_code |= consts.RET_CODE_ERR
+            if self.values["dry_run"]:
+                log.Log("Running in dry-run mode, nothing will be modified", log.NOTE)
 
         return ret_code
 
@@ -117,7 +150,10 @@ class RemoveAction(actions.BaseAction):
         if ret_code & consts.RET_CODE_ERR:
             return ret_code
 
-        ret_code |= self.repo.remove_increments_older_than()
+        if self.values["entity"] == "increments":
+            ret_code |= self.repo.remove_increments_older_than()
+        elif self.values["entity"] == "file":
+            ret_code |= self.repo.remove_file()
 
         return ret_code
 

@@ -208,6 +208,12 @@ class Repo(location.Location):
         """
         return self._shadow.remove_increments_older_than(time_string, show_sizes)
 
+    def remove_file(self):
+        """
+        Shadow function for RepoShadow.remove_file
+        """
+        return self._shadow.remove_file()
+
     def list_files_changed_since(self, reftime):
         """
         Shadow function for RepoShadow.list_files_changed_since
