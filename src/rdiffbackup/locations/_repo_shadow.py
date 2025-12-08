@@ -1202,7 +1202,7 @@ class RepoShadow(location.LocationShadow):
 
     # ### COPIED FROM MANAGE ####
 
-    # @API(RepoShadow.remove_increments, 300)
+    # @API(RepoShadow.remove_increments_older_than, 300)
     @classmethod
     def remove_increments_older_than(cls, time_string=None, show_sizes=None):
         """
@@ -1245,7 +1245,24 @@ class RepoShadow(location.LocationShadow):
     # @API(RepoShadow.remove_file, 300)
     @classmethod
     def remove_file(cls):
-        print(cls._ref_index, cls._ref_path, cls._ref_inc, cls._ref_type, cls._values["dry_run"])
+        # TODO remove metadata
+        for inc_file in cls._ref_inc.get_incfiles_list():
+            log.Log("Removing increment {ip}".format(ip=inc_file), log.INFO)
+            if not cls._values["dry_run"]:
+                inc_file.delete()
+        if cls._ref_inc.lstat():
+            log.Log("Removing increment {ip}".format(ip=cls._ref_inc), log.INFO)
+            if not cls._values["dry_run"]:
+                cls._ref_inc.delete()
+        else:
+            log.Log("No increment {ip} to remove".format(ip=cls._ref_inc), log.INFO)
+        if cls._ref_path.lstat():
+            log.Log("Removing mirror {mp}".format(mp=cls._ref_path), log.INFO)
+            if not cls._values["dry_run"]:
+                cls._ref_path.delete()
+        else:
+            log.Log("No mirror {mp} to remove".format(mp=cls._ref_path), log.INFO)
+
         return consts.RET_CODE_OK
 
     @classmethod
