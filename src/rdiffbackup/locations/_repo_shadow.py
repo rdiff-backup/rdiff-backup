@@ -1242,10 +1242,41 @@ class RepoShadow(location.LocationShadow):
                 rp.delete()
         return consts.RET_CODE_OK
 
+    META_FILES = {
+        b"file_statistics": (
+            b"",
+            lambda repopath, line: line.startswith(repopath.metaquote + b" ")
+            or line.startswith(repopath.metaquote + b"/"),
+        ),
+        b"mirror_metadata": (
+            b"File ",
+            lambda repopath, line: line == b"File " + repopath.metaquote + b"\n"
+            or line.startswith(b"File " + repopath.metaquote + b"/"),
+        ),
+        b"extended_attributes": (
+            b"# file: ",
+            lambda repopath, line: line == b"# file: " + repopath.aclquote + b"\n"
+            or line.startswith(b"# file: " + repopath.aclquote + b"/"),
+        ),
+        b"access_control_lists": (
+            b"# file: ",
+            lambda repopath, line: line == b"# file: " + repopath.aclquote + b"\n"
+            or line.startswith(b"# file: " + repopath.aclquote + b"/"),
+        ),
+        b"win_access_control_lists": (
+            b"# file: ",
+            lambda repopath, line: line == b"# file: " + repopath.aclquote + b"\n"
+            or line.startswith(b"# file: " + repopath.aclquote + b"/"),
+        ),
+    }
+
     # @API(RepoShadow.remove_file, 300)
     @classmethod
     def remove_file(cls):
-        # TODO remove metadata
+        for meta_prefix in cls.META_FILES:
+            for meta_file in cls._data_dir.append(meta_prefix).get_incfiles_list():
+                cls._remove_from_metadata(meta_file, meta_prefix)
+
         for inc_file in cls._ref_inc.get_incfiles_list():
             log.Log("Removing increment {ip}".format(ip=inc_file), log.INFO)
             if not cls._values["dry_run"]:
@@ -1256,6 +1287,7 @@ class RepoShadow(location.LocationShadow):
                 cls._ref_inc.delete()
         else:
             log.Log("No increment {ip} to remove".format(ip=cls._ref_inc), log.INFO)
+
         if cls._ref_path.lstat():
             log.Log("Removing mirror {mp}".format(mp=cls._ref_path), log.INFO)
             if not cls._values["dry_run"]:
@@ -1264,6 +1296,49 @@ class RepoShadow(location.LocationShadow):
             log.Log("No mirror {mp} to remove".format(mp=cls._ref_path), log.INFO)
 
         return consts.RET_CODE_OK
+
+    @classmethod
+    def _remove_from_metadata(cls, meta_file, meta_prefix):
+        """
+        This function is used to remove the repo path from the given `meta_file`.
+        """
+
+        start_marker, matches = cls.META_FILES[meta_prefix]
+        repopath = cls._ref_path.get_indexpath()
+        log.Log(
+            "Removing entry/ies of or within '{rp}' from '{mf}'".format(
+                rp=convert.to_safe_str(repopath),
+                mf=convert.to_safe_str(meta_file),
+            ),
+            log.INFO,
+        )
+        tmp_file = meta_file.get_temp_rpath(sibling=True)
+        in_fp = meta_file.open("rb", meta_file.isinccompressed())
+        out_fp = tmp_file.open("wb", meta_file.isinccompressed())
+        try:
+            line = in_fp.readline()
+            while line:
+                if line.startswith(start_marker) and matches(repopath, line):
+                    line = in_fp.readline()
+                    while line and not line.startswith(start_marker):
+                        # Special case to handle longfilename
+                        if line.startswith(
+                            b"  AlternateIncrementName "
+                        ) or line.startswith(b"  AlternateMirrorName "):
+                            name = line.strip(b"\n").rsplit(b" ", 1)[1]
+                            path = os.path.join(repopath.repo.long_filename_data, name)
+                            _remove_increments(path, dry_run)
+                        line = in_fp.readline()
+                else:
+                    out_fp.write(line)
+                    line = in_fp.readline()
+        finally:
+            in_fp.close()
+            out_fp.close()
+        if cls._values["dry_run"]:
+            tmp_file.delete()
+        else:
+            rpath.rename(tmp_file, meta_file)
 
     @classmethod
     def _get_removal_time(cls, time_string, show_sizes):
