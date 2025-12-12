@@ -49,7 +49,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.singletons import consts, fstats, generics, log, specifics, sstats
-from rdiffbackup.utils import convert, locking, simpleps
+from rdiffbackup.utils import convert, locking, quoting, simpleps
 
 # ### COPIED FROM BACKUP ####
 
@@ -1245,28 +1245,38 @@ class RepoShadow(location.LocationShadow):
     META_FILES = {
         b"file_statistics": (
             b"",
-            lambda repopath, line: line.startswith(repopath.metaquote + b" ")
-            or line.startswith(repopath.metaquote + b"/"),
+            quoting.quote_path,
+            quoting.unquote_path,
+            lambda qpath, line: line.startswith(qpath + b" ")
+            or line.startswith(qpath + b"/"),
         ),
         b"mirror_metadata": (
             b"File ",
-            lambda repopath, line: line == b"File " + repopath.metaquote + b"\n"
-            or line.startswith(b"File " + repopath.metaquote + b"/"),
+            quoting.quote_path,
+            quoting.unquote_path,
+            lambda qpath, line: line == b"File " + qpath + b"\n"
+            or line.startswith(b"File " + qpath + b"/"),
         ),
         b"extended_attributes": (
             b"# file: ",
-            lambda repopath, line: line == b"# file: " + repopath.aclquote + b"\n"
-            or line.startswith(b"# file: " + repopath.aclquote + b"/"),
+            C.acl_quote,
+            C.acl_unquote,
+            lambda qpath, line: line == b"# file: " + qpath + b"\n"
+            or line.startswith(b"# file: " + qpath + b"/"),
         ),
         b"access_control_lists": (
             b"# file: ",
-            lambda repopath, line: line == b"# file: " + repopath.aclquote + b"\n"
-            or line.startswith(b"# file: " + repopath.aclquote + b"/"),
+            C.acl_quote,
+            C.acl_unquote,
+            lambda qpath, line: line == b"# file: " + qpath + b"\n"
+            or line.startswith(b"# file: " + qpath + b"/"),
         ),
         b"win_access_control_lists": (
             b"# file: ",
-            lambda repopath, line: line == b"# file: " + repopath.aclquote + b"\n"
-            or line.startswith(b"# file: " + repopath.aclquote + b"/"),
+            C.acl_quote,
+            C.acl_unquote,
+            lambda qpath, line: line == b"# file: " + qpath + b"\n"
+            or line.startswith(b"# file: " + qpath + b"/"),
         ),
     }
 
@@ -1303,7 +1313,7 @@ class RepoShadow(location.LocationShadow):
         This function is used to remove the repo path from the given `meta_file`.
         """
 
-        start_marker, matches = cls.META_FILES[meta_prefix]
+        start_marker, quote_fn, unquote_fn, matches = cls.META_FILES[meta_prefix]
         repopath = cls._ref_path.get_indexpath()
         log.Log(
             "Removing entry/ies of or within '{rp}' from '{mf}'".format(
@@ -1318,16 +1328,36 @@ class RepoShadow(location.LocationShadow):
         try:
             line = in_fp.readline()
             while line:
-                if line.startswith(start_marker) and matches(repopath, line):
+                if line.startswith(start_marker) and matches(quote_fn(repopath), line):
                     line = in_fp.readline()
                     while line and not line.startswith(start_marker):
                         # Special case to handle longfilename
                         if line.startswith(
                             b"  AlternateIncrementName "
                         ) or line.startswith(b"  AlternateMirrorName "):
-                            name = line.strip(b"\n").rsplit(b" ", 1)[1]
-                            path = os.path.join(repopath.repo.long_filename_data, name)
-                            _remove_increments(path, dry_run)
+                            alt_name = unquote_fn(line.strip(b"\n").rsplit(b" ", 1)[1])
+                            alt_rp = map_longnames.get_long_rp(alt_name)
+
+                            for inc_rp in alt_rp.get_incfiles_list():
+                                log.Log(
+                                    "Removing long increment {ip}".format(ip=inc_rp),
+                                    log.INFO,
+                                )
+                                if not cls._values["dry_run"]:
+                                    inc_rp.delete()
+                            if alt_rp.lstat():
+                                log.Log(
+                                    "Removing long file {ip}".format(ip=alt_rp),
+                                    log.INFO,
+                                )
+                                if not cls._values["dry_run"]:
+                                    alt_rp.delete()
+                            else:
+                                log.Log(
+                                    "No long file {ip} to remove".format(ip=alt_rp),
+                                    log.INFO,
+                                )
+
                         line = in_fp.readline()
                 else:
                     out_fp.write(line)
