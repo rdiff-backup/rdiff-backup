@@ -82,7 +82,7 @@ def get_mirror_rp(mirror_base, mirror_rorp):
     and mirror_rorp exists.
     """
     if mirror_rorp.has_alt_mirror_name():
-        return _get_long_rp(mirror_rorp.get_alt_mirror_name())
+        return get_long_rp(mirror_rorp.get_alt_mirror_name())
     else:
         rp = _check_new_index(mirror_base, mirror_rorp.index)
         if rp:
@@ -111,7 +111,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         """
         if old_rorp.has_alt_mirror_name():
             alt_mirror = old_rorp.get_alt_mirror_name()
-            return (_get_long_rp(alt_mirror), alt_mirror, None)
+            return (get_long_rp(alt_mirror), alt_mirror, None)
         else:
             mirror_rp = mirror_root.new_index(old_rorp.index)
             if old_rorp.has_alt_inc_name():
@@ -127,7 +127,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         if mirror_rp:
             return (mirror_rp, None, None)
         alt_mirror = _get_next_free_filename()
-        return (_get_long_rp(alt_mirror), alt_mirror, None)
+        return (get_long_rp(alt_mirror), alt_mirror, None)
 
     def update_rorp(new_rorp, alt_mirror, alt_inc):
         """
@@ -147,7 +147,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         if alt_mirror:
             return (None, mirror_rp)
         elif alt_inc:
-            return (alt_inc, _get_long_rp(alt_inc))
+            return (alt_inc, get_long_rp(alt_inc))
         elif not index:
             return (None, inc_root)
 
@@ -155,7 +155,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         if _check_new_index(inc_root, trial_inc_index, make_dirs=1):
             return (None, inc_root.new_index(index))
         alt_inc = _get_next_free_filename()
-        return (alt_inc, _get_long_rp(alt_inc))
+        return (alt_inc, get_long_rp(alt_inc))
 
     (new_rorp, old_rorp) = rorp_pair
     if old_rorp and old_rorp.lstat():
@@ -198,7 +198,7 @@ def update_rf(rf, rorp, mirror_root, rf_class):
             ),
             log.DEBUG,
         )
-        rf.inc_rp = _get_long_rp(inc_base)
+        rf.inc_rp = get_long_rp(inc_base)
         rf.inc_list = _get_inclist(inc_base, rf_class)
         rf.set_relevant_incs()
 
@@ -212,7 +212,7 @@ def update_rf(rf, rorp, mirror_root, rf_class):
                 "the following line doesn't make any sense but does it matter?"
             )
             # FIXME mirror_name isn't defined anywhere, is inc_name meant?
-            # rf.mirror_rp = _get_long_rp(mirror_name)
+            # rf.mirror_rp = get_long_rp(mirror_name)
         elif rorp.has_alt_inc_name():
             inc_name = rorp.get_alt_inc_name()
         else:
@@ -227,7 +227,7 @@ def update_rf(rf, rorp, mirror_root, rf_class):
         """
         if rorp.has_alt_mirror_name():
             inc_name = rorp.get_alt_mirror_name()
-            mirror_rp = _get_long_rp(inc_name)
+            mirror_rp = get_long_rp(inc_name)
         else:
             mirror_rp = mirror_root.new_index(rorp.index)
             if rorp.has_alt_inc_name():
@@ -250,10 +250,7 @@ def update_rf(rf, rorp, mirror_root, rf_class):
         return make_new_rf(rorp, mirror_root)
 
 
-# === INTERNAL FUNCTIONS ===
-
-
-def _get_long_rp(base=None):
+def get_long_rp(base=None):
     """
     Return an rpath in long name directory with given base
     """
@@ -261,6 +258,9 @@ def _get_long_rp(base=None):
         return _long_name_rootrp.append(base)
     else:
         return _long_name_rootrp
+
+
+# === INTERNAL FUNCTIONS ===
 
 
 def _get_next_free_filename():
@@ -275,7 +275,7 @@ def _get_next_free_filename():
         """
         log.Log("Setting next free from long filenames dir", log.INFO)
         cur_high = 0
-        for filename in _get_long_rp().listdir():
+        for filename in get_long_rp().listdir():
             try:
                 i = int(filename.split(b".")[0])
             except ValueError:
@@ -288,7 +288,7 @@ def _get_next_free_filename():
         """
         Return next int free by reading the next_free file, or None
         """
-        rp = _get_long_rp(_counter_filename)
+        rp = get_long_rp(_counter_filename)
         if not rp.lstat():
             return None
         return int(rp.get_string())
@@ -297,7 +297,7 @@ def _get_next_free_filename():
         """
         Write value i into the counter file
         """
-        rp = _get_long_rp(_counter_filename)
+        rp = get_long_rp(_counter_filename)
         if rp.lstat():
             rp.delete()
         rp.write_string(str(_free_name_counter))
@@ -308,7 +308,7 @@ def _get_next_free_filename():
     if not _free_name_counter:
         _free_name_counter = scan_next_free()
     filename = b"%i" % _free_name_counter
-    rp = _get_long_rp(filename)
+    rp = get_long_rp(filename)
     assert not rp.lstat(), "Unexpected file '{rp}' found".format(rp=rp)
     _free_name_counter += 1
     write_next_free(_free_name_counter)
@@ -374,6 +374,6 @@ def _set_restore_cache(rf_class):
     """
     global _restore_inc_cache
     _restore_inc_cache = {}
-    root_rf = rf_class(_get_long_rp(), _get_long_rp(), [])
-    for incbase_rp, inclist in root_rf.yield_inc_complexes(_get_long_rp()):
+    root_rf = rf_class(get_long_rp(), get_long_rp(), [])
+    for incbase_rp, inclist in root_rf.yield_inc_complexes(get_long_rp()):
         _restore_inc_cache[incbase_rp.index[-1]] = inclist
