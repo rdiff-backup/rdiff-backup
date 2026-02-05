@@ -33,6 +33,7 @@ from rdiff_backup import (
     rpath,
     Security,
 )
+from rdiffbackup.locations import increment
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, log, specifics
 
@@ -90,24 +91,12 @@ class Connection:
         if "map_filenames" in cls.globals:
             return  # import has already happened
         modules = {
-            # "gzip": "gzip",  # ???
             "os": "os",
             "platform": "platform",
             "shutil": "shutil",
-            # "socket": "socket",
-            # "tempfile": "tempfile",
-            # "types": "types",
-            # "increment": "rdiff_backup.increment",
-            # "iterfile": "rdiff_backup.iterfile",
-            # "librsync": "rdiff_backup.librsync",
-            # "Rdiff": "rdiff_backup.Rdiff",
             "robust": "rdiff_backup.robust",
-            # "rorpiter": "rdiff_backup.rorpiter",
             "rpath": "rdiff_backup.rpath",
             "SetConnections": "rdiff_backup.SetConnections",
-            # "selection": "rdiff_backup.selection",
-            # "Security": "rdiff_backup.Security",
-            # "Time": "rdiff_backup.Time",
             "_dir_shadow": "rdiffbackup.locations._dir_shadow",
             "_repo_shadow": "rdiffbackup.locations._repo_shadow",
             "map_filenames": "rdiffbackup.locations.map.filenames",
@@ -115,7 +104,7 @@ class Connection:
             "generics": "rdiffbackup.singletons.generics",
             "log": "rdiffbackup.singletons.log",
             "specifics": "rdiffbackup.singletons.specifics",
-            "stats": "rdiffbackup.singletons.stats",
+            "sstats": "rdiffbackup.singletons.sstats",
         }
         for name, module in modules.items():
             cls.globals[name] = importlib.import_module(module)
@@ -221,9 +210,10 @@ class LowLevelPipeConnection(Connection):
     f - file object
     b - string
     q - quit signal
-    R - RPath
     Q - QuotedRPath
     r - RORPath only
+    R - RPath
+    S - StoredRPath
     c - PipeConnection object
 
     """
@@ -252,9 +242,11 @@ class LowLevelPipeConnection(Connection):
         elif isinstance(obj, Connection):
             self._putconn(obj, req_num)
         elif isinstance(obj, map_filenames.QuotedRPath):
-            self._putqrpath(obj, req_num)
+            self._putrpath(obj, req_num, "Q")
+        elif isinstance(obj, increment.StoredRPath):
+            self._putrpath(obj, req_num, "S")
         elif isinstance(obj, rpath.RPath):
-            self._putrpath(obj, req_num)
+            self._putrpath(obj, req_num, "R")
         elif isinstance(obj, rpath.RORPath):
             self._putrorpath(obj, req_num)
         elif (hasattr(obj, "read") or hasattr(obj, "write")) and hasattr(obj, "close"):
@@ -282,20 +274,15 @@ class LowLevelPipeConnection(Connection):
             "i", self._i2b(VirtualFile.new(iterfile.MiscIterToFile(iterator))), req_num
         )
 
-    def _putrpath(self, rpath, req_num):
-        """Put an rpath into the pipe
+    def _putrpath(self, rpath, req_num, letter):
+        """
+        Put an rpath or child type into the pipe
 
         The rpath's connection will be encoded as its conn_number.  It
         and the other information is put in a tuple.
-
         """
         rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index, rpath.data)
-        self._write("R", pickle.dumps(rpath_repr, consts.PICKLE_PROTOCOL), req_num)
-
-    def _putqrpath(self, qrpath, req_num):
-        """Put a quoted rpath into the pipe (similar to _putrpath above)"""
-        qrpath_repr = (qrpath.conn.conn_number, qrpath.base, qrpath.index, qrpath.data)
-        self._write("Q", pickle.dumps(qrpath_repr, consts.PICKLE_PROTOCOL), req_num)
+        self._write(letter, pickle.dumps(rpath_repr, consts.PICKLE_PROTOCOL), req_num)
 
     def _putrorpath(self, rorpath, req_num):
         """Put an rorpath into the pipe
@@ -389,9 +376,11 @@ class LowLevelPipeConnection(Connection):
         elif format_string == b"r":
             result = self._getrorpath(data)
         elif format_string == b"R":
-            result = self._getrpath(data)
+            result = self._getrpath(data, rpath.RPath)
+        elif format_string == b"S":
+            result = self._getrpath(data, increment.StoredRPath)
         elif format_string == b"Q":
-            result = self._getqrpath(data)
+            result = self._getrpath(data, map_filenames.QuotedRPath)
         elif format_string == b"c":
             result = specifics.connection_dict[self._b2i(data)]
         else:
@@ -410,17 +399,10 @@ class LowLevelPipeConnection(Connection):
         index, data = pickle.loads(raw_rorpath_buf)
         return rpath.RORPath(index, data)
 
-    def _getrpath(self, raw_rpath_buf):
+    def _getrpath(self, raw_rpath_buf, rpath_type):
         """Return RPath object indicated by raw_rpath_buf"""
         conn_number, base, index, data = pickle.loads(raw_rpath_buf)
-        return rpath.RPath(specifics.connection_dict[conn_number], base, index, data)
-
-    def _getqrpath(self, raw_qrpath_buf):
-        """Return QuotedRPath object from raw buffer"""
-        conn_number, base, index, data = pickle.loads(raw_qrpath_buf)
-        return map_filenames.QuotedRPath(
-            specifics.connection_dict[conn_number], base, index, data
-        )
+        return rpath_type(specifics.connection_dict[conn_number], base, index, data)
 
     def _close(self):
         """Close the pipes associated with the connection"""

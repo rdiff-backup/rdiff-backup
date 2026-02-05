@@ -12,6 +12,7 @@ import commontest as comtst
 
 from rdiff_backup import rpath
 from rdiffbackup import meta_mgr
+from rdiffbackup.locations import increment
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, ea
 from rdiffbackup.singletons import generics, specifics
@@ -192,7 +193,7 @@ user.empty
         rp3 = self.ea_test1_rpath.append("e3")
 
         # Now write records corresponding to above rps into file
-        man = meta_mgr.PatchDiffMan(self.out_rp)
+        man = meta_mgr.PatchDiffMan(increment.StoredRPath.get_copy(self.out_rp))
         writer = man._writer_helper(
             "snapshot", 10000, ea.get_plugin_class(), force=True
         )
@@ -493,7 +494,7 @@ other::---
         rp3 = self.acl_test1_rpath.append("a3")
 
         # Now write records corresponding to above rps into file
-        man = meta_mgr.PatchDiffMan(self.out_rp)
+        man = meta_mgr.PatchDiffMan(increment.StoredRPath.get_copy(self.out_rp))
         writer = man._writer_helper(
             "snapshot", 10000, acl_posix.get_plugin_class(), force=True
         )

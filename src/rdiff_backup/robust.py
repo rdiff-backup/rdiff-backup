@@ -22,7 +22,7 @@ import errno
 import signal
 import zlib
 from rdiff_backup import C, connection, librsync, rpath
-from rdiffbackup.singletons import log, stats
+from rdiffbackup.singletons import log, sstats
 
 
 # Those are the signals we want to catch because they relate to conditions
@@ -112,7 +112,7 @@ def check_common_error(error_handler, function, args=[]):
     except (Exception, KeyboardInterrupt, SystemExit) as exc:
         if catch_error(exc):
             log.Log.exception()
-            stats.SessionStats.add_error()
+            sstats.SessionStats.add_error()
             if error_handler:
                 return error_handler(exc, *args)
             else:

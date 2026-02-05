@@ -374,3 +374,19 @@ For example, you must call `rdiff-backup --force backup dir1 dir2` because `rdif
 | `+rdiff-backup --force remove increments --older-than {datetime} {backup-repo}+`
 
 |===
+
+== Migration from v2.2 to v3.0
+
+
+|===
+| Description | old CLI | new CLI
+
+| Display average of session statistics
+| `+rdiff-backup calculate --method average {statistic_files...}+`
+| `+rdiff-backup calculate average {statistic_files...}+`
+
+| Display session and file statistics of a repository
+| `+rdiff-backup-statistics --begin-time {datetime} --end-time {datetime} --minimum-ratio {ratio} {backup-repo}+`
+| `+rdiff-backup calculate statistics --begin-time {datetime} --end-time {datetime} --minimum-ratio {ratio} {backup-repo}+`
+
+|===

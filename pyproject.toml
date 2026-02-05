@@ -50,7 +50,6 @@ Downloads = "https://github.com/rdiff-backup/rdiff-backup/releases"
 [project.scripts]
 rdiff-backup = "rdiffbackup.run:main"
 rdiff-backup-delete = "rdiff_backup.run_delete:main"
-rdiff-backup-statistics = "rdiff_backup.run_stats:main"
 
 [tool.setuptools]
 platforms = ['linux', 'win32']
@@ -61,7 +60,6 @@ package-data = {"rdiff_backup" = ["*.dll"]}
 "share/man/man1" = [
 	"dist/rdiff-backup.1",
 	"dist/rdiff-backup-delete.1",
-	"dist/rdiff-backup-statistics.1",
 ]
 "share/doc/rdiff-backup" = [
 	"CHANGELOG.adoc",

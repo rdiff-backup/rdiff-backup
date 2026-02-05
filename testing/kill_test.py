@@ -13,6 +13,7 @@ import unittest
 import commontest as comtst
 
 from rdiff_backup import rpath, Time
+from rdiffbackup.locations import increment
 from rdiffbackup.singletons import consts, specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
@@ -208,7 +209,7 @@ class KillTest(ProcessFuncs):
         time is not curtime.
 
         """
-        rbdir = rp.append_path("rdiff-backup-data")
+        rbdir = increment.StoredRPath.get_copy(rp.append_path("rdiff-backup-data"))
         inclist = rbdir.append("current_mirror").get_incfiles_list()
         self.assertIn(
             len(inclist),

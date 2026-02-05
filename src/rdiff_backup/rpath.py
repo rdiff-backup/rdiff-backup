@@ -42,7 +42,7 @@ import shutil
 import stat
 import tempfile
 import time
-from rdiff_backup import C, Time
+from rdiff_backup import C
 from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, acl_win, ea
 from rdiffbackup.singletons import consts, generics, log, specifics
@@ -223,13 +223,13 @@ class RORPath:
         self.data["perms"] = 0o700
 
     def equal_loose(self, other):
-        """True iff the two rorpaths are kinda equivalent
+        """
+        True iff the two rorpaths are kinda equivalent
 
         Sometimes because permissions cannot be set, a file cannot be
         replicated exactly on the remote side.  This function tells
         you whether the two files are close enough.  self must be the
         original rpath.
-
         """
         # we build a set of keys to be ignored during loose comparaison
         ignored_keys = set(
@@ -660,6 +660,10 @@ class RPath(RORPath):
     # class index to make temporary files unique, see _get_next_tempfile_name
     _temp_file_index = -1
 
+    @classmethod
+    def get_copy(cls, rp):
+        return cls(rp.conn, rp.base, rp.index, rp.data)
+
     def __init__(self, connection, base, index=(), data=None):
         """
         RPath constructor
@@ -1038,26 +1042,6 @@ class RPath(RORPath):
         else:
             return self.__class__(self.conn, b"/")
 
-    def get_incfiles_list(self):
-        """
-        Returns list of increments whose name starts like the current file
-        """
-        dirname, basename = self.dirsplit()
-        parent_dir = self.__class__(self.conn, dirname, ())
-        if not parent_dir.isdir():
-            return []  # inc directory not created yet
-
-        inc_list = []
-        for filename in parent_dir.listdir():
-            inc_info = get_incfile_info(filename)
-            if inc_info and inc_info[3] == basename:
-                inc = parent_dir.append(filename)
-                assert (
-                    inc.isincfile()
-                ), "Path '{irp!r}' must be an increment file".format(irp=inc)
-                inc_list.append(inc)
-        return inc_list
-
     def newpath(self, newpath, index=()):
         """Return new RPath with the same connection but different path"""
         return self.__class__(self.conn, newpath, index)
@@ -1166,59 +1150,6 @@ class RPath(RORPath):
         outfp.write(s)
         outfp.close()
         self.setdata()
-
-    def isincfile(self):
-        """Return true if path looks like an increment file
-
-        Also sets various inc information used by the *inc* functions.
-
-        """
-        if self.index:
-            basename = self.index[-1]
-        else:
-            basename = self.base
-
-        inc_info = get_incfile_info(basename)
-
-        if inc_info:
-            (
-                self.inc_compressed,
-                self.inc_timestr,
-                self.inc_type,
-                self.inc_basestr,
-            ) = inc_info
-            return 1
-        else:
-            return None
-
-    def isinccompressed(self):
-        """Return true if inc file is compressed"""
-        return self.inc_compressed
-
-    def getinctype(self):
-        """Return type of an increment file"""
-        return self.inc_type
-
-    def getinctime(self):
-        """Return time in seconds of an increment file"""
-        return Time.bytestotime(self.inc_timestr)
-
-    def getincbase(self):
-        """Return the base filename of an increment file in rp form"""
-        if self.index:
-            return self.__class__(
-                self.conn, self.base, self.index[:-1] + (self.inc_basestr,)
-            )
-        else:
-            return self.__class__(self.conn, self.inc_basestr)
-
-    def getincbase_bname(self):
-        """Return the base filename as bytes of an increment file"""
-        rp = self.getincbase()
-        if rp.index:
-            return rp.index[-1]
-        else:
-            return rp.dirsplit()[1]
 
     def makedev(self, type, major, minor):
         """Make a special file with specified type, and major/minor nums"""
@@ -1909,37 +1840,6 @@ def open_local_read(rpath):
         rpath.conn is specifics.local_connection
     ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
     return open(rpath.path, "rb")
-
-
-def get_incfile_info(basename):
-    """Returns None or tuple of
-    (is_compressed, timestr, type, and basename)"""
-    dotsplit = basename.split(b".")
-    if dotsplit[-1] == b"gz":
-        compressed = 1
-        if len(dotsplit) < 4:
-            return None
-        timestring, ext = dotsplit[-3:-1]
-    else:
-        compressed = None
-        if len(dotsplit) < 3:
-            return None
-        timestring, ext = dotsplit[-2:]
-    if Time.bytestotime(timestring) is None:
-        return None
-    if not (
-        ext == b"snapshot"
-        or ext == b"dir"
-        or ext == b"missing"
-        or ext == b"diff"
-        or ext == b"data"
-    ):
-        return None
-    if compressed:
-        basestr = b".".join(dotsplit[:-3])
-    else:
-        basestr = b".".join(dotsplit[:-2])
-    return (compressed, timestring, ext, basestr)
 
 
 # @API(delete_dir_no_files, 200)
