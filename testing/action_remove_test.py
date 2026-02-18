@@ -15,11 +15,11 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 class ActionRemoveTest(unittest.TestCase):
     """
-    Test that rdiff-backup properly removes increments
+    Basis class to define one setUp method
     """
+    base_dir = os.path.join(TEST_BASE_DIR, b"action_remove")
 
     def setUp(self):
-        self.base_dir = os.path.join(TEST_BASE_DIR, b"action_remove")
         self.from1_struct = {
             "from1": {
                 "contents": {
@@ -104,6 +104,22 @@ class ActionRemoveTest(unittest.TestCase):
             b"backup",
             (),
         )
+
+    def tearDown(self):
+        # we clean-up only if the test was successful
+        if self.success:
+            fileset.remove_fileset(self.base_dir, self.from1_struct)
+            fileset.remove_fileset(self.base_dir, self.from2_struct)
+            fileset.remove_fileset(self.base_dir, self.from3_struct)
+            fileset.remove_fileset(self.base_dir, self.from4_struct)
+            fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
+
+
+class ActionRemoveIncsTest(ActionRemoveTest):
+    """
+    Test that rdiff-backup properly removes increments
+    """
+    base_dir = os.path.join(TEST_BASE_DIR, b"remove_incs")
 
     def test_action_removeincsolderthan(self):
         """test different ways of removing increments"""
@@ -267,14 +283,30 @@ class ActionRemoveTest(unittest.TestCase):
         # all tests were successful
         self.success = True
 
-    def tearDown(self):
-        # we clean-up only if the test was successful
-        if self.success:
-            fileset.remove_fileset(self.base_dir, self.from1_struct)
-            fileset.remove_fileset(self.base_dir, self.from2_struct)
-            fileset.remove_fileset(self.base_dir, self.from3_struct)
-            fileset.remove_fileset(self.base_dir, self.from4_struct)
-            fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
+
+class ActionRemoveFileTest(ActionRemoveTest):
+    """
+    Test that rdiff-backup properly removes individual files
+    """
+    base_dir = os.path.join(TEST_BASE_DIR, b"remove_file")
+
+    def test_action_removefile(self):
+        """test different ways of removing files"""
+        #self.assertEqual(
+            #comtst.rdiff_backup_action(
+                #False,
+                ##None,
+                #os.path.join(self.bak_path, b"file-does-not-exist"),
+                #None,
+                #(),
+                #b"remove",
+                #("file",),
+            #),
+            #consts.RET_CODE_WARN,
+        #)
+
+        # all tests were successful
+        #self.success = True
 
 
 if __name__ == "__main__":
