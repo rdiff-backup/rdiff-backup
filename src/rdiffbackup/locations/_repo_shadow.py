@@ -1283,16 +1283,23 @@ class RepoShadow(location.LocationShadow):
     # @API(RepoShadow.remove_file, 300)
     @classmethod
     def remove_file(cls):
+        """
+        Remove the referenced increment/file from the repository
+        Returns OK if something was removed, else a warning
+        """
+        file_removed = False
         for meta_prefix in cls.META_FILES:
             for meta_file in cls._data_dir.append(meta_prefix).get_incfiles_list():
-                cls._remove_from_metadata(meta_file, meta_prefix)
+                file_removed |= cls._remove_from_metadata(meta_file, meta_prefix)
 
         for inc_file in cls._ref_inc.get_incfiles_list():
             log.Log("Removing increment {ip}".format(ip=inc_file), log.INFO)
+            file_removed |= True
             if not cls._values["dry_run"]:
                 inc_file.delete()
         if cls._ref_inc.lstat():
             log.Log("Removing increment {ip}".format(ip=cls._ref_inc), log.INFO)
+            file_removed |= True
             if not cls._values["dry_run"]:
                 cls._ref_inc.delete()
         else:
@@ -1300,12 +1307,20 @@ class RepoShadow(location.LocationShadow):
 
         if cls._ref_path.lstat():
             log.Log("Removing mirror {mp}".format(mp=cls._ref_path), log.INFO)
+            file_removed |= True
             if not cls._values["dry_run"]:
                 cls._ref_path.delete()
         else:
             log.Log("No mirror {mp} to remove".format(mp=cls._ref_path), log.INFO)
 
-        return consts.RET_CODE_OK
+        if file_removed:
+            return consts.RET_CODE_OK
+        else:
+            log.Log(
+                "No file corresponds to reference '{rf}'".format(rf=cls._ref_path),
+                log.WARNING,
+            )
+            return consts.RET_CODE_WARN
 
     @classmethod
     def _remove_from_metadata(cls, meta_file, meta_prefix):
@@ -1313,6 +1328,7 @@ class RepoShadow(location.LocationShadow):
         This function is used to remove the repo path from the given `meta_file`.
         """
 
+        anything_removed = False
         start_marker, quote_fn, unquote_fn, matches = cls.META_FILES[meta_prefix]
         repopath = cls._ref_path.get_indexpath()
         log.Log(
@@ -1359,16 +1375,19 @@ class RepoShadow(location.LocationShadow):
                                 )
 
                         line = in_fp.readline()
+                    anything_removed |= True
                 else:
                     out_fp.write(line)
                     line = in_fp.readline()
         finally:
             in_fp.close()
             out_fp.close()
-        if cls._values["dry_run"]:
+        if cls._values["dry_run"] or not anything_removed:
             tmp_file.delete()
         else:
+            tmp_file.setdata()
             rpath.rename(tmp_file, meta_file)
+        return anything_removed
 
     @classmethod
     def _get_removal_time(cls, time_string, show_sizes):
