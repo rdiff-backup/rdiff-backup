@@ -17,6 +17,7 @@ class ActionRemoveTest(unittest.TestCase):
     """
     Basis class to define one setUp method
     """
+
     base_dir = os.path.join(TEST_BASE_DIR, b"action_remove")
 
     def setUp(self):
@@ -26,6 +27,8 @@ class ActionRemoveTest(unittest.TestCase):
                     "fileChanged": {"content": "initial"},
                     "fileOld": {},
                     "fileUnchanged": {"content": "unchanged"},
+                    "file": {"content": "whatever1"},
+                    "file.d": {"contents": {"file": {}}},
                 }
             }
         }
@@ -36,6 +39,8 @@ class ActionRemoveTest(unittest.TestCase):
                     "fileChanged": {"content": "modified"},
                     "fileNew": {},
                     "fileUnchanged": {"content": "unchanged"},
+                    "file": {"content": "whatever11"},
+                    "file.d": {"contents": {"file": {}}},
                 }
             }
         }
@@ -46,6 +51,8 @@ class ActionRemoveTest(unittest.TestCase):
                     "fileChanged": {"content": "modified again"},
                     "fileNew": {},
                     "fileUnchanged": {"content": "unchanged"},
+                    "file": {"content": "whatever111"},
+                    "file.d": {"contents": {"file": {}}},
                 }
             }
         }
@@ -56,6 +63,8 @@ class ActionRemoveTest(unittest.TestCase):
                     "fileChanged": {"content": "modified again"},
                     "fileEvenNewer": {},
                     "fileUnchanged": {"content": "unchanged"},
+                    "file": {"content": "whatever1111"},
+                    "file.d": {"contents": {"file": {}}},
                 }
             }
         }
@@ -119,6 +128,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
     """
     Test that rdiff-backup properly removes increments
     """
+
     base_dir = os.path.join(TEST_BASE_DIR, b"remove_incs")
 
     def test_action_removeincsolderthan(self):
@@ -288,25 +298,257 @@ class ActionRemoveFileTest(ActionRemoveTest):
     """
     Test that rdiff-backup properly removes individual files
     """
+
     base_dir = os.path.join(TEST_BASE_DIR, b"remove_file")
 
-    def test_action_removefile(self):
-        """test different ways of removing files"""
-        #self.assertEqual(
-            #comtst.rdiff_backup_action(
-                #False,
-                ##None,
-                #os.path.join(self.bak_path, b"file-does-not-exist"),
-                #None,
-                #(),
-                #b"remove",
-                #("file",),
-            #),
-            #consts.RET_CODE_WARN,
-        #)
+    def test_action_removefile_allornothing(self):
+        """test removing files never or always present"""
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"file-does-not-exist"),
+                None,
+                (),
+                b"remove",
+                ("file",),
+            ),
+            consts.RET_CODE_WARN,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"file"),
+                None,
+                (),
+                b"remove",
+                ("file",),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files",),
+                return_stdout=True,
+            ),
+            b""".
+file.d
+file.d/file
+fileChanged
+fileEvenNewer
+fileUnchanged
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files", "--at", "10000"),
+                return_stdout=True,
+            ),
+            b""".
+file.d
+file.d/file
+fileChanged
+fileOld
+fileUnchanged
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files", "--at", "20000"),
+                return_stdout=True,
+            ),
+            b""".
+file.d
+file.d/file
+fileChanged
+fileNew
+fileUnchanged
+""",
+        )
+        for at_time in ("100000", "200000", "30000", "40000"):
+            self.assertEqual(
+                comtst.rdiff_backup_action(
+                    True,
+                    None,
+                    self.bak_path,
+                    None,
+                    (),
+                    b"verify",
+                    ("--at", at_time),
+                ),
+                consts.RET_CODE_OK,
+            )
 
         # all tests were successful
-        #self.success = True
+        self.success = True
+
+    def test_action_removedirectory(self):
+        """test removing directory"""
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"file.d"),
+                None,
+                (),
+                b"remove",
+                ("file",),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files",),
+                return_stdout=True,
+            ),
+            b""".
+file
+fileChanged
+fileEvenNewer
+fileUnchanged
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files", "--at", "10000"),
+                return_stdout=True,
+            ),
+            b""".
+file
+fileChanged
+fileOld
+fileUnchanged
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files", "--at", "20000"),
+                return_stdout=True,
+            ),
+            b""".
+file
+fileChanged
+fileNew
+fileUnchanged
+""",
+        )
+        for at_time in ("100000", "200000", "30000", "40000"):
+            self.assertEqual(
+                comtst.rdiff_backup_action(
+                    True,
+                    None,
+                    self.bak_path,
+                    None,
+                    (),
+                    b"verify",
+                    ("--at", at_time),
+                ),
+                consts.RET_CODE_OK,
+            )
+
+        # all tests were successful
+        self.success = True
+
+    def test_action_removefile(self):
+        """test removing file only present partially"""
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"fileNew"),
+                None,
+                (),
+                b"remove",
+                ("file",),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"fileOld"),
+                None,
+                (),
+                b"remove",
+                ("file",),
+            ),
+            consts.RET_CODE_OK,
+        )
+        # old and new files removed, result is the same at both times
+        for at_time in ("10000", "20000"):
+            self.assertEqual(
+                comtst.rdiff_backup_action(
+                    False,
+                    None,
+                    self.bak_path,
+                    None,
+                    (),
+                    b"list",
+                    ("files", "--at", at_time),
+                    return_stdout=True,
+                ),
+                b""".
+file
+file.d
+file.d/file
+fileChanged
+fileUnchanged
+""",
+            )
+        for at_time in ("10000", "20000", "30000", "40000"):
+            self.assertEqual(
+                comtst.rdiff_backup_action(
+                    True,
+                    None,
+                    self.bak_path,
+                    None,
+                    (),
+                    b"verify",
+                    ("--at", at_time),
+                ),
+                consts.RET_CODE_OK,
+            )
+
+        # all tests were successful
+        self.success = True
 
 
 if __name__ == "__main__":
