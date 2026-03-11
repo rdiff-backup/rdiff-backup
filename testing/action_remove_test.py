@@ -146,6 +146,19 @@ class ActionRemoveIncsTest(ActionRemoveTest):
             ),
             consts.RET_CODE_OK,
         )
+        # you can't remove a partial increment
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"whatever"),
+                None,
+                (),
+                b"remove",
+                ("increments",),
+            ),
+            consts.RET_CODE_ERR,
+        )
         self.assertEqual(
             comtst.rdiff_backup_action(
                 False,
@@ -314,6 +327,32 @@ class ActionRemoveFileTest(ActionRemoveTest):
                 ("file",),
             ),
             consts.RET_CODE_WARN,
+        )
+        # you can't remove the whole backup repository
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"remove",
+                ("file",),
+            ),
+            consts.RET_CODE_ERR,
+        )
+        # you can't remove rdiff-backup-data
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"rdiff-backup-data", b"file.d"),
+                None,
+                (),
+                b"remove",
+                ("file",),
+            ),
+            consts.RET_CODE_ERR,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
@@ -534,6 +573,109 @@ fileUnchanged
 """,
             )
         for at_time in ("10000", "20000", "30000", "40000"):
+            self.assertEqual(
+                comtst.rdiff_backup_action(
+                    True,
+                    None,
+                    self.bak_path,
+                    None,
+                    (),
+                    b"verify",
+                    ("--at", at_time),
+                ),
+                consts.RET_CODE_OK,
+            )
+
+        # all tests were successful
+        self.success = True
+
+    def test_action_removefile_dryrun(self):
+        """test not really removing files"""
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"file-does-not-exist"),
+                None,
+                (),
+                b"remove",
+                ("file", "--dry-run"),
+            ),
+            consts.RET_CODE_WARN,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                os.path.join(self.bak_path, b"file"),
+                None,
+                (),
+                b"remove",
+                ("file", "--dry-run"),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files",),
+                return_stdout=True,
+            ),
+            b""".
+file
+file.d
+file.d/file
+fileChanged
+fileEvenNewer
+fileUnchanged
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files", "--at", "10000"),
+                return_stdout=True,
+            ),
+            b""".
+file
+file.d
+file.d/file
+fileChanged
+fileOld
+fileUnchanged
+""",
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
+                ("files", "--at", "20000"),
+                return_stdout=True,
+            ),
+            b""".
+file
+file.d
+file.d/file
+fileChanged
+fileNew
+fileUnchanged
+""",
+        )
+        for at_time in ("100000", "200000", "30000", "40000"):
             self.assertEqual(
                 comtst.rdiff_backup_action(
                     True,
