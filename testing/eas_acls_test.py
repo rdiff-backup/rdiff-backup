@@ -283,6 +283,15 @@ user.empty
             )
         )
 
+    def test_very_big_ea(self):
+        """Test trying to write an EA too big for a file system block"""
+        ea_big = ea.ExtendedAttributes(("e4",), {b"user.big": b"x" * 99999})
+        ea_big_file = os.path.join(TEST_BASE_DIR, b"ea_test_big")
+        ea_big_rpath = rpath.RPath(specifics.local_connection, ea_big_file)
+        ea_big_rpath.touch()
+        # The actual test is that there is no exception raised
+        self.assertIsNone(ea_big.write_to_rp(ea_big_rpath))
+
 
 class ACLTest(unittest.TestCase):
     """Test access control lists"""

@@ -141,6 +141,23 @@ class ExtendedAttributes:
                         log.INFO,
                     )
                     continue
+                # Different file systems answer differently to too big EAs
+                elif exc.errno == errno.E2BIG:  # e.g. XFS
+                    log.Log(
+                        "Unable to write xattr {xa} to path {pa} "
+                        "because it is too big, ignoring".format(xa=name, pa=rp),
+                        log.INFO,
+                    )
+                    continue
+                elif exc.errno == errno.ENOSPC:  # e.g. EXT4
+                    log.Log(
+                        "Unable to write xattr {xa} to path {pa} "
+                        "because it is too big or file system full, ignoring".format(
+                            xa=name, pa=rp
+                        ),
+                        log.INFO,
+                    )
+                    continue
                 else:
                     raise
 
