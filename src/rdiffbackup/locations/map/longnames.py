@@ -157,7 +157,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         alt_inc = _get_next_free_filename()
         return (alt_inc, get_long_rp(alt_inc))
 
-    (new_rorp, old_rorp) = rorp_pair
+    new_rorp, old_rorp = rorp_pair
     if old_rorp and old_rorp.lstat():
         mirror_rp, alt_mirror, alt_inc = mir_triple_old(old_rorp)
         index = old_rorp.index

@@ -52,7 +52,7 @@ class TestAction(actions.BaseAction):
         ret_code = super().pre_check()
         # validate that all locations are remote
         for location in self.values["locations"]:
-            (file_host, file_path, err) = SetConnections.parse_location(location)
+            file_host, file_path, err = SetConnections.parse_location(location)
             if err:
                 log.Log(err, log.ERROR)
                 ret_code |= consts.RET_CODE_ERR

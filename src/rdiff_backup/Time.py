@@ -23,7 +23,6 @@ import re
 import time
 from rdiffbackup.singletons import generics
 
-
 _interval_conv_dict = {
     "s": 1,
     "m": 60,
@@ -186,17 +185,14 @@ def genstrtotime(timestr, ref_time=None, rp=None, session_times=None):
         return ref_time
 
     def error():
-        raise TimeException(
-            """Bad time string "%s"
+        raise TimeException("""Bad time string "%s"
 
 The acceptable time strings are intervals (like "3D64s"), w3-datetime
 strings, like "2002-04-26T04:22:01-07:00" (strings like
 "2002-04-26T04:22:01" are also acceptable - rdiff-backup will use the
 current time zone), or ordinary dates like 2/4/1997 or 2001-04-23
 (various combinations are acceptable, but the month always precedes
-the day)."""
-            % timestr
-        )
+the day).""" % timestr)
 
     # Test for straight integer
     if _integer_regexp.search(timestr):
@@ -244,15 +240,12 @@ def _intervalstr_to_seconds(interval_string):
     """
 
     def error():
-        raise TimeException(
-            """Bad interval string "%s"
+        raise TimeException("""Bad interval string "%s"
 
 Intervals are specified like 2Y (2 years) or 2h30m (2.5 hours).  The
 allowed special characters are s, m, h, D, W, M, and Y.  See the man
 page for more information.
-"""
-            % interval_string
-        )
+""" % interval_string)
 
     if len(interval_string) < 2:
         error()

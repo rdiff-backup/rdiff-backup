@@ -10,7 +10,6 @@ import os
 import sys
 import math
 
-
 if len(sys.argv) > 5 or len(sys.argv) < 4:
     print("Usage: init_files [directory name] [file size] [file count] [base]")
     print()

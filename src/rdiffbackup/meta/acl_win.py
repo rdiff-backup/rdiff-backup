@@ -191,7 +191,7 @@ class ACL:
         # children files/subdirs are created and generate the appropriate
         # DACL so the inheritance magic can happen during step 4.
 
-        (flags, revision) = sd.GetSecurityDescriptorControl()
+        flags, revision = sd.GetSecurityDescriptorControl()
         if not rp.isdir() and flags & SE_DACL_PROTECTED:
             self._clear_rp(rp)
 

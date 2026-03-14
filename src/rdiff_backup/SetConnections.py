@@ -340,9 +340,9 @@ def _init_connection(remote_cmd):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
         )
-        (stdin, stdout) = (process.stdin, process.stdout)
+        stdin, stdout = (process.stdin, process.stdout)
     except OSError:
-        (stdin, stdout) = (None, None)
+        stdin, stdout = (None, None)
     conn_number = len(specifics.connections)
     conn = connection.PipeConnection(stdout, stdin, conn_number, process)
 
@@ -373,9 +373,7 @@ Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version ({lv})
-""".format(
-                ex=exception, rc=convert.to_safe_str(remote_cmd), lv=specifics.version
-            ),
+""".format(ex=exception, rc=convert.to_safe_str(remote_cmd), lv=specifics.version),
             log.ERROR,
         )
         return False

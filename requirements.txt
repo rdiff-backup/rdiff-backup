@@ -39,7 +39,7 @@ psutil
 
 tox
 flake8
-black < 26
+black
 bandit
 coverage
 mypy

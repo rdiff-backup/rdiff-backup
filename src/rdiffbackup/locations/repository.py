@@ -54,7 +54,7 @@ class Repo(location.Location):
             self._shadow = _repo_shadow.RepoShadow
         else:
             self._shadow = orig_path.conn._repo_shadow.RepoShadow
-        (self.orig_path, self.base_dir, self.ref_index, self.ref_type) = (
+        self.orig_path, self.base_dir, self.ref_index, self.ref_type = (
             self._shadow.init(
                 orig_path,
                 values,

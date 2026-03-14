@@ -116,7 +116,7 @@ class PipeConnectionTest(unittest.TestCase):
             stdout=subprocess.PIPE,
             close_fds=True,
         )
-        (stdin, stdout) = (self.p.stdin, self.p.stdout)
+        stdin, stdout = (self.p.stdin, self.p.stdout)
         self.conn = connection.PipeConnection(stdout, stdin, process=self.p)
         Security._security_level = "override"
 
@@ -251,7 +251,7 @@ class LengthyConnectionTest(unittest.TestCase):
             stdout=subprocess.PIPE,
             close_fds=True,
         )
-        (stdin, stdout) = (self.p.stdin, self.p.stdout)
+        stdin, stdout = (self.p.stdin, self.p.stdout)
         self.conn = connection.PipeConnection(stdout, stdin, process=self.p)
         Security._security_level = "override"
         # the sleep command should never be finished at this stage
