@@ -72,13 +72,20 @@ Under RHEL, the repo to enable is https://access.redhat.com/documentation/en-us/
 
 NOTE: This does not enable updates for `PowerTools`, check the distribution documentation for details on how to do this.
 
+=== RHEL 9, 10 and their replicas (from EPEL, x86_64)
+
+----
+sudo dnf install epel-release
+sudo dnf install rdiff-backup
+sudo dnf install python3-xattr  #<1>
+----
+<1> `python3-pyxattr` isn't available from EPEL 10, check the pip method if you need support for extended attributes.
+
 === Fedora 34+
 
 ----
 sudo dnf install rdiff-backup
 ----
-
-NOTE: for earlier versions, see the COPR instructions below.
 
 === Debian and derivatives, Raspbian, etc. (from PyPi)
 
@@ -100,6 +107,16 @@ sudo pip install rdiff-backup pyxattr pylibacl  # or rdiff-backup[meta]
 echo 'exec scl enable rh-python36 -- rdiff-backup "$@"' | sudo tee /usr/bin/rdiff-backup
 sudo chmod +x /usr/bin/rdiff-backup
 ----
+
+=== CentOS (Stream) and RHEL 9 & 10 (from PyPi) - x86_64
+
+----
+sudo dnf install python3-pip python3-devel gcc libacl-devel
+sudo dnf install epel-release  #<1>
+sudo dnf install librsync-devel  #<1>
+sudo pip install rdiff-backup[meta]
+----
+<1> Only necessary if the pip install command complains about a missing `librsync.h`.
 
 === Fedora and derivatives (from PyPI)
 
@@ -203,6 +220,8 @@ sudo apt install rdiff-backup
 
 ==== Fedora, CentOS and RHEL (from COPR)
 
+See https://copr.fedorainfracloud.org/coprs/frankcrawford/rdiff-backup/[Frank's rdiff-backup COPR repo] to see which versions are currently supported, then follow the fitting instructions.
+
 On CentOS and RHEL (7 and 8):
 
 ----
@@ -211,7 +230,15 @@ sudo yum copr enable frankcrawford/rdiff-backup
 sudo yum install rdiff-backup
 ----
 
-On Fedora 30+:
+On CentOS (Streams) and RHEL 9:
+
+----
+sudo dnf install dnf-plugins-core epel-release
+sudo dnf copr enable frankcrawford/rdiff-backup
+sudo dnf install rdiff-backup
+----
+
+On Fedora:
 
 ----
 sudo dnf install dnf-plugins-core
