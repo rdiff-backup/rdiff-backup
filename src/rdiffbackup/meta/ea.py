@@ -42,6 +42,16 @@ from rdiffbackup import meta
 from rdiffbackup.singletons import generics, log, specifics
 from rdiffbackup.utils import convert
 
+_XATTR_IGNORE_REASONS = {
+    errno.EOPNOTSUPP: "extended attributes are not supported by the file system or kernel [EOPNOTSUPP]",
+    errno.EPERM: "operation isn't permitted [EPERM]",
+    errno.EACCES: "access has been denied [EACCES]",
+    errno.ENOENT: "the file was not found [ENOENT]",
+    errno.EINVAL: "an argument is invalid (flags, name, or value) [EINVAL]",
+    errno.E2BIG: "the value is too big (e.g. XFS limit) [E2BIG]",
+    errno.ENOSPC: "the value is too big or file system is full (e.g. EXT4 limit) [ENOSPC]",
+}
+
 
 class ExtendedAttributes:
     """Hold a file's extended attribute information"""
@@ -126,40 +136,18 @@ class ExtendedAttributes:
             except OSError as exc:
                 # Mac and Linux attributes have different namespaces, so
                 # fail gracefully if can't call xattr.set
-                if exc.errno in (
-                    errno.EOPNOTSUPP,
-                    errno.EPERM,
-                    errno.EACCES,
-                    errno.ENOENT,
-                    errno.EINVAL,
-                ):
-                    log.Log(
-                        "Unable to write xattr {xa} to path {pa} "
-                        "due to exception '{ex}', ignoring".format(
-                            xa=name, pa=rp, ex=exc
-                        ),
-                        log.INFO,
-                    )
-                    continue
-                # Different file systems answer differently to too big EAs
-                elif exc.errno == errno.E2BIG:  # e.g. XFS
-                    log.Log(
-                        "Unable to write xattr {xa} to path {pa} "
-                        "because it is too big, ignoring".format(xa=name, pa=rp),
-                        log.INFO,
-                    )
-                    continue
-                elif exc.errno == errno.ENOSPC:  # e.g. EXT4
-                    log.Log(
-                        "Unable to write xattr {xa} to path {pa} "
-                        "because it is too big or file system full, ignoring".format(
-                            xa=name, pa=rp
-                        ),
-                        log.INFO,
-                    )
-                    continue
-                else:
+                if exc.errno not in _XATTR_IGNORE_REASONS:
                     raise
+                else:
+                    log.Log(
+                        "Unable to write xattr {xa} to path {pa} because {er}, "
+                        "ignoring".format(
+                            xa=name,
+                            pa=rp,
+                            er=_XATTR_IGNORE_REASONS[exc.errno],
+                        ),
+                        log.INFO,
+                    )
 
     def get(self, name):
         """Return attribute attached to given name"""
