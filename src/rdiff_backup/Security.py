@@ -336,6 +336,7 @@ def _set_allowed_requests(sec_class, sec_level):
                 "_dir_shadow.WriteDirShadow.check",
                 "_dir_shadow.WriteDirShadow.setup",
                 "_repo_shadow.RepoShadow.force_regress",
+                "_repo_shadow.RepoShadow.remove_file",
             ]
         )
     if sec_class == "server":

@@ -49,7 +49,7 @@ from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.locations.map import hardlinks as map_hardlinks
 from rdiffbackup.locations.map import longnames as map_longnames
 from rdiffbackup.singletons import consts, fstats, generics, log, specifics, sstats
-from rdiffbackup.utils import convert, locking, simpleps
+from rdiffbackup.utils import convert, locking, quoting, simpleps
 
 # ### COPIED FROM BACKUP ####
 
@@ -1202,7 +1202,7 @@ class RepoShadow(location.LocationShadow):
 
     # ### COPIED FROM MANAGE ####
 
-    # @API(RepoShadow.remove_increments, 300)
+    # @API(RepoShadow.remove_increments_older_than, 300)
     @classmethod
     def remove_increments_older_than(cls, time_string=None, show_sizes=None):
         """
@@ -1241,6 +1241,153 @@ class RepoShadow(location.LocationShadow):
                 log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
                 rp.delete()
         return consts.RET_CODE_OK
+
+    META_FILES = {
+        b"file_statistics": (
+            b"",
+            quoting.quote_path,
+            quoting.unquote_path,
+            lambda qpath, line: line.startswith(qpath + b" ")
+            or line.startswith(qpath + b"/"),
+        ),
+        b"mirror_metadata": (
+            b"File ",
+            quoting.quote_path,
+            quoting.unquote_path,
+            lambda qpath, line: line == b"File " + qpath + b"\n"
+            or line.startswith(b"File " + qpath + b"/"),
+        ),
+        b"extended_attributes": (
+            b"# file: ",
+            C.acl_quote,
+            C.acl_unquote,
+            lambda qpath, line: line == b"# file: " + qpath + b"\n"
+            or line.startswith(b"# file: " + qpath + b"/"),
+        ),
+        b"access_control_lists": (
+            b"# file: ",
+            C.acl_quote,
+            C.acl_unquote,
+            lambda qpath, line: line == b"# file: " + qpath + b"\n"
+            or line.startswith(b"# file: " + qpath + b"/"),
+        ),
+        b"win_access_control_lists": (
+            b"# file: ",
+            C.acl_quote,
+            C.acl_unquote,
+            lambda qpath, line: line == b"# file: " + qpath + b"\n"
+            or line.startswith(b"# file: " + qpath + b"/"),
+        ),
+    }
+
+    # @API(RepoShadow.remove_file, 300)
+    @classmethod
+    def remove_file(cls):
+        """
+        Remove the referenced increment/file from the repository
+        Returns OK if something was removed, else a warning
+        """
+        file_removed = False
+        for meta_prefix in cls.META_FILES:
+            for meta_file in cls._data_dir.append(meta_prefix).get_incfiles_list():
+                file_removed |= cls._remove_from_metadata(meta_file, meta_prefix)
+
+        for inc_file in cls._ref_inc.get_incfiles_list():
+            log.Log("Removing increment {ip}".format(ip=inc_file), log.INFO)
+            file_removed |= True
+            if not cls._values["dry_run"]:
+                inc_file.delete()
+        if cls._ref_inc.lstat():
+            log.Log("Removing increment {ip}".format(ip=cls._ref_inc), log.INFO)
+            file_removed |= True
+            if not cls._values["dry_run"]:
+                cls._ref_inc.delete()
+        else:
+            log.Log("No increment {ip} to remove".format(ip=cls._ref_inc), log.INFO)
+
+        if cls._ref_path.lstat():
+            log.Log("Removing mirror {mp}".format(mp=cls._ref_path), log.INFO)
+            file_removed |= True
+            if not cls._values["dry_run"]:
+                cls._ref_path.delete()
+        else:
+            log.Log("No mirror {mp} to remove".format(mp=cls._ref_path), log.INFO)
+
+        if file_removed:
+            return consts.RET_CODE_OK
+        else:
+            log.Log(
+                "No file corresponds to reference '{rf}'".format(rf=cls._ref_path),
+                log.WARNING,
+            )
+            return consts.RET_CODE_WARN
+
+    @classmethod
+    def _remove_from_metadata(cls, meta_file, meta_prefix):
+        """
+        This function is used to remove the repo path from the given `meta_file`.
+        """
+
+        anything_removed = False
+        start_marker, quote_fn, unquote_fn, matches = cls.META_FILES[meta_prefix]
+        repopath = cls._ref_path.get_indexpath()
+        log.Log(
+            "Removing entry/ies of or within '{rp}' from '{mf}'".format(
+                rp=convert.to_safe_str(repopath),
+                mf=convert.to_safe_str(meta_file),
+            ),
+            log.INFO,
+        )
+        tmp_file = meta_file.get_temp_rpath(sibling=True)
+        in_fp = meta_file.open("rb", meta_file.isinccompressed())
+        out_fp = tmp_file.open("wb", meta_file.isinccompressed())
+        try:
+            line = in_fp.readline()
+            while line:
+                if line.startswith(start_marker) and matches(quote_fn(repopath), line):
+                    line = in_fp.readline()
+                    while line and not line.startswith(start_marker):
+                        # Special case to handle longfilename
+                        if line.startswith(
+                            b"  AlternateIncrementName "
+                        ) or line.startswith(b"  AlternateMirrorName "):
+                            alt_name = unquote_fn(line.strip(b"\n").rsplit(b" ", 1)[1])
+                            alt_rp = map_longnames.get_long_rp(alt_name)
+
+                            for inc_rp in alt_rp.get_incfiles_list():
+                                log.Log(
+                                    "Removing long increment {ip}".format(ip=inc_rp),
+                                    log.INFO,
+                                )
+                                if not cls._values["dry_run"]:
+                                    inc_rp.delete()
+                            if alt_rp.lstat():
+                                log.Log(
+                                    "Removing long file {ip}".format(ip=alt_rp),
+                                    log.INFO,
+                                )
+                                if not cls._values["dry_run"]:
+                                    alt_rp.delete()
+                            else:
+                                log.Log(
+                                    "No long file {ip} to remove".format(ip=alt_rp),
+                                    log.INFO,
+                                )
+
+                        line = in_fp.readline()
+                    anything_removed |= True
+                else:
+                    out_fp.write(line)
+                    line = in_fp.readline()
+        finally:
+            in_fp.close()
+            out_fp.close()
+        if cls._values["dry_run"] or not anything_removed:
+            tmp_file.delete()
+        else:
+            tmp_file.setdata()
+            rpath.rename(tmp_file, meta_file)
+        return anything_removed
 
     @classmethod
     def _get_removal_time(cls, time_string, show_sizes):

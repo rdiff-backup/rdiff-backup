@@ -228,6 +228,15 @@ See <<_time_formats,TIME FORMATS>> for details.
 Show the size of each increment being removed.
 The default is to _not_ show sizes.
 
+remove *file* [*--dry-run*] _mirror_file_or_dir_:: Remove the given file/directory from the repository.
+Beware that it will be removed from all increments and from the mirror, so that no trace of it will remain in your backup repository!
+This feature is dangerous and mainly meant to remove a big file you might have backed-up by mistake.
++
+CAUTION: the behavior of rdiff-backup is undefined if you remove the _last_ file of an increment.
+
+--dry-run;;
+Try to remove the given file/directory from the backup repository but don't actually change anything.
+
 restore [<<_creation_options,CREATION OPTIONS>>] [<<_compression_options,COMPRESSION OPTIONS>>] [<<_selection_options,SELECTION OPTIONS>>] [<<_filesystem_options,FILESYSTEM OPTIONS>>] [<<_user_group_options,USER GROUP OPTIONS>>] [*--at* _time_|*--increment*] _source_ _targetdir_::
 restore a source backup repository at a specific time or a specific     source increment to a target directory.
 See <<_restoring,RESTORING>> for details.

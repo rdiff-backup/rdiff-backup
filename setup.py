@@ -254,12 +254,6 @@ setup(
                     ("docs", "rdiff-backup.1.adoc"),
                     ("dist", "rdiff-backup.1"),
                 ),
-                (
-                    'asciidoctor -b manpage -a revdate="{date}" '
-                    '-a revnumber="{ver}" -o {outfile} {infile}',
-                    ("docs", "rdiff-backup-delete.1.adoc"),
-                    ("dist", "rdiff-backup-delete.1"),
-                ),
             ]
         },
     },

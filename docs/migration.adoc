@@ -389,4 +389,8 @@ For example, you must call `rdiff-backup --force backup dir1 dir2` because `rdif
 | `+rdiff-backup-statistics --begin-time {datetime} --end-time {datetime} --minimum-ratio {ratio} {backup-repo}+`
 | `+rdiff-backup calculate statistics --begin-time {datetime} --end-time {datetime} --minimum-ratio {ratio} {backup-repo}+`
 
+| Remove a single file from a repository
+| `+rdiff-backup-delete {backup-repo}/{path-to-file}+`
+| `+rdiff-backup remove file {backup-repo}/{path-to-file}+`
+
 |===
