@@ -16,7 +16,7 @@ defaults:
     shell: bash
 
 env:
-  WIN_PYTHON_VERSION: 3.12.0
+  WIN_PYTHON_VERSION: 3.13.12
   WIN_LIBRSYNC_VERSION: v2.3.4
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         #--- Build and deploy Linux wheels using manylinux containers ---
-        many-linux: [_2_28_x86_64]
+        many-linux: [manylinux_2_28_x86_64]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -34,13 +34,13 @@ jobs:
     - name: create manylinux wheel(s) in a container
       uses: addnab/docker-run-action@v1
       with:
-        image: quay.io/pypa/manylinux${{ matrix.many-linux }}
+        image: quay.io/pypa/${{ matrix.many-linux }}
         options: -v ${{ github.workspace }}:/ws
         run: |
           if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
           #py=$(echo ${{ matrix.python-version }} | tr -d .)
-          plat=manylinux${{ matrix.many-linux }}
-          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{12,11,10,9}*/bin
+          plat=${{ matrix.many-linux }}
+          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{13,12,11,10}*/bin
     - name: Upload wheel artifacts
       uses: actions/upload-artifact@v4
       with:

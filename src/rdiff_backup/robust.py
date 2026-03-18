@@ -24,7 +24,6 @@ import zlib
 from rdiff_backup import C, connection, librsync, rpath
 from rdiffbackup.singletons import log, sstats
 
-
 # Those are the signals we want to catch because they relate to conditions
 # impacting only a single file, especially on remote file systems.
 # We list first only the POSIX conform signals, present on all platforms.

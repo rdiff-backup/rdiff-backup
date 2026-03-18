@@ -335,14 +335,10 @@ pattern (such as '**') which matches the base directory""".format(
     def _parse_last_excludes(self):
         """Exit with error if last selection function isn't an exclude"""
         if self.selection_functions and not self.selection_functions[-1].exclude:
-            log.Log.FatalError(
-                """Last selection expression {se}
+            log.Log.FatalError("""Last selection expression {se}
 only specifies that files be included.  Because the default is to
 include all files, the expression is redundant.  Exiting because this
-probably isn't what you meant""".format(
-                    se=self.selection_functions[-1].name
-                )
-            )
+probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
     def _add_selection_func(self, sel_func, add_to_start=None):
         """Add another selection function at the end or beginning"""

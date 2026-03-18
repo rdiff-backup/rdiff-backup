@@ -104,7 +104,7 @@ class RepoShadow(location.LocationShadow):
         # base directory of the repository
         cls._orig_path = increment.StoredRPath.get_copy(orig_path)
         if can_be_sub_path:
-            (base_dir, ref_index, ref_type) = cls._get_repository_dirs(cls._orig_path)
+            base_dir, ref_index, ref_type = cls._get_repository_dirs(cls._orig_path)
             cls._base_dir = base_dir
             cls._ref_index = ref_index
             cls._ref_type = ref_type
@@ -1649,8 +1649,7 @@ class RepoShadow(location.LocationShadow):
         curmirroot = cls._data_dir.append(b"current_mirror")
         curmir_incs = curmirroot.get_incfiles_list()
         if not curmir_incs:
-            log.Log.FatalError(
-                """Bad rdiff-backup-data dir on destination side
+            log.Log.FatalError("""Bad rdiff-backup-data dir on destination side
 
 The rdiff-backup data directory
 {dd}
@@ -1663,10 +1662,7 @@ into a new directory failed.  If this is the case it is safe to delete
 the rdiff-backup-data directory because there is no important
 information in it.
 
-""".format(
-                    dd=cls._data_dir
-                )
-            )
+""".format(dd=cls._data_dir))
         elif len(curmir_incs) == 1:
             return False
         else:
@@ -1822,9 +1818,7 @@ information in it.
     id {pi} is still running.  If two different rdiff-backup processes write
     the same repository simultaneously, data corruption will probably
     result.  To proceed with regress anyway, rerun rdiff-backup with the
-    --force option""".format(
-                        pi=pid
-                    )
+    --force option""".format(pi=pid)
                 )
 
     @classmethod

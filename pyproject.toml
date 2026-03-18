@@ -9,7 +9,7 @@ authors = [
 ]
 description = "Backup and Restore utility, easy to use, efficient, locally and remotely usable"
 readme = {file = "pyproject.readme.md", content-type = "text/markdown"}
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 keywords = [
 	'backup', 'simple', 'easy', 'remote', 'incremental', 'efficient', 'cross-platform'
 ]

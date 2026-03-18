@@ -329,9 +329,7 @@ user:{0}:---
 group::---
 group:root:---
 mask::---
-other::---""".format(
-            current_user
-        ),
+other::---""".format(current_user),
     )
     acl2 = acl_posix.AccessControlLists(
         (b"a2",),
@@ -339,9 +337,7 @@ other::---""".format(
 group::r-x
 group:{0}:rwx
 mask::---
-other::---""".format(
-            current_group
-        ),
+other::---""".format(current_group),
     )
     acl3 = acl_posix.AccessControlLists(
         (b"a3",),
@@ -445,9 +441,7 @@ group::---
 group:root:---
 mask::---
 other::---
-""".format(
-            self.current_user
-        )
+""".format(self.current_user)
         extractor = acl_posix.ACLExtractor(io.BytesIO(os.fsencode(record_list)))
         acl_iter = extractor._iterate_starting_with(())
         first = next(acl_iter)
@@ -615,9 +609,7 @@ group::r-x
 group:root:r-x
 group:{1}:-w-
 mask::r-x
-other::---""".format(
-                    self.current_user, self.current_group
-                ),
+other::---""".format(self.current_user, self.current_group),
             )
             rp.write_acl(acl)
             return rp
@@ -645,7 +637,7 @@ other::---""".format(
             specifics.local_connection, os.path.join(TEST_BASE_DIR, b"acl_map_test")
         )
         make_dir(rootrp)
-        (users_map_rp, groups_map_rp) = write_mapping_files(rootrp)
+        users_map_rp, groups_map_rp = write_mapping_files(rootrp)
 
         comtst.rdiff_backup(
             1,
