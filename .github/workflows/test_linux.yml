@@ -1,5 +1,8 @@
 ---
 name: Test-Linux
+permissions:
+  contents: read
+  pull-requests: read
 
 on:
   push:
