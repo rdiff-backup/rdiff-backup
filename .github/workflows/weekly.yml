@@ -1,5 +1,8 @@
 ---
 name: Deploy-Weekly
+permissions:
+  contents: read
+  pull-requests: read
 
 on:
   schedule:  # Each Sunday (0) at 22:22 UTC
@@ -124,6 +127,9 @@ jobs:
         ls -la to/
 
   release-weekly:
+    permissions:
+      contents: write
+      pull_requests: read
     runs-on: ubuntu-latest
     needs: [build-manylinux, build-sdist, test-built-windows]
     steps:
