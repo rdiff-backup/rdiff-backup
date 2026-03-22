@@ -125,7 +125,7 @@ NOTE: the GitHub releases are created as draft, meaning that a maintainer must r
 
 The same pre-requisites as for the installation of rdiff-backup also apply for building:
 
-* Python 3.9 or higher
+* Python 3.10 or higher
 * librsync 2.0.0 or higher (to be verified)
 
 Further python dependencies are documented in link:../requirements.txt[requirements.txt].
@@ -155,7 +155,7 @@ All of those should come packaged with your system or available from https://pyp
 
 * Windows:
 ** .github/workflows/test_windows.yml - check for `WIN_PYTHON_VERSION`
-** .github/workflows/deploy.yml - check for `WIN_PYTHON_VERSION`
+** .github/workflows/deploy.yml and weekly.yml - check for `WIN_PYTHON_VERSION`
 ** tools/windows/group_vars/windows_hosts/generic.yml - check for `python_version` and `python_version_full` 
 * Linux:
 ** tox.ini, tox_root.ini, tox_dist.ini and tox_slow.ini - check for `envlist`
