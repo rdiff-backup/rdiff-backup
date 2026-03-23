@@ -38,7 +38,7 @@ jobs:
           if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
           #py=$(echo ${{ matrix.python-version }} | tr -d .)
           plat=manylinux${{ matrix.many-linux }}
-          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{12,11,10,9}*/bin
+          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{13,12,11,10}*/bin
     - name: Upload wheel artifacts
       uses: actions/upload-artifact@v4
       with:

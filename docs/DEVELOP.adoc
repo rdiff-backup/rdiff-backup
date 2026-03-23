@@ -155,12 +155,12 @@ All of those should come packaged with your system or available from https://pyp
 
 * Windows:
 ** .github/workflows/test_windows.yml - check for `WIN_PYTHON_VERSION`
-** .github/workflows/deploy.yml and weekly.yml - check for `WIN_PYTHON_VERSION`
+** .github/workflows/{deploy,weekly}.yml - check for `WIN_PYTHON_VERSION`
 ** tools/windows/group_vars/windows_hosts/generic.yml - check for `python_version` and `python_version_full` 
 * Linux:
 ** tox.ini, tox_root.ini, tox_dist.ini and tox_slow.ini - check for `envlist`
 ** .github/workflows/test_linux.yml - check for `python-version`
-** .github/workflows/deploy.yml - check for `/opt/python/cp3...` (and possibly `many-linux`)
+** .github/workflows/{deploy,weekly}.yml - check for `/opt/python/cp3...` (and possibly `many-linux`)
 ** pyproject.toml - check for `requires-python`
 ** README.adoc - check for Python references
 
