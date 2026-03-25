@@ -44,20 +44,20 @@ sudo apt install rdiff-backup  # Debian, Ubuntu & Co
 sudo dnf install rdiff-backup  # Fedora
 ----
 
-==== More complex ways for RHEL, CentOS (Stream), etc
+==== With EPEL for RHEL, CentOS (Stream), etc
 
 .Click here for the instructions
 [%collapsible]
 ====
 
-.RHEL 7 and its replicas (from EPEL)
+.RHEL 9, 10 and their replicas (from EPEL)
 [source,shell]
 ----
-sudo yum install epel-release
-sudo yum install rdiff-backup
-sudo yum install py3libacl pyxattr  #<1>
+sudo dnf config-manager --set-enabled crb  #<1>
+sudo dnf install epel-release
+sudo dnf install rdiff-backup
 ----
-<1> the last line is optional to get ACLs and EAs support.
+<1> There are https://access.redhat.com/articles/4348511[different instructions to enable CodeReady Builder (CRB) on RHEL].
 
 .RHEL 8 and its replicas (from EPEL)
 [source,shell]
@@ -72,42 +72,14 @@ Under RHEL, the repo to enable is https://access.redhat.com/documentation/en-us/
 
 NOTE: This does not enable updates for `PowerTools`, check the distribution documentation for details on how to do this.
 
-.RHEL 9, 10 and their replicas (from EPEL)
+.RHEL 7 and its replicas (from EPEL)
 [source,shell]
 ----
-sudo dnf install epel-release
-sudo dnf install rdiff-backup
-sudo dnf install python3-xattr  #<1>
+sudo yum install epel-release
+sudo yum install rdiff-backup
+sudo yum install py3libacl pyxattr  #<1>
 ----
-<1> `python3-pyxattr` isn't available from EPEL 10, check the PyPi method if you need support for extended attributes.
-
-.CentOS (Stream) and RHEL 9 & 10 (from PyPi)
-[source,shell]
-----
-sudo dnf install python3-pip python3-devel gcc libacl-devel
-sudo dnf install epel-release  #<1>
-sudo dnf install librsync-devel  #<1>
-sudo pip install rdiff-backup[meta]
-----
-<1> Only necessary if the pip install command complains about a missing `librsync.h`.
-
-====
-
-==== More complex ways for Debian, Ubuntu, etc
-
-.Click here for the instructions
-[%collapsible]
-====
-
-.Debian and derivatives, Raspbian, etc. (from PyPi)
-[source,shell]
-----
-sudo apt install python3-pip python3-setuptools python3-pylibacl python3-pyxattr
-sudo pip3 install rdiff-backup
-----
-
-NOTE: If your platform is not i386 or amd64, e.g.
-ARM/MIPS/etc, you may need the build dependencies `build-essentials`, `librsync-dev`.
+<1> the last line is optional to get ACLs and EAs support.
 
 ====
 
@@ -125,16 +97,32 @@ You need to make sure that the following requirements are met, using your system
 * __libacl__ or __libacl1__ or simply __acl__ (optional, to support ACLs)
 * SSH, generally __OpenSSH__, client and/or server (optional, for remote operations)
 
+Here two examples on how to install the dependencies.
+
+.Install dependencies for CentOS (Stream), RHEL 9 & 10, etc
+[source,shell]
+----
+sudo dnf install python3-pip python3-devel gcc libacl-devel
+sudo dnf install epel-release  #<1>
+sudo dnf install librsync-devel  #<1>
+----
+<1> Only necessary if the pip install command complains about a missing `librsync.h`.
+
+.Install dependencies for Debian and derivatives, Raspbian, etc
+[source,shell]
+----
+sudo apt install python3-pip python3-setuptools python3-pylibacl python3-pyxattr
+sudo apt install build-essentials librsync-dev  #<1>
+----
+<1> Probably necessary if your platform is not i386 or amd64, e.g. ARM/MIPS/etc
+
 Then you should only need to call one of the following before you can use rdiff-backup:
 
 [source,shell]
 ----
-sudo pip3 install rdiff-backup        # without optional dependencies
-sudo pip3 install rdiff-backup[meta]  # with support for metadata, ACLs and EAs
+pip3 install rdiff-backup        # without optional dependencies
+pip3 install rdiff-backup[meta]  # with support for metadata, ACLs and EAs
 ----
-
-NOTE: especially if your platform is _not_ i386 or amd64, e.g.
-ARM/MIPS/PowerPC/etc, but also if the pip3 installation fails with `#include [...].h` files missing, you may need the build dependencies named like `python3-devel`, `librsync-dev` or `libacl1-dev`.
 
 If even this fails or you want to install the absolutely latest and greatest, have a look at the xref:docs/DEVELOP.adoc#_build_and_install[Development documentation] for other ways to install.
 
