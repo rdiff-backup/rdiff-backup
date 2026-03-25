@@ -116,13 +116,18 @@ sudo apt install build-essentials librsync-dev  #<1>
 ----
 <1> Probably necessary if your platform is not i386 or amd64, e.g. ARM/MIPS/etc
 
-Then you should only need to call one of the following before you can use rdiff-backup:
+Then you should only need to call one of the following commands before you can use rdiff-backup:
 
 [source,shell]
 ----
 pip3 install rdiff-backup        # without optional dependencies
 pip3 install rdiff-backup[meta]  # with support for metadata, ACLs and EAs
 ----
+
+CAUTION: You can install diff-backup using pip as root (with `sudo` in front) or as normal user, depending on your use case.
+Beware that it is generally not recommended to mix system and pip libraries.
+Hence make sure that you don't install via pip any dependency already packaged for your distro.
+Consider the usage of a https://docs.python.org/3/library/venv.html[virtual environment (virtualenv or venv)] to be extra sure (at the price of added complexity we won't detail here).
 
 If even this fails or you want to install the absolutely latest and greatest, have a look at the xref:docs/DEVELOP.adoc#_build_and_install[Development documentation] for other ways to install.
 
