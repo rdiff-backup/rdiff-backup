@@ -28,39 +28,39 @@ If the optional dependencies pylibacl and pyxattr are installed, rdiff-backup wi
 
 == INSTALLATION
 
-In older Linux distributions the rdiff-backup versions are of the 1.x series, which is not recommended for new installs anymore.
-Follow the instructions below to install the latest 2.x release of rdiff-backup.
+See xref:docs/migration.adoc[how to migrate side-by-side] for migration considerations.
 
-CAUTION: rdiff-backup 1.x and 2.x aren't compatible and can't be mixed in server/client mode!
-See xref:docs/migration.adoc[how to migrate side-by-side].
+=== Linux, BSD & Co
 
-=== Ubuntu Focal or Debian Bullseye or newer (has 2.0)
+==== The simplest way
 
+The `rdiff-backup` package is xref:#_packaging_status_in_distros[available in many distributions] and you can often simply use the standard system installation method.
+We can't list them all but here two examples from the command line:
+
+.It doesn't go simpler
+[source,shell]
 ----
-sudo apt install rdiff-backup
-----
-
-=== Ubuntu backports for older versions (needs a backported 2.0)
-
-----
-sudo apt install software-properties-common
-sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-backports
-sudo apt update
-sudo apt install rdiff-backup
+sudo apt install rdiff-backup  # Debian, Ubuntu & Co
+sudo dnf install rdiff-backup  # Fedora
 ----
 
-=== RHEL 7 and its replicas (from EPEL)
+==== With EPEL for RHEL, CentOS (Stream), etc
 
+.Click here for the instructions
+[%collapsible]
+====
+
+.RHEL 9, 10 and their replicas (from EPEL)
+[source,shell]
 ----
-sudo yum install epel-release
-sudo yum install rdiff-backup
-sudo yum install py3libacl pyxattr
+sudo dnf config-manager --set-enabled crb  #<1>
+sudo dnf install epel-release
+sudo dnf install rdiff-backup
 ----
+<1> There are https://access.redhat.com/articles/4348511[different instructions to enable CodeReady Builder (CRB) on RHEL].
 
-NOTE: the last line is optional to get ACLs and EAs support.
-
-=== RHEL 8 and its replicas (from EPEL)
-
+.RHEL 8 and its replicas (from EPEL)
+[source,shell]
 ----
 sudo dnf install epel-release
 sudo dnf --enablerepo=PowerTools install rdiff-backup
@@ -72,43 +72,22 @@ Under RHEL, the repo to enable is https://access.redhat.com/documentation/en-us/
 
 NOTE: This does not enable updates for `PowerTools`, check the distribution documentation for details on how to do this.
 
-=== Fedora 34+
-
+.RHEL 7 and its replicas (from EPEL)
+[source,shell]
 ----
-sudo dnf install rdiff-backup
+sudo yum install epel-release
+sudo yum install rdiff-backup
+sudo yum install py3libacl pyxattr  #<1>
 ----
+<1> the last line is optional to get ACLs and EAs support.
 
-NOTE: for earlier versions, see the COPR instructions below.
+====
 
-=== Debian and derivatives, Raspbian, etc. (from PyPi)
+==== More complex ways for anything UN*X-oid (from PyPi)
 
-----
-sudo apt install python3-pip python3-setuptools python3-pylibacl python3-pyxattr
-sudo pip3 install rdiff-backup
-----
-
-NOTE: If your platform is not i386 or amd64, e.g.
-ARM/MIPS/etc, you may need the build dependencies `build-essentials`, `librsync-dev`.
-
-=== CentOS and RHEL 6 (from PyPi)
-
-----
-sudo yum install centos-release-scl
-sudo yum install rh-python36 gcc libacl-devel
-scl enable rh-python36 bash
-sudo pip install rdiff-backup pyxattr pylibacl  # or rdiff-backup[meta]
-echo 'exec scl enable rh-python36 -- rdiff-backup "$@"' | sudo tee /usr/bin/rdiff-backup
-sudo chmod +x /usr/bin/rdiff-backup
-----
-
-=== Fedora and derivatives (from PyPI)
-
-----
-sudo dnf install python3-pip python3-setuptools py3libacl python3-pyxattr
-sudo pip3 install rdiff-backup
-----
-
-=== Other Linux and UN*X-oid systems, e.g. BSD (from PyPi)
+.Click here for the instructions
+[%collapsible]
+====
 
 You need to make sure that the following requirements are met, using your system's package/software/application manager, searching there for the following keywords:
 
@@ -118,29 +97,64 @@ You need to make sure that the following requirements are met, using your system
 * __libacl__ or __libacl1__ or simply __acl__ (optional, to support ACLs)
 * SSH, generally __OpenSSH__, client and/or server (optional, for remote operations)
 
-Then you should only need to call one of the following before you can use rdiff-backup:
+Here two examples on how to install the dependencies.
+
+.Install dependencies for CentOS (Stream), RHEL 9 & 10, etc
+[source,shell]
+----
+sudo dnf install python3-pip python3-devel gcc libacl-devel
+sudo dnf install epel-release  #<1>
+sudo dnf install librsync-devel  #<1>
+----
+<1> Only necessary if the pip install command complains about a missing `librsync.h`.
+
+.Install dependencies for Debian and derivatives, Raspbian, etc
+[source,shell]
+----
+sudo apt install python3-pip python3-setuptools python3-pylibacl python3-pyxattr
+sudo apt install build-essentials librsync-dev  #<1>
+----
+<1> Probably necessary if your platform is not i386 or amd64, e.g. ARM/MIPS/etc
+
+Then you should only need to call one of the following commands before you can use rdiff-backup:
 
 [source,shell]
 ----
-sudo pip3 install rdiff-backup        # without optional dependencies
-sudo pip3 install rdiff-backup[meta]  # with support for metadata, ACLs and EAs
+pip3 install rdiff-backup        # without optional dependencies
+pip3 install rdiff-backup[meta]  # with support for metadata, ACLs and EAs
 ----
 
-NOTE: especially if your platform is _not_ i386 or amd64, e.g.
-ARM/MIPS/PowerPC/etc, but also if the pip3 installation fails with `#include [...].h` files missing, you may need the build dependencies named like `python3-devel`, `librsync-dev` or `libacl1-dev`.
+CAUTION: You can install diff-backup using pip as root (with `sudo` in front) or as normal user, depending on your use case.
+Beware that it is generally not recommended to mix system and pip libraries.
+Hence make sure that you don't install via pip any dependency already packaged for your distro.
+Consider the usage of a https://docs.python.org/3/library/venv.html[virtual environment (virtualenv or venv)] to be extra sure (at the price of added complexity we won't detail here).
+
+If even this fails or you want to install the absolutely latest and greatest, have a look at the xref:docs/DEVELOP.adoc#_build_and_install[Development documentation] for other ways to install.
+
+====
 
 === Windows
 
-Just download and unpack the file `rdiff-backup-VERSION.win64exe.zip` (or win32 if need be).
-It is available as _asset_ attached to one of the releases available in the https://github.com/rdiff-backup/rdiff-backup/releases[releases section].
-Then drop the binary `rdiff-backup.exe` somewhere in your PATH and it should work, as it comes with all dependencies included.
+For _remote_ operations, you will need to have an SSH package installed.
+The standard one provided by Microsoft is probably your safest choice, else we recommend using OpenSSH from http://www.mls-software.com/opensshd.html[mls-software.com].
 
 NOTE: starting with rdiff-backup 2.1.1 embedding Python 3.10, rdiff-backup https://www.python.org/downloads/windows/[cannot be used on Windows 7 or earlier].
 
-Another way to install rdiff-backup is to use https://chocolatey.org/[Chocolatey] and call https://community.chocolatey.org/packages/rdiff-backup#install[choco install rdiff-backup].
+==== Install using our packages
 
-For remote operations, you will need to have an SSH package installed.
-The standard one provided by Microsoft is probably your safest choice, else we recommend using OpenSSH from http://www.mls-software.com/opensshd.html[mls-software.com].
+. Go to https://github.com/rdiff-backup/rdiff-backup/releases[releases section].
+. Check the _assets_ attached to the latest releases available.
+. Download and unpack the file `rdiff-backup-VERSION.win64exe.zip` (or win32 if need be).
+. Drop the binary `rdiff-backup.exe` somewhere in your `PATH`.
+. It should work, as it comes with all dependencies included.
+
+==== Install using Chocolatey
+
+Another way to install rdiff-backup is to use https://chocolatey.org/[Chocolatey]:
+
+. Install https://docs.chocolatey.org/en-us/choco/setup/[Chocolatey] (if not already done)
+. Call https://community.chocolatey.org/packages/rdiff-backup#install[choco install rdiff-backup].
+
 
 == BASIC USAGE
 
@@ -158,6 +172,7 @@ taking the above example `cp -i /run/media/myuser/MYUSBDRIVE/homebackup/mydir/my
 
 There are many more ways to use and tweak rdiff-backup, they're documented in the man pages, in the link:docs/[documentation directory], or on https://rdiff-backup.net[our website].
 
+
 == TROUBLESHOOTING
 
 If you have everything installed properly, and it still doesn't work, see the enclosed xref:docs/FAQ.adoc[FAQ], the https://rdiff-backup.net/[rdiff-backup web page] and/or the https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users[rdiff-backup-users mailing list].
@@ -166,6 +181,7 @@ We're also happy to help if you create an issue to our https://github.com/rdiff-
 The most important is probably to explain what happened with which version of rdiff-backup, with which command parameters on which operating system version, and attach the output of rdiff-backup run with the very verbose option `-v9`.
 
 The FAQ in particular is an important reference, especially if you are using smbfs/CIFS, Windows, or have compiled by hand on Mac OS X.
+
 
 == CONTRIBUTING
 
@@ -187,44 +203,10 @@ the xref:docs/rdiff-backup.1.adoc[man page]), or updating the webpage rdiff-back
 If you don't have anything particular in your mind but want to help out, just browse the list of issues.
 Both coding and non-coding tasks have been filed as issues.
 
-For source code related documentation see xref:docs/DEVELOP.adoc[docs/DEVELOP.adoc]
+For source code related documentation see xref:docs/DEVELOP.adoc[docs/DEVELOP.adoc].
+To provide meaningful bug reports and help with testing, please use the latest development release or the https://github.com/rdiff-backup/rdiff-backup/releases/tag/weekly[weekly release].
 
-=== Installing latest development release
 
-To provide meaningful bug reports and help with testing, please use the latest development release.
-
-==== Ubuntu and Debian development releases
-
-----
-sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
-sudo apt update
-sudo apt install rdiff-backup
-----
-
-==== Fedora, CentOS and RHEL (from COPR)
-
-On CentOS and RHEL (7 and 8):
-
-----
-sudo yum install dnf-plugins-core epel-release
-sudo yum copr enable frankcrawford/rdiff-backup
-sudo yum install rdiff-backup
-----
-
-On Fedora 30+:
-
-----
-sudo dnf install dnf-plugins-core
-sudo dnf copr enable frankcrawford/rdiff-backup
-sudo dnf install rdiff-backup
-----
-
-==== PyPi pre-releases
-
-----
-sudo pip3 install rdiff-backup --pre
-----
-
-== Packaging status in distros
+== PACKAGING STATUS IN DISTROS
 
 image::https://repology.org/badge/vertical-allrepos/rdiff-backup.svg?columns=4&minversion=2.2[Packaging status,link=https://repology.org/project/rdiff-backup/versions]
