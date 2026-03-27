@@ -1842,16 +1842,6 @@ def open_local_read(rpath):
     return open(rpath.path, "rb")
 
 
-# @API(delete_dir_no_files, 200)
-def delete_dir_no_files(rp):
-    """Deletes the directory at rp.path if empty. Raises if the
-    directory contains files."""
-    assert rp.isdir(), "Path '{rp}' must be a directory to be deleted.".format(rp=rp)
-    if rp.contains_files():
-        raise RPathException("Directory contains files.")
-    rp.delete()
-
-
 # @API(setdata_local, 200)
 def setdata_local(rp):
     """

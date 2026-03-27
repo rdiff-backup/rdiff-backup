@@ -74,7 +74,6 @@ _file_requests = {
     "os.unlink": 0,
     "os.utime": 0,
     "rpath.make_file_dict": 0,
-    "rpath.delete_dir_no_files": 0,
     "shutil.rmtree": 0,
     "_repo_shadow.RepoShadow.init": 0,
     "_dir_shadow.ReadDirShadow.init": 0,
@@ -303,7 +302,6 @@ def _set_allowed_requests(sec_class, sec_level):
     if sec_level == "read-write":
         requests.update(
             [
-                "rpath.delete_dir_no_files",
                 "rpath.copy_reg_file",  # FIXME really needed?
                 "rpath.make_socket_local",  # FIXME really needed?
                 "rpath.RPath.fsync_local",  # FIXME really needed?
