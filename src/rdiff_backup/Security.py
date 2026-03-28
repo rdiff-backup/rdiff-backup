@@ -59,12 +59,8 @@ _disallowed_server_globals = ["server"]
 # taking a file.
 _file_requests = {
     "os.chmod": 0,
-    "os.chown": 0,
-    "os.lchown": 0,
     "os.link": 1,
     "os.listdir": 0,
-    "os.makedirs": 0,
-    "os.mkdir": 0,
     "os.mkfifo": 0,
     "os.mknod": 0,
     "os.remove": 0,
@@ -307,12 +303,8 @@ def _set_allowed_requests(sec_class, sec_level):
                 "rpath.RPath.fsync_local",  # FIXME really needed?
                 # System
                 "os.chmod",
-                "os.chown",
-                "os.lchown",
                 "os.link",
                 "os.makedev",
-                "os.makedirs",
-                "os.mkdir",
                 "os.mkfifo",
                 "os.mknod",
                 "os.remove",
