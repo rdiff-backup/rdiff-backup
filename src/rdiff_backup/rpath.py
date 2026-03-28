@@ -825,9 +825,12 @@ class RPath(RORPath):
 
     def chown(self, uid, gid):
         """Set file's uid and gid"""
+        assert (
+            self.conn is specifics.local_connection
+        ), "Function chown works locally not over '{conn}'.".format(conn=self.conn)
         if self.issym():
             try:
-                self.conn.os.lchown(self.path, uid, gid)
+                os.lchown(self.path, uid, gid)
             except AttributeError:
                 log.Log(
                     "Function lchown missing, cannot change ownership "
@@ -835,7 +838,7 @@ class RPath(RORPath):
                     log.WARNING,
                 )
         else:
-            self.conn.os.chown(self.path, uid, gid)
+            os.chown(self.path, uid, gid)
         # uid/gid equal to -1 is ignored by chown/lchown
         if uid >= 0:
             self.data["uid"] = uid
@@ -843,19 +846,28 @@ class RPath(RORPath):
             self.data["gid"] = gid
 
     def mkdir(self):
+        assert (
+            self.conn is specifics.local_connection
+        ), "Function mkdir works locally not over '{conn}'.".format(conn=self.conn)
         log.Log("Making directory {di}".format(di=self), log.DEBUG)
-        self.conn.os.mkdir(self.path)
+        os.mkdir(self.path)
         self.setdata()
 
     def makedirs(self):
+        assert (
+            self.conn is specifics.local_connection
+        ), "Function makedirs works locally not over '{conn}'.".format(conn=self.conn)
         log.Log("Making directory path {dp}".format(dp=self), log.DEBUG)
-        self.conn.os.makedirs(self.path)
+        os.makedirs(self.path)
         self.setdata()
 
     def rmdir(self):
+        assert (
+            self.conn is specifics.local_connection
+        ), "Function rmdir works locally not over '{conn}'.".format(conn=self.conn)
         log.Log("Removing directory {di}".format(di=self), log.DEBUG)
-        self.conn.os.chmod(self.path, 0o700)
-        self.conn.os.rmdir(self.path)
+        os.chmod(self.path, 0o700)
+        os.rmdir(self.path)
         self.data = {"type": None}
 
     def listdir(self):
