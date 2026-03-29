@@ -206,7 +206,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 b"remove",
                 ("increments", "--older-than", "30000"),
             ),
-            consts.RET_CODE_WARN,
+            consts.RET_CODE_OK,
         )
         self.assertRegex(
             comtst.rdiff_backup_action(
