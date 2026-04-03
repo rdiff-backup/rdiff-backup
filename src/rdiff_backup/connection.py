@@ -558,6 +558,8 @@ class PipeConnection(LowLevelPipeConnection):
             )
             argument_list.append(arg)
         try:
+            # For specific debugging purposes
+            # print(f"REQUEST: {request} <<{argument_list}>>", file=sys.stderr)
             Security.vet_request(request, argument_list)
             result = self._eval(request.function_string)(*argument_list)
         except BaseException:

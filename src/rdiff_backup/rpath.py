@@ -750,7 +750,7 @@ class RPath(RORPath):
     def chmod(self, permissions, loglevel=log.WARNING):
         """Wrapper around os.chmod"""
         try:
-            self.conn.os.chmod(self.path, permissions & generics.permission_mask)
+            os.chmod(self.path, permissions & generics.permission_mask)
         except OSError as e:
             if e.strerror == "Inappropriate file type or format" and not self.isdir():
                 # Some systems throw this error if try to set sticky bit
@@ -762,7 +762,7 @@ class RPath(RORPath):
                     ),
                     loglevel,
                 )
-                self.conn.os.chmod(
+                os.chmod(
                     self.path, permissions & 0o6777 & generics.permission_mask
                 )
             else:
@@ -778,7 +778,7 @@ class RPath(RORPath):
             log.DEBUG,
         )
         try:
-            self.conn.os.utime(self.path, (accesstime, modtime))
+            os.utime(self.path, (accesstime, modtime))
         except OverflowError:
             log.Log(
                 "Cannot change times of path {pa} to times {ti} - "
@@ -806,7 +806,7 @@ class RPath(RORPath):
                 log.WARNING,
             )
         try:
-            self.conn.os.utime(self.path, (int(time.time()), modtime))
+            os.utime(self.path, (int(time.time()), modtime))
         except OverflowError:
             log.Log(
                 "Cannot change path {pa} to modified time {mt} - "
@@ -877,7 +877,7 @@ class RPath(RORPath):
 
     def symlink(self, linktext):
         """Make symlink at self.path pointing to linktext"""
-        self.conn.os.symlink(linktext, self.path)
+        os.symlink(linktext, self.path)
         self.setdata()
         if not self.issym():
             raise RPathException(
@@ -892,12 +892,12 @@ class RPath(RORPath):
             ),
             log.DEBUG,
         )
-        self.conn.os.link(linkpath, self.path)
+        os.link(linkpath, self.path)
         self.setdata()
 
     def mkfifo(self):
         """Make a fifo at self.path"""
-        self.conn.os.mkfifo(self.path)
+        os.mkfifo(self.path)
         self.setdata()
         if not self.isfifo():
             raise RPathException(
@@ -906,7 +906,7 @@ class RPath(RORPath):
 
     def mksock(self):
         """Make a socket at self.path"""
-        self.conn.rpath.make_socket_local(self)
+        os.mknod(self.path, stat.S_IFSOCK)
         self.setdata()
         if not self.issock():
             raise RPathException(
@@ -976,13 +976,13 @@ class RPath(RORPath):
                 self.conn.shutil.rmtree(self.path)
         else:
             try:
-                self.conn.os.unlink(self.path)
+                os.unlink(self.path)
             except OSError as error:
                 if error.errno in (errno.EPERM, errno.EACCES):
                     # On Windows, read-only files cannot be deleted.
                     # Remove the read-only attribute and try again.
                     self.chmod(0o700)
-                    self.conn.os.unlink(self.path)
+                    os.unlink(self.path)
                 else:
                     raise
 
@@ -1106,30 +1106,19 @@ class RPath(RORPath):
                 return tf
 
     def open(self, mode, compress=None):
-        """Return open file.  Supports modes "w" and "r".
+        """
+        Return open file.  Supports modes "w" and "r".
 
         If compress is true, data written/read will be gzip
-        compressed/decompressed on the fly.  The extra complications
-        below are for security reasons - try to make the extent of the
-        risk apparent from the remote call.
-
+        compressed/decompressed on the fly.
         """
-        if self.conn is specifics.local_connection:
-            if compress:
-                return gzip.GzipFile(self.path, mode)
-            else:
-                return open(self.path, mode)
-
+        assert (
+            self.conn is specifics.local_connection
+        ), "Function open must be called locally not over {co}.".format(co=self.conn)
         if compress:
-            if mode == "r" or mode == "rb":
-                return self.conn.rpath.gzip_open_local_read(self)
-            else:
-                return self.conn.gzip.GzipFile(self.path, mode)
+            return gzip.GzipFile(self.path, mode)
         else:
-            if mode == "r" or mode == "rb":
-                return self.conn.rpath.open_local_read(self)
-            else:
-                return self.conn.open(self.path, mode)
+            return open(self.path, mode)
 
     def write_from_fileobj(self, fp, compress=None):
         """Reads fp and writes to self.path.  Closes both when done
@@ -1172,7 +1161,7 @@ class RPath(RORPath):
         else:
             raise RPathException
         try:
-            self.conn.os.mknod(self.path, mode, self.conn.os.makedev(major, minor))
+            os.mknod(self.path, mode, os.makedev(major, minor))
         except OSError as exc:
             log.Log(
                 "Unable to mknod device file '{df}' due to "
@@ -1183,22 +1172,21 @@ class RPath(RORPath):
         self.setdata()
 
     def fsync(self, fp=None):
-        """fsync the current file or directory
+        """
+        fsync the current file or directory
 
         If fp is none, get the file description by opening the file.
         This can be useful for directories.
-
         """
         if generics.do_fsync:
             if not fp:
-                self.conn.rpath.RPath.fsync_local(self)
+                self.fsync_open()
             else:
                 os.fsync(fp.fileno())
 
-    # @API(RPath.fsync_local, 200)
-    def fsync_local(self):
+    def fsync_open(self):
         """
-        fsync current file, run locally
+        fsync current file, trying to open it
         """
         assert (
             self.conn is specifics.local_connection
@@ -1498,12 +1486,16 @@ def copyfileobj(inputfp, outputfp):
         outputfp.write(b"\x00")
 
 
-def copy(rpin, rpout, compress=0):
+def copy(rpin: RORPath, rpout: RPath, compress=0):
     """Copy RPath or RORPath rpin to rpout.  Works for symlinks, dirs, etc.
 
     Returns close value of input for regular file, which can be used
     to pass hashes on.
     """
+    assert (
+        rpout.conn == specifics.local_connection
+        and not hasattr(rpin, "conn") or rpin.conn == specifics.local_connection
+    ), "Function copy works locally not over '{conn}'.".format(conn=rpout.conn)
     log.Log(
         "Regular copying input path {ip} to output path {op}".format(ip=rpin, op=rpout),
         log.DEBUG,
@@ -1520,7 +1512,7 @@ def copy(rpin, rpout, compress=0):
             return
 
     if rpin.isreg():
-        return copy_reg_file(rpin, rpout, compress)
+        return rpout.write_from_fileobj(rpin.open("rb"), compress=compress)
     elif rpin.isdir():
         rpout.mkdir()
     elif rpin.issym():
@@ -1540,31 +1532,6 @@ def copy(rpin, rpout, compress=0):
         rpout.mksock()
     else:
         raise RPathException("File '{rp!r}' has unknown type.".format(rp=rpin))
-
-
-# @API(copy_reg_file, 200)
-def copy_reg_file(rpin, rpout, compress=0):
-    """Copy regular file rpin to rpout, possibly avoiding connection"""
-    try:
-        if rpout.conn is rpin.conn and rpout.conn is not specifics.local_connection:
-            v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
-            rpout.setdata()
-            return v
-    except AttributeError:
-        pass
-    try:
-        return rpout.write_from_fileobj(rpin.open("rb"), compress=compress)
-    except OSError as e:
-        if e.errno == errno.ERANGE:
-            log.Log.FatalError(
-                "'OSError - Result too large' while reading file {fi}. "
-                "If you are using a Mac, this is probably "
-                "the result of HFS+ filesystem corruption. "
-                "Please exclude this file from your backup "
-                "before proceeding".format(fi=rpin)
-            )
-        else:
-            raise
 
 
 def cmp(rpin, rpout):
@@ -1716,7 +1683,7 @@ def rename(rp_source, rp_dest):
             rp_source.delete()
         else:
             try:
-                rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+                os.rename(rp_source.path, rp_dest.path)
             except OSError as error:
                 # XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
                 # pathname too long on Windows
@@ -1730,9 +1697,9 @@ def rename(rp_source, rp_dest):
                     return
                 elif error.errno == errno.EEXIST:
                     # On Windows, files can't be renamed on top of an existing file
-                    rp_source.conn.os.chmod(rp_dest.path, 0o700)
-                    rp_source.conn.os.unlink(rp_dest.path)
-                    rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+                    os.chmod(rp_dest.path, 0o700)
+                    os.unlink(rp_dest.path)
+                    os.rename(rp_source.path, rp_dest.path)
                 else:
                     log.Log(
                         "Exception '{ex}' while renaming from path {fp} "
@@ -1821,37 +1788,6 @@ def make_file_dict(filename):
         data["atime"] = int(statblock[stat.ST_ATIME])
         data["ctime"] = int(statblock[stat.ST_CTIME])
     return data
-
-
-# @API(make_socket_local, 200)
-def make_socket_local(rpath):
-    """Make a local socket at the given path
-
-    This takes an rpath so that it will be checked by Security.
-    (Miscellaneous strings will not be.)
-    """
-    assert (
-        rpath.conn is specifics.local_connection
-    ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
-    rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
-
-
-# @API(gzip_open_local_read, 200)
-def gzip_open_local_read(rpath):
-    """Return open GzipFile.  See security note directly above"""
-    assert (
-        rpath.conn is specifics.local_connection
-    ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
-    return gzip.GzipFile(rpath.path, "rb")
-
-
-# @API(open_local_read, 200)
-def open_local_read(rpath):
-    """Return open file (provided for security reasons)"""
-    assert (
-        rpath.conn is specifics.local_connection
-    ), "Function works locally not over '{conn}'.".format(conn=rpath.conn)
-    return open(rpath.path, "rb")
 
 
 # @API(setdata_local, 200)
