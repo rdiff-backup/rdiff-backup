@@ -7,6 +7,10 @@ permissions:
 on:
   schedule:  # Each Sunday (0) at 22:22 UTC
     - cron: '22 22 * * 0'
+  push:  # for trying things
+    branches: ['*_weekly']
+    tags:
+    - '*_weekly'
 
 # necessary for Windows
 defaults:
@@ -33,7 +37,7 @@ jobs:
       uses: addnab/docker-run-action@v1
       with:
         image: quay.io/pypa/manylinux${{ matrix.many-linux }}
-        options: -v ${{ github.workspace }}:/ws
+        options: -v ${{ github.workspace }}:/ws --user 1001:1001
         run: |
           if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
           #py=$(echo ${{ matrix.python-version }} | tr -d .)

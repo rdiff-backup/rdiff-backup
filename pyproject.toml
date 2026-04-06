@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=67.0.0", "setuptools-scm>=7.1.0"]
+requires = ["setuptools>=77.0.0", "setuptools-scm>=7.1.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,7 +13,7 @@ requires-python = ">=3.10"
 keywords = [
 	'backup', 'simple', 'easy', 'remote', 'incremental', 'efficient', 'cross-platform'
 ]
-license = {text = "GPL-2.0-or-later"}
+license = "GPL-2.0-or-later"
 classifiers = [
 	'Development Status :: 5 - Production/Stable',
 	'Environment :: Console',
@@ -27,7 +27,6 @@ classifiers = [
 	'Topic :: System :: Archiving :: Backup',
 ]
 dependencies = [
-	'importlib-metadata ; python_version < "3.8"',
 	'pywin32 ; platform_system == "Windows"',
 	'PyYAML',
 ]
