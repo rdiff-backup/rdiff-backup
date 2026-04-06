@@ -34,6 +34,11 @@ case "${ruby_version}" in
 		;;
 esac
 
+# To avoid complaints from setuptools_scm resp. git or pip
+git config --global --add safe.directory "${basedir}"
+PIP_ROOT_USER_ACTION=ignore
+export PIP_ROOT_USER_ACTION
+
 # Compile wheels
 for PYBIN in $pybindirs; do
     "${PYBIN}/pip" install --user -r ${requs_dir}/base.txt
