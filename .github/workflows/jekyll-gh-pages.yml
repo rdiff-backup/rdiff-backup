@@ -26,26 +26,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: install dependencies and call Jekyll
         run: |
           sudo gem install bundler
           cd docs
           bundle install
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" .
-#      - name: Setup Pages
-#      - name: Setup Pages
-#        uses: actions/configure-pages@v2
-#      - name: Build with Jekyll
-#        uses: actions/jekyll-build-pages@v1
-#        with:
-#          source: ./docs
-#          destination: ./docs/_site
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./docs/_site
 
@@ -59,4 +51,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

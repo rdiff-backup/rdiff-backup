@@ -24,12 +24,12 @@ jobs:
     steps:
     - name: skip on pull requests purely for documentation
       run: echo SKIP=${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, '[DOC] ') }} >> "$GITHUB_ENV"
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       if: ${{ env.SKIP != 'true' }}
     - name: Set up Python ${{ matrix.python-version }}
       id: inst-py
       if: ${{ env.SKIP != 'true' }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
