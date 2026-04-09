@@ -58,9 +58,7 @@ _disallowed_server_globals = ["server"]
 # The keys are files request, the value is the index of the argument
 # taking a file.
 _file_requests = {
-    "os.listdir": 0,
     "rpath.make_file_dict": 0,
-    "shutil.rmtree": 0,
     "_repo_shadow.RepoShadow.init": 0,
     "_dir_shadow.ReadDirShadow.init": 0,
     "_dir_shadow.WriteDirShadow.init": 0,
@@ -227,11 +225,7 @@ def _set_allowed_requests(sec_class, sec_level):
             [
                 "rpath.make_file_dict",
                 "rpath.setdata_local",
-                # System
-                "os.getuid",
-                "os.listdir",
                 # API >= 201
-                "platform.system",
                 "_repo_shadow.RepoShadow.get_config",
                 "_repo_shadow.RepoShadow.get_mirror_time",
                 "_repo_shadow.RepoShadow.needs_regress",

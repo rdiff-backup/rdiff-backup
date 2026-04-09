@@ -762,9 +762,7 @@ class RPath(RORPath):
                     ),
                     loglevel,
                 )
-                os.chmod(
-                    self.path, permissions & 0o6777 & generics.permission_mask
-                )
+                os.chmod(self.path, permissions & 0o6777 & generics.permission_mask)
             else:
                 raise
         self.data["perms"] = permissions
@@ -816,9 +814,7 @@ class RPath(RORPath):
         except OSError:
             # It's not possible to set a modification time for
             # directories on Windows.
-            if not self.isdir():
-                raise
-            if self.conn.platform.system() != "Windows":
+            if not (self.isdir() and os.name == "nt"):
                 raise
         else:
             self.data["mtime"] = modtime
@@ -872,8 +868,7 @@ class RPath(RORPath):
 
     def listdir(self):
         """Return list of string paths returned by os.listdir"""
-        path = self.path
-        return self.conn.os.listdir(path)
+        return os.listdir(self.path)
 
     def symlink(self, linktext):
         """Make symlink at self.path pointing to linktext"""
@@ -952,17 +947,13 @@ class RPath(RORPath):
 
     def isowner(self):
         """Return true if current process is owner of rp or root"""
-        try:
-            uid = self.conn.os.getuid()
-        except AttributeError:
-            return True  # Windows doesn't have getuid(), so hope for the best
+        uid = self.conn.specifics.get("process_uid")
         return uid == 0 or ("uid" in self.data and uid == self.data["uid"])
 
     def isgroup(self):
         """Return true if process has group of rp"""
-        return "gid" in self.data and self.data["gid"] in self.conn.specifics.get(
-            "process_groups"
-        )
+        groups = self.conn.specifics.get("process_groups")
+        return "gid" in self.data and self.data["gid"] in groups
 
     def delete(self):
         """Delete file at self.path.  Recursively deletes directories."""
@@ -973,7 +964,7 @@ class RPath(RORPath):
             except os.error:
                 if generics.fsync_directories:
                     self.fsync()
-                self.conn.shutil.rmtree(self.path)
+                shutil.rmtree(self.path)
         else:
             try:
                 os.unlink(self.path)
@@ -1494,7 +1485,8 @@ def copy(rpin: RORPath, rpout: RPath, compress=0):
     """
     assert (
         rpout.conn == specifics.local_connection
-        and not hasattr(rpin, "conn") or rpin.conn == specifics.local_connection
+        and not hasattr(rpin, "conn")
+        or rpin.conn == specifics.local_connection
     ), "Function copy works locally not over '{conn}'.".format(conn=rpout.conn)
     log.Log(
         "Regular copying input path {ip} to output path {op}".format(ip=rpin, op=rpout),

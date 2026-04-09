@@ -537,9 +537,10 @@ def _test_connection(conn_number, rp):
                 log.ERROR,
             )
             return False
-        if type(conn.os.listdir(rp.path)) is not list:
+        data = conn.rpath.make_file_dict(rp.path)
+        if not isinstance(data, dict) or "type" not in data or data["type"] != "dir":
             log.Log(
-                "Connection not listing directory '{rp}'".format(rp=rp),
+                "Connection not listing '{rp}' as directory".format(rp=rp),
                 log.ERROR,
             )
             return False

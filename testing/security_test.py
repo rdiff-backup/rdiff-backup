@@ -25,7 +25,7 @@ class SecurityTest(unittest.TestCase):
             b"%s server --restrict-path foo --restrict-mode read-only" % comtst.RBBin
         )
         conn = SetConnections._init_connection(remote_cmd)
-        self.assertIsInstance(conn.os.getuid(), int)
+        self.assertIsInstance(conn.specifics.get("process_uid"), int)
         with self.assertRaises(Security.Violation):
             conn.os.remove(b"/tmp/foobar")
         SetConnections.CloseConnections()
@@ -36,7 +36,7 @@ class SecurityTest(unittest.TestCase):
             b"%s server --restrict-path foo --restrict-mode update-only" % comtst.RBBin
         )
         conn = SetConnections._init_connection(remote_cmd)
-        self.assertIsInstance(conn.os.getuid(), int)
+        self.assertIsInstance(conn.specifics.get("process_uid"), int)
         with self.assertRaises(Security.Violation):
             conn.os.remove(b"/tmp/foobar")
         SetConnections.CloseConnections()
