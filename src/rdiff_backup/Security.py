@@ -58,24 +58,7 @@ _disallowed_server_globals = ["server"]
 # The keys are files request, the value is the index of the argument
 # taking a file.
 _file_requests = {
-    "os.chmod": 0,
-    "os.chown": 0,
-    "os.lchown": 0,
-    "os.link": 1,
-    "os.listdir": 0,
-    "os.makedirs": 0,
-    "os.mkdir": 0,
-    "os.mkfifo": 0,
-    "os.mknod": 0,
-    "os.remove": 0,
-    "os.rename": 0,
-    "os.rmdir": 0,
-    "os.symlink": 1,
-    "os.unlink": 0,
-    "os.utime": 0,
     "rpath.make_file_dict": 0,
-    "rpath.delete_dir_no_files": 0,
-    "shutil.rmtree": 0,
     "_repo_shadow.RepoShadow.init": 0,
     "_dir_shadow.ReadDirShadow.init": 0,
     "_dir_shadow.WriteDirShadow.init": 0,
@@ -240,15 +223,9 @@ def _set_allowed_requests(sec_class, sec_level):
     ):
         requests.update(
             [
-                "rpath.gzip_open_local_read",
                 "rpath.make_file_dict",
-                "rpath.open_local_read",
                 "rpath.setdata_local",
-                # System
-                "os.getuid",
-                "os.listdir",
                 # API >= 201
-                "platform.system",
                 "_repo_shadow.RepoShadow.get_config",
                 "_repo_shadow.RepoShadow.get_mirror_time",
                 "_repo_shadow.RepoShadow.needs_regress",
@@ -303,27 +280,6 @@ def _set_allowed_requests(sec_class, sec_level):
     if sec_level == "read-write":
         requests.update(
             [
-                "rpath.delete_dir_no_files",
-                "rpath.copy_reg_file",  # FIXME really needed?
-                "rpath.make_socket_local",  # FIXME really needed?
-                "rpath.RPath.fsync_local",  # FIXME really needed?
-                # System
-                "os.chmod",
-                "os.chown",
-                "os.lchown",
-                "os.link",
-                "os.makedev",
-                "os.makedirs",
-                "os.mkdir",
-                "os.mkfifo",
-                "os.mknod",
-                "os.remove",
-                "os.rename",
-                "os.rmdir",
-                "os.symlink",
-                "os.unlink",
-                "os.utime",
-                "shutil.rmtree",
                 # API >= 201
                 "_repo_shadow.RepoShadow.regress",
                 "_repo_shadow.RepoShadow.remove_increments_older_than",
