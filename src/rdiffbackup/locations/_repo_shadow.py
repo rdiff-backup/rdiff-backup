@@ -1230,7 +1230,7 @@ class RepoShadow(location.LocationShadow):
         if removal_time < 0:  # no increment is old enough
             log.Log(
                 "No increment is older than '{ot}'".format(ot=time_string),
-                log.WARNING,
+                log.NOTE,
             )
             return consts.RET_CODE_WARN
 
@@ -1411,12 +1411,6 @@ class RepoShadow(location.LocationShadow):
             ]
         times_in_secs = [t for t in times_in_secs if t < action_time]
         if not times_in_secs:
-            log.Log(
-                "No increments older than {at} found, exiting.".format(
-                    at=Time.timetopretty(action_time)
-                ),
-                log.NOTE,
-            )
             return -1
 
         times_in_secs.sort()
