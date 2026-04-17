@@ -262,7 +262,10 @@ def parse_location(file_desc):
     file_path = sbs.join([x.replace(sbs + b":", b":") for x in file_path.split(dbs)])
     # And then we make sure that paths under Windows use / instead of \
     # (we don't do it for the host part because it could be a shell command)
-    file_path = file_path.replace(b"\\", b"/")
+    # On non-Windows platforms, backslash is a valid filename character and
+    # must not be converted to forward slash (fixes #1040).
+    if os.name == "nt":
+        file_path = file_path.replace(b"\\", b"/")
     if is_unc_path:
         file_path = b"/" + file_path
 
