@@ -743,9 +743,7 @@ class RPath(RORPath):
 
     def setdata(self):
         """Set data dictionary using the wrapper"""
-        self.data = self.conn.rpath.make_file_dict(self.path)
-        if self.lstat():
-            self.conn.rpath.setdata_local(self)
+        self.data = self.conn.rpath.get_rpath_data(self)
 
     def chmod(self, permissions, loglevel=log.WARNING):
         """Wrapper around os.chmod"""
@@ -1704,26 +1702,21 @@ def rename(rp_source, rp_dest):
         rp_source.data = {"type": None}
 
 
-# @API(make_file_dict, 200)
-def make_file_dict(filename):
-    """Generate the data dictionary for the given RPath
-
-    This is a global function so that os.name can be called locally,
-    thus avoiding network lag and so that we only need to send the
-    filename over the network, thus avoiding the need to pickle an
-    (incomplete) rpath object.
+# @API(get_rpath_data, 300)
+def get_rpath_data(rp):
+    """
+    Generate and return the data dictionary for the given path
     """
 
     try:
-        statblock = os.lstat(filename)
+        statblock = os.lstat(rp)
     except (FileNotFoundError, NotADirectoryError, PermissionError):
         # FIXME not sure if this shouldn't trigger a warning but doing it
         # generates (too) many messages during the tests
         # log.Log("Missing file '{mf}' couldn't be assessed".format(
-        #             mf=filename), log.WARNING)
+        #             mf=rp), log.WARNING)
         # FIXME perhaps we should have a different type/flag for this case?
         return {"type": None}
-    data = {}
     mode = statblock[stat.ST_MODE]
 
     if stat.S_ISREG(mode):
@@ -1733,32 +1726,36 @@ def make_file_dict(filename):
     elif stat.S_ISCHR(mode):
         type_ = "dev"
         s = statblock.st_rdev
-        data["devnums"] = ("c", os.major(s), os.minor(s))
+        rp.data["devnums"] = ("c", os.major(s), os.minor(s))
     elif stat.S_ISBLK(mode):
         type_ = "dev"
         s = statblock.st_rdev
-        data["devnums"] = ("b", os.major(s), os.minor(s))
+        rp.data["devnums"] = ("b", os.major(s), os.minor(s))
     elif stat.S_ISFIFO(mode):
         type_ = "fifo"
     elif stat.S_ISLNK(mode):
         type_ = "sym"
-        data["linkname"] = os.readlink(filename)
+        rp.data["linkname"] = os.readlink(rp)
     elif stat.S_ISSOCK(mode):
         type_ = "sock"
     else:
-        raise C.UnknownFileError(filename)
-    data["type"] = type_
-    data["size"] = statblock[stat.ST_SIZE]
-    data["perms"] = stat.S_IMODE(mode)
-    data["uid"] = statblock[stat.ST_UID]
-    data["gid"] = statblock[stat.ST_GID]
-    data["inode"] = statblock[stat.ST_INO]
-    data["devloc"] = statblock[stat.ST_DEV]
-    data["nlink"] = statblock[stat.ST_NLINK]
+        raise C.UnknownFileError(rp)
+    rp.data["type"] = type_
+    rp.data["size"] = statblock[stat.ST_SIZE]
+    rp.data["perms"] = stat.S_IMODE(mode)
+    rp.data["uid"] = statblock[stat.ST_UID]
+    rp.data["gid"] = statblock[stat.ST_GID]
+    rp.data["inode"] = statblock[stat.ST_INO]
+    rp.data["devloc"] = statblock[stat.ST_DEV]
+    rp.data["nlink"] = statblock[stat.ST_NLINK]
+
+    # Map user and group IDs to names
+    rp.data["uname"] = usrgrp.uid2uname(rp.data["uid"])
+    rp.data["gname"] = usrgrp.gid2gname(rp.data["gid"])
 
     if os.name == "nt":
         try:
-            attribs = win32api.GetFileAttributes(os.fsdecode(filename))
+            attribs = win32api.GetFileAttributes(os.fsdecode(rp))
         except pywintypes.error as exc:
             if exc.args[0] == 32:  # file in use
                 # we could also ignore with: return {'type': None}
@@ -1768,31 +1765,26 @@ def make_file_dict(filename):
                 # we replace the specific Windows exception by a generic
                 # one also understood by a potential Linux client/server
                 raise OSError(
-                    None, exc.args[1] + " - " + exc.args[2], filename, exc.args[0]
+                    None, exc.args[1] + " - " + exc.args[2], rp.path, exc.args[0]
                 ) from None
         if attribs & win32con.FILE_ATTRIBUTE_REPARSE_POINT:
-            data["type"] = "sym"
-            data["linkname"] = None
+            rp.data["type"] = "sym"
+            rp.data["linkname"] = None
 
     if not (type_ == "sym" or type_ == "dev"):
         # mtimes on symlinks and dev files don't work consistently
-        data["mtime"] = int(statblock[stat.ST_MTIME])
-        data["atime"] = int(statblock[stat.ST_ATIME])
-        data["ctime"] = int(statblock[stat.ST_CTIME])
-    return data
+        rp.data["mtime"] = int(statblock[stat.ST_MTIME])
+        rp.data["atime"] = int(statblock[stat.ST_ATIME])
+        rp.data["ctime"] = int(statblock[stat.ST_CTIME])
+    return _add_rpath_metadata(rp)
 
 
-# @API(setdata_local, 200)
-def setdata_local(rp):
+def _add_rpath_metadata(rp):
     """
     Set eas/acls, uid/gid, resource fork in data dictionary
 
-    This is a global function because it must be called locally, since
-    these features may exist or not depending on the connection.
+    Return the data dictionary completed with this information
     """
-    assert (
-        rp.conn is specifics.local_connection
-    ), "Function must be called locally not over {conn}.".format(conn=rp.conn)
     reset_perms = False
     if specifics.process_uid != 0 and not rp.readable() and rp.isowner():
         if rp.lstat() == "sym":
@@ -1801,19 +1793,17 @@ def setdata_local(rp):
             # Neither Windows nor Linux support chmod without following
             # symlinks, so we would anyway try to chmod the file pointed at,
             # not the symlink itself
-            rp.data["type"] = None
             log.ErrorLog(
                 "ListError",
                 rp,
                 OSError("[Errno n/a] Ignoring strange unreadable symlink"),
             )
-            return
+            rp.data["type"] = None
+            return rp.data
         else:
             reset_perms = True
             rp.chmod(0o400 | rp.getperms())
 
-    rp.data["uname"] = usrgrp.uid2uname(rp.data["uid"])
-    rp.data["gname"] = usrgrp.gid2gname(rp.data["gid"])
     if specifics.eas_conn:
         rp.data["ea"] = ea.get_meta(rp)
     if specifics.acls_conn:
@@ -1827,6 +1817,8 @@ def setdata_local(rp):
 
     if reset_perms:
         rp.chmod(rp.getperms() & ~0o400)
+
+    return rp.data
 
 
 def _carbonfile_get(rp):
