@@ -28,7 +28,7 @@ We are only assuming that:
 * You have Linux.
 * You are somewhat confident with the command line, SSH and an editor of your choice.
 * You have a https://github.com/join[GitHub account] we'll call `MYGHUSER` with an https://docs.github.com/en/authentication/connecting-to-github-with-ssh[SSH key assigned].
-* `APT_DNF_ZYPPER` is a placeholder for whatever package manager is used on your Linux version, and you have the necessary access rights to call it via `sudo` (`sudo pacman -S ...` is also fine, or whatever).
+* `APT_DNF_ZYPPER` is a placeholder for whatever package manager is used on your Linux version, and you have the necessary access rights to call it via `sudo` (`sudo pacman -S ...` is also fine instead, or whatever).
 
 Once you're ready, start with the dependencies:
 
@@ -38,6 +38,7 @@ Once you're ready, start with the dependencies:
 [source,shell]
 ----
 sudo apt update  # only under Debian/Ubuntu
+sudo pacman -Sy  # only under pacman-based distros
 sudo APT_DNF_ZYPPER install git findutils python3
 sudo apt install python3-venv  # only under Debian/Ubuntu
 git clone git@github.com:rdiff-backup/rdiff-backup-filesrepo.git
