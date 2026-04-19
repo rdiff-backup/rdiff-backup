@@ -4,7 +4,7 @@
 # Possible profiles are: usage, devel
 # e.g. BINDEP=devel ./create_venv.sh my/venv/dir python3.12
 
-VENV=${1:-dist/rdb}
+VENV=${1:-.venv}
 PYTHON=${2:-python3}
 mkdir -p $(dirname ${VENV})
 ${PYTHON} -m venv ${VENV}

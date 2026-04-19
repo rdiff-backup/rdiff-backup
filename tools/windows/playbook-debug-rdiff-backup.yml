@@ -6,12 +6,12 @@
     - name: prepare variable backquote to avoid quoting issues
       set_fact:
         bq: \
-    - name: create virtualenv under dist/rdb
+    - name: create virtualenv under .venv
       win_command:
         cmd: tools\win_create_venv.bat
       args:
         chdir: "{{ rdiffbackup_dir }}"
-        creates: "{{ rdiffbackup_dir }}/dist/rdb"
+        creates: "{{ rdiffbackup_dir }}/.venv"
       environment:
         LIBRSYNC_DIR: "{{ librsync_install_dir | replace('/', bq) }}"
     - name: create dist\setup-rdiff-backup.bat to call rdiff-backup from the venv

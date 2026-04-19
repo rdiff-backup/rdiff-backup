@@ -2,27 +2,110 @@
 :page-name: Development Guide
 :sectnums:
 :toc: macro
+:python_min_version: 3.10
 
 link:.[Home,role="button round"] // *{page-name}*
 
 '''''
 
+While this document focusses more on the processual and technical aspects of development (under Linux), it has a few companion documents highlighting specific aspects of development:
+
+* xref:CODING.adoc[Coding Conventions].
+* xref:DOCUMENTATION.adoc[Documentation Guidelines].
+* And development guides addressing xref:Windows-DEVELOP.adoc[Windows] and xref:MacOS-DEVELOP.adoc[MacOS].
+
+But let's start with this document.
+
 toc::[]
 
+== BEGINNER'S STEP BY STEP INTRODUCTION
 
-NOTE: Suggest https://github.com/rdiff-backup/rdiff-backup/issues/new?title=Docs%20feedback:%20/docs/DEVELOP.md[improvements to this documentation]!
+This chapter is a very opinionated way of starting programming for `rdiff-backup`.
+If you are a seasoned Python programmer, you might want to skip it.
 
-== GETTING THE SOURCE
+We are only assuming that:
 
-Simply clone the source with:
+* You have Linux.
+* You are somewhat confident with the command line, SSH and an editor of your choice.
+* You have a https://github.com/join[GitHub account] we'll call `MYGHUSER` with an https://docs.github.com/en/authentication/connecting-to-github-with-ssh[SSH key assigned].
+* `APT_DNF_ZYPPER` is a placeholder for whatever package manager is used on your Linux version, and you have the necessary access rights to call it via `sudo` (`sudo pacman -S ...` is also fine instead, or whatever).
 
+Once you're ready, start with the dependencies:
+
+. https://github.com/rdiff-backup/rdiff-backup/fork[Fork the rdiff-backup repository] into your user `MYGHUSER`.
+. Go through the following commands once:
++
 [source,shell]
 ----
-git clone https://github.com/rdiff-backup/rdiff-backup.git
+sudo apt update  # only under Debian/Ubuntu
+sudo pacman -Sy  # only under pacman-based distros
+sudo APT_DNF_ZYPPER install git findutils python3
+sudo apt install python3-venv  # only under Debian/Ubuntu
+git clone git@github.com:rdiff-backup/rdiff-backup-filesrepo.git
+sudo tar xf rdiff-backup-filesrepo/rdiff-backup_testfiles.tar
+sudo ./rdiff-backup-filesrepo/rdiff-backup_testfiles.fix.sh  #<1>
+git clone git@github.com:MYGHUSER/rdiff-backup.git
+cd rdiff-backup
+python3 -m venv .venv  #<2>
+. .venv/bin/activate  #<3>
+pip install bindep  #<4>
+pip install --upgrade pip  #<5>
+pip install powerline-status  #<6>
+sudo dnf config-manager --set-enabled crb  # only under CentOS & Co
+sudo dnf install epel-release  # only under CentOS & Co
+sudo APT_DNF_ZYPPER install $(bindep -b devel)  #<7>
+pip install -r requirements.txt
+pip install .  #<8>
+which rdiff-backup  #<9>
+rdiff-backup --version  #<10>
 ----
+<1> This command must be called as the user with which you'll test. 
+    Don't call it directly as root.
+<2> This create a https://docs.python.org/3/tutorial/venv.html[Virtual Environment] so that you keep your system clean.
+<3> It's really a single point followed by `.venv/...`.
+    Anyway, after that command, your prompt should have `(.venv)` prefix.
+    If not, something is wrong and should be fixed before continuing.
+<4> https://docs.opendev.org/opendev/bindep/[bindep] allows us to define non-Python dependencies in `bindep.txt`.
+<5> If pip tells you to do so, it's just annoying.
+<6> If using vim from within the venv gives you powerline warnings; again annoying...
+    You may ignore potential deprecation warnings.
+<7> This might fail under the more exotic Linux versions, feel free to provide a patch to `bindep.txt` or raise an issue together with the output of `bindep --profiles`.
+<8> You're installing `rdiff-backup` from the Git repository.
+<9> This should point at the `rdiff-backup` installed within the venv `.../.venv/bin/rdiff-backup`.
+<10> The version is typically longer than usual and with a `dev` in it.
 
-NOTE: If you plan to provide your own code, you should first fork our repo and clone your own forked repo (probably using ssh not https).
-How is described at https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks
+At this point, you can use `rdiff-backup` almost as normal, e.g. `rdiff-backup info` or `rdiff-backup --help`.
+If you've done everything correctly, any other command should work as well (try it out before continuing) with the exception of remote commands.
+Because `rdiff-backup` isn't in your `PATH` on the other side of an SSH connection, it will fail (or you will use the wrong version of `rdiff-backup`).
+There are multiple ways to address this issue:
+
+[upperalpha]
+. Use a `--remote-schema` explicitly pointing at the right `rdiff-backup` e.g. `rdiff-backup --remote-schema "ssh -C {h} $(which rdiff-backup) server" -v5 backup docs localhost::/tmp/bak`.
+. Use a fake remote schema not using SSH as in `rdiff-backup --remote-schema "mkdir -p {h}; cd {h}; rdiff-backup server" -v5 backup docs fake.myown.d::/tmp/bak` (don't forget to `rmdir fake.myown.d` after).
+This is the approach used by most of the test suite so that tests don't rely on SSH.
+. Install your own version of `rdiff-backup` at user or even system level using pip.
+But this can be dangerous so only do it if you know what you're doing (and hence how to do it).
+
+TIP: you can leave the venv with `deactivate`, then the `(.venv)` prefix disappears.
+
+If everything went well till now, you can start to do changes to the code.
+Each time you'll do so, you'll want to install it again and test your changes:
+
+. Verify that you're in the venv (check the prefix), activate it if necessary with `source .venv/bin/activate`.
+. Fix your code with `black src testing setup.py`.
+. Install your latest version of `rdiff-backup` with `pip install .`.
+. There are many ways to test it, but the minimal set is `tox -e check-static` followed by `tox -e py`.
++
+IMPORTANT: Please don't submit code which hasn't passed both tests!
+Also read the rest of this document and its companions in their entirety and comply with our guidlines and conventions.
+If you encounter issues or have doubts, ask on the mailto:rdiff-backup-users@nongnu.org[mailing list] after https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users[having registered].
+
+. Once successful, you're ready for your first https://github.blog/developer-skills/github/beginners-guide-to-github-creating-a-pull-request/[Pull Request (PR)].
+
+NOTE: The above instructions have been cursorily tested in containers using `podman` with the images `opensuse/tumbleweed`, `debian`, `ubuntu`, `archlinux`, `manjarolinux/base`, `quay.io/centos/centos:stream10`.
+In general, the packages `vim` and `sudo` had to be installed and a user with sudo-rights created (e.g. `useradd -m -G wheel myuser`).
+Full testing hasn't been done as the container's file system doesn't allow the creation of certain special files.
+
 
 == GENERAL GUIDELINES
 
@@ -32,7 +115,6 @@ Eventually it will be much easier to merge your change request if the idea and d
 It might provide useful insight why the current state is as it is.
 * Changes can be submitted using the typical Github workflow: clone this repository, make your changes, test and verify, and submit a Pull Request (PR).
 * For all code changes, please remember also to include inline comments and update tests where needed.
-* Follow of course our xref:CODING.adoc[coding] and xref:DOCUMENTATION.adoc[documentation] guidelines.
 
 === License
 
@@ -119,13 +201,26 @@ They are meant mostly to test the deployment itself (use alpha versions to relea
 
 NOTE: the GitHub releases are created as draft, meaning that a maintainer must review them and publish them before they become visible.
 
+
+== GETTING THE SOURCE
+
+Simply clone the source with:
+
+[source,shell]
+----
+git clone https://github.com/rdiff-backup/rdiff-backup.git
+----
+
+NOTE: If you plan to provide your own code, you should first fork our repo and clone your own forked repo (probably using SSH not HTTPS).
+How is described at https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks.
+
 == BUILD AND INSTALL
 
 === Pre-requisites
 
 The same pre-requisites as for the installation of rdiff-backup also apply for building:
 
-* Python 3.10 or higher
+* Python {python_min_version} or higher
 * librsync 2.0.0 or higher (to be verified)
 
 Further python dependencies are documented in link:../requirements.txt[requirements.txt].
