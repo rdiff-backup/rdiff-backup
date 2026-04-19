@@ -1,8 +1,7 @@
 @ECHO ON
 @REM create a Python virtualenv to test rdiff-backup
 IF "%1" EQU "" (
-	mkdir dist
-	SET venv_dir=dist/rdb
+	SET venv_dir=.venv
 ) ELSE (
 	mkdir %~dp1
 	SET venv_dir=%1

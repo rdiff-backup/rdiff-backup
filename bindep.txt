@@ -4,10 +4,10 @@
 
 # USAGE:
 # Install bindep with e.g. `pip install --user bindep` and call for example
-#   bindep -l newlines [usage|devel]
+#   bindep -l newline [usage|devel]
 # to see which packages are necessary on your platform for this purpose
 # You could use the following command to install missing packages:
-#   dnf|yum|apt -y install $(bindep devel)
+#   dnf|yum|apt -y install $(bindep -b devel)
 
 # If this doesn't work on your favourite Linux platform, create an enhancement
 # issue at https://github.com/rdiff-backup/rdiff-backup/issues/new
@@ -33,23 +33,24 @@ python-pyxattr [platform:pacman usage]
 
 # Packages for development of rdiff-backup
 
-python3-devel [platform:redhat devel]
+python3-devel [platform:rpm devel]
 python3-dev [platform:dpkg devel]
 python-build [platform:pacman devel]
 python3-build [!platform:pacman devel]
 python-devtools [platform:pacman devel]
 python3-wheel [!platform:pacman devel]
 python-wheel [platform:pacman devel]
-python3-setuptools_scm [platform:redhat devel]
+python3-setuptools_scm [platform:rpm devel]
 python3-setuptools-scm [platform:dpkg devel]
 python-setuptools-scm [platform:pacman devel]
-librsync-devel [platform:redhat devel]
+librsync-devel [platform:rpm devel]
 librsync-dev [platform:dpkg devel]
-libacl-devel [platform:redhat devel]
+libacl-devel [platform:rpm devel]
 libacl1-dev [platform:dpkg devel]
 acl [platform:pacman devel]
 gcc [devel]
 rubygem-asciidoctor [platform:redhat devel]
+ruby4.0-rubygem-asciidoctor [platform:suse devel]
 asciidoctor [platform:dpkg devel]
 asciidoctor [platform:pacman devel]
 gh [!platform:pacman devel]
