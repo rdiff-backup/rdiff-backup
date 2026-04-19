@@ -51,6 +51,8 @@ python3 -m venv .venv  #<2>
 pip install bindep  #<4>
 pip install --upgrade pip  #<5>
 pip install powerline-status  #<6>
+sudo dnf config-manager --set-enabled crb  # only under CentOS & Co
+sudo dnf install epel-release  # only under CentOS & Co
 sudo APT_DNF_ZYPPER install $(bindep -b devel)  #<7>
 pip install -r requirements.txt
 pip install .  #<8>
@@ -99,6 +101,10 @@ Also read the rest of this document and its companions in their entirety and com
 If you encounter issues or have doubts, ask on the mailto:rdiff-backup-users@nongnu.org[mailing list] after https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users[having registered].
 
 . Once successful, you're ready for your first https://github.blog/developer-skills/github/beginners-guide-to-github-creating-a-pull-request/[Pull Request (PR)].
+
+NOTE: The above instructions have been cursorily tested in containers using `podman` with the images `opensuse/tumbleweed`, `debian`, `ubuntu`, `archlinux`, `manjarolinux/base`, `quay.io/centos/centos:stream10`.
+In general, the packages `vim` and `sudo` had to be installed and a user with sudo-rights created (e.g. `useradd -m -G wheel myuser`).
+Full testing hasn't been done as the container's file system doesn't allow the creation of certain special files.
 
 
 == GENERAL GUIDELINES
