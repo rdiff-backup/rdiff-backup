@@ -100,7 +100,7 @@ class ACL:
             return
 
         try:
-            sd = GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+            sd = GetNamedSecurityInfo(os.fsdecode(rp), SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
             log.Log(
                 "Unable to read ACL from path {pa} due to "
@@ -197,7 +197,7 @@ class ACL:
 
         try:
             SetNamedSecurityInfo(
-                os.fsdecode(rp.path),
+                os.fsdecode(rp),
                 SE_FILE_OBJECT,
                 ACL.flags,
                 sd.GetSecurityDescriptorOwner(),
@@ -231,9 +231,9 @@ class ACL:
 
     def _clear_rp(self, rp):
         # not sure how to interpret this
-        # I'll just clear all acl-s from rp.path
+        # I'll just clear all acl-s from rp
         try:
-            sd = GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+            sd = GetNamedSecurityInfo(os.fsdecode(rp), SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
             log.Log(
                 "Unable to read ACL from path {pa} for clearing them "
@@ -263,7 +263,7 @@ class ACL:
 
         try:
             SetNamedSecurityInfo(
-                os.fsdecode(rp.path),
+                os.fsdecode(rp),
                 SE_FILE_OBJECT,
                 ACL.flags,
                 sd.GetSecurityDescriptorOwner(),
