@@ -106,6 +106,14 @@ class QuotedRPath(increment.StoredRPath):
         dirname, basename = super().dirsplit()
         return (dirname, unquote(basename))
 
+    def __fspath__(self):
+        """
+        Just a getter to return the path unquoted
+
+        Fulfills the os.PathLike interface
+        """
+        return unquote(self.path)
+
 
 def quote(path):
     """
