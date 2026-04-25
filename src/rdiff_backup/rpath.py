@@ -743,9 +743,7 @@ class RPath(RORPath):
 
     def setdata(self):
         """Set data dictionary using the wrapper"""
-        self.data = self.conn.rpath.make_file_dict(self.path)
-        if self.lstat():
-            self.conn.rpath.setdata_local(self)
+        self.data = self.conn.rpath.get_rpath_data(self.path, self.base, self.index)
 
     def chmod(self, permissions, loglevel=log.WARNING):
         """Wrapper around os.chmod"""
@@ -1704,14 +1702,10 @@ def rename(rp_source, rp_dest):
         rp_source.data = {"type": None}
 
 
-# @API(make_file_dict, 200)
-def make_file_dict(filename):
-    """Generate the data dictionary for the given RPath
-
-    This is a global function so that os.name can be called locally,
-    thus avoiding network lag and so that we only need to send the
-    filename over the network, thus avoiding the need to pickle an
-    (incomplete) rpath object.
+# @API(get_rpath_data, 300)
+def get_rpath_data(filename, base, index):
+    """
+    Generate and return the data dictionary for the given path
     """
 
     try:
@@ -1756,6 +1750,10 @@ def make_file_dict(filename):
     data["devloc"] = statblock[stat.ST_DEV]
     data["nlink"] = statblock[stat.ST_NLINK]
 
+    # Map user and group IDs to names
+    data["uname"] = usrgrp.uid2uname(data["uid"])
+    data["gname"] = usrgrp.gid2gname(data["gid"])
+
     if os.name == "nt":
         try:
             attribs = win32api.GetFileAttributes(os.fsdecode(filename))
@@ -1779,20 +1777,16 @@ def make_file_dict(filename):
         data["mtime"] = int(statblock[stat.ST_MTIME])
         data["atime"] = int(statblock[stat.ST_ATIME])
         data["ctime"] = int(statblock[stat.ST_CTIME])
-    return data
+    return _add_rpath_metadata(base, index, data)
 
 
-# @API(setdata_local, 200)
-def setdata_local(rp):
+def _add_rpath_metadata(base, index, data):
     """
     Set eas/acls, uid/gid, resource fork in data dictionary
 
-    This is a global function because it must be called locally, since
-    these features may exist or not depending on the connection.
+    Return the data dictionary completed with this information
     """
-    assert (
-        rp.conn is specifics.local_connection
-    ), "Function must be called locally not over {conn}.".format(conn=rp.conn)
+    rp = RPath(specifics.local_connection, base, index=index, data=data)
     reset_perms = False
     if specifics.process_uid != 0 and not rp.readable() and rp.isowner():
         if rp.lstat() == "sym":
@@ -1801,19 +1795,17 @@ def setdata_local(rp):
             # Neither Windows nor Linux support chmod without following
             # symlinks, so we would anyway try to chmod the file pointed at,
             # not the symlink itself
-            rp.data["type"] = None
             log.ErrorLog(
                 "ListError",
                 rp,
                 OSError("[Errno n/a] Ignoring strange unreadable symlink"),
             )
-            return
+            rp.data["type"] = None
+            return rp.data
         else:
             reset_perms = True
             rp.chmod(0o400 | rp.getperms())
 
-    rp.data["uname"] = usrgrp.uid2uname(rp.data["uid"])
-    rp.data["gname"] = usrgrp.gid2gname(rp.data["gid"])
     if specifics.eas_conn:
         rp.data["ea"] = ea.get_meta(rp)
     if specifics.acls_conn:
@@ -1827,6 +1819,8 @@ def setdata_local(rp):
 
     if reset_perms:
         rp.chmod(rp.getperms() & ~0o400)
+
+    return rp.data
 
 
 def _carbonfile_get(rp):

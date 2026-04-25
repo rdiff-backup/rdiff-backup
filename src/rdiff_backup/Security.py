@@ -223,8 +223,7 @@ def _set_allowed_requests(sec_class, sec_level):
     ):
         requests.update(
             [
-                "rpath.make_file_dict",
-                "rpath.setdata_local",
+                "rpath.get_rpath_data",
                 # API >= 201
                 "_repo_shadow.RepoShadow.get_config",
                 "_repo_shadow.RepoShadow.get_mirror_time",
