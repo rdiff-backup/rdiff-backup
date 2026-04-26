@@ -24,10 +24,6 @@ class CompareTest(unittest.TestCase):
 
     def generic_test(self, local, compare_method):
         """Used for 6 tests below"""
-        if not local:  # need a fix for Windows only present in API 201
-            options = ("--api-version", "201")
-        else:
-            options = ()  # just to also test the old API
         compare_options = ("--method", compare_method)
 
         self.assertEqual(
@@ -36,7 +32,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 comtst.old_inc3_dir,
                 self.outdir,
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),
@@ -48,7 +44,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 comtst.old_inc2_dir,
                 self.outdir,
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),
@@ -63,7 +59,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 comtst.old_inc2_dir,
                 self.outdir,
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),
@@ -75,7 +71,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 comtst.old_inc3_dir,
                 self.outdir,
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),
@@ -108,10 +104,6 @@ class CompareTest(unittest.TestCase):
 
     def generic_selective_test(self, local, compare_method):
         """Used for selective tests--just compare part of a backup"""
-        if not local:  # need a fix for Windows only present in API 201
-            options = ("--api-version", "201")
-        else:
-            options = ()  # just to also test the old API
         compare_options = ("--method", compare_method)
 
         self.assertEqual(
@@ -120,7 +112,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 os.path.join(comtst.old_inc3_dir, b"various_file_types"),
                 os.path.join(self.outdir, b"various_file_types"),
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),
@@ -132,7 +124,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 os.path.join(comtst.old_inc2_dir, b"increment1"),
                 os.path.join(self.outdir, b"increment1"),
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),
@@ -147,7 +139,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 os.path.join(comtst.old_inc2_dir, b"newdir"),
                 os.path.join(self.outdir, b"newdir"),
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),
@@ -159,7 +151,7 @@ class CompareTest(unittest.TestCase):
                 local,
                 os.path.join(comtst.old_inc3_dir, b"newdir"),
                 os.path.join(self.outdir, b"newdir"),
-                options,
+                (),
                 b"compare",
                 compare_options,
             ),

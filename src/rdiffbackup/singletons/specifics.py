@@ -44,7 +44,7 @@ except metadata.PackageNotFoundError:
 # An actual value of 0 means that the default version is to be used or whatever
 # makes the connection work within the min-max range, depending on the
 # API versions supported by the remote connection.
-api_version: dict[str, int] = {"default": 201, "min": 201, "max": 201, "actual": 0}
+api_version: dict[str, int] = {"default": 219, "min": 219, "max": 299, "actual": 0}
 # Allow overwrite from the environment variable RDIFF_BACKUP_API_VERSION
 # we don't do a lot of error handling because it's more of a dev option
 api_version.update(yaml.safe_load(os.environ.get("RDIFF_BACKUP_API_VERSION", "{}")))

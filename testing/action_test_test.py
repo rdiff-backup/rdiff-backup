@@ -1,5 +1,5 @@
 """
-Test the "test" action with API >= 201
+Test the "test" action
 """
 
 import os
@@ -11,7 +11,7 @@ TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
 
 class ActionTestTest(unittest.TestCase):
-    """Test api versioning functionality"""
+    """Test the test action (!)"""
 
     def setUp(self):
         if os.name == "nt":
@@ -26,34 +26,24 @@ class ActionTestTest(unittest.TestCase):
         # the test action works with one or two locations (or more)
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
-                self.dir1,
-                self.dir2,
-                ("--api-version", "201"),
-                b"test",
-                (),
+                False, False, self.dir1, self.dir2, (), b"test", ()
             ),
             0,
         )
         self.assertEqual(
-            comtst.rdiff_backup_action(
-                False, True, self.dir1, None, ("--api-version", "201"), b"test", ()
-            ),
+            comtst.rdiff_backup_action(False, True, self.dir1, None, (), b"test", ()),
             0,
         )
         # but it doesn't work with a local one
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False, True, self.dir1, self.dir2, ("--api-version", "201"), b"test", ()
+                False, True, self.dir1, self.dir2, (), b"test", ()
             ),
             0,
         )
         # and it doesn't work without any location
         self.assertNotEqual(
-            comtst.rdiff_backup_action(
-                True, True, None, None, ("--api-version", "201"), b"test", ()
-            ),
+            comtst.rdiff_backup_action(True, True, None, None, (), b"test", ()),
             0,
         )
 

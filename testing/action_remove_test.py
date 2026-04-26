@@ -1,5 +1,5 @@
 """
-Test the remove action with api version >= 201
+Test the remove action
 """
 
 import os
@@ -82,7 +82,7 @@ class ActionRemoveTest(unittest.TestCase):
             True,
             self.from1_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "10000"),
+            ("--current-time", "10000"),
             b"backup",
             (),
         )
@@ -91,7 +91,7 @@ class ActionRemoveTest(unittest.TestCase):
             True,
             self.from2_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "20000"),
+            ("--current-time", "20000"),
             b"backup",
             (),
         )
@@ -100,7 +100,7 @@ class ActionRemoveTest(unittest.TestCase):
             True,
             self.from3_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "30000"),
+            ("--current-time", "30000"),
             b"backup",
             (),
         )
@@ -109,7 +109,7 @@ class ActionRemoveTest(unittest.TestCase):
             True,
             self.from4_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "40000"),
+            ("--current-time", "40000"),
             b"backup",
             (),
         )
@@ -140,7 +140,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201"),
+                (),
                 b"remove",
                 ("increments", "--older-than", "1B"),
             ),
@@ -165,7 +165,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--force"),  # now forcing!
+                ("--force",),  # now forcing!
                 b"remove",
                 ("increments", "--older-than", "1B"),
             ),
@@ -178,7 +178,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--parsable"),
+                ("--parsable",),
                 b"list",
                 ("increments",),
                 return_stdout=True,
@@ -202,7 +202,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--force"),
+                ("--force",),
                 b"remove",
                 ("increments", "--older-than", "30000"),
             ),
@@ -214,7 +214,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--parsable"),
+                ("--parsable",),
                 b"list",
                 ("increments",),
                 return_stdout=True,
@@ -237,10 +237,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                (
-                    "--api-version",
-                    "201",
-                ),
+                (),
                 b"remove",
                 ("increments", "--older-than", "30001", "--size"),
             ),
@@ -253,7 +250,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--parsable"),
+                ("--parsable",),
                 b"list",
                 ("increments",),
                 return_stdout=True,
@@ -273,10 +270,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                (
-                    "--api-version",
-                    "201",
-                ),
+                (),
                 b"remove",
                 ("increments", "--older-than", "now"),
             ),
@@ -289,7 +283,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--parsable"),
+                ("--parsable",),
                 b"list",
                 ("increments",),
                 return_stdout=True,

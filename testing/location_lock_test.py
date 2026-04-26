@@ -1,5 +1,5 @@
 """
-Test the handling of locking with api version >= 201
+Test the handling of locking
 """
 
 import os

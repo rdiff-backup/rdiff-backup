@@ -1,5 +1,5 @@
 """
-Test the ability to regress/remove read-only paths with api version >= 201
+Test the ability to regress/remove read-only paths
 """
 
 import os
@@ -52,7 +52,7 @@ class ActionReadOnlyTest(unittest.TestCase):
                 False,
                 self.from1_path,
                 self.bak_path,
-                ("--api-version", "201", "--current-time", "10000"),
+                ("--current-time", "10000"),
                 b"backup",
                 (),
             ),
@@ -64,7 +64,7 @@ class ActionReadOnlyTest(unittest.TestCase):
                 True,
                 self.from2_path,
                 self.bak_path,
-                ("--api-version", "201", "--current-time", "20000"),
+                ("--current-time", "20000"),
                 b"backup",
                 (),
             ),
@@ -83,7 +83,7 @@ class ActionReadOnlyTest(unittest.TestCase):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--force"),
+                ("--force",),
                 b"regress",
                 (),
             ),
@@ -103,7 +103,7 @@ class ActionReadOnlyTest(unittest.TestCase):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--force"),
+                ("--force",),
                 b"remove",
                 ("increments", "--older-than", "0B"),
             ),

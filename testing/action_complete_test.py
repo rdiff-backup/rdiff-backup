@@ -1,5 +1,5 @@
 """
-Test the complete action with api version >= 201
+Test the complete action
 """
 
 import os
@@ -22,9 +22,7 @@ class ActionCompleteTest(unittest.TestCase):
 
         # test the error cases
         self.assertEqual(
-            comtst.rdiff_backup_action(
-                True, True, None, None, ("--api-version", "201"), b"complete", ()
-            ),
+            comtst.rdiff_backup_action(True, True, None, None, (), b"complete", ()),
             consts.RET_CODE_ERR,
         )
         self.assertEqual(
@@ -33,7 +31,7 @@ class ActionCompleteTest(unittest.TestCase):
                 True,
                 None,
                 None,
-                ("--api-version", "201"),
+                (),
                 b"complete",
                 ("--cword", "1", "--", "rdiff-backup"),
             ),
@@ -47,7 +45,7 @@ class ActionCompleteTest(unittest.TestCase):
                 True,
                 None,
                 None,
-                ("--api-version", "201"),
+                (),
                 b"complete",
                 ("--cword", "1", "--", "rdiff-backup", "--verb"),
                 return_stdout=True,
@@ -61,7 +59,7 @@ class ActionCompleteTest(unittest.TestCase):
                 True,
                 None,
                 None,
-                ("--api-version", "201"),
+                (),
                 b"complete",
                 ("--cword", "2", "--", "rdiff-backup", "--verbosity", ""),
                 return_stdout=True,
@@ -74,7 +72,7 @@ class ActionCompleteTest(unittest.TestCase):
                 True,
                 None,
                 None,
-                ("--api-version", "201"),
+                (),
                 b"complete",
                 ("--cword", "1", "--", "rdiff-backup", "--verbosity", "5"),
                 return_stdout=True,
@@ -90,7 +88,7 @@ class ActionCompleteTest(unittest.TestCase):
                 True,
                 None,
                 None,
-                ("--api-version", "201"),
+                (),
                 b"complete",
                 ("--cword", "2", "--", "rdiff-backup", "backup", "D"),
                 return_stdout=True,
@@ -103,7 +101,7 @@ class ActionCompleteTest(unittest.TestCase):
             True,
             None,
             None,
-            ("--api-version", "201"),
+            (),
             b"complete",
             ("--cword", "2", "--", "rdiff-backup", "backup", ""),
             return_stdout=True,
@@ -116,7 +114,7 @@ class ActionCompleteTest(unittest.TestCase):
             True,
             None,
             None,
-            ("--api-version", "201"),
+            (),
             b"complete",
             ("--cword", "2", "--", "rdiff-backup", "test", ""),
             return_stdout=True,
@@ -129,7 +127,7 @@ class ActionCompleteTest(unittest.TestCase):
             True,
             None,
             None,
-            ("--api-version", "201"),
+            (),
             b"complete",
             ("--cword", "1", "--", "rdiff-backup", ""),
             return_stdout=True,
@@ -145,7 +143,7 @@ class ActionCompleteTest(unittest.TestCase):
             True,
             None,
             None,
-            ("--api-version", "201"),
+            (),
             b"complete",
             ("--cword", "1", "--", "rdiff-backup", "", "complete"),
             return_stdout=True,
@@ -161,7 +159,7 @@ class ActionCompleteTest(unittest.TestCase):
                 True,
                 None,
                 None,
-                ("--api-version", "201"),
+                (),
                 b"complete",
                 (
                     "--cword",

@@ -1,5 +1,5 @@
 """
-Test the quoting of characters in filenames with api version >= 201
+Test the quoting of characters in filenames
 """
 
 import os
@@ -82,8 +82,6 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 self.from1_path,
                 self.bak_path,
                 (
-                    "--api-version",
-                    "201",
                     "--current-time",
                     "10000",
                     "--chars-to-quote",
@@ -101,8 +99,6 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 self.from2_path,
                 self.bak_path,
                 (
-                    "--api-version",
-                    "201",
                     "--current-time",
                     "20000",
                     "--chars-to-quote",
@@ -121,7 +117,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 False,
                 self.bak_path,
                 self.to1_path,
-                ("--api-version", "201"),
+                (),
                 b"restore",
                 ("--at", "1B"),
             ),
@@ -129,13 +125,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                self.to2_path,
-                ("--api-version", "201"),
-                b"restore",
-                (),
+                True, True, self.bak_path, self.to2_path, (), b"restore", ()
             ),
             0,
         )
@@ -158,14 +148,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 False,
                 self.from1_path,
                 self.bak_path,
-                (
-                    "--api-version",
-                    "201",
-                    "--current-time",
-                    "10000",
-                    "--chars-to-quote",
-                    "A-P:",
-                ),
+                ("--current-time", "10000", "--chars-to-quote", "A-P:"),
                 b"backup",
                 (),
             ),
@@ -177,14 +160,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 False,
                 self.from2_path,
                 self.bak_path,
-                (
-                    "--api-version",
-                    "201",
-                    "--current-time",
-                    "11000",
-                    "--chars-to-quote",
-                    "A-P:",
-                ),
+                ("--current-time", "11000", "--chars-to-quote", "A-P:"),
                 b"backup",
                 (),
             ),
@@ -197,14 +173,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 True,
                 self.from2_path,
                 self.bak_path,
-                (
-                    "--api-version",
-                    "201",
-                    "--current-time",
-                    "15000",
-                    "--chars-to-quote",
-                    "H-Z:",
-                ),
+                ("--current-time", "15000", "--chars-to-quote", "H-Z:"),
                 b"backup",
                 (),
             ),
@@ -217,8 +186,6 @@ class LocationMapFilenamesTest(unittest.TestCase):
                 self.from2_path,
                 self.bak_path,
                 (
-                    "--api-version",
-                    "201",
                     "--current-time",
                     "20000",
                     "--chars-to-quote",
@@ -234,13 +201,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # then we restore the last mirror to a directory without issue
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                self.to2_path,
-                ("--api-version", "201"),
-                b"restore",
-                (),
+                True, True, self.bak_path, self.to2_path, (), b"restore", ()
             ),
             0,
         )
@@ -249,13 +210,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # then we run a --force regress
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                None,
-                ("--api-version", "201", "--force"),
-                b"regress",
-                (),
+                True, True, self.bak_path, None, ("--force",), b"regress", ()
             ),
             0,
         )
@@ -263,13 +218,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # then we restore the last mirror to a directory without issue
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                self.to1_path,
-                ("--api-version", "201"),
-                b"restore",
-                (),
+                True, True, self.bak_path, self.to1_path, (), b"restore", ()
             ),
             0,
         )

@@ -43,7 +43,7 @@ class RobustTest(unittest.TestCase):
         target_dir = os.path.join(base_dir, b"bak")
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True, True, src_dir, target_dir, ("--api-version", "201"), b"backup", ()
+                True, True, src_dir, target_dir, (), b"backup", ()
             ),
             0,
         )
