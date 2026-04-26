@@ -527,7 +527,7 @@ Depending on the kind of issue, there are some good places to put a breakpoint:
 If you need to check the details of the coverage report after the run of `tox -e pyXY`, you can simply call something like the following:
 
 ----
-COVERAGE_FILE=.tox/pyXY/log/coverage.sqlite .tox/pyXY/bin/coverage report -m
+COVERAGE_FILE=.tox/pyXY/tmp/coverage.sqlite .tox/pyXY/bin/coverage report -m
 ----
 
 The report output will show you which code lines aren't covered by the tests.
