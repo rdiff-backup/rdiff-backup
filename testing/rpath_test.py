@@ -494,13 +494,13 @@ class FileCopying(RPathTest):
         fifo = rpath.RPath(self.lc, self.mainprefix, ("fifo",))
         if fifo.lstat():
             fifo.delete()
-        os.mkfifo(fifo.path)
+        os.mkfifo(fifo)
         fifo.setdata()
         # Create symlink
         sl = rpath.RPath(self.lc, self.mainprefix, ("symbolic_link",))
         if sl.lstat():
             sl.delete()
-        os.symlink(self.rf.path, sl.path)
+        os.symlink(self.rf, sl)
         sl.setdata()
         # Test rename with EXDEV error.
         for rp in [fifo, sl]:
