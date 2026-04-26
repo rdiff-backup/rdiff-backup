@@ -1,5 +1,5 @@
 """
-Test the regress action with api version >= 201
+Test the regress action
 """
 
 import os
@@ -88,7 +88,7 @@ class ActionRegressTest(unittest.TestCase):
             True,
             self.from1_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "10000"),
+            ("--current-time", "10000"),
             b"backup",
             (),
         )
@@ -97,7 +97,7 @@ class ActionRegressTest(unittest.TestCase):
             True,
             self.from2_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "20000"),
+            ("--current-time", "20000"),
             b"backup",
             (),
         )
@@ -106,7 +106,7 @@ class ActionRegressTest(unittest.TestCase):
             True,
             self.from3_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "30000"),
+            ("--current-time", "30000"),
             b"backup",
             (),
         )
@@ -117,13 +117,7 @@ class ActionRegressTest(unittest.TestCase):
         # regressing a successful backup doesn't do anything
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201"),
-                b"regress",
-                (),
+                False, None, self.bak_path, None, (), b"regress", ()
             ),
             consts.RET_CODE_OK,
         )
@@ -139,39 +133,21 @@ class ActionRegressTest(unittest.TestCase):
         # the current process (the test) is still running, hence it fails
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201"),
-                b"regress",
-                (),
+                True, None, self.bak_path, None, (), b"regress", ()
             ),
             consts.RET_CODE_OK,
         )
         # but it runs with --force
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201", "--force"),
-                b"regress",
-                (),
+                True, None, self.bak_path, None, ("--force",), b"regress", ()
             ),
             consts.RET_CODE_WARN,
         )
         # we restore and compare
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                self.to2_path,
-                ("--api-version", "201"),
-                b"restore",
-                (),
+                True, True, self.bak_path, self.to2_path, (), b"restore", ()
             ),
             consts.RET_CODE_OK,
         )
@@ -185,7 +161,7 @@ class ActionRegressTest(unittest.TestCase):
                 True,
                 self.from4_path,
                 self.bak_path,
-                ("--api-version", "201", "--current-time", "40000"),
+                ("--current-time", "40000"),
                 b"backup",
                 (),
             ),
@@ -199,7 +175,7 @@ class ActionRegressTest(unittest.TestCase):
                 True,
                 self.from4_path,
                 self.bak_path,
-                ("--api-version", "201", "--current-time", "40001", "--force"),
+                ("--current-time", "40001", "--force"),
                 b"backup",
                 (),
             ),
@@ -208,13 +184,7 @@ class ActionRegressTest(unittest.TestCase):
         # we restore and compare
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                self.to4_path,
-                ("--api-version", "201"),
-                b"restore",
-                (),
+                True, True, self.bak_path, self.to4_path, (), b"restore", ()
             ),
             consts.RET_CODE_OK,
         )
@@ -228,39 +198,21 @@ class ActionRegressTest(unittest.TestCase):
         # regressing a successful backup with force simply removes it
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201", "--force"),
-                b"regress",
-                (),
+                False, None, self.bak_path, None, ("--force",), b"regress", ()
             ),
             consts.RET_CODE_OK,
         )
         # we do it twice
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201", "--force"),
-                b"regress",
-                (),
+                True, None, self.bak_path, None, ("--force",), b"regress", ()
             ),
             consts.RET_CODE_OK,
         )
         # we restore and compare
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                self.to1_path,
-                ("--api-version", "201"),
-                b"restore",
-                (),
+                True, True, self.bak_path, self.to1_path, (), b"restore", ()
             ),
             consts.RET_CODE_OK,
         )
@@ -268,13 +220,7 @@ class ActionRegressTest(unittest.TestCase):
         # the last tentative to regress forcefully ends with a warning
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201", "--force"),
-                b"regress",
-                (),
+                True, None, self.bak_path, None, ("--force",), b"regress", ()
             ),
             2,
         )

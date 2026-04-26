@@ -1,5 +1,5 @@
 """
-Test the handling of hardlinks with api version >= 201
+Test the handling of hardlinks
 """
 
 import os
@@ -47,7 +47,7 @@ class LocationMapHardlinksTest(unittest.TestCase):
                 True,
                 self.from1_path,
                 self.bak_path,
-                ("--api-version", "201", "--current-time", "10000"),
+                ("--current-time", "10000"),
                 b"backup",
                 (),
             ),
@@ -68,7 +68,7 @@ class LocationMapHardlinksTest(unittest.TestCase):
                 True,
                 self.from1_path,
                 self.bak_path,
-                ("--api-version", "201", "--current-time", "20000"),
+                ("--current-time", "20000"),
                 b"backup",
                 (),
             ),
@@ -88,13 +88,7 @@ class LocationMapHardlinksTest(unittest.TestCase):
         # restore the hardlinked files
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
-                self.bak_path,
-                self.to1_path,
-                ("--api-version", "201"),
-                b"restore",
-                (),
+                True, True, self.bak_path, self.to1_path, (), b"restore", ()
             ),
             0,
         )

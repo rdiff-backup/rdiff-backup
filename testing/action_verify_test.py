@@ -1,5 +1,5 @@
 """
-Test the verify action with api version >= 201
+Test the verify action
 """
 
 import os
@@ -49,7 +49,7 @@ class ActionVerifyTest(unittest.TestCase):
             True,
             self.from1_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "10000"),
+            ("--current-time", "10000"),
             b"backup",
             (),
         )
@@ -58,7 +58,7 @@ class ActionVerifyTest(unittest.TestCase):
             True,
             self.from2_path,
             self.bak_path,
-            ("--api-version", "201", "--current-time", "20000"),
+            ("--current-time", "20000"),
             b"backup",
             (),
         )
@@ -68,13 +68,7 @@ class ActionVerifyTest(unittest.TestCase):
         # removing multiple increments fails without --force
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201"),
-                b"verify",
-                (),
+                False, None, self.bak_path, None, (), b"verify", ()
             ),
             0,
         )
@@ -84,7 +78,7 @@ class ActionVerifyTest(unittest.TestCase):
                 None,
                 self.bak_path,
                 None,
-                ("--api-version", "201", "--force"),  # now forcing!
+                ("--force",),  # now forcing!
                 b"verify",
                 ("--at", "1B"),
             ),
@@ -96,13 +90,7 @@ class ActionVerifyTest(unittest.TestCase):
             fd.write("corrupt data")
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False,
-                None,
-                self.bak_path,
-                None,
-                ("--api-version", "201"),
-                b"verify",
-                ("--at", "now"),
+                False, None, self.bak_path, None, (), b"verify", ("--at", "now")
             ),
             0,
         )
