@@ -85,7 +85,7 @@ class ExtendedAttributes:
     def read_from_rp(self, rp):
         """Set the extended attributes from an rpath"""
         try:
-            attr_list = xattr.list(rp.path, rp.issym())
+            attr_list = xattr.list(rp, rp.issym())
         except OSError as exc:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
@@ -106,7 +106,7 @@ class ExtendedAttributes:
                 # Resource Fork handled elsewhere, except for directories
                 continue
             try:
-                self.attr_dict[attr] = xattr.get(rp.path, attr, rp.issym())
+                self.attr_dict[attr] = xattr.get(rp, attr, rp.issym())
             except OSError as exc:
                 # File probably modified while reading, just continue
                 if exc.errno == errno.ENODATA:
@@ -132,7 +132,7 @@ class ExtendedAttributes:
         self._clear_rp(rp)
         for name, value in self.attr_dict.items():
             try:
-                xattr.set(rp.path, name, value, 0, rp.issym())
+                xattr.set(rp, name, value, 0, rp.issym())
             except OSError as exc:
                 # Mac and Linux attributes have different namespaces, so
                 # fail gracefully if can't call xattr.set
@@ -168,9 +168,9 @@ class ExtendedAttributes:
     def _clear_rp(self, rp):
         """Delete all the extended attributes in rpath"""
         try:
-            for name in xattr.list(rp.path, rp.issym()):
+            for name in xattr.list(rp, rp.issym()):
                 try:
-                    xattr.remove(rp.path, name, rp.issym())
+                    xattr.remove(rp, name, rp.issym())
                 except PermissionError:  # errno.EACCES
                     # SELinux attributes cannot be removed, and we don't want
                     # to bail out or be too noisy at low log levels.

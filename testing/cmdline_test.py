@@ -151,7 +151,7 @@ class PathSetter(unittest.TestCase):
 
         # Getting restore rps
         inc_paths = self.getinc_paths(
-            b"increments.", os.path.join(Local.rpout.path, b"rdiff-backup-data")
+            b"increments.", os.path.join(Local.rpout, b"rdiff-backup-data")
         )
         self.assertEqual(len(inc_paths), 3)
 
@@ -188,7 +188,7 @@ class PathSetter(unittest.TestCase):
         # Test restoration of a few random files
         vft_paths = self.getinc_paths(
             b"various_file_types.",
-            os.path.join(Local.rpout.path, b"rdiff-backup-data", b"increments"),
+            os.path.join(Local.rpout, b"rdiff-backup-data", b"increments"),
         )
         comtst.rdiff_backup(
             from_local,
@@ -202,7 +202,7 @@ class PathSetter(unittest.TestCase):
 
         timbar_paths = self.getinc_paths(
             b"timbar.pyc.",
-            os.path.join(Local.rpout.path, b"rdiff-backup-data", b"increments"),
+            os.path.join(Local.rpout, b"rdiff-backup-data", b"increments"),
         )
         comtst.rdiff_backup(
             from_local,
@@ -229,7 +229,7 @@ class PathSetter(unittest.TestCase):
             len(
                 self.getinc_paths(
                     b"nochange.",
-                    os.path.join(Local.rpout.path, b"rdiff-backup-data", b"increments"),
+                    os.path.join(Local.rpout, b"rdiff-backup-data", b"increments"),
                 )
             ),
             0,
@@ -379,7 +379,7 @@ class Final(PathSetter):
         # remove mirror_metadata files to simulate old style backups
         # pathlib.Path doesn't work with bytes hence need to work with str path
         for mirror_file in pathlib.Path(
-            os.fsdecode(Local.rpout.append(b"rdiff-backup-data").path)
+            os.fsdecode(Local.rpout.append(b"rdiff-backup-data"))
         ).glob("mirror_metadata*"):
             mirror_file.unlink()
         comtst.rdiff_backup(
@@ -629,9 +629,9 @@ class FinalSelection(PathSetter):
         self.delete_tmpdirs()
 
         # create a few relative paths to check a different approach than absolute
-        inc2_rel = os.path.relpath(Local.inc2rp.path)
-        out_rel = os.path.relpath(Local.rpout.path)
-        rest1_rel = os.path.relpath(Local.rpout1.path)
+        inc2_rel = os.path.relpath(Local.inc2rp)
+        out_rel = os.path.relpath(Local.rpout)
+        rest1_rel = os.path.relpath(Local.rpout1)
 
         # Test --include option
         comtst.rdiff_backup(
@@ -751,10 +751,10 @@ class FinalSelection(PathSetter):
             Local.rpout1.path,
             extra_options=(b"restore", b"--at", b"now"),
         )
-        self.assertTrue(os.lstat(Local.rpout1.append("executable").path))
-        self.assertTrue(os.lstat(Local.rpout1.append("symbolic_link").path))
-        self.assertRaises(OSError, os.lstat, Local.rpout1.append("regular_file").path)
-        self.assertRaises(OSError, os.lstat, Local.rpout1.append("executable2").path)
+        self.assertTrue(os.lstat(Local.rpout1.append("executable")))
+        self.assertTrue(os.lstat(Local.rpout1.append("symbolic_link")))
+        self.assertRaises(OSError, os.lstat, Local.rpout1.append("regular_file"))
+        self.assertRaises(OSError, os.lstat, Local.rpout1.append("executable2"))
 
     def testSelRestoreLocal(self):
         """Test selection options when restoring locally"""

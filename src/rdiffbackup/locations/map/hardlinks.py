@@ -187,7 +187,7 @@ def link_rp(diff_rorp, dest_rpath, dest_root=None):
         dest_root = dest_rpath  # use base of dest_rpath
     dest_link_rpath = dest_root.new_index(diff_rorp.get_link_flag())
     try:
-        dest_rpath.hardlink(dest_link_rpath.path)
+        dest_rpath.hardlink(dest_link_rpath)
     except OSError as exc:
         # This can happen if the source of dest_link_rpath was deleted
         # after it's linking info was recorded but before
@@ -196,8 +196,9 @@ def link_rp(diff_rorp, dest_rpath, dest_root=None):
             dest_rpath.touch()  # This will cause an UpdateError later
         else:
             raise Exception(
-                "OS error '%s' linking %s to %s"
-                % (exc, dest_rpath.path, dest_link_rpath.path)
+                "OS error '{ex}' linking {dp} to {dl}".format(
+                    ex=exc, dp=dest_rpath, dl=dest_link_rpath
+                )
             )
 
 

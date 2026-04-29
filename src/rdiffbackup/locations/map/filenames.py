@@ -82,7 +82,7 @@ class QuotedRPath(increment.StoredRPath):
         We want them unquoted so that the results can be sorted
         correctly and append()ed to the current QuotedRPath.
         """
-        return list(map(unquote, self.conn.os.listdir(self.path)))
+        return list(map(unquote, self.conn.os.listdir(self)))
 
     def isincfile(self):
         """
@@ -105,14 +105,6 @@ class QuotedRPath(increment.StoredRPath):
         """
         dirname, basename = super().dirsplit()
         return (dirname, unquote(basename))
-
-    def __fspath__(self):
-        """
-        Just a getter to return the path unquoted
-
-        Fulfills the os.PathLike interface
-        """
-        return unquote(self.path)
 
 
 def quote(path):

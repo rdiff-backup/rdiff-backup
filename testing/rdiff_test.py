@@ -113,7 +113,7 @@ class RdiffTest(unittest.TestCase):
             )
         else:
             comtst.os_system((b"gzip", self.delta.path))
-        os.rename(gzip_path, self.delta.path)
+        os.rename(gzip_path, self.delta)
         self.delta.setdata()
 
         Rdiff.patch_local(self.basis, self.delta, self.output, delta_compressed=1)

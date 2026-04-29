@@ -343,7 +343,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
         acl = posix1e.ACL()
 
     try:
-        acl.applyto(rp.path)
+        acl.applyto(rp)
     except OSError as exc:
         log.Log(
             "Unable to set ACL on path {pa} due to exception '{ex}'".format(
@@ -358,7 +358,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
             def_acl = _list_to_acl(default_entry_list, map_names)
         else:
             def_acl = posix1e.ACL()
-        def_acl.applyto(rp.path, posix1e.ACL_TYPE_DEFAULT)
+        def_acl.applyto(rp, posix1e.ACL_TYPE_DEFAULT)
 
 
 def get_acl_lists_from_rp(rp):
@@ -369,7 +369,7 @@ def get_acl_lists_from_rp(rp):
         conn=rp.conn
     )
     try:
-        acl = posix1e.ACL(file=rp.path)
+        acl = posix1e.ACL(file=rp)
     except (FileNotFoundError, UnicodeEncodeError) as exc:
         log.Log(
             "Unable to read ACL from path {pa} due to exception '{ex}'".format(
@@ -392,7 +392,7 @@ def get_acl_lists_from_rp(rp):
             raise
     if rp.isdir():
         try:
-            def_acl = posix1e.ACL(filedef=os.fsdecode(rp.path))
+            def_acl = posix1e.ACL(filedef=os.fsdecode(rp))
         except (FileNotFoundError, UnicodeEncodeError) as exc:
             log.Log(
                 "Unable to read default ACL from path {pa} due to "

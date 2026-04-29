@@ -220,7 +220,7 @@ class FSAbilities:
         hl_dest = hl_dir.append("hardlinked_file2")
         hl_source.touch()
         try:
-            hl_dest.hardlink(hl_source.path)
+            hl_dest.hardlink(hl_source)
             if hl_source.getinode() != hl_dest.getinode():
                 raise OSError(errno.EOPNOTSUPP, "Hard links don't compare")
         except (OSError, AttributeError):
@@ -335,7 +335,7 @@ class FSAbilities:
             return
 
         try:
-            posix1e.ACL(file=rp.path)
+            posix1e.ACL(file=rp)
         except OSError as exc:
             log.Log(
                 "POSIX ACLs not supported by filesystem at path {pa} "
@@ -444,11 +444,11 @@ class FSAbilities:
 
         test_ea = b"test val"
         try:
-            xattr.list(rp.path)
+            xattr.list(rp)
             if write:
-                xattr.set(rp.path, b"user.test", test_ea)
-                read_ea = xattr.get(rp.path, b"user.test")
-                xattr.remove(rp.path, b"user.test")
+                xattr.set(rp, b"user.test", test_ea)
+                read_ea = xattr.get(rp, b"user.test")
+                xattr.remove(rp, b"user.test")
         except OSError as exc:
             log.Log(
                 "Extended attributes not supported by filesystem at "
@@ -487,7 +487,7 @@ class FSAbilities:
             return
         try:
             sd = win32security.GetNamedSecurityInfo(
-                os.fsdecode(dir_rp.path),
+                os.fsdecode(dir_rp),
                 win32security.SE_FILE_OBJECT,
                 win32security.OWNER_SECURITY_INFORMATION
                 | win32security.GROUP_SECURITY_INFORMATION
@@ -497,7 +497,7 @@ class FSAbilities:
             acl.GetAceCount()  # to verify that it works
             if write:
                 win32security.SetNamedSecurityInfo(
-                    os.fsdecode(dir_rp.path),
+                    os.fsdecode(dir_rp),
                     win32security.SE_FILE_OBJECT,
                     win32security.OWNER_SECURITY_INFORMATION
                     | win32security.GROUP_SECURITY_INFORMATION
@@ -576,11 +576,11 @@ class FSAbilities:
 
         s = b"test string---this should end up in resource fork"
         try:
-            fp_write = open(os.path.join(reg_rp.path, b"..namedfork", b"rsrc"), "wb")
+            fp_write = open(os.path.join(reg_rp, b"..namedfork", b"rsrc"), "wb")
             fp_write.write(s)
             fp_write.close()
 
-            fp_read = open(os.path.join(reg_rp.path, b"..namedfork", b"rsrc"), "rb")
+            fp_read = open(os.path.join(reg_rp, b"..namedfork", b"rsrc"), "rb")
             s_back = fp_read.read()
             fp_read.close()
         except OSError:

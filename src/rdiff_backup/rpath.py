@@ -748,7 +748,7 @@ class RPath(RORPath):
     def chmod(self, permissions, loglevel=log.WARNING):
         """Wrapper around os.chmod"""
         try:
-            os.chmod(self.path, permissions & generics.permission_mask)
+            os.chmod(self, permissions & generics.permission_mask)
         except OSError as e:
             if e.strerror == "Inappropriate file type or format" and not self.isdir():
                 # Some systems throw this error if try to set sticky bit
@@ -760,7 +760,7 @@ class RPath(RORPath):
                     ),
                     loglevel,
                 )
-                os.chmod(self.path, permissions & 0o6777 & generics.permission_mask)
+                os.chmod(self, permissions & 0o6777 & generics.permission_mask)
             else:
                 raise
         self.data["perms"] = permissions
@@ -774,7 +774,7 @@ class RPath(RORPath):
             log.DEBUG,
         )
         try:
-            os.utime(self.path, (accesstime, modtime))
+            os.utime(self, (accesstime, modtime))
         except OverflowError:
             log.Log(
                 "Cannot change times of path {pa} to times {ti} - "
@@ -802,7 +802,7 @@ class RPath(RORPath):
                 log.WARNING,
             )
         try:
-            os.utime(self.path, (int(time.time()), modtime))
+            os.utime(self, (int(time.time()), modtime))
         except OverflowError:
             log.Log(
                 "Cannot change path {pa} to modified time {mt} - "
@@ -824,7 +824,7 @@ class RPath(RORPath):
         ), "Function chown works locally not over '{conn}'.".format(conn=self.conn)
         if self.issym():
             try:
-                os.lchown(self.path, uid, gid)
+                os.lchown(self, uid, gid)
             except AttributeError:
                 log.Log(
                     "Function lchown missing, cannot change ownership "
@@ -832,7 +832,7 @@ class RPath(RORPath):
                     log.WARNING,
                 )
         else:
-            os.chown(self.path, uid, gid)
+            os.chown(self, uid, gid)
         # uid/gid equal to -1 is ignored by chown/lchown
         if uid >= 0:
             self.data["uid"] = uid
@@ -844,7 +844,7 @@ class RPath(RORPath):
             self.conn is specifics.local_connection
         ), "Function mkdir works locally not over '{conn}'.".format(conn=self.conn)
         log.Log("Making directory {di}".format(di=self), log.DEBUG)
-        os.mkdir(self.path)
+        os.mkdir(self)
         self.setdata()
 
     def makedirs(self):
@@ -852,7 +852,7 @@ class RPath(RORPath):
             self.conn is specifics.local_connection
         ), "Function makedirs works locally not over '{conn}'.".format(conn=self.conn)
         log.Log("Making directory path {dp}".format(dp=self), log.DEBUG)
-        os.makedirs(self.path)
+        os.makedirs(self)
         self.setdata()
 
     def rmdir(self):
@@ -860,17 +860,17 @@ class RPath(RORPath):
             self.conn is specifics.local_connection
         ), "Function rmdir works locally not over '{conn}'.".format(conn=self.conn)
         log.Log("Removing directory {di}".format(di=self), log.DEBUG)
-        os.chmod(self.path, 0o700)
-        os.rmdir(self.path)
+        os.chmod(self, 0o700)
+        os.rmdir(self)
         self.data = {"type": None}
 
     def listdir(self):
         """Return list of string paths returned by os.listdir"""
-        return os.listdir(self.path)
+        return os.listdir(self)
 
     def symlink(self, linktext):
         """Make symlink at self.path pointing to linktext"""
-        os.symlink(linktext, self.path)
+        os.symlink(linktext, self)
         self.setdata()
         if not self.issym():
             raise RPathException(
@@ -885,12 +885,12 @@ class RPath(RORPath):
             ),
             log.DEBUG,
         )
-        os.link(linkpath, self.path)
+        os.link(linkpath, self)
         self.setdata()
 
     def mkfifo(self):
         """Make a fifo at self.path"""
-        os.mkfifo(self.path)
+        os.mkfifo(self)
         self.setdata()
         if not self.isfifo():
             raise RPathException(
@@ -899,7 +899,7 @@ class RPath(RORPath):
 
     def mksock(self):
         """Make a socket at self.path"""
-        os.mknod(self.path, stat.S_IFSOCK)
+        os.mknod(self, stat.S_IFSOCK)
         self.setdata()
         if not self.issock():
             raise RPathException(
@@ -954,7 +954,7 @@ class RPath(RORPath):
         return "gid" in self.data and self.data["gid"] in groups
 
     def delete(self):
-        """Delete file at self.path.  Recursively deletes directories."""
+        """Delete itself, recursively if necessary."""
         log.Log("Deleting (recursively) path {pa}".format(pa=self), log.DEBUG)
         if self.isdir():
             try:
@@ -962,16 +962,16 @@ class RPath(RORPath):
             except os.error:
                 if generics.fsync_directories:
                     self.fsync()
-                shutil.rmtree(self.path)
+                shutil.rmtree(self.path)  # rmtree doesn't support PathLike as bytes
         else:
             try:
-                os.unlink(self.path)
+                os.unlink(self)
             except OSError as error:
                 if error.errno in (errno.EPERM, errno.EACCES):
                     # On Windows, read-only files cannot be deleted.
                     # Remove the read-only attribute and try again.
                     self.chmod(0o700)
-                    os.unlink(self.path)
+                    os.unlink(self)
                 else:
                     raise
 
@@ -1080,7 +1080,7 @@ class RPath(RORPath):
         # is (almost) full and when the --tempdir flag is defined,
         # attempt to save temporary files on a different path and
         # hopefully file system.
-        if tempfile.tempdir and shutil.disk_usage(self.path).free < 0:  # 1048576):
+        if tempfile.tempdir and shutil.disk_usage(self).free < 0:  # 1048576):
             # FIXME disabled because os.rename between file systems fails
             tempdir = self.newpath(tempfile.tempdir)
         else:
@@ -1105,9 +1105,9 @@ class RPath(RORPath):
             self.conn is specifics.local_connection
         ), "Function open must be called locally not over {co}.".format(co=self.conn)
         if compress:
-            return gzip.GzipFile(self.path, mode)
+            return gzip.GzipFile(self, mode)
         else:
-            return open(self.path, mode)
+            return open(self, mode)
 
     def write_from_fileobj(self, fp, compress=None):
         """Reads fp and writes to self.path.  Closes both when done
@@ -1150,7 +1150,7 @@ class RPath(RORPath):
         else:
             raise RPathException
         try:
-            os.mknod(self.path, mode, os.makedev(major, minor))
+            os.mknod(self, mode, os.makedev(major, minor))
         except OSError as exc:
             log.Log(
                 "Unable to mknod device file '{df}' due to "
@@ -1181,7 +1181,7 @@ class RPath(RORPath):
             self.conn is specifics.local_connection
         ), "Function must be called locally not over {conn}.".format(conn=self.conn)
         try:
-            fd = os.open(self.path, os.O_RDONLY)
+            fd = os.open(self, os.O_RDONLY)
             os.fsync(fd)
             os.close(fd)
         except OSError as e:
@@ -1203,7 +1203,7 @@ class RPath(RORPath):
                     self.setdata()
                     oldperms = self.getperms()
                 self.chmod(0o700)
-            fd = os.open(self.path, os.O_RDWR)
+            fd = os.open(self, os.O_RDWR)
             if oldperms is not None:
                 self.chmod(oldperms)
             os.fsync(fd)  # Sync after we switch back permissions!
@@ -1298,7 +1298,7 @@ class RPath(RORPath):
         except KeyError:
             try:
                 rfork_fp = self.conn.open(
-                    os.path.join(self.path, b"..namedfork", b"rsrc"), "rb"
+                    os.path.join(self, b"..namedfork", b"rsrc"), "rb"
                 )
                 rfork = rfork_fp.read()
                 rfork_fp.close()
@@ -1310,7 +1310,7 @@ class RPath(RORPath):
     def write_resource_fork(self, rfork_data):
         """Write new resource fork to self"""
         log.Log("Writing resource fork to path {pa}".format(pa=self), log.DEBUG)
-        fp = self.conn.open(os.path.join(self.path, b"..namedfork", b"rsrc"), "wb")
+        fp = self.conn.open(os.path.join(self, b"..namedfork", b"rsrc"), "wb")
         fp.write(rfork_data)
         fp.close()
         self.set_resource_fork(rfork_data)
@@ -1673,7 +1673,7 @@ def rename(rp_source, rp_dest):
             rp_source.delete()
         else:
             try:
-                os.rename(rp_source.path, rp_dest.path)
+                os.rename(rp_source, rp_dest)
             except OSError as error:
                 # XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
                 # pathname too long on Windows
@@ -1687,9 +1687,9 @@ def rename(rp_source, rp_dest):
                     return
                 elif error.errno == errno.EEXIST:
                     # On Windows, files can't be renamed on top of an existing file
-                    os.chmod(rp_dest.path, 0o700)
-                    os.unlink(rp_dest.path)
-                    os.rename(rp_source.path, rp_dest.path)
+                    os.chmod(rp_dest, 0o700)
+                    os.unlink(rp_dest)
+                    os.rename(rp_source, rp_dest)
                 else:
                     log.Log(
                         "Exception '{ex}' while renaming from path {fp} "
