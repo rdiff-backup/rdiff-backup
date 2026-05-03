@@ -7,6 +7,7 @@ import unittest
 
 import commontest as comtst
 import fileset
+from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -149,6 +150,18 @@ fileUnchanged
                 None,
                 (),
                 b"list",
+                ("files", "--changed-since", "NotADateTime"),
+            ),
+            consts.RET_CODE_ERR,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"list",
                 ("files", "--changed-since", "now"),
                 return_stdout=True,
             ),
@@ -207,6 +220,34 @@ deleted fileOld
         self.success = True
 
     def test_action_listincrements(self):
+        """test the list increments action, without and with size"""
+        incs_output = comtst.rdiff_backup_action(
+            False,
+            None,
+            self.bak_path,
+            None,
+            (),
+            b"list",
+            ("increments",),
+            return_stdout=True,
+        )
+        self.assertIn(b"Found 1 increments", incs_output)
+        incs_output = comtst.rdiff_backup_action(
+            False,
+            None,
+            self.bak_path,
+            None,
+            (),
+            b"list",
+            ("increments", "--size"),
+            return_stdout=True,
+        )
+        self.assertIn(b"Cumulative size", incs_output)
+
+        # all tests were successful
+        self.success = True
+
+    def test_action_listincrements_parsable(self):
         """test the list increments action, without and with size"""
         # we need to use a regex for different timezones
         self.assertRegex(
