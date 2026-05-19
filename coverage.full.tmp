@@ -1,5 +1,4 @@
 Name                                                                            Stmts   Miss  Cover   Missing
-TOTAL                                                                            9341   1263    86%
 rdiffbackup/actions/backup.py               75      6    92%   89, 93, 110, 116, 119-124
 rdiffbackup/actions/calculate.py            65      4    94%   120, 127, 151-152
 rdiffbackup/actions/compare.py              84      5    94%   97, 101, 105, 111, 118
@@ -59,3 +58,4 @@ rdiffbackup/utils/plugins.py                19      3    84%   80, 82-83
 rdiffbackup/utils/quoting.py                21      2    90%   47, 65
 rdiffbackup/utils/simpleps.py               27      4    85%   42, 54, 77-78
 rdiffbackup/utils/usrgrp.py                 50      2    96%   32-33
+TOTAL                                                                            9341   1263    86%
