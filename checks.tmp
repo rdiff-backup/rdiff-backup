@@ -1,0 +1,42 @@
+/home/ericl/Workspace/rdiff-backup/.venv/bin/rdiff-backup -v5 \
+    restore \
+    --exclude \
+    '**/*_link' \
+    --include \
+    '**/dir?' \
+    --exclude \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2 \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/bak \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2
+
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:229 => start restoring
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:232 => dir.apply
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:385 => ITR.finish_processing
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/rorpiter.py:164 => to_be_finished.end_process_directory() [when pointing at root dir i.e. .base_rp has empty index]
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:442-448 => end_process_directory - self.dir_update is None and self.dir_replacement is set to temp file, self is of type rdiffbackup.locations._dir_shadow._DirPatchITRB
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:449 => fails on rmdir
+
+rm -fr .venv/testfiles/selection_test/select_command_test/to2
+
+/home/ericl/Workspace/rdiff-backup/.venv/bin/rdiff-backup -v5 \
+    restore \
+    --exclude \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir1/nowhere_link \
+    --exclude \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir1/some_link \
+    --include \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir1 \
+    --include \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir2 \
+    --exclude \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2 \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/bak \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2
+
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:229 => start restoring
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:232 => dir.apply
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:385 => ITR.finish_processing
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/rorpiter.py:164 => to_be_finished.end_process_directory() [when pointing at root dir i.e. .base_rp has empty index]
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:442-448 => end_process_directory - self.dir_update is a RORPath with empty index and self.dir_replacement is set to None, self is of type rdiffbackup.locations._dir_shadow._DirPatchITRB
+
+TODO: check on which conditions/selection criteria .dir_update resp. .dir_replacement is set.
