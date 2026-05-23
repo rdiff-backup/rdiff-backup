@@ -795,9 +795,13 @@ class CommandTest(unittest.TestCase):
                             "nowhere_link": {"type": "link", "target": "nowhere"},
                         },
                     },
-                    "dir2": {
+                    "dirwith": {
                         "contents": {
-                            "some_other_file": {"content": "whatever"},
+                            "dir2": {
+                                "contents": {
+                                    "some_other_file": {"content": "whatever"},
+                                },
+                            },
                         },
                     },
                 }
@@ -932,7 +936,7 @@ class CommandTest(unittest.TestCase):
         exclude_file = os.path.join(self.base_dir, b"exclude.txt")
         with open(include_file, "wb") as ifb:
             ifb.write(os.path.join(self.from1_path, b"dir1", b"some_file") + b"\n")
-            ifb.write(os.path.join(self.from1_path, b"dir2") + b"\n")
+            ifb.write(os.path.join(self.from1_path, b"dirwith", b"dir2") + b"\n")
         with open(exclude_file, "wb") as efb:
             efb.write(os.path.join(self.from1_path, b"dir1") + b"\n")
         self.assertEqual(
@@ -964,7 +968,7 @@ class CommandTest(unittest.TestCase):
         )
         self.assertTrue(
             rpath.RPath(
-                specifics.local_connection, self.bak_path, (b"dir2", "some_other_file")
+                specifics.local_connection, self.bak_path, (b"dirwith", b"dir2", "some_other_file")
             ).lstat()
         )
         self.assertEqual(
@@ -1022,7 +1026,7 @@ class CommandTest(unittest.TestCase):
         )
         self.assertTrue(
             rpath.RPath(
-                specifics.local_connection, self.bak_path, (b"dir2", "some_other_file")
+                specifics.local_connection, self.bak_path, (b"dirwith", b"dir2", "some_other_file")
             ).lstat()
         )
         self.assertEqual(
@@ -1058,7 +1062,7 @@ class CommandTest(unittest.TestCase):
         )
         with open(include_file, "wb") as ifb:
             ifb.write(os.path.join(self.to1_path, b"dir1", b"some_file") + b"\n")
-            ifb.write(os.path.join(self.to1_path, b"dir2") + b"\n")
+            ifb.write(os.path.join(self.to1_path, b"dirwith", b"dir2") + b"\n")
         with open(exclude_file, "wb") as efb:
             efb.write(os.path.join(self.to1_path, b"dir1") + b"\n")
         self.assertEqual(
