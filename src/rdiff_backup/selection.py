@@ -90,6 +90,7 @@ class Select:
     # Constants to express exclusion or inclusion
     EXCLUDE = 0
     INCLUDE = 1
+    DOSCAN = 2
     # Constants to express if min size or max size
     MIN = 0
     MAX = 1
@@ -118,31 +119,31 @@ class Select:
 
     def _select_filename(self, rp):
         """Evaluate the selection functions using only the filename and return the dominant value: 0, 1, or 2."""
-        scanned = 0  # 0, by default, or 2 if prev sel func scanned rp
+        scanned = Select.EXCLUDE
         for sf in self.selection_functions:
             if not sf.check_filename and not sf.exclude:
-                return 1
+                return Select.INCLUDE
             result = sf(rp)
-            if result == 1:
-                return 1
-            elif result == 0:
+            if result == Select.INCLUDE:
+                return Select.INCLUDE
+            elif result == Select.EXCLUDE:
                 return scanned
-            elif result == 2:
-                scanned = 2
-        return 1
+            elif result == Select.DOSCAN:
+                scanned = Select.DOSCAN
+        return Select.INCLUDE
 
     def select_default(self, rp):
         """Run through the selection functions and return dominant val 0/1/2"""
-        scanned = 0  # 0, by default, or 2 if prev sel func scanned rp
+        scanned = Select.EXCLUDE
         for sf in self.selection_functions:
             result = sf(rp)
-            if result == 1:
-                return 1
-            elif result == 0:
+            if result == Select.INCLUDE:
+                return Select.INCLUDE
+            elif result == Select.EXCLUDE:
                 return scanned
-            elif result == 2:
-                scanned = 2
-        return 1
+            elif result == Select.DOSCAN:
+                scanned = Select.DOSCAN
+        return Select.INCLUDE
 
     def parse_selection_args(self, argtuples=()):
         """
@@ -253,7 +254,7 @@ class Select:
                 # First check if path is excluded by filename to reduce IO calls
                 minimal_rp = rp.new_index_empty(rp.index + (filename,))
                 s = self._select_filename(minimal_rp)
-                if s == 0:
+                if s == Select.EXCLUDE:
                     continue
                 # If filename is not excluded, run all selection functions.
                 new_rp = robust.check_common_error(
@@ -261,9 +262,9 @@ class Select:
                 )
                 if new_rp and new_rp.lstat():
                     s = self.select_default(new_rp)
-                    if s == 1:
+                    if s == Select.INCLUDE:
                         yield (new_rp, 0)
-                    elif s == 2 and new_rp.isdir():
+                    elif s == Select.DOSCAN and new_rp.isdir():
                         yield (new_rp, 1)
 
         yield rpath
@@ -726,15 +727,15 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
         def include_sel_func(rp):
             if glob_comp_re.match(rp.path):
-                return 1
+                return Select.INCLUDE
             elif scan_comp_re.match(rp.path):
-                return 2
+                return Select.DOSCAN
             else:
                 return None
 
         def exclude_sel_func(rp):
             if glob_comp_re.match(rp.path):
-                return 0
+                return Select.EXCLUDE
             else:
                 return None
 
@@ -875,7 +876,7 @@ class _FilterIterITRB(rorpiter.ITRBranch):
 
         """
         self.select, self.rorp_cache = select, rorp_cache
-        self.branch_excluded = None
+        self.branch_excluded = False
         self.base_queue = None  # holds branch base while examining contents
 
     def can_fast_process(self, index, next_rp, next_rorp):
@@ -896,11 +897,11 @@ class _FilterIterITRB(rorpiter.ITRBranch):
 
     def start_process_directory(self, index, next_rp, next_rorp):
         s = self.select(next_rp)
-        if s == 0:
-            self.branch_excluded = 1
-        elif s == 1:
+        if s == Select.EXCLUDE:
+            self.branch_excluded = True
+        elif s == Select.INCLUDE:
             self.rorp_cache.append(next_rorp)
-        elif s == 2:
+        elif s == Select.DOSCAN:
             self.base_queue = next_rorp
         else:
             raise ValueError("Unexpected select value {sel}.".format(sel=s))

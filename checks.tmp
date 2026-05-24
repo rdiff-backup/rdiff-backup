@@ -42,3 +42,7 @@ rm -fr .venv/testfiles/selection_test/select_command_test/to2
 TODO: check on which conditions/selection criteria .dir_update resp. .dir_replacement is set.
 
 /home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:428 => start_process_directory - diff_rorp is None! Issue isn't limited to root directory but impacts any parent directory.
+
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/selection.py:636
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/selection.py:121
+/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/selection.py:136
