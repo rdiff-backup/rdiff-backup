@@ -535,7 +535,7 @@ class FSAbilities:
         test_rp = rp.append("dir_inc_check")
         test_rp.touch()
         try:
-            test_rp.chmod(0o7777, 4)
+            test_rp.chmod(0o7777, log.INFO)
         except OSError:
             test_rp.delete()
             self.dir_inc_perms = False
@@ -620,10 +620,10 @@ class FSAbilities:
         tmpd_rp = dir_rp.append(b"high_perms_dir")
         tmpd_rp.touch()
         try:
-            tmpf_rp.chmod(0o7000, 4)
-            tmpf_rp.chmod(0o7777, 4)
-            tmpd_rp.chmod(0o7000, 4)
-            tmpd_rp.chmod(0o7777, 4)
+            tmpf_rp.chmod(0o7000, log.INFO)
+            tmpf_rp.chmod(0o7777, log.INFO)
+            tmpd_rp.chmod(0o7000, log.INFO)
+            tmpd_rp.chmod(0o7777, log.INFO)
         except OSError:
             self.high_perms = False
         else:
