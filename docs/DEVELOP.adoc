@@ -594,7 +594,7 @@ We use https://docs.github.com/en/actions[GitHub Actions] to release automatical
 
 The following rules apply:
 
-* each modification to master happens through a Pull Request (PR) which triggers a pipeline job, which must be succesful for the merge to have a chance to happen.
+* each modification to master happens through a Pull Request (PR) which triggers a pipeline job, which must be successful for the merge to have a chance to happen.
 Such PR jobs will _not_ trigger a release.
 * GitHub releases are generated as draft only on Git tags looking like a release.
 The release manager reviews then the draft release, names and describes it before they makes it visible.
