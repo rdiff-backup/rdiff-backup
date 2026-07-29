@@ -25,6 +25,7 @@ documentation on what this code does can be found on the man page.
 
 import os
 import re
+import typing
 
 from rdiff_backup import robust, rorpiter, rpath
 from rdiffbackup.singletons import generics, log
@@ -88,12 +89,12 @@ class Select:
     glob_re = re.compile(b"(.*[*?[\\\\]|ignorecase\\:)", re.I | re.S)
 
     # Constants to express exclusion or inclusion
-    EXCLUDE = 0
-    INCLUDE = 1
-    DOSCAN = 2
+    EXCLUDE: typing.Final[int] = 0
+    INCLUDE: typing.Final[int] = 1
+    DOSCAN: typing.Final[int] = 2
     # Constants to express if min size or max size
-    MIN = 0
-    MAX = 1
+    MIN: typing.Final[int] = 0
+    MAX: typing.Final[int] = 1
 
     def __init__(self, rootrp):
         """Select initializer.  rpath is the root directory"""
@@ -193,7 +194,9 @@ class Select:
 
     def parse_rbdir_exclude(self):
         """Add exclusion of rdiff-backup-data dir to front of list"""
-        self._add_selection_func(self._glob_get_tuple_sf((b"rdiff-backup-data",), 0), 1)
+        self._add_selection_func(
+            self._glob_get_tuple_sf((b"rdiff-backup-data",), Select.EXCLUDE), True
+        )
 
     def _init_parsing_mapping(self):
         """
@@ -246,8 +249,8 @@ class Select:
             """
             Generate relevant files in directory rpath
 
-            Returns (rpath, num) where num == 0 means rpath should be
-            generated normally, num == 1 means the rpath is a directory
+            Returns (rpath, num) where INCLUDE means rpath should be
+            generated normally, DOSCAN means the rpath is a directory
             and should be included iff something inside is included.
             """
             for filename in self._listdir_sorted(rp):
@@ -263,9 +266,9 @@ class Select:
                 if new_rp and new_rp.lstat():
                     s = self.select_default(new_rp)
                     if s == Select.INCLUDE:
-                        yield (new_rp, 0)
+                        yield (new_rp, Select.INCLUDE)
                     elif s == Select.DOSCAN and new_rp.isdir():
-                        yield (new_rp, 1)
+                        yield (new_rp, Select.DOSCAN)
 
         yield rpath
         if not rpath.isdir():
@@ -281,7 +284,7 @@ class Select:
                 if delayed_rp_stack:
                     delayed_rp_stack.pop()
                 continue
-            if val == 0:
+            if val == Select.INCLUDE:
                 if delayed_rp_stack:
                     for delayed_rp in delayed_rp_stack:
                         yield delayed_rp
@@ -289,7 +292,7 @@ class Select:
                 yield rpath
                 if rpath.isdir():
                     diryield_stack.append(diryield(rpath))
-            elif val == 1:
+            elif val == Select.DOSCAN:
                 delayed_rp_stack.append(rpath)
                 diryield_stack.append(diryield(rpath))
 
@@ -367,7 +370,7 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         i = [0]  # We have to put index in list because of stupid scoping rules
 
         def selection_function(rp):
-            while 1:
+            while True:
                 if i[0] >= len(tuple_list):
                     return None
                 include, move_on = self._filelist_pair_match(rp, tuple_list[i[0]])
@@ -414,7 +417,7 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
                 continue
             tuple_list.append(tuple)
             if not tuple[1]:
-                something_excluded = 1
+                something_excluded = True
         return (tuple_list, something_excluded)
 
     def _filelist_parse_line(self, line, include):
@@ -466,7 +469,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
                 return (None, False)  # rp greater, not initial sequence
         else:
             raise ValueError(
-                "Include is {ival}, should be 0 or 1.".format(ival=include)
+                "Include is {ival}, should be EXCLUDE (0) or INCLUDE (1).".format(
+                    ival=include
+                )
             )
 
     def _filelist_globbing_get_sfs(self, list_content, inc_default, list_name):
@@ -485,9 +490,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
             if not line:
                 continue  # skip blanks
             if line[:2] == b"+ ":
-                yield self._glob_get_sf(line[2:], 1)
+                yield self._glob_get_sf(line[2:], Select.INCLUDE)
             elif line[:2] == b"- ":
-                yield self._glob_get_sf(line[2:], 0)
+                yield self._glob_get_sf(line[2:], Select.EXCLUDE)
             else:
                 yield self._glob_get_sf(line, inc_default)
 
@@ -495,7 +500,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """Return selection function matching files on other filesystems"""
         assert (
             include == Select.EXCLUDE or include == Select.INCLUDE
-        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
+        ), "Include is {ival}, should be EXCLUDE (0) or INCLUDE (1).".format(
+            ival=include
+        )
         root_devloc = self.rpath.getdevloc()
 
         def sel_func(rp):
@@ -513,7 +520,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """Return selection function given by regexp_string"""
         assert (
             include == Select.EXCLUDE or include == Select.INCLUDE
-        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
+        ), "Include is {ival}, should be EXCLUDE (0) or INCLUDE (1).".format(
+            ival=include
+        )
         try:
             regexp = re.compile(os.fsencode(regexp_string))
         except re.error:
@@ -538,7 +547,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """Return selection function given by a file if present"""
         assert (
             include == Select.EXCLUDE or include == Select.INCLUDE
-        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
+        ), "Include is {ival}, should be EXCLUDE (0) or INCLUDE (1).".format(
+            ival=include
+        )
 
         def sel_func(rp):
             if rp.isdir() and rp.readable() and rp.append(presence_filename).lstat():
@@ -633,7 +644,9 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """Return selection function given by glob string"""
         assert (
             include == Select.EXCLUDE or include == Select.INCLUDE
-        ), "Include is {ival}, should be 0 or 1.".format(ival=include)
+        ), "Include is {ival}, should be EXCLUDE (0) or INCLUDE (1).".format(
+            ival=include
+        )
         glob_str = os.fsencode(glob_str)  # paths and glob must be bytes
         if glob_str == b"**":
 
@@ -670,13 +683,13 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
         def include_sel_func(rp):
             if rp.index == tuple[: len(rp.index)] or rp.index[: len(tuple)] == tuple:
-                return 1  # /foo/bar implicitly matches /foo, vice-versa
+                return Select.INCLUDE  # /foo/bar implicitly matches /foo, vice-versa
             else:
                 return None
 
         def exclude_sel_func(rp):
             if rp.index[: len(tuple)] == tuple:
-                return 0  # /foo excludes /foo/bar, not vice-versa
+                return Select.EXCLUDE  # /foo excludes /foo/bar, not vice-versa
             else:
                 return None
 
@@ -831,7 +844,7 @@ class FilterIter:
         self.ITR = rorpiter.IterTreeReducer(
             _FilterIterITRB, [select.select_default, self.stored_rorps]
         )
-        self.itr_finished = 0
+        self.itr_finished = False
 
     def __iter__(self):
         return self
@@ -846,7 +859,7 @@ class FilterIter:
                     raise
                 else:
                     self.ITR.finish_processing()
-                    self.itr_finished = 1
+                    self.itr_finished = True
             else:
                 next_rp = rpath.RPath(
                     self.base_rp.conn,
@@ -887,12 +900,12 @@ class _FilterIterITRB(rorpiter.ITRBranch):
         if self.branch_excluded:
             return
         s = self.select(next_rp)
-        if s == 1:
+        if s == Select.INCLUDE:
             if self.base_queue:
                 self.rorp_cache.append(self.base_queue)
                 self.base_queue = None
             self.rorp_cache.append(next_rorp)
-        elif s != 0:
+        elif s != Select.EXCLUDE:
             raise ValueError("Unexpected select value {sel}.".format(sel=s))
 
     def start_process_directory(self, index, next_rp, next_rorp):

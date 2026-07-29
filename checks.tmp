@@ -1,7 +1,7 @@
+FAILS:
+
 /home/ericl/Workspace/rdiff-backup/.venv/bin/rdiff-backup -v5 \
     restore \
-    --exclude \
-    '**/*_link' \
     --include \
     '**/dir?' \
     --exclude \
@@ -9,40 +9,40 @@
     /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/bak \
     /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2
 
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:229 => start restoring
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:232 => dir.apply
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:385 => ITR.finish_processing
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/rorpiter.py:164 => to_be_finished.end_process_directory() [when pointing at root dir i.e. .base_rp has empty index]
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:442-448 => end_process_directory - self.dir_update is None and self.dir_replacement is set to temp file, self is of type rdiffbackup.locations._dir_shadow._DirPatchITRB
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:449 => fails on rmdir
+Does NOT fail:
 
-rm -fr .venv/testfiles/selection_test/select_command_test/to2
-
-/home/ericl/Workspace/rdiff-backup/.venv/bin/rdiff-backup -v5 \
-    restore \
-    --exclude \
-    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir1/nowhere_link \
-    --exclude \
-    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir1/some_link \
+/home/ericl/Workspace/rdiff-backup/.venv/bin/rdiff-backup restore \
     --include \
-    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir1 \
-    --include \
-    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dir2 \
+    /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2/dirwith/dir2 \
     --exclude \
     /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2 \
     /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/bak \
     /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2
 
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:229 => start restoring
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/actions/restore.py:232 => dir.apply
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:385 => ITR.finish_processing
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/rorpiter.py:164 => to_be_finished.end_process_directory() [when pointing at root dir i.e. .base_rp has empty index]
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:442-448 => end_process_directory - self.dir_update is a RORPath with empty index and self.dir_replacement is set to None, self is of type rdiffbackup.locations._dir_shadow._DirPatchITRB
 
-TODO: check on which conditions/selection criteria .dir_update resp. .dir_replacement is set.
 
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiffbackup/locations/_dir_shadow.py:428 => start_process_directory - diff_rorp is None! Issue isn't limited to root directory but impacts any parent directory.
+rm -fr /home/ericl/Workspace/rdiff-backup/.venv/testfiles/selection_test/select_command_test/to2
 
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/selection.py:636
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/selection.py:121
-/home/ericl/Workspace/rdiff-backup/.venv/lib64/python3.14/site-packages/rdiff_backup/selection.py:136
+
+b /home/ericl/Workspace/rdiff-backup/.venv/lib/python3.12/site-packages/rdiffbackup/locations/_repo_shadow.py:865
+    def _get_mirror_rorp_iter(cls, rest_time=None, require_metadata=None):
+    	[...]
+        if cls._select:
+            rorp_iter = selection.FilterIter(cls._select, rorp_iter)
+
+FAIL - cls._select.selection_functions
+[<function Select._glob_get_tuple_sf.<locals>.exclude_sel_func at 0x7940833f7240>,
+ <function Select._glob_get_normal_sf.<locals>.include_sel_func at 0x7940833f6de0>,
+ <function Select._glob_get_tuple_sf.<locals>.exclude_sel_func at 0x7940833f6f20>]
+
+NOT FAIL - cls._select.selection_functions
+[<function Select._glob_get_tuple_sf.<locals>.exclude_sel_func at 0x77e1a07fb380>,
+ <function Select._glob_get_tuple_sf.<locals>.include_sel_func at 0x77e1a07fb2e0>,
+ <function Select._glob_get_tuple_sf.<locals>.exclude_sel_func at 0x77e1a07fade0>]
+
+b /home/ericl/Workspace/rdiff-backup/.venv/lib/python3.12/site-packages/rdiff_backup/selection.py:900
+b /home/ericl/Workspace/rdiff-backup/.venv/lib/python3.12/site-packages/rdiff_backup/selection.py:912
+
+FAIL: Rorp() is marked DOSCAN and lands in self.base_queue
+
+_glob_get_tuple_sf.<locals>.include_sel_func implicitly includes all containing directories, whereas Select._glob_get_normal_sf.<locals>.include_sel_func doesn't do it.
