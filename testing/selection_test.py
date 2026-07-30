@@ -968,7 +968,9 @@ class CommandTest(unittest.TestCase):
         )
         self.assertTrue(
             rpath.RPath(
-                specifics.local_connection, self.bak_path, (b"dirwith", b"dir2", "some_other_file")
+                specifics.local_connection,
+                self.bak_path,
+                (b"dirwith", b"dir2", "some_other_file"),
             ).lstat()
         )
         self.assertEqual(
@@ -1026,7 +1028,9 @@ class CommandTest(unittest.TestCase):
         )
         self.assertTrue(
             rpath.RPath(
-                specifics.local_connection, self.bak_path, (b"dirwith", b"dir2", "some_other_file")
+                specifics.local_connection,
+                self.bak_path,
+                (b"dirwith", b"dir2", "some_other_file"),
             ).lstat()
         )
         self.assertEqual(
@@ -1126,7 +1130,7 @@ class CommandTest(unittest.TestCase):
             consts.RET_CODE_OK,
         )
 
-        #self.success = True
+        self.success = True
 
     def tearDown(self):
         # we clean-up only if the test was successful

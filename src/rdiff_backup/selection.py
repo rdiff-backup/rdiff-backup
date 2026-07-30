@@ -842,7 +842,7 @@ class FilterIter:
         self.base_rp = select.rpath
         self.stored_rorps = []
         self.ITR = rorpiter.IterTreeReducer(
-            _FilterIterITRB, [select.select_default, self.stored_rorps]
+            _FilterIterITRB, [select.select_default, self.stored_rorps, []]
         )
         self.itr_finished = False
 
@@ -880,7 +880,7 @@ class _FilterIterITRB(rorpiter.ITRBranch):
 
     """
 
-    def __init__(self, select, rorp_cache):
+    def __init__(self, select, rorp_cache, base_queue):
         """Initialize _FilterIterITRB.  Called by IterTreeReducer.
 
         select should be the relevant Select object used to test the
@@ -890,7 +890,9 @@ class _FilterIterITRB(rorpiter.ITRBranch):
         """
         self.select, self.rorp_cache = select, rorp_cache
         self.branch_excluded = False
-        self.base_queue = None  # holds branch base while examining contents
+        # It is important to keep base_queue always the same list so that it is
+        # shared between instances of this class as created by IterTreeReducer.
+        self.base_queue = base_queue  # holds branch base while examining contents
 
     def can_fast_process(self, index, next_rp, next_rorp):
         return not next_rp.isdir()
@@ -902,8 +904,8 @@ class _FilterIterITRB(rorpiter.ITRBranch):
         s = self.select(next_rp)
         if s == Select.INCLUDE:
             if self.base_queue:
-                self.rorp_cache.append(self.base_queue)
-                self.base_queue = None
+                self.rorp_cache.extend(self.base_queue)
+                self.base_queue.clear()
             self.rorp_cache.append(next_rorp)
         elif s != Select.EXCLUDE:
             raise ValueError("Unexpected select value {sel}.".format(sel=s))
@@ -913,8 +915,18 @@ class _FilterIterITRB(rorpiter.ITRBranch):
         if s == Select.EXCLUDE:
             self.branch_excluded = True
         elif s == Select.INCLUDE:
+            if self.base_queue:
+                self.rorp_cache.extend(self.base_queue)
+                self.base_queue.clear()
             self.rorp_cache.append(next_rorp)
         elif s == Select.DOSCAN:
-            self.base_queue = next_rorp
+            # add the current directory at the end of the queue according to hierarchy
+            while self.base_queue:
+                if self.base_queue[-1].index == next_rorp.index[:-1]:
+                    self.base_queue.append(next_rorp)
+                    break
+                self.base_queue.pop()
+            else:  # base_queue is empty
+                self.base_queue.append(next_rorp)
         else:
             raise ValueError("Unexpected select value {sel}.".format(sel=s))
