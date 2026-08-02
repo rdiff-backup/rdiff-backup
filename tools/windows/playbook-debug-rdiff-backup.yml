@@ -19,5 +19,5 @@
         content: |
           REM call this script to get the right environment variable and examples
           SET LIBRSYNC_DIR={{ librsync_install_dir | replace('/', bq) }}
-          dist\rdb\scripts\activate
+          .venv\scripts\activate
         dest: "{{ rdiffbackup_dir }}/dist/setup-rdiff-backup.bat"
