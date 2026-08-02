@@ -5,6 +5,7 @@ Test handling of of rdiff-backup CLI arguments
 import argparse
 import os
 import subprocess
+import sys
 import unittest
 
 import commontest as comtst
@@ -136,9 +137,11 @@ class SelectActionTest(unittest.TestCase):
                 ("exclude-something", "blup"),
             ],
         )
-        os.chmod(list_file, 0o200)  # can't read, only write
-        with self.assertRaises(SystemExit):
-            args = parser.parse_args(["--include-something-filelist", list_file])
+        # Doesn't work under Windows which doesn't know write-only files
+        if sys.platform != "win32":
+            os.chmod(list_file, 0o200)  # can't read, only write
+            with self.assertRaises(SystemExit):
+                args = parser.parse_args(["--include-something-filelist", list_file])
         self.success = True
 
     def tearDown(self):
