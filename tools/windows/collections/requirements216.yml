@@ -1,0 +1,9 @@
+---
+# specific dependency file for Ansible 2.16
+collections:
+  - name: ansible.windows
+    version: ">=1.11.0"
+  - name: chocolatey.chocolatey
+    version: "<1.6"  # version 1.6 requires Ansible >= 2.18
+  - community.windows
+  - ansible.posix

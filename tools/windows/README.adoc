@@ -2,28 +2,71 @@
 :sectnums:
 :toc:
 
-== Create the Windows VM
+== Installation steps
 
-Install Vagrant, ruby-devel and libvirt-devel as root and the necessary plug-ins with `vagrant plugin install <plugin>`:
+=== under Ubuntu
 
-* vagrant-libvirt (_not_ libvirt!)
-* winrm
-* winrm-elevated
+First install Vagrant:
 
-Also install ansible(-core) in version 2.12 or higher, and call the following to get the necessary collections installed:
+.Follow https://developer.hashicorp.com/vagrant/install
+[source,shell]
+----
+wget -O - https://apt.releases.hashicorp.com/gpg | \
+	sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | \
+	sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install vagrant
+----
+
+.Then continue with
+[source,shell]
+----
+sudo apt install libvirt-dev virt-manager  # virt-manager is possibly too much but works!
+sudo apt install ansible-core ansible-  # you can install the full ansible, I prefer not
+sudo systemctl start libvirtd
+----
+
+=== Under Fedora
+
+The trick so far to make vagrant work under Fedora is to install vagrant from repository but _no_ vagrant plugin:
 
 ----
-ansible-galaxy collection install -r collections/requirements.yml
+sudo dnf install vagrant ruby-devel libvirt-devel
 ----
 
-A simple `vagrant up` should now do, using a default Windows image, and you'll get in the best case a fully workable rdiff-backup development environment on Windows.
+IMPORTANT: Make sure no vagrant plugin is installed as RPM.
 
-NOTE: Starting from https://github.com/redhat-cop/automate-windows/tree/master/vagrant-libvirt-image,  you can create your own Windows VM usable by Ansible (any other alternative  approach to a such VM is of course valid).
+=== Further steps
 
-You can re-apply the changes using `vagrant provision` or direcly apply the playbook `playbook-provision-windows.yml` using Ansible to the Windows you've just created to create the necessary development environment.
+I personally want to run vagrant as normal user so make yourself part of the libvirt group:
+`sudo usermod --append -G libvirt myuser` (tested under Ubuntu) or add something like the following polkit rule (under Fedora):
 
-IMPORTANT: The current state of the automation isn't very satisfying, the more complex packages need to be installed manually from the command line with something like `choco install <packagename>` and the playbook restarted.
-A few reboots in-between might be necessary.
+.`/etc/polkit-1/rules.d/80-vagrant-libvirt.rules`
+----
+polkit.addRule(function(action, subject) {
+  if (action.id == "org.libvirt.unix.manage" && subject.local && subject.active && subject.isInGroup("wheel")) {
+      return polkit.Result.YES;
+  }
+});
+----
+
+In both cases, it's best to reboot.
+
+== Configure vagrant and create the VM
+
+After that you can run:
+
+[source,shell]
+----
+ansible-galaxy collection install -r collections/requirements.yml  # or 216 for ansible 2.16
+vagrant plugin install vagrant-libvirt winrm winrm-elevated
+vagrant up
+vagrant provision  # if the provisioning fails before
+vagrant reload  # just to be sure Windows is ready "reboot tut gut"
+ansible -m win_ping winbuilder  # make sure Ansible is properly configured
+----
+
+=== If you already have a development Windows
 
 If you already have a Windows VM/PC/laptop/server, you'd like to use for rdiff-backup development, you don't need to use Vagrant, you can directly use Ansible:
 
@@ -44,35 +87,43 @@ ansible_port=5986
 ansible_winrm_server_cert_validation=ignore
 ----
 
-TIP: with the newest version of Windows, you can even connect to the VM using SSH e.g. with `vagrant ssh`.
+== Build, test, debug
 
-== Build librsync and rdiff-backup
+It can be as easy as calling ansible-playbook:
 
-It can be as easy as calling twice ansible-playbook:
-
+[source, shell]
 ----
-ansible-playbook playbook-build-librsync.yml
-ansible-playbook playbook-build-rdiff-backup.yml
+ansible-playbook playbook-pipeline.yml  # build librsync and rdiff-backup
+ansible-playbook playbook-pipeline.yml -e rdiff_version_tag=mybranch  # same thing with branch
+ansible-playbook playbook-test-rdiff-backup.yml  # unpack test files and test
+ansible-playbook playbook-debug-rdiff-backup.yml  # prepare venv and script for debugging
 ----
 
-NOTE: you can use the variables under `group_vars/all` to steer the build process, check the comments there for more details.
+Then open a console e.g. using `vagrant ssh` and here you go:
 
-== Develop and try under Windows
-
-Open a console and type:
-
+[source, shell]
 ----
 cd %HOME%\Develop\rdiff-backup
-.\build\setup-rdiff-backup.bat
-.\build\scripts-3.9\rdiff-backup --version
-.\build\scripts-3.9\rdiff-backup sourcedir targetdir
-python -m pdb .\build\scripts-3.9\rdiff-backup sourcedir targetdir
+git checkout mybranch  # if not already done
+.\dist\setup-rdiff-backup.bat  # join the virtual environment
+pip install .  # each time you do code changes
+rdiff-backup --version
+rdiff-backup sourcedir targetdir
+python -m pdb -m rdiffbackup.run sourcedir targetdir
 [...]
+deactivate  # leave the virtual environment
 ----
 
-If you do changes to the source code, just rebuild using one or both playbooks and try again.
+If you do changes to the source code, you can rebuild using the playbook(s) and try again.
 
 NOTE: If you do changes outside of the VM, you'll need to do `git pull` on your own, the playbooks doesn't (yet) take care of it for you.
+
+Testing goes with:
+
+----
+SET LIBRSYNC_DIR=C:\Users\vagrant\librsync64
+tox -c tox_win.ini
+----
 
 == Samba server
 
@@ -80,7 +131,7 @@ If you need a samba server to do some specific tests, you can simply call explic
 
 There are 2 shares available, one `\\samba\readonlyshare` and one `\\samba\readwriteshare`, (the difference should be obvious), which you can map on the Windows VM using a command like `net use x: \\samba\whichevershare` (or use directly).
 
-== Miscellaneous considerations
+== Miscellaneous considerations (possibly outdated)
 
 === Vagrant and Ansible
 
