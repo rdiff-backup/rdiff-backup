@@ -882,6 +882,7 @@ class CommandTest(unittest.TestCase):
         )
         self.success = True
 
+    @unittest.skipIf(sys.platform.startswith("win"), "can't work with Windows")
     def test_select_symlinks(self):
         """Test inclusion and exclusion of symlinks"""
         self.assertEqual(
@@ -1011,7 +1012,7 @@ class CommandTest(unittest.TestCase):
                     "--include-globbing-filelist",
                     incglob_file,
                     "--exclude",
-                    self.from1_path,
+                    self.from1_path.replace(b"\\", b"/"),  # replacement for Windows
                 ),
             ),
             consts.RET_CODE_OK,
@@ -1047,7 +1048,7 @@ class CommandTest(unittest.TestCase):
                     "--include-globbing-filelist",
                     incglob_file,
                     "--exclude",
-                    self.from1_path,
+                    self.from1_path.replace(b"\\", b"/"),  # replacement for Windows
                 ),
             ),
             consts.RET_CODE_OK,
@@ -1112,7 +1113,7 @@ class CommandTest(unittest.TestCase):
                     "--include-globbing-filelist",
                     incglob_file,
                     "--exclude",
-                    self.to2_path,
+                    self.to2_path.replace(b"\\", b"/"),  # replacement for Windows
                 ),
             ),
             consts.RET_CODE_OK,
