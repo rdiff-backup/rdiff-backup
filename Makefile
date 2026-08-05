@@ -18,7 +18,7 @@ check:
 	@command -v rdiff >/dev/null && echo "rdiff is installed" || { echo "Error: rdiff is not installed"; exit 1; }
 
 test-static:
-	${RUN_COMMAND} tox -c tox.ini -e check-static
+	${RUN_COMMAND} tox -c tox.ini -e lint
 
 test-runtime: test-runtime-base test-runtime-root test-runtime-slow
 

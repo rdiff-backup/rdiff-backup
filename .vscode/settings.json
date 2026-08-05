@@ -1,0 +1,15 @@
+{
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./testing",
+        "-t",
+        "./testing",
+        "-p",
+        "*_test.py"
+    ],
+    "python.analysis.extraPaths": ["./src"],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}"
+}

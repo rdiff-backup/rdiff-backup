@@ -94,7 +94,7 @@ Each time you'll do so, you'll want to install it again and test your changes:
 . Verify that you're in the venv (check the prefix), activate it if necessary with `source .venv/bin/activate`.
 . Fix your code with `black src testing setup.py`.
 . Install your latest version of `rdiff-backup` with `pip install .`.
-. There are many ways to test it, but the minimal set is `tox -e check-static` followed by `tox -e py`.
+. There are many ways to test it, but the minimal set is `tox -e lint` followed by `tox -e py`.
 +
 IMPORTANT: Please don't submit code which hasn't passed both tests!
 Also read the rest of this document and its companions in their entirety and comply with our guidlines and conventions.
