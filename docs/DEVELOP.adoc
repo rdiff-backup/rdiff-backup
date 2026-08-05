@@ -253,7 +253,7 @@ All of those should come packaged with your system or available from https://pyp
 ** .github/workflows/{deploy,weekly}.yml - check for `WIN_PYTHON_VERSION`
 ** tools/windows/group_vars/windows_hosts/generic.yml - check for `python_version` and `python_version_full` 
 * Linux:
-** tox.ini, tox_root.ini, tox_dist.ini and tox_slow.ini - check for `envlist`
+** tox.ini, tox_root.ini and tox_dist.ini - check for `envlist`
 ** .github/workflows/test_linux.yml - check for `python-version`
 ** .github/workflows/{deploy,weekly}.yml - check for `/opt/python/cp3...` (and possibly `many-linux`)
 ** pyproject.toml - check for `requires-python`
@@ -354,7 +354,6 @@ You will most probably be asked for your password so that sudo can extract and p
 That's it, you can now run the tests:
 
 * run `tox` to use the default `tox.ini`
-* or `tox -c tox_slow.ini` for long tests
 * or `sudo tox -c tox_root.ini` for the few tests needing root rights
 
 For more details on testing, see the `test` sections in the link:../Makefile[Makefile] and the link:../.github/workflows[GitHub Actions].

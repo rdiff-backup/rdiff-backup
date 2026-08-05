@@ -28,7 +28,7 @@ test-runtime-files:
 
 test-runtime-base: check test-runtime-files
 	@echo "=== Base tests ==="
-	${RUN_COMMAND} tox -c tox.ini -e py
+	${RUN_COMMAND} tox -c tox.ini -f base
 
 test-runtime-root: test-runtime-files
 	@echo "=== Tests that require root permissions ==="
@@ -37,7 +37,7 @@ test-runtime-root: test-runtime-files
 
 test-runtime-slow: test-runtime-files
 	@echo "=== Long running performance tests ==="
-	${RUN_COMMAND} tox -c tox_slow.ini -e py
+	${RUN_COMMAND} tox -c tox.ini -f slow
 
 test-misc: container clean build test-static test-runtime-slow
 
