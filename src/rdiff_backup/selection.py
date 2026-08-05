@@ -765,7 +765,15 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
         """Return list of regexps equivalent to prefixes of glob_str"""
 
         glob_parts = glob_str.split(b"/")
-        if b"" in glob_parts[1:-1]:  # "" OK if comes first or last, as in /foo/
+
+        # Allow a leading empty part for UNC paths like //server/share/foo
+        # on Windows, but still catch consecutive slashes anywhere else.
+        if os.name == "nt" and glob_str.startswith(b"//"):
+            check_parts = glob_parts[2:-1]
+        else:
+            check_parts = glob_parts[1:-1]
+
+        if b"" in check_parts:  # "" OK if comes first or last, as in /foo/
             raise GlobbingError(
                 "Consecutive '/'s found in globbing string {gs}".format(
                     gs=convert.to_safe_str(glob_str)
