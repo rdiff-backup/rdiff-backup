@@ -136,7 +136,7 @@ class testMiscIters(unittest.TestCase):
         next(i_out)
         self.assertRaises(StopIteration, i_out.__next__)
 
-    @unittest.skipIf(os.name == "nt", "FIXME fails under Windows")
+    @unittest.skipIf(sys.platform.startswith("win"), "FIXME fails under Windows")
     def testMix(self):
         """Test a mix of RPs and ordinary objects"""
         filelist = [5, self.regfile3, "hello"]
@@ -171,7 +171,7 @@ class testMiscIters(unittest.TestCase):
         self.assertEqual(next(i_out2), self.outputrp)
         self.assertRaises(StopIteration, i_out2.__next__)
 
-    @unittest.skipIf(os.name == "nt", "FIXME fails under Windows")
+    @unittest.skipIf(sys.platform.startswith("win"), "FIXME fails under Windows")
     def testFlushRepeat(self):
         """Test flushing like above, but have Flush obj emerge from iter"""
         rplist = [self.outputrp, iterfile.MiscIterFlushRepeat, self.outputrp]

@@ -3,6 +3,7 @@ Test the quoting of characters in filenames
 """
 
 import os
+import sys
 import unittest
 
 import commontest as comtst
@@ -21,7 +22,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(TEST_BASE_DIR, b"location_map_filenames")
         # Windows can't handle too long filenames, FIXME issue #782
-        long_multi = 3 if os.name == "nt" else 25
+        long_multi = 3 if sys.platform.startswith("win") else 25
         self.from1_struct = {
             "from1": {
                 "contents": {

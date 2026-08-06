@@ -24,11 +24,11 @@ Portable locking utilities, defining lock and unlock functions
 # by Jonathan Feinberg, John Nielsen:
 # https://www.oreilly.com/library/view/python-cookbook/0596001673/ch04s25.html
 
-import os
+import sys
 import typing
 
 # needs win32all to work on Windows
-if os.name == "nt":
+if sys.platform.startswith("win"):
     import pywintypes
     import win32con
     import win32file
@@ -52,7 +52,7 @@ if os.name == "nt":
         hfile = win32file._get_osfhandle(file.fileno())
         win32file.UnlockFileEx(hfile, 0, 0xFFFF0000, __overlapped)
 
-elif os.name == "posix":
+else:
     from fcntl import LOCK_EX, LOCK_SH, LOCK_NB  # noqa: F401 implicitly used
     import fcntl
 
@@ -61,6 +61,3 @@ elif os.name == "posix":
 
     def unlock(file: typing.IO) -> None:
         fcntl.flock(file, fcntl.LOCK_UN | fcntl.LOCK_NB)
-
-else:  # pragma: no cover  # we will never test on other platforms
-    raise RuntimeError("Portable locking only defined for nt and posix platforms")

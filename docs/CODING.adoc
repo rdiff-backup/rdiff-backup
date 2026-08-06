@@ -92,3 +92,4 @@ In the meantime, consider the following:
 * don't introduce imports only for typing purposes.
 Introduce such imports only depending on the statement `if typing.TYPE_CHECKING:`.
 Also double-quote type hints requiring such an additional import.
+* Use `sys.version_info` and `sys.platform` to differentiate respectively Python versions and operating systems because this is what https://mypy.readthedocs.io/en/stable/common_issues.html#version-and-platform-checks[Mypy understands].

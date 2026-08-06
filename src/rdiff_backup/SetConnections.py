@@ -27,6 +27,7 @@ the related connections.
 import os
 import re
 import subprocess
+import sys
 from rdiff_backup import connection, rpath
 from rdiffbackup.singletons import consts, generics, log, specifics
 from rdiffbackup.utils import convert
@@ -326,7 +327,7 @@ def _init_connection(remote_cmd):
         log.INFO,
     )
     # Windows doesn't support bytes for command string
-    if os.name == "nt":
+    if sys.platform.startswith("win"):
         exec_cmd = os.fsdecode(remote_cmd)
     else:
         exec_cmd = remote_cmd

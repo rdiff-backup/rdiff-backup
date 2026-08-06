@@ -3,6 +3,7 @@ Test increment functions
 """
 
 import os
+import sys
 import unittest
 
 import commontest as comtst
@@ -36,7 +37,7 @@ out_gz = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"out.gz"))
 
 Time.set_current_time(1000000000)
 prevtime = 999424113
-if os.name == "nt":
+if sys.platform.startswith("win"):
     prevtimestr = b"2001-09-02T02-48-33-07-00"
 else:
     prevtimestr = b"2001-09-02T02:48:33-07:00"
@@ -79,7 +80,9 @@ class IncrementTest(unittest.TestCase):
         self.assertEqual(missing_rp.getinctype(), b"missing")
         missing_rp.delete()
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
+    @unittest.skipIf(
+        sys.platform.startswith("win"), "Symlinks not supported under Windows"
+    )
     def testsnapshot(self):
         """Test making of a snapshot"""
         increment.init(False, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
@@ -95,7 +98,9 @@ class IncrementTest(unittest.TestCase):
         self.assertTrue(rpath.cmp(snap_rp2, rf))
         snap_rp2.delete()
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
+    @unittest.skipIf(
+        sys.platform.startswith("win"), "Symlinks not supported under Windows"
+    )
     def testGzipsnapshot(self):
         """Test making a compressed snapshot"""
         increment.init(True, actions.DEFAULT_NOT_COMPRESSED_REGEXP)
@@ -113,7 +118,9 @@ class IncrementTest(unittest.TestCase):
         self.assertTrue(rp.isinccompressed())
         rp.delete()
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
+    @unittest.skipIf(
+        sys.platform.startswith("win"), "Symlinks not supported under Windows"
+    )
     def testdir(self):
         """Test increment on base_dir"""
         rp = increment.make_increment(sym, base_dir, target, prevtime)

@@ -236,7 +236,9 @@ class RedirectedConnectionTest(unittest.TestCase):
         SetConnections.CloseConnections()
 
 
-@unittest.skipIf(os.name == "nt", "No way to prolongate a Windows command")
+@unittest.skipIf(
+    sys.platform.startswith("win"), "No way to prolongate a Windows command"
+)
 class LengthyConnectionTest(unittest.TestCase):
     """Test what happens if a server process takes too long to quit"""
 

@@ -4,6 +4,7 @@ Test the calculate action
 
 import glob
 import os
+import sys
 import unittest
 
 from rdiffbackup.singletons import consts
@@ -22,7 +23,7 @@ class ActionCalculateTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(TEST_BASE_DIR, b"action_calculate")
         # Windows can't handle too long filenames
-        long_multi = 10 if os.name == "nt" else 25
+        long_multi = 10 if sys.platform.startswith("win") else 25
         self.from1_struct = {
             "from1": {
                 "contents": {
@@ -53,7 +54,7 @@ class ActionCalculateTest(unittest.TestCase):
             }
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
-        if os.name != "nt":
+        if sys.platform.startswith("win"):
             # rdiff-backup can't handle (yet) hardlinks under Windows
             self.from1_struct["from1"]["contents"]["somehardlink"] = {"inode": "fileA"}
             self.from2_struct["from2"]["contents"]["somehardlink"] = {"inode": "fileA"}

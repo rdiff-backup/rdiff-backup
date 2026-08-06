@@ -24,6 +24,7 @@ gids, and possibly vice-versa.  So maintain a separate dictionary for
 this.
 """
 
+import sys
 import typing
 
 try:
@@ -49,14 +50,16 @@ def uid2uname(uid: int) -> typing.Optional[str]:
     """
     if uid in _uid2uname:
         return _uid2uname[uid]
+    elif sys.platform.startswith("win"):
+        uname = None
     else:
         try:
             uname = pwd.getpwuid(uid).pw_name
             _uname2uid[uname] = uid
         except (KeyError, OverflowError, NameError):
             uname = None
-        _uid2uname[uid] = uname
-        return uname
+    _uid2uname[uid] = uname
+    return uname
 
 
 def gid2gname(gid: int) -> typing.Optional[str]:
@@ -65,14 +68,16 @@ def gid2gname(gid: int) -> typing.Optional[str]:
     """
     if gid in _gid2gname:
         return _gid2gname[gid]
+    elif sys.platform.startswith("win"):
+        gname = None
     else:
         try:
             gname = grp.getgrgid(gid).gr_name
             _gname2gid[gname] = gid
         except (KeyError, OverflowError, NameError):
             gname = None
-        _gid2gname[gid] = gname
-        return gname
+    _gid2gname[gid] = gname
+    return gname
 
 
 def uname2uid(uname: str) -> typing.Optional[int]:
@@ -81,14 +86,16 @@ def uname2uid(uname: str) -> typing.Optional[int]:
     """
     if uname in _uname2uid:
         return _uname2uid[uname]
+    elif sys.platform.startswith("win"):
+        uid = None
     else:
         try:
             uid = pwd.getpwnam(uname).pw_uid
             _uid2uname[uid] = uname
         except (KeyError, NameError):
             uid = None
-        _uname2uid[uname] = uid
-        return uid
+    _uname2uid[uname] = uid
+    return uid
 
 
 def gname2gid(gname: str) -> typing.Optional[int]:
@@ -97,11 +104,13 @@ def gname2gid(gname: str) -> typing.Optional[int]:
     """
     if gname in _gname2gid:
         return _gname2gid[gname]
+    elif sys.platform.startswith("win"):
+        gid = None
     else:
         try:
             gid = grp.getgrnam(gname).gr_gid
             _gid2gname[gid] = gname
         except (KeyError, NameError):
             gid = None
-        _gname2gid[gname] = gid
-        return gid
+    _gname2gid[gname] = gid
+    return gid

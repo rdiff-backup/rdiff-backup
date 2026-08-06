@@ -28,6 +28,7 @@ FSAbilities object describing it.
 
 import errno
 import os
+import sys
 from rdiff_backup import robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
@@ -210,7 +211,7 @@ class FSAbilities:
         """
         Set self.hardlinks to true if hard linked files can be created
         """
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             log.Log("Hardlinks disabled on Windows", log.INFO)
             self.hardlinks = None
             return
@@ -665,7 +666,7 @@ class FSAbilities:
         Cygwin/FAT32 |  -success-   -HANGS-
         Native Win   |  WinError,2  WinError,87 WinError,87
         """
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             self.escape_dos_devices = True
             return
 

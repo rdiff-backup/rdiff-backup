@@ -64,7 +64,7 @@ class CheckTypes(RPathTest):
         self.assertTrue(rpath.RPath(self.lc, self.prefix, ("regular_file",)).isreg())
         self.assertFalse(rpath.RPath(self.lc, self.prefix, ("symbolic_link",)).isreg())
 
-    @unittest.skipIf(os.name == "nt", "Fifo don't exist under Windows")
+    @unittest.skipIf(sys.platform.startswith("win"), "Fifo don't exist under Windows")
     def testFifo(self):
         """Fifo's identified"""
         self.assertTrue(rpath.RPath(self.lc, self.prefix, ("fifo",)).isfifo())
@@ -103,7 +103,7 @@ class CheckTypes(RPathTest):
         )
 
 
-@unittest.skipIf(os.name == "nt", "Windows doesn't handle well rights")
+@unittest.skipIf(sys.platform.startswith("win"), "Windows doesn't handle well rights")
 class CheckPerms(RPathTest):
     """Check to see if permissions are reported and set accurately"""
 
@@ -154,7 +154,9 @@ class CheckTimes(RPathTest):
         self.assertEqual(rp.getmtime(), 20000)
         rp.delete()
 
-    @unittest.skipIf(os.name == "nt", "Windows doesn't handle ctime correctly")
+    @unittest.skipIf(
+        sys.platform.startswith("win"), "Windows doesn't handle ctime correctly"
+    )
     def testCtime(self):
         """Check to see if ctime read, compared"""
         rp = rpath.RPath(self.lc, self.prefix, ("ctimetest.1",))
@@ -201,7 +203,7 @@ class CheckDir(RPathTest):
         self.assertEqual(dirlist, [b"1", b"2", b"3", b"4"])
 
 
-@unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
+@unittest.skipIf(sys.platform.startswith("win"), "Symlinks not supported under Windows")
 class CheckSyms(RPathTest):
     """Check symlinking and reading"""
 
@@ -222,7 +224,7 @@ class CheckSyms(RPathTest):
         link.delete()
 
 
-@unittest.skipIf(os.name == "nt", "Sockets don't exist under Windows")
+@unittest.skipIf(sys.platform.startswith("win"), "Sockets don't exist under Windows")
 class CheckSockets(RPathTest):
     """Check reading and making sockets"""
 
@@ -297,7 +299,7 @@ class FilenameOps(RPathTest):
         b"//host/share": b"//host/share",
         b"//host//share/": b"//host/share",
     }
-    if os.name != "nt":  # Windows doesn't like double slashes
+    if sys.platform.startswith("win"):  # Windows doesn't like double slashes
         normdict[b"//"] = b"/"
     dirsplitdict = {
         b"/": (b"", b""),
@@ -374,7 +376,7 @@ class FileIO(RPathTest):
 
         with rp_gz.open("wb", compress=1) as fp_out:
             fp_out.write(s)
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             self.assertEqual(
                 comtst.os_system((b"7z", b"x", b"-o%s" % self.out_dir, file_gz)), 0
             )
@@ -403,7 +405,7 @@ class FileIO(RPathTest):
         rp_nogz.setdata()
         self.assertTrue(rp_nogz.lstat())
 
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             self.assertEqual(
                 comtst.os_system(
                     (b"7z", b"a", b"-tgzip", b"-sdel", file_gz, file_nogz)
@@ -445,7 +447,9 @@ class FileCopying(FileBasis):
         self.assertFalse(rpath.cmp(self.rf, self.hl1))
         self.assertFalse(rpath.cmp(self.dir, self.rf))
 
-    @unittest.skipIf(os.name == "nt", "Symlinks not supported under Windows")
+    @unittest.skipIf(
+        sys.platform.startswith("win"), "Symlinks not supported under Windows"
+    )
     def testCompMisc(self):
         """Test miscellaneous comparisons"""
         self.assertTrue(rpath.cmp(self.dir, rpath.RPath(self.lc, self.mainprefix, ())))
@@ -479,7 +483,7 @@ class FileCopying(FileBasis):
 
     def testCopy(self):
         """Test copy of various files"""
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             comp_list = [self.rf, self.dir]
         else:
             comp_list = [self.sl, self.rf, self.fifo, self.dir]
@@ -491,7 +495,9 @@ class FileCopying(FileBasis):
             self.dest.delete()
 
     @unittest.mock.patch("os.rename", side_effect=OSError(errno.EXDEV, "strerror"))
-    @unittest.skipIf(os.name == "nt", "Symlinks And Fifo not supported under Windows")
+    @unittest.skipIf(
+        sys.platform.startswith("win"), "Symlinks And Fifo not supported under Windows"
+    )
     def testRenameCrossDeviceLink(self, mock_rename):
         # Create fifo
         fifo = rpath.RPath(self.lc, self.mainprefix, ("fifo",))
@@ -613,7 +619,7 @@ class FileAttributes(FileBasis):
             self.hl1,
             self.dir,
         ]
-        if os.name != "nt":  # symlinks not supported under Windows
+        if sys.platform.startswith("win"):  # symlinks not supported under Windows
             copy_list.append(self.sym)
         for rp in copy_list:
             rpath.copy_with_attribs(rp, out)
