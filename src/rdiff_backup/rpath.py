@@ -120,14 +120,6 @@ class RORPath:
         else:
             return os.path.join(*filenames)
 
-    @classmethod
-    def getcwdb(self):
-        """A getcwdb function that makes sure that also under Windows '/' are used"""
-        if os.path.altsep:  # only Windows has an alternative separator for paths
-            return os.getcwdb().replace(os.fsencode(os.path.sep), b"/")
-        else:
-            return os.getcwdb()
-
     def __init__(self, index, data=None):
         self.index = tuple(map(os.fsencode, index))
         if data:
@@ -1698,8 +1690,8 @@ def rename(rp_source, rp_dest):
                     )
                     raise
 
-        rp_dest.data = rp_source.data
-        rp_source.data = {"type": None}
+            rp_dest.data = rp_source.data
+            rp_source.data = {"type": None}
 
 
 # @API(get_rpath_data, 300)

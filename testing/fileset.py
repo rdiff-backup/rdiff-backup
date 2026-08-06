@@ -428,8 +428,14 @@ def _rmtree(set_path):
         # Windows can't remove read-only files
         for file_name in files:
             file = os.path.join(dir_name, file_name)
-            mode = os.stat(file).st_mode
-            os.chmod(file, mode | 0o222)
+            mode = os.stat(file, follow_symlinks=False).st_mode
+            if stat.S_ISLNK(mode):
+                try:
+                    os.chmod(file, mode | 0o222, follow_symlinks=False)
+                except NotImplementedError:
+                    pass
+            else:
+                os.chmod(file, mode | 0o222)
     shutil.rmtree(set_path)
 
 

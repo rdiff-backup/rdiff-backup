@@ -783,16 +783,49 @@ class SelectionIfPresentTest(unittest.TestCase):
 class CommandTest(unittest.TestCase):
     """Test rdiff-backup on actual directories"""
 
+    def setUp(self):
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"select_command_test")
+        self.from1_struct = {
+            "from1": {
+                "contents": {
+                    "dir1": {
+                        "contents": {
+                            "some_file": {"content": "whatever"},
+                            "some_link": {"type": "link", "target": "some_file"},
+                            "nowhere_link": {"type": "link", "target": "nowhere"},
+                        },
+                    },
+                    "dirwith": {
+                        "contents": {
+                            "dir2": {
+                                "contents": {
+                                    "some_other_file": {"content": "whatever"},
+                                },
+                            },
+                        },
+                    },
+                }
+            }
+        }
+        self.from1_path = os.path.join(self.base_dir, b"from1")
+        fileset.create_fileset(self.base_dir, self.from1_struct)
+        fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
+        fileset.remove_fileset(self.base_dir, {"to1": {"type": "dir"}})
+        fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
+        self.bak_path = os.path.join(self.base_dir, b"bak")
+        self.to1_path = os.path.join(self.base_dir, b"to1")
+        self.to2_path = os.path.join(self.base_dir, b"to2")
+        self.success = False
+
     def testEmptyDirInclude(self):
         """
         Make sure empty directories are included with **xx exps
 
         This checks for a bug present in 1.0.3/1.1.5 and similar.
         """
-        out_dir = os.path.join(TEST_BASE_DIR, b"output")
-        out_rp = rpath.RPath(specifics.local_connection, out_dir)
-        comtst.re_init_rpath_dir(out_rp)
+        bak_rp = rpath.RPath(specifics.local_connection, self.bak_path)
         # we need to change directory to be able to work with relative paths
+        old_dir = os.getcwdb()
         os.chdir(TEST_BASE_DIR)
         currdir = os.path.basename(os.getcwdb())
         os.chdir(os.pardir)  # chdir one level up
@@ -807,7 +840,7 @@ class CommandTest(unittest.TestCase):
             1,
             1,
             selrp.path,
-            out_dir,
+            self.bak_path,
             extra_options=(
                 b"backup",
                 b"--include",
@@ -817,8 +850,10 @@ class CommandTest(unittest.TestCase):
             ),
         )
 
-        outempty = out_rp.append("emptydir")
+        outempty = bak_rp.append("emptydir")
         self.assertTrue(outempty.isdir())
+        os.chdir(old_dir)
+        self.success = True
 
     def test_overlapping_dirs(self):
         """
@@ -826,28 +861,283 @@ class CommandTest(unittest.TestCase):
         while ignoring this repo
         """
 
-        testrp = rpath.RPath(specifics.local_connection, TEST_BASE_DIR).append(
-            "selection_overlap"
-        )
-        comtst.re_init_rpath_dir(testrp)
-        backuprp = testrp.append("backup")
-        emptyrp = testrp.append("empty")  # just to have something to backup
-        emptyrp.mkdir()
+        base_rp = rpath.RPath(specifics.local_connection, self.base_dir)
+        backup_rp = base_rp.append("backup")
+        empty_rp = base_rp.append("empty")  # just to have something to backup
+        empty_rp.mkdir()
 
         comtst.rdiff_backup(
             1,
             1,
-            testrp.path,
-            backuprp.path,
-            extra_options=(b"backup", b"--exclude", backuprp.path),
+            base_rp.path,
+            backup_rp.path,
+            extra_options=(b"backup", b"--exclude", backup_rp.path),
             expected_ret_code=consts.RET_CODE_WARN,
         )
 
         self.assertTrue(
-            backuprp.append("rdiff-backup-data").isdir()
-            and backuprp.append("empty").isdir(),
-            "Backup to {rp} didn't happen properly.".format(rp=backuprp),
+            backup_rp.append("rdiff-backup-data").isdir()
+            and backup_rp.append("empty").isdir(),
+            "Backup to {rp} didn't happen properly.".format(rp=backup_rp),
         )
+        self.success = True
+
+    @unittest.skipIf(sys.platform.startswith("win"), "can't work with Windows")
+    def test_select_symlinks(self):
+        """Test inclusion and exclusion of symlinks"""
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                ("--current-time", "10000"),
+                b"backup",
+                (),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertTrue(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "some_link")
+            ).lstat()
+        )
+        self.assertTrue(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "nowhere_link")
+            ).lstat()
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                ("--current-time", "20000"),
+                b"backup",
+                (b"--exclude-symbolic-links",),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertFalse(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "some_link")
+            ).lstat()
+        )
+        self.assertFalse(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "nowhere_link")
+            ).lstat()
+        )
+        self.success = True
+
+    def test_select_from_file(self):
+        """Test inclusion and exclusion of using files"""
+        include_file = os.path.join(self.base_dir, b"include.txt")
+        exclude_file = os.path.join(self.base_dir, b"exclude.txt")
+        with open(include_file, "wb") as ifb:
+            ifb.write(os.path.join(self.from1_path, b"dir1", b"some_file") + b"\n")
+            ifb.write(os.path.join(self.from1_path, b"dirwith", b"dir2") + b"\n")
+        with open(exclude_file, "wb") as efb:
+            efb.write(os.path.join(self.from1_path, b"dir1") + b"\n")
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                ("--current-time", "10000"),
+                b"backup",
+                (
+                    "--include-filelist",
+                    include_file,
+                    "--exclude-filelist",
+                    exclude_file,
+                ),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertTrue(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "some_file")
+            ).lstat()
+        )
+        self.assertFalse(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "some_link")
+            ).lstat()
+        )
+        self.assertTrue(
+            rpath.RPath(
+                specifics.local_connection,
+                self.bak_path,
+                (b"dirwith", b"dir2", "some_other_file"),
+            ).lstat()
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                (),
+                b"compare",
+                (
+                    "--include-filelist",
+                    include_file,
+                    "--exclude-filelist",
+                    exclude_file,
+                ),
+            ),
+            consts.RET_CODE_OK,
+        )
+
+        incglob_file = os.path.join(self.base_dir, b"inc_glob.txt")
+        excglob_file = os.path.join(self.base_dir, b"exc_glob.txt")
+        with open(incglob_file, "wb") as ifb:
+            ifb.write(b"**/dir?\n")
+        with open(excglob_file, "wb") as efb:
+            efb.write(b"**/*_link\n")
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                ("--current-time", "20000"),
+                b"backup",
+                (
+                    "--exclude-globbing-filelist",
+                    excglob_file,
+                    "--include-globbing-filelist",
+                    incglob_file,
+                    "--exclude",
+                    self.from1_path.replace(b"\\", b"/"),  # replacement for Windows
+                ),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertTrue(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "some_file")
+            ).lstat()
+        )
+        self.assertFalse(
+            rpath.RPath(
+                specifics.local_connection, self.bak_path, (b"dir1", "some_link")
+            ).lstat()
+        )
+        self.assertTrue(
+            rpath.RPath(
+                specifics.local_connection,
+                self.bak_path,
+                (b"dirwith", b"dir2", "some_other_file"),
+            ).lstat()
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                (),
+                b"compare",
+                (
+                    "--exclude-globbing-filelist",
+                    excglob_file,
+                    "--include-globbing-filelist",
+                    incglob_file,
+                    "--exclude",
+                    self.from1_path.replace(b"\\", b"/"),  # replacement for Windows
+                ),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.from1_path,
+                self.bak_path,
+                ("--current-time", "30000"),
+                b"backup",
+                (),
+            ),
+            consts.RET_CODE_OK,
+        )
+        with open(include_file, "wb") as ifb:
+            ifb.write(os.path.join(self.to1_path, b"dir1", b"some_file") + b"\n")
+            ifb.write(os.path.join(self.to1_path, b"dirwith", b"dir2") + b"\n")
+        with open(exclude_file, "wb") as efb:
+            efb.write(os.path.join(self.to1_path, b"dir1") + b"\n")
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.bak_path,
+                self.to1_path,
+                (),
+                b"restore",
+                (
+                    "--include-filelist",
+                    include_file,
+                    "--exclude-filelist",
+                    exclude_file,
+                ),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.to1_path,
+                self.bak_path,
+                (),
+                b"compare",
+                ("--at", "10000"),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.bak_path,
+                self.to2_path,
+                (),
+                b"restore",
+                (
+                    "--exclude-globbing-filelist",
+                    excglob_file,
+                    "--include-globbing-filelist",
+                    incglob_file,
+                    "--exclude",
+                    self.to2_path.replace(b"\\", b"/"),  # replacement for Windows
+                ),
+            ),
+            consts.RET_CODE_OK,
+        )
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                False,
+                self.to2_path,
+                self.bak_path,
+                (),
+                b"compare",
+                ("--at", "20000"),
+            ),
+            consts.RET_CODE_OK,
+        )
+
+        self.success = True
+
+    def tearDown(self):
+        # we clean-up only if the test was successful
+        if self.success:
+            fileset.remove_fileset(self.base_dir, self.from1_struct)
+            fileset.remove_fileset(self.base_dir, {"bak": {"type": "dir"}})
 
 
 if __name__ == "__main__":

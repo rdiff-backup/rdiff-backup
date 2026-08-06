@@ -421,8 +421,7 @@ class FileIO(RPathTest):
             self.assertEqual(read_s, s)
 
 
-class FileCopying(RPathTest):
-    """Test file copying and comparison"""
+class FileBasis(RPathTest):
 
     def setUp(self):
         self.hl1 = rpath.RPath(self.lc, self.prefix, ("two_hardlinked_files1",))
@@ -435,6 +434,10 @@ class FileCopying(RPathTest):
         if self.dest.lstat():
             self.dest.delete()
         self.assertFalse(self.dest.lstat())
+
+
+class FileCopying(FileBasis):
+    """Test file copying and comparison"""
 
     def testComp(self):
         """Test comparisons involving regular files"""
@@ -509,12 +512,39 @@ class FileCopying(RPathTest):
             self.assertEqual(prev_data, self.dest.lstat())
             self.dest.delete()
 
+    def testRenameHardlinks(self):
+        """Test renaming hardlinks on top of each other"""
+        out_rp = rpath.RPath(self.lc, self.out_dir)
+        comtst.re_init_rpath_dir(out_rp)
+        rp1 = out_rp.append("file1")
+        rp2 = out_rp.append("file2")
+        rp1.touch()
+        rpath.rename(rp1, rp2)
+        self.assertFalse(rp1.lstat())
+        self.assertTrue(rp2.lstat())
+        rp1.hardlink(rp2)
+        self.assertTrue(rp1.lstat())
+        rpath.rename(rp1, rp2)
+        self.assertFalse(rp1.lstat())
+        self.assertTrue(rp2.lstat())
 
-class FileAttributes(FileCopying):
+    def testRenameInexistent(self):
+        """Test renaming inexistent file"""
+        out_rp = rpath.RPath(self.lc, self.out_dir)
+        comtst.re_init_rpath_dir(out_rp)
+        rp1 = out_rp.append("file1")
+        rp2 = out_rp.append("file2")
+        rp2.touch()
+        self.assertTrue(rp2.lstat())
+        rpath.rename(rp1, rp2)
+        self.assertFalse(rp2.lstat())
+
+
+class FileAttributes(FileBasis):
     """Test file attribute operations"""
 
     def setUp(self):
-        FileCopying.setUp(self)
+        super().setUp()
         self.noperms = rpath.RPath(self.lc, self.mainprefix, ("noperms",))
         self.nowrite = rpath.RPath(self.lc, self.mainprefix, ("nowrite",))
         self.exec1 = rpath.RPath(self.lc, self.prefix, ("executable",))
