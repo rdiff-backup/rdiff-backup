@@ -299,7 +299,7 @@ class FilenameOps(RPathTest):
         b"//host/share": b"//host/share",
         b"//host//share/": b"//host/share",
     }
-    if sys.platform.startswith("win"):  # Windows doesn't like double slashes
+    if not sys.platform.startswith("win"):  # Windows doesn't like double slashes
         normdict[b"//"] = b"/"
     dirsplitdict = {
         b"/": (b"", b""),
@@ -619,7 +619,7 @@ class FileAttributes(FileBasis):
             self.hl1,
             self.dir,
         ]
-        if sys.platform.startswith("win"):  # symlinks not supported under Windows
+        if not sys.platform.startswith("win"):  # symlinks not supported under Windows
             copy_list.append(self.sym)
         for rp in copy_list:
             rpath.copy_with_attribs(rp, out)

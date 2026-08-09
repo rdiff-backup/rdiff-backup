@@ -52,7 +52,7 @@ class ActionBackupRestoreTest(unittest.TestCase):
             }
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
-        if sys.platform.startswith("win"):
+        if not sys.platform.startswith("win"):
             # rdiff-backup can't handle (yet) hardlinks under Windows
             self.from1_struct["from1"]["contents"]["somehardlink"] = {"inode": "fileA"}
             self.from2_struct["from2"]["contents"]["somehardlink"] = {"inode": "fileA"}

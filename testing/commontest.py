@@ -73,7 +73,7 @@ def re_init_rpath_dir(rp, uid=-1, gid=-1):
         remove_dir(rp.path)
         rp.setdata()
     rp.makedirs()
-    if sys.platform.startswith("win"):
+    if not sys.platform.startswith("win"):
         rp.chown(uid, gid)
 
 
@@ -511,7 +511,7 @@ def _files_rorp_eq(
     """Combined eq func returns true if two files compare same"""
     # default value depends on OS, symlinks aren't supported under Windows
     if compare_symlinks is None:
-        compare_symlinks = sys.platform.startswith("win")
+        compare_symlinks = not sys.platform.startswith("win")
     if not compare_symlinks:
         if src_rorp and src_rorp.issym() or dest_rorp and dest_rorp.issym():
             return True
