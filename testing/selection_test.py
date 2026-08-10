@@ -3,6 +3,7 @@ Test selection aspects of rdiff-backup
 """
 
 import os
+import re
 import subprocess
 import sys
 import unittest
@@ -1132,6 +1133,43 @@ class CommandTest(unittest.TestCase):
         )
 
         self.success = True
+
+    @unittest.skipUnless(
+        sys.platform.startswith("win"), "UNC path only work on Windows"
+    )
+    def test_with_unc_path(self):
+        """
+        Test if we can backup a directory using UNC path on Windows.
+        """
+        # Replace C:/ by //localhost/C$
+        unc_base_dir = re.sub(rb"^([A-Za-z]):/", rb"//localhost/\1$/", self.base_dir)
+
+        testrp = rpath.RPath(specifics.local_connection, unc_base_dir)
+        comtst.re_init_rpath_dir(testrp)
+        # Given a data source with data
+        sourcerp = testrp.append("source")
+        sourcerp.mkdir()
+        includerp = sourcerp.append("dir1")
+        includerp.mkdir()
+        sourcerp.append("dir2").mkdir()
+        # Given an empty destination
+        destrp = testrp.append("dest")
+        destrp.mkdir()
+        # When backup run with UNC path
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                True,
+                True,
+                sourcerp.path,
+                destrp.path,
+                (),
+                b"backup",
+                ("--include", includerp.path, "--exclude", "**"),
+            ),
+            consts.RET_CODE_OK,
+        )
+        # Then backup is sucessful.
+        self.assertTrue(destrp.append("dir1").isdir())
 
     def tearDown(self):
         # we clean-up only if the test was successful
