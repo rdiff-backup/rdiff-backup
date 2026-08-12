@@ -9,6 +9,7 @@ import os
 import shlex
 import shutil
 import subprocess
+import sys
 
 from rdiff_backup import (
     hash,
@@ -44,7 +45,7 @@ abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(__file__)))
 
 __no_execute__ = 1  # Keeps the actual rdiff-backup program from running
 
-if os.name == "nt":
+if sys.platform.startswith("win"):
     generics.set("use_compatible_timestamps", True)
     CMD_SEP = b" & "
 else:
@@ -72,7 +73,7 @@ def re_init_rpath_dir(rp, uid=-1, gid=-1):
         remove_dir(rp.path)
         rp.setdata()
     rp.makedirs()
-    if os.name != "nt":
+    if not sys.platform.startswith("win"):
         rp.chown(uid, gid)
 
 
@@ -224,7 +225,7 @@ def rdiff_backup_action(
         except subprocess.CalledProcessError as exc:
             ret_val = exc.output
         # normalize line endings under Windows
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             ret_val = ret_val.replace(b"\r\n", b"\n")
     else:
         ret_val = os_system(cmdargs, input=std_input, universal_newlines=False)
@@ -235,7 +236,7 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
     """
     Return a tuple of remote or local source and destination locations
     """
-    if os.name == "nt":
+    if sys.platform.startswith("win"):
         remote_location = "cd {rdir} & {tdir}\\server.py::{dir}"
     else:
         remote_location = "cd {rdir}; {tdir}/server.py::{dir}"
@@ -510,7 +511,7 @@ def _files_rorp_eq(
     """Combined eq func returns true if two files compare same"""
     # default value depends on OS, symlinks aren't supported under Windows
     if compare_symlinks is None:
-        compare_symlinks = os.name != "nt"
+        compare_symlinks = not sys.platform.startswith("win")
     if not compare_symlinks:
         if src_rorp and src_rorp.issym() or dest_rorp and dest_rorp.issym():
             return True

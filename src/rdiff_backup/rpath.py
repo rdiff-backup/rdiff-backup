@@ -40,6 +40,7 @@ import os
 import re
 import shutil
 import stat
+import sys
 import tempfile
 import time
 from rdiff_backup import C
@@ -804,7 +805,7 @@ class RPath(RORPath):
         except OSError:
             # It's not possible to set a modification time for
             # directories on Windows.
-            if not (self.isdir() and os.name == "nt"):
+            if not (self.isdir() and sys.platform.startswith("win")):
                 raise
         else:
             self.data["mtime"] = modtime
@@ -1746,7 +1747,7 @@ def get_rpath_data(filename, base, index):
     data["uname"] = usrgrp.uid2uname(data["uid"])
     data["gname"] = usrgrp.gid2gname(data["gid"])
 
-    if os.name == "nt":
+    if sys.platform.startswith("win"):
         try:
             attribs = win32api.GetFileAttributes(os.fsdecode(filename))
         except pywintypes.error as exc:

@@ -23,12 +23,12 @@ import sys
 from rdiffbackup import arguments, actions_mgr
 from rdiffbackup.singletons import consts, generics, log, specifics
 
-if os.name == "nt":
+if sys.platform.startswith("win"):
     import msvcrt
 
 
 def main():
-    if os.name == "nt":
+    if sys.platform.startswith("win"):
         # make sure line endings are kept under Windows like under Linux
         msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
         msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)

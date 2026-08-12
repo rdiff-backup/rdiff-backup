@@ -24,7 +24,7 @@ it has no real life of itself, i.e. it has only class methods and can't
 be instantiated.
 """
 
-import os
+import sys
 
 from rdiff_backup import (
     hash,
@@ -72,7 +72,6 @@ class ReadDirShadow(location.LocationShadow):
             base_rp = cls._base_dir
         if select_opts is None:
             select_opts = cls._values.get("selections") or []
-        is_windows = os.name == "nt"
 
         # FIXME not sure we couldn't support symbolic links nowadays on Windows
         # knowing that it would require specific handling when reading the link:
@@ -80,7 +79,10 @@ class ReadDirShadow(location.LocationShadow):
         #   TypeError: symlink: src should be string, bytes or os.PathLike,
         #                       not NoneType
         # I suspect that not all users can read symlinks with os.readlink
-        if is_windows and ("exclude-symbolic-links", None) not in select_opts:
+        if (
+            sys.platform.startswith("win")
+            and ("exclude-symbolic-links", None) not in select_opts
+        ):
             log.Log("Symbolic links excluded on Windows", log.NOTE)
             select_opts.insert(0, ("exclude-symbolic-links", None))
         sel = selection.Select(base_rp)

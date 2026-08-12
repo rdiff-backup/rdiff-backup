@@ -4,6 +4,7 @@ Test handling of long names
 
 import errno
 import os
+import sys
 import unittest
 
 import commontest as comtst
@@ -13,7 +14,7 @@ from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
-if os.name == "nt":
+if sys.platform.startswith("win"):
     NAME_MAX_LEN = 255
 else:
     NAME_MAX_LEN = os.pathconf(TEST_BASE_DIR, "PC_NAME_MAX")

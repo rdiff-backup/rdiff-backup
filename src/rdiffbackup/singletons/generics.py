@@ -21,7 +21,7 @@ A variety of variables which need to have the same value across connections.
 They are generic to all instances of rdiff-backup involved.
 """
 
-import os
+import sys
 import typing
 
 from rdiffbackup.singletons import specifics
@@ -76,8 +76,8 @@ chars_to_quote_unregexp: typing.Optional["re.Pattern[bytes]"] = None
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.
 # The default is based on the operating system type (nt or posix).
-escape_dos_devices: bool = os.name == "nt"
-escape_trailing_spaces: bool = os.name == "nt"
+escape_dos_devices: bool = sys.platform.startswith("win")
+escape_trailing_spaces: bool = sys.platform.startswith("win")
 
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which

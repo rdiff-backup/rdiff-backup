@@ -22,8 +22,8 @@ and also because, under Windows, it doesn't act as always expected.
 """
 
 import collections.abc as abc
-import os
 import subprocess
+import sys
 import typing
 
 
@@ -50,7 +50,7 @@ def _get_pid_name_ps(pid: typing.Union[int, str]) -> typing.Optional[str]:
 
     The function uses the ps utility or tasklist (under Windows)
     """
-    if os.name == "nt":
+    if sys.platform.startswith("win"):
         cmd = ["tasklist", "/nh", "/fi", "pid eq {pp}".format(pp=pid)]
     else:
         cmd = ["ps", "-p", str(pid), "-o", "comm=,pid="]

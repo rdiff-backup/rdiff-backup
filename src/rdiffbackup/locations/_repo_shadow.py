@@ -29,6 +29,7 @@ import io
 import os
 import re
 import socket
+import sys
 import tempfile
 import yaml
 from rdiff_backup import (
@@ -1759,7 +1760,7 @@ information in it.
         def pid_running(pid):
             """Return True if we know if process with pid is currently running,
             False if it isn't running, and None if we don't know for sure."""
-            if os.name == "nt":
+            if sys.platform.startswith("win"):
                 import win32api
                 import win32con
                 import pywintypes

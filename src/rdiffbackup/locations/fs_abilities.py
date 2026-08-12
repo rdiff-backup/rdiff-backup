@@ -28,6 +28,7 @@ FSAbilities object describing it.
 
 import errno
 import os
+import sys
 from rdiff_backup import robust, selection, Time
 from rdiffbackup.meta import acl_win  # FIXME there should be no dependency
 from rdiffbackup.locations.map import filenames as map_filenames
@@ -210,7 +211,7 @@ class FSAbilities:
         """
         Set self.hardlinks to true if hard linked files can be created
         """
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             log.Log("Hardlinks disabled on Windows", log.INFO)
             self.hardlinks = None
             return
@@ -654,7 +655,7 @@ class FSAbilities:
         This test must detect if the underlying OS is Windows, whether we are
         running under Cygwin or natively. Cygwin allows these special files to
         be stat'd from any directory. Native Windows returns OSError (like
-        non-Cygwin POSIX), but we can check for that using os.name.
+        non-Cygwin POSIX), but we can check for that using sys.platform.
 
         Note that 'con' and 'aux' have some unusual behaviors as shown below.
 
@@ -665,7 +666,7 @@ class FSAbilities:
         Cygwin/FAT32 |  -success-   -HANGS-
         Native Win   |  WinError,2  WinError,87 WinError,87
         """
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             self.escape_dos_devices = True
             return
 

@@ -3,6 +3,7 @@ Test file system abilities gathering
 """
 
 import os
+import sys
 import time
 import unittest
 
@@ -48,7 +49,7 @@ try:
 except (ImportError, AttributeError):
     carbon_type = type(None)
 
-if os.name == "nt":  # because we ignore hardlinks under Windows
+if sys.platform.startswith("win"):  # because we ignore hardlinks under Windows
     hardlinks_type = type(None)
 else:
     hardlinks_type = bool

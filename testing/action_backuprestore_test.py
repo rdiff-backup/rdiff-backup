@@ -4,6 +4,7 @@ Test the basic backup and restore actions
 
 import glob
 import os
+import sys
 import unittest
 
 import commontest as comtst
@@ -20,7 +21,7 @@ class ActionBackupRestoreTest(unittest.TestCase):
     def setUp(self):
         self.base_dir = os.path.join(TEST_BASE_DIR, b"action_backup_restore")
         # Windows can't handle too long filenames, FIXME issue #782
-        long_multi = 5 if os.name == "nt" else 25
+        long_multi = 5 if sys.platform.startswith("win") else 25
         self.from1_struct = {
             "from1": {
                 "contents": {
@@ -51,7 +52,7 @@ class ActionBackupRestoreTest(unittest.TestCase):
             }
         }
         self.from2_path = os.path.join(self.base_dir, b"from2")
-        if os.name != "nt":
+        if not sys.platform.startswith("win"):
             # rdiff-backup can't handle (yet) hardlinks under Windows
             self.from1_struct["from1"]["contents"]["somehardlink"] = {"inode": "fileA"}
             self.from2_struct["from2"]["contents"]["somehardlink"] = {"inode": "fileA"}

@@ -4,6 +4,7 @@ Compare results with call to rdiff utility
 
 import os
 import random
+import sys
 import unittest
 
 import commontest as comtst
@@ -97,7 +98,7 @@ class RdiffTest(unittest.TestCase):
         )
         self.assertTrue(self.delta.lstat())
         gzip_path = self.delta.path + b".gz"
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             # simulate gzip using 7z on Windows
             comtst.os_system(
                 (
@@ -149,7 +150,7 @@ class RdiffTest(unittest.TestCase):
 
         Rdiff.write_delta(self.basis, self.new, delta_gz, 1)
         self.assertTrue(delta_gz.lstat())
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             # simulate gunzip using 7z on Windows
             comtst.os_system(
                 (
@@ -171,7 +172,7 @@ class RdiffTest(unittest.TestCase):
         self.assertTrue(rpath.cmp(self.new, self.output))
         list(map(rpath.RPath.delete, rplist))
 
-    @unittest.skipIf(os.name == "nt", "FIXME fails under Windows")
+    @unittest.skipIf(sys.platform.startswith("win"), "FIXME fails under Windows")
     def testRdiffRename(self):
         """Rdiff replacing original file with patch outfile"""
         rplist = [self.basis, self.new, self.delta, self.signature]

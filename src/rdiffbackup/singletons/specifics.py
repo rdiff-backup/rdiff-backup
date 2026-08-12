@@ -23,6 +23,7 @@ They are specific to each instance of rdiff-backup involved.
 
 import builtins
 import os
+import sys
 import typing
 import yaml
 from importlib import metadata
@@ -56,12 +57,17 @@ server: bool = False
 # vary depending on the connection.
 process_uid: int
 process_groups: builtins.set[int]
-try:
-    process_uid = os.getuid()
-    process_groups = builtins.set(os.getgroups())
-except AttributeError:
+
+if sys.platform.startswith("win"):
     process_uid = 0
     process_groups = {0}
+else:
+    try:
+        process_uid = os.getuid()
+        process_groups = builtins.set(os.getgroups())
+    except AttributeError:
+        process_uid = 0
+        process_groups = {0}
 
 # The following three attributes represent whether extended attributes
 # are supported.  If eas_active is true, then the current session

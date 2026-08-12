@@ -3,6 +3,7 @@ Test making the code robust against specific exceptions
 """
 
 import os
+import sys
 import unittest
 
 import commontest as comtst
@@ -33,7 +34,9 @@ class RobustTest(unittest.TestCase):
         with self.assertRaises(NameError):
             robust.check_common_error(None, cause_uncatchable_error)
 
-    @unittest.skipIf(os.name == "nt", "Test is meaningless under Windows")
+    @unittest.skipIf(
+        sys.platform.startswith("win"), "Test is meaningless under Windows"
+    )
     def test_check_failed_errorlog(self):
         """
         Validate that one unreadable file doesn't fail the whole backup

@@ -2,7 +2,7 @@
 Test the "test" action
 """
 
-import os
+import sys
 import unittest
 
 import commontest as comtst
@@ -14,7 +14,7 @@ class ActionTestTest(unittest.TestCase):
     """Test the test action (!)"""
 
     def setUp(self):
-        if os.name == "nt":
+        if sys.platform.startswith("win"):
             self.dir1 = b"C:\\"
             self.dir2 = b"C:\\"
         else:
