@@ -25,6 +25,7 @@ documentation on what this code does can be found on the man page.
 
 import os
 import re
+import sys
 import typing
 
 from rdiff_backup import robust, rorpiter, rpath
@@ -768,7 +769,7 @@ probably isn't what you meant""".format(se=self.selection_functions[-1].name))
 
         # Allow a leading empty part for UNC paths like //server/share/foo
         # on Windows, but still catch consecutive slashes anywhere else.
-        if os.name == "nt" and glob_str.startswith(b"//"):
+        if sys.platform.startswith("win") and glob_str.startswith(b"//"):
             check_parts = glob_parts[2:-1]
         else:
             check_parts = glob_parts[1:-1]

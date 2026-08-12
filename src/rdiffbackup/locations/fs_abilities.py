@@ -655,7 +655,7 @@ class FSAbilities:
         This test must detect if the underlying OS is Windows, whether we are
         running under Cygwin or natively. Cygwin allows these special files to
         be stat'd from any directory. Native Windows returns OSError (like
-        non-Cygwin POSIX), but we can check for that using os.name.
+        non-Cygwin POSIX), but we can check for that using sys.platform.
 
         Note that 'con' and 'aux' have some unusual behaviors as shown below.
 
