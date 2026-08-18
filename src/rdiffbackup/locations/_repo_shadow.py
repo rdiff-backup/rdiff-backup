@@ -1228,7 +1228,13 @@ class RepoShadow(location.LocationShadow):
             show_sizes = cls._values.get("size")
         removal_time = cls._get_removal_time(time_string, show_sizes)
 
-        if removal_time < 0:  # no increment is old enough
+        if removal_time is None:  # time couldn't be parsed
+            log.Log(
+                "Can't parse time of removal '{tr}'".format(tr=time_string),
+                log.ERROR,
+            )
+            return consts.RET_CODE_ERR
+        elif removal_time < 0:  # no increment is old enough
             log.Log(
                 "No increment is older than '{ot}'".format(ot=time_string),
                 log.WARNING,

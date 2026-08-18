@@ -133,6 +133,19 @@ class ActionRemoveIncsTest(ActionRemoveTest):
 
     def test_action_removeincsolderthan(self):
         """test different ways of removing increments"""
+        # Removing fails cleanly if the date can't be parsed
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                False,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"remove",
+                ("increments", "--older-than", "not-a-date"),
+            ),
+            consts.RET_CODE_ERR,
+        )
         # removing multiple increments fails without --force
         self.assertNotEqual(
             comtst.rdiff_backup_action(
