@@ -12,7 +12,7 @@ from rdiff_backup import rpath
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class FilenameMappingTest(unittest.TestCase):

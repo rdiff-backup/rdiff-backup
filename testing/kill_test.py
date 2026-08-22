@@ -16,7 +16,7 @@ from rdiff_backup import rpath, Time
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import consts, specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class Local:

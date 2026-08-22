@@ -86,9 +86,15 @@ def re_init_subdir(maindir, *subdirs):
     return directory
 
 
-# two temporary directories to simulate remote actions
-abs_remote1_dir = re_init_subdir(abs_test_dir, b"remote1")
-abs_remote2_dir = re_init_subdir(abs_test_dir, b"remote2")
+def init_test_dirs(base_name):
+    global TEST_REMOTE1_DIR, TEST_REMOTE2_DIR
+
+    test_base_dir = get_test_base_dir(base_name)
+    # two temporary directories to simulate remote actions
+    TEST_REMOTE1_DIR = re_init_subdir(test_base_dir, b"remote1")
+    TEST_REMOTE2_DIR = re_init_subdir(test_base_dir, b"remote2")
+
+    return test_base_dir
 
 
 def get_test_base_dir(module_file):
@@ -131,9 +137,9 @@ def rdiff_backup(
     remote_exec = CMD_SEP.join([b"cd %s", b"%s server::%s"])
 
     if not source_local:
-        src_dir = remote_exec % (abs_remote1_dir, RBBin, src_dir)
+        src_dir = remote_exec % (TEST_REMOTE1_DIR, RBBin, src_dir)
     if dest_dir and not dest_local:
-        dest_dir = remote_exec % (abs_remote2_dir, RBBin, dest_dir)
+        dest_dir = remote_exec % (TEST_REMOTE2_DIR, RBBin, dest_dir)
 
     cmdargs = [RBBin]
     if not (source_local and dest_local):
@@ -193,10 +199,10 @@ def rdiff_backup_action(
 
     is_remote = False
     if src_dir and not source_local:
-        src_dir = remote_exec % (abs_remote1_dir, RBBin, src_dir)
+        src_dir = remote_exec % (TEST_REMOTE1_DIR, RBBin, src_dir)
         is_remote = True
     if dest_dir and not dest_local:
-        dest_dir = remote_exec % (abs_remote2_dir, RBBin, dest_dir)
+        dest_dir = remote_exec % (TEST_REMOTE2_DIR, RBBin, dest_dir)
         is_remote = True
 
     if is_remote:
@@ -243,7 +249,7 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
 
     if not src_local:
         src_dir = remote_location.format(
-            rdir=os.fsdecode(abs_remote1_dir),
+            rdir=os.fsdecode(TEST_REMOTE1_DIR),
             tdir=os.fsdecode(abs_testing_dir),
             dir=os.fsdecode(src_dir),
         )
@@ -251,7 +257,7 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
         src_dir = os.fsdecode(src_dir)
     if not dest_local:
         dest_dir = remote_location.format(
-            rdir=os.fsdecode(abs_remote2_dir),
+            rdir=os.fsdecode(TEST_REMOTE2_DIR),
             tdir=os.fsdecode(abs_testing_dir),
             dir=os.fsdecode(dest_dir),
         )

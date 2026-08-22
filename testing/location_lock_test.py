@@ -12,7 +12,7 @@ from rdiff_backup import rpath
 from rdiffbackup.locations import _repo_shadow
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class LocationLockTest(unittest.TestCase):

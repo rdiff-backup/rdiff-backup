@@ -14,7 +14,7 @@ from rdiffbackup.locations import increment
 from rdiffbackup.meta import stdattr
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class HashTest(unittest.TestCase):

@@ -13,7 +13,7 @@ from rdiff_backup import rpath
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import fstats, generics, specifics, sstats
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class SessionStatsCalcTest(unittest.TestCase):

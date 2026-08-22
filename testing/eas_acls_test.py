@@ -17,7 +17,7 @@ from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, ea
 from rdiffbackup.singletons import generics, specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
