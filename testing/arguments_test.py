@@ -14,7 +14,7 @@ from rdiffbackup import arguments, actions_mgr
 from rdiffbackup.singletons import consts
 from rdiffbackup.utils import argopts
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class ArgumentsTest(unittest.TestCase):

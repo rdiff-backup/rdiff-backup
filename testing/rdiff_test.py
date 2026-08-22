@@ -12,7 +12,7 @@ import commontest as comtst
 from rdiff_backup import Rdiff, rpath
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 def MakeRandomFile(path):

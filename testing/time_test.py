@@ -11,7 +11,7 @@ from commontest import *  # noqa: F403, F401 some side effect or test fails
 from rdiff_backup import Time
 from rdiffbackup.singletons import generics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class TimeTest(unittest.TestCase):

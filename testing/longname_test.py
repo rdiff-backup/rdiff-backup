@@ -12,7 +12,7 @@ import commontest as comtst
 from rdiff_backup import rpath, Time
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 if sys.platform.startswith("win"):
     NAME_MAX_LEN = 255

@@ -55,7 +55,7 @@ else:
     hardlinks_type = bool
 
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR = comtst.init_test_dirs(__file__)
 
 
 class FSAbilitiesTest(unittest.TestCase):
