@@ -12,7 +12,7 @@ import commontest as comtst
 from rdiffbackup import actions
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class ApiVersionTest(unittest.TestCase):

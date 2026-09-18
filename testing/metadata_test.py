@@ -14,15 +14,27 @@ from rdiff_backup import rpath, selection
 from rdiffbackup import meta_mgr
 from rdiffbackup.locations import increment
 from rdiffbackup.meta import stdattr
-from rdiffbackup.singletons import specifics
+from rdiffbackup.singletons import generics, specifics
 from rdiffbackup.utils import quoting
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class MetadataTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
     out_rp = increment.StoredRPath(specifics.local_connection, out_dir)
+
+    def setUp(self):
+        # make sure EAs and ACLs aren't active
+        generics.set("eas_active", False)
+        generics.set("eas_write", False)
+        specifics.set("eas_conn", False)
+        generics.set("acls_active", False)
+        generics.set("acls_write", False)
+        specifics.set("acls_conn", False)
+        generics.set("win_acls_active", False)
+        generics.set("win_acls_write", False)
+        specifics.set("win_acls_conn", False)
 
     def testQuote(self):
         """Test quoting and unquoting"""

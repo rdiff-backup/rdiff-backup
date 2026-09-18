@@ -13,7 +13,7 @@ from rdiff_backup import rpath
 from rdiffbackup.locations import increment
 from rdiffbackup.singletons import fstats, generics, specifics, sstats
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class SessionStatsCalcTest(unittest.TestCase):
@@ -246,11 +246,11 @@ class IncStatTest(unittest.TestCase):
         generics.compression = True
         comtst.remove_dir(self.out_dir)
         comtst.InternalBackup(
-            1, 1, os.path.join(comtst.old_test_dir, b"stattest1"), self.out_dir
+            None, None, os.path.join(comtst.old_test_dir, b"stattest1"), self.out_dir
         )
         comtst.InternalBackup(
-            1,
-            1,
+            None,
+            None,
             os.path.join(comtst.old_test_dir, b"stattest2"),
             self.out_dir,
             int(time.time()) + 1,

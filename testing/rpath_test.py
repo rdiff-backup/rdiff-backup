@@ -15,7 +15,7 @@ from rdiff_backup import rpath
 from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils import pickle
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class RPathTest(unittest.TestCase):
