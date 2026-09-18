@@ -14,7 +14,7 @@ from rdiff_backup import connection, rpath, Security, SetConnections
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 SourceDir = "rdiff_backup"
 regfilename = os.path.join(comtst.old_test_dir, b"various_file_types", b"regular_file")

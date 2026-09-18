@@ -12,7 +12,7 @@ from rdiff_backup import rpath
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, generics, specifics
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class FilenameMappingTest(unittest.TestCase):
@@ -70,8 +70,8 @@ class FilenameMappingTest(unittest.TestCase):
         shortrp.touch()
 
         comtst.rdiff_backup(
-            True,
-            True,
+            None,
+            None,
             inrp.path,
             outrp.path,
             100000,
@@ -84,11 +84,11 @@ class FilenameMappingTest(unittest.TestCase):
         self.assertTrue(shortrp_out.lstat())
 
         comtst.rdiff_backup(
-            True, True, os.path.join(comtst.old_test_dir, b"empty"), outrp.path, 200000
+            None, None, os.path.join(comtst.old_test_dir, b"empty"), outrp.path, 200000
         )
         shortrp_out.setdata()
         self.assertFalse(shortrp_out.lstat())
-        comtst.rdiff_backup(True, True, inrp.path, outrp.path, 300000)
+        comtst.rdiff_backup(None, None, inrp.path, outrp.path, 300000)
         shortrp_out.setdata()
         self.assertTrue(shortrp_out.lstat())
 
@@ -102,8 +102,8 @@ class FilenameMappingTest(unittest.TestCase):
         comtst.re_init_rpath_dir(outrp)
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 inrp.path,
                 outrp.path,
                 ("--chars-to-quote", "A-C"),
@@ -117,8 +117,8 @@ class FilenameMappingTest(unittest.TestCase):
         # enforce a requote of the whole repository and see it refused
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 inrp.path,
                 outrp.path,
                 ("--chars-to-quote", "X-Z", "--force"),

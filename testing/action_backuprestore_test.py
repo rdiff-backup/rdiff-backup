@@ -10,7 +10,7 @@ import unittest
 import commontest as comtst
 import fileset
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
 class ActionBackupRestoreTest(unittest.TestCase):
@@ -75,8 +75,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -87,8 +87,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -101,8 +101,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # then we restore the increment and the last mirror to two directories
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.bak_path,
                 self.to1_path,
                 ("--no-ssh-compression",),
@@ -113,8 +113,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 self.to2_path,
                 ("--remote-tempdir", self.base_dir),
@@ -130,8 +130,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )[0]
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 dir_old_inc,
                 self.to3_path,
                 (),
@@ -152,8 +152,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -164,8 +164,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -176,8 +176,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )  # can't backup at same time
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -188,8 +188,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )  # can't match
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "20001"),
@@ -204,8 +204,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -216,8 +216,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -230,8 +230,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # then we generate some error cases while restoring
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.bak_path,
                 self.to1_path,
                 (),
@@ -242,8 +242,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )  # bad time string
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 self.to4_path,  # can't write to file
                 (),
@@ -254,8 +254,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 self.to4_path,  # force write to file
                 ("--force",),
@@ -266,8 +266,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.bak_path,
                 self.to1_path,
                 (),
@@ -278,8 +278,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )  # both not allowed
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 self.to2_path,
                 (),
@@ -290,8 +290,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )  # not an increment!
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 b"/does-not-exist",
                 self.to1_path,
                 (),
@@ -302,8 +302,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )  # restoring from non-existing repository
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.to4_path,
                 self.to1_path,
                 (),
@@ -320,8 +320,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )[0]
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 dir_old_inc,
                 self.to3_path,
                 (),
@@ -341,8 +341,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # we backup using a specific chars-to-quote
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 # colon quoted for Windows compatibility
@@ -356,8 +356,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         # then we restore once the full repo, once a sub-path
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 os.path.join(self.bak_path, b"itemX"),
                 self.to1_path,
                 (),
@@ -368,8 +368,8 @@ class ActionBackupRestoreTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 self.to2_path,
                 (),
@@ -432,8 +432,8 @@ class PreQuotingTest(unittest.TestCase):
         # we backup using a specific chars-to-quote
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 # colon quoted for Windows compatibility
@@ -445,8 +445,8 @@ class PreQuotingTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.from2_path,
                 self.bak_path,
                 # colon quoted for Windows compatibility
@@ -460,8 +460,8 @@ class PreQuotingTest(unittest.TestCase):
         # then we restore once the full repo, once a sub-path
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.bak_path,
                 self.to1_path,
                 (),
@@ -472,8 +472,8 @@ class PreQuotingTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 self.to2_path,
                 (),
@@ -508,8 +508,8 @@ class ConnectionHandlingTest(unittest.TestCase):
         # we backup using a non existing destination location
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 ".",
                 "doesnotexist::/some_dir",
                 (),

@@ -9,8 +9,6 @@ import commontest as comtst
 
 from rdiffbackup.singletons import consts
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
-
 
 class ActionCompleteTest(unittest.TestCase):
     """
@@ -22,13 +20,13 @@ class ActionCompleteTest(unittest.TestCase):
 
         # test the error cases
         self.assertEqual(
-            comtst.rdiff_backup_action(True, True, None, None, (), b"complete", ()),
+            comtst.rdiff_backup_action(None, None, None, None, (), b"complete", ()),
             consts.RET_CODE_ERR,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 None,
                 None,
                 (),
@@ -41,8 +39,8 @@ class ActionCompleteTest(unittest.TestCase):
         # then try different combinations of verbosity
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 None,
                 None,
                 (),
@@ -55,8 +53,8 @@ class ActionCompleteTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 None,
                 None,
                 (),
@@ -68,8 +66,8 @@ class ActionCompleteTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 None,
                 None,
                 (),
@@ -84,8 +82,8 @@ class ActionCompleteTest(unittest.TestCase):
         # then check what happens with files
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 None,
                 None,
                 (),
@@ -97,8 +95,8 @@ class ActionCompleteTest(unittest.TestCase):
 """,
         )
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             None,
             None,
             (),
@@ -110,8 +108,8 @@ class ActionCompleteTest(unittest.TestCase):
         self.assertTrue(full_output.endswith(b"::file::\n"))
         # try with a command accepting a variable number of files
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             None,
             None,
             (),
@@ -123,8 +121,8 @@ class ActionCompleteTest(unittest.TestCase):
         self.assertTrue(full_output.endswith(b"::file::\n"))
 
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             None,
             None,
             (),
@@ -139,8 +137,8 @@ class ActionCompleteTest(unittest.TestCase):
 
         # if the action is already given, none should be listed again
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             None,
             None,
             (),
@@ -155,8 +153,8 @@ class ActionCompleteTest(unittest.TestCase):
 
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 None,
                 None,
                 (),

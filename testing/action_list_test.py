@@ -9,7 +9,7 @@ import commontest as comtst
 import fileset
 from rdiffbackup.singletons import consts
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, _ = comtst.init_test_dirs(__file__)
 
 
 class ActionListTest(unittest.TestCase):
@@ -46,8 +46,8 @@ class ActionListTest(unittest.TestCase):
         self.success = False
         # we backup twice to the same backup repository at different times
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from1_path,
             self.bak_path,
             ("--current-time", "111111"),
@@ -55,8 +55,8 @@ class ActionListTest(unittest.TestCase):
             (),
         )
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from2_path,
             self.bak_path,
             ("--current-time", "222222"),
@@ -69,7 +69,7 @@ class ActionListTest(unittest.TestCase):
         # we list the files at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -86,7 +86,7 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,
@@ -103,7 +103,7 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,
@@ -120,7 +120,7 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,
@@ -144,7 +144,7 @@ fileUnchanged
         # we list the files at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -156,7 +156,7 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -169,7 +169,7 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,
@@ -185,7 +185,7 @@ deleted fileOld
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,
@@ -201,7 +201,7 @@ deleted fileOld
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,
@@ -222,7 +222,7 @@ deleted fileOld
     def test_action_listincrements(self):
         """test the list increments action, without and with size"""
         incs_output = comtst.rdiff_backup_action(
-            False,
+            TEST_REMOTE1_DIR,
             None,
             self.bak_path,
             None,
@@ -233,7 +233,7 @@ deleted fileOld
         )
         self.assertIn(b"Found 1 increments", incs_output)
         incs_output = comtst.rdiff_backup_action(
-            False,
+            TEST_REMOTE1_DIR,
             None,
             self.bak_path,
             None,
@@ -252,7 +252,7 @@ deleted fileOld
         # we need to use a regex for different timezones
         self.assertRegex(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -276,7 +276,7 @@ deleted fileOld
         # especially directories can have any kind of size
         self.assertRegex(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,

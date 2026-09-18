@@ -11,7 +11,7 @@ import fileset
 from rdiff_backup import rpath
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
 class ActionReadOnlyTest(unittest.TestCase):
@@ -48,8 +48,8 @@ class ActionReadOnlyTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -60,8 +60,8 @@ class ActionReadOnlyTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -79,7 +79,7 @@ class ActionReadOnlyTest(unittest.TestCase):
         # we regress forcefully
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -99,7 +99,7 @@ class ActionReadOnlyTest(unittest.TestCase):
         # we remove forcefully
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,

@@ -14,7 +14,7 @@ import fileset
 from rdiff_backup import rpath, selection
 from rdiffbackup.singletons import consts, generics, specifics
 
-TEST_BASE_DIR = comtst.init_test_dirs(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
 class MatchingTest(unittest.TestCase):
@@ -715,8 +715,8 @@ class SelectionIfPresentTest(unittest.TestCase):
         """Test that --exclude-if-present works properly"""
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -739,8 +739,8 @@ class SelectionIfPresentTest(unittest.TestCase):
         """Test that --include-if-present works properly"""
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -761,8 +761,8 @@ class SelectionIfPresentTest(unittest.TestCase):
         # this fails because the last include statement is redundant
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -838,8 +838,8 @@ class CommandTest(unittest.TestCase):
         emptydir.mkdir()
 
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             selrp.path,
             self.bak_path,
             extra_options=(
@@ -868,8 +868,8 @@ class CommandTest(unittest.TestCase):
         empty_rp.mkdir()
 
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             base_rp.path,
             backup_rp.path,
             extra_options=(b"backup", b"--exclude", backup_rp.path),
@@ -888,8 +888,8 @@ class CommandTest(unittest.TestCase):
         """Test inclusion and exclusion of symlinks"""
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -910,8 +910,8 @@ class CommandTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -943,8 +943,8 @@ class CommandTest(unittest.TestCase):
             efb.write(os.path.join(self.from1_path, b"dir1") + b"\n")
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -977,8 +977,8 @@ class CommandTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -1001,8 +1001,8 @@ class CommandTest(unittest.TestCase):
             efb.write(b"**/*_link\n")
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -1037,8 +1037,8 @@ class CommandTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -1056,8 +1056,8 @@ class CommandTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "30000"),
@@ -1073,8 +1073,8 @@ class CommandTest(unittest.TestCase):
             efb.write(os.path.join(self.to1_path, b"dir1") + b"\n")
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.bak_path,
                 self.to1_path,
                 (),
@@ -1090,8 +1090,8 @@ class CommandTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.to1_path,
                 self.bak_path,
                 (),
@@ -1102,8 +1102,8 @@ class CommandTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.bak_path,
                 self.to2_path,
                 (),
@@ -1121,8 +1121,8 @@ class CommandTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.to2_path,
                 self.bak_path,
                 (),
@@ -1158,8 +1158,8 @@ class CommandTest(unittest.TestCase):
         # When backup run with UNC path
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 sourcerp.path,
                 destrp.path,
                 (),
