@@ -1,8 +1,9 @@
 # Makefile to automate rdiff-backup build and install steps
 
-# Currently all steps are run isolated inside a Docker image, but this could
-# be extended to have more options.
-RUN_COMMAND ?= docker run --rm -i -v ${PWD}/..:/build/ -w /build/$(shell basename `pwd`) rdiff-backup-dev:debian-sid
+# By default, steps are run directly on the host (no isolation).
+# Set RUN_COMMAND to wrap each step, e.g. in a Docker container, if desired.
+# e.g.: docker run --rm -i -v ${PWD}/..:/build/ -w /build/$(shell basename `pwd`) rdiff-backup-dev:debian-sid
+RUN_COMMAND ?=
 
 # Define SUDO=sudo if you don't want to run the whole thing as root
 # we set SUDO="sudo -E env PATH=$PATH" if we want to keep the whole environment
@@ -10,7 +11,7 @@ SUDO ?=
 
 .NOTPARALLEL: all test-misc
 
-all: container clean test build
+all: clean test build
 
 test: test-static test-runtime
 
@@ -39,7 +40,7 @@ test-runtime-slow: test-runtime-files
 	@echo "=== Long running performance tests ==="
 	${RUN_COMMAND} tox -c tox_slow.ini -e py
 
-test-misc: container clean build test-static test-runtime-slow
+test-misc: clean build test-static test-runtime-slow
 
 build:
 	# Build rdiff-backup (assumes src/ is in directory 'rdiff-backup' and
