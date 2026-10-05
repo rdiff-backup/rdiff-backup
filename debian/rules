@@ -2,3 +2,6 @@
 
 %:
 	dh $@ --buildsystem=pybuild --with python3
+
+execute_after_dh_auto_clean:
+	rm -rf .tox .tox.root
