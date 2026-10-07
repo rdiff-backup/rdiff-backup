@@ -41,6 +41,71 @@ class RORPStateTest(RPathTest):
         self.assertEqual(rorp2.index, rorp.index)
 
 
+class RORPEquality(RPathTest):
+    """Test comparison of rorpaths with owner names unknown on one side"""
+
+    def setUp(self):
+        out_rp = rpath.RPath(self.lc, self.out_dir)
+        comtst.re_init_rpath_dir(out_rp)
+        # a mirror file read from the file system, e.g. when metadata is missing
+        self.mirror_rp = out_rp.append("rorp_equality")
+        self.mirror_rp.write_string("some content")
+        # the mirror side can't resolve the names, like a host without LDAP
+        self.mirror_rp.data["uname"] = None
+        self.mirror_rp.data["gname"] = None
+
+    def _get_source_rorp(self, **changes):
+        """Return a rorpath as sent by the source, with resolved names"""
+        data = dict(self.mirror_rp.data)
+        data["uname"] = "someone@ldap.example.com"
+        data["gname"] = "somegroup@ldap.example.com"
+        data.update(changes)
+        return rpath.RORPath(self.mirror_rp.index, data)
+
+    def testUnresolvedName(self):
+        """Test names unknown on one side are ignored, whichever side"""
+        src_rorp = self._get_source_rorp()
+        testpairs = [
+            (src_rorp, self.mirror_rp),
+            (src_rorp, self.mirror_rp.getRORPath()),
+        ]
+        for a, b in testpairs:
+            self.assertTrue(a == b)
+            self.assertTrue(b == a)
+            self.assertFalse(a != b)
+            self.assertFalse(b != a)
+        # the legacy string "None" (stored by 0.12.x) counts as unresolved too
+        self.mirror_rp.data["uname"] = "None"
+        self.mirror_rp.data["gname"] = "None"
+        self.assertTrue(src_rorp == self.mirror_rp)
+        self.assertTrue(self.mirror_rp == src_rorp)
+
+    def testResolvedNames(self):
+        """Test names known on both sides are compared"""
+        self.mirror_rp.data["uname"] = "root"
+        self.mirror_rp.data["gname"] = "root"
+        src_rorp = self._get_source_rorp()
+        self.assertFalse(src_rorp == self.mirror_rp)
+        self.assertFalse(self.mirror_rp == src_rorp)
+        src_rorp = self._get_source_rorp(uname="root", gname="root")
+        self.assertTrue(src_rorp == self.mirror_rp)
+        self.assertTrue(self.mirror_rp == src_rorp)
+
+    def testOtherAttribs(self):
+        """Test ignoring names doesn't hide other differences"""
+        other_uid = self.mirror_rp.getuidgid()[0] + 1
+        other_perms = 0o640 if self.mirror_rp.getperms() == 0o600 else 0o600
+        testpairs = [
+            (self._get_source_rorp(mtime=12345), self.mirror_rp),
+            (self._get_source_rorp(size=1), self.mirror_rp),
+            (self._get_source_rorp(uid=other_uid), self.mirror_rp),
+            (self._get_source_rorp(perms=other_perms), self.mirror_rp),
+        ]
+        for a, b in testpairs:
+            self.assertFalse(a == b)
+            self.assertFalse(b == a)
+
+
 class CheckTypes(RPathTest):
     """Check to see if file types are identified correctly"""
 
