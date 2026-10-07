@@ -40,7 +40,5 @@ jobs:
     - name: Execute tests ${{ matrix.test-step }}
       if: ${{ env.SKIP != 'true' }}
       run: |
-        export RUN_COMMAND=
         export SUDO="sudo -E env PATH=$PATH"
         make test
-      # the empty RUN_COMMAND avoids using docker
