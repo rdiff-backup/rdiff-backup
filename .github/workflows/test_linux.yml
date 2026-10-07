@@ -41,7 +41,5 @@ jobs:
     - name: Execute tests ${{ matrix.test-step }}
       if: '!steps.skip-docs.outputs.skip'
       run: |
-        export RUN_COMMAND=
         export SUDO=sudo
         make test
-      # the empty RUN_COMMAND avoids using docker
