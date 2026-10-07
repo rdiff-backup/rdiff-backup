@@ -183,7 +183,7 @@ jobs:
 #    #--- Build Debian packages ---
 #    - os: linux
 #      language: shell
-#      env: MAKE_STEP=dist_deb RUN_COMMAND=
+#      env: MAKE_STEP=dist_deb
 #      addons:
 #        apt:
 #          packages:  # make sure these match debian/control contents
