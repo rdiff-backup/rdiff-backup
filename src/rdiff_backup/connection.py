@@ -20,7 +20,6 @@
 
 import errno
 import importlib
-import pickle
 import subprocess
 import sys
 import time
@@ -33,6 +32,7 @@ from rdiff_backup import (
     rpath,
     Security,
 )
+from rdiffbackup.utils import pickle
 from rdiffbackup.locations import increment
 from rdiffbackup.locations.map import filenames as map_filenames
 from rdiffbackup.singletons import consts, log, specifics
