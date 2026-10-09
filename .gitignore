@@ -12,7 +12,7 @@ MANIFEST
 *[._]local[._]*
 
 # setup.py installation files
-src/rdiff_backup.egg-info/
+*.egg-info/
 .eggs/
 
 # Windows build file
@@ -39,3 +39,9 @@ mprofile_*.dat
 
 # Ignore Windows artefacts
 *.dll
+
+# Ignore virtualenv
+.venv
+
+# Ignore compiled modules
+src/rdiff_backup/*.so
