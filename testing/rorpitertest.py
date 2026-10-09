@@ -1,10 +1,10 @@
 import unittest
-import pickle
 import os
 from commontest import old_test_dir, abs_output_dir, \
     compare_recursive, iter_equal
 from rdiff_backup import rpath, rorpiter, Globals
 from functools import reduce
+from rdiffbackup.utils import pickle
 
 
 class index:
@@ -173,7 +173,7 @@ class TreeReducerTest(unittest.TestCase):
         for index in self.i1a:
             val = itm1a(index)
             self.assertTrue(val)
-        itm1b = pickle.loads(pickle.dumps(itm1a))
+        itm1b = pickle.loads(pickle.dumps(itm1a, 4))
         for index in self.i1b:
             val = itm1b(index)
             self.assertTrue(val)
@@ -187,14 +187,14 @@ class TreeReducerTest(unittest.TestCase):
                 self.assertFalse(val)
             else:
                 self.assertTrue(val)
-        itm2b = pickle.loads(pickle.dumps(itm2a))
+        itm2b = pickle.loads(pickle.dumps(itm2a, 4))
         for index in self.i2b:
             val = itm2b(index)
             if index == ():
                 self.assertFalse(val)
             else:
                 self.assertTrue(val)
-        itm2c = pickle.loads(pickle.dumps(itm2b))
+        itm2c = pickle.loads(pickle.dumps(itm2b, 4))
         for index in self.i2c:
             val = itm2c(index)
             if index == ():

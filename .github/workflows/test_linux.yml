@@ -14,18 +14,13 @@ on:
 
 jobs:
   test-make-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: ["3.10",3.9,3.8,3.7]
     steps:
-    - name: skip workflow if only docs PR
-      id: skip-docs # id used for referencing step
-      uses: saulmaldonado/skip-workflow@v1.1.1
-      with:
-        phrase: '[DOC]'
-        search: '["pull_request"]'
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: skip on pull requests purely for documentation
+      run: echo SKIP=${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, '[DOC] ') }} >> "$GITHUB_ENV"
     - uses: actions/checkout@v3
       if: '!steps.skip-docs.outputs.skip'
     - name: Set up Python ${{ matrix.python-version }}
@@ -41,7 +36,5 @@ jobs:
     - name: Execute tests ${{ matrix.test-step }}
       if: '!steps.skip-docs.outputs.skip'
       run: |
-        export RUN_COMMAND=
         export SUDO=sudo
         make test
-      # the empty RUN_COMMAND avoids using docker

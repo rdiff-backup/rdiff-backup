@@ -18,7 +18,6 @@
 # 02110-1301, USA
 """Support code for remote execution and data transfer"""
 
-import pickle
 import sys
 import traceback
 # we need those imports because they are used through the connection
@@ -31,6 +30,8 @@ import tempfile  # noqa: F401
 import types  # noqa: F401
 import time
 import subprocess
+
+from rdiffbackup.utils import pickle
 
 # The following EA and ACL modules may be used if available
 try:  # compat200
