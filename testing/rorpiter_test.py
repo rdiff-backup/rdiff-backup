@@ -4,13 +4,12 @@ Test iteration of read-only paths
 
 import functools
 import os
-import pickle
 import unittest
 
 import commontest as comtst
-
 from rdiff_backup import rpath, rorpiter
-from rdiffbackup.singletons import specifics
+from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.utils import pickle
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -231,7 +230,7 @@ class TreeReducerTest(unittest.TestCase):
         for index in self.i1a:
             val = itm1a(index)
             self.assertTrue(val)
-        itm1b = pickle.loads(pickle.dumps(itm1a))
+        itm1b = pickle.loads(pickle.dumps(itm1a, consts.PICKLE_PROTOCOL))
         for index in self.i1b:
             val = itm1b(index)
             self.assertTrue(val)
@@ -245,14 +244,14 @@ class TreeReducerTest(unittest.TestCase):
                 self.assertFalse(val)
             else:
                 self.assertTrue(val)
-        itm2b = pickle.loads(pickle.dumps(itm2a))
+        itm2b = pickle.loads(pickle.dumps(itm2a, consts.PICKLE_PROTOCOL))
         for index in self.i2b:
             val = itm2b(index)
             if index == ():
                 self.assertFalse(val)
             else:
                 self.assertTrue(val)
-        itm2c = pickle.loads(pickle.dumps(itm2b))
+        itm2c = pickle.loads(pickle.dumps(itm2b, consts.PICKLE_PROTOCOL))
         for index in self.i2c:
             val = itm2c(index)
             if index == ():

@@ -19,10 +19,10 @@
 """Convert an iterator to a file object and vice-versa"""
 
 import errno
-import pickle
 import array
 from rdiff_backup import robust, rpath
 from rdiffbackup.singletons import consts
+from rdiffbackup.utils import pickle
 
 
 class IterFileException(Exception):
