@@ -10,7 +10,7 @@ import fileset
 
 from rdiffbackup.singletons import consts
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
 class ActionCompareTest(unittest.TestCase):
@@ -58,8 +58,8 @@ class ActionCompareTest(unittest.TestCase):
         self.success = False
         # we backup to the same backup repository at different times
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from1_path,
             self.bak_path,
             ("--current-time", "10000"),
@@ -67,8 +67,8 @@ class ActionCompareTest(unittest.TestCase):
             (),
         )
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from2_path,
             self.bak_path,
             ("--current-time", "20000"),
@@ -81,8 +81,8 @@ class ActionCompareTest(unittest.TestCase):
         # first try without date
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -93,8 +93,8 @@ class ActionCompareTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.from2_path,
                 self.bak_path,
                 (),
@@ -109,8 +109,8 @@ class ActionCompareTest(unittest.TestCase):
         # then with date
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -121,8 +121,8 @@ class ActionCompareTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.from2_path,
                 self.bak_path,
                 (),
@@ -135,8 +135,8 @@ class ActionCompareTest(unittest.TestCase):
         # then try to compare with hashes
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -147,8 +147,8 @@ class ActionCompareTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.from2_path,
                 self.bak_path,
                 (),
@@ -160,8 +160,8 @@ class ActionCompareTest(unittest.TestCase):
         # reduce verbosity to avoid file system quoting notes under Windows
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from3_path,
                 self.bak_path,
                 ("--parsable", "-v2"),
@@ -180,8 +180,8 @@ class ActionCompareTest(unittest.TestCase):
         # then try to compare full
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -192,8 +192,8 @@ class ActionCompareTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 (),
@@ -205,8 +205,8 @@ class ActionCompareTest(unittest.TestCase):
         # reduce verbosity to avoid file system quoting notes under Windows
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.from3_path,
                 self.bak_path,
                 ("--parsable", "-v2"),

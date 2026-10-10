@@ -17,7 +17,7 @@ from rdiffbackup.locations.map import owners as map_owners
 from rdiffbackup.meta import acl_posix, ea
 from rdiffbackup.singletons import generics, specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
@@ -236,7 +236,7 @@ user.empty
             self.ea_test1_dir,
         ]
         comtst.backup_restore_series(
-            1, 1, dirlist, compare_eas=1, test_base_dir=TEST_BASE_DIR
+            None, None, dirlist, compare_eas=1, test_base_dir=TEST_BASE_DIR
         )
 
     def testSeriesRemote(self):
@@ -249,7 +249,11 @@ user.empty
             self.ea_test1_dir,
         ]
         comtst.backup_restore_series(
-            None, None, dirlist, compare_eas=1, test_base_dir=TEST_BASE_DIR
+            TEST_REMOTE1_DIR,
+            TEST_REMOTE2_DIR,
+            dirlist,
+            compare_eas=1,
+            test_base_dir=TEST_BASE_DIR,
         )
 
     def test_final_local(self):
@@ -257,22 +261,22 @@ user.empty
         self.make_backup_dirs()
         self.make_temp_out_dirs()
         comtst.rdiff_backup(
-            1, 1, self.ea_test1_rpath.path, self.out_dir, current_time=10000
+            None, None, self.ea_test1_rpath.path, self.out_dir, current_time=10000
         )
         self.assertTrue(
             comtst.compare_recursive(self.ea_test1_rpath, self.out_rp, compare_eas=1)
         )
 
         comtst.rdiff_backup(
-            1, 1, self.ea_test2_rpath.path, self.out_dir, current_time=20000
+            None, None, self.ea_test2_rpath.path, self.out_dir, current_time=20000
         )
         self.assertTrue(
             comtst.compare_recursive(self.ea_test2_rpath, self.out_rp, compare_eas=1)
         )
 
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             self.out_dir,
             self.restore_dir,
             extra_options=(b"restore", b"--at", b"10000"),
@@ -529,7 +533,7 @@ other::---
             self.acl_test1_dir,
         ]
         comtst.backup_restore_series(
-            1, 1, dirlist, compare_acls=1, test_base_dir=TEST_BASE_DIR
+            None, None, dirlist, compare_acls=1, test_base_dir=TEST_BASE_DIR
         )
 
     def testSeriesRemote(self):
@@ -542,7 +546,11 @@ other::---
             self.acl_test1_dir,
         ]
         comtst.backup_restore_series(
-            None, None, dirlist, compare_acls=1, test_base_dir=TEST_BASE_DIR
+            TEST_REMOTE1_DIR,
+            TEST_REMOTE2_DIR,
+            dirlist,
+            compare_acls=1,
+            test_base_dir=TEST_BASE_DIR,
         )
 
     def test_final_local(self):
@@ -550,22 +558,22 @@ other::---
         self.make_backup_dirs()
         self.make_temp_out_dirs()
         comtst.rdiff_backup(
-            1, 1, self.acl_test1_rpath.path, self.out_dir, current_time=10000
+            None, None, self.acl_test1_rpath.path, self.out_dir, current_time=10000
         )
         self.assertTrue(
             comtst.compare_recursive(self.acl_test1_rpath, self.out_rp, compare_acls=1)
         )
 
         comtst.rdiff_backup(
-            1, 1, self.acl_test2_rpath.path, self.out_dir, current_time=20000
+            None, None, self.acl_test2_rpath.path, self.out_dir, current_time=20000
         )
         self.assertTrue(
             comtst.compare_recursive(self.acl_test2_rpath, self.out_rp, compare_acls=1)
         )
 
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             self.out_dir,
             self.restore_dir,
             extra_options=(b"restore", b"--at", b"10000"),
@@ -578,8 +586,8 @@ other::---
 
         self.restore_rp.delete()
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             self.out_dir,
             self.restore_dir,
             extra_options=(b"restore", b"--at", b"now"),
@@ -640,8 +648,8 @@ other::---""".format(self.current_user, self.current_group),
         users_map_rp, groups_map_rp = write_mapping_files(rootrp)
 
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             rootrp.path,
             self.out_dir,
             extra_options=(
@@ -695,10 +703,10 @@ other::---""",
         self.make_temp_out_dirs()
         self.make_backup_dirs()
         comtst.rdiff_backup(
-            1, 1, self.acl_test1_rpath.path, self.out_dir, current_time=10000
+            None, None, self.acl_test1_rpath.path, self.out_dir, current_time=10000
         )
         comtst.rdiff_backup(
-            1, 1, self.acl_test1_rpath.path, self.out_dir, current_time=20000
+            None, None, self.acl_test1_rpath.path, self.out_dir, current_time=20000
         )
         incdir = self.out_rp.append("rdiff-backup-data", "increments")
         self.assertTrue(incdir.isdir())
@@ -762,7 +770,12 @@ class CombinedTest(unittest.TestCase):
             self.combo_test1_dir,
         ]
         comtst.backup_restore_series(
-            1, 1, dirlist, compare_eas=1, compare_acls=1, test_base_dir=TEST_BASE_DIR
+            None,
+            None,
+            dirlist,
+            compare_eas=1,
+            compare_acls=1,
+            test_base_dir=TEST_BASE_DIR,
         )
 
     def testSeriesRemote(self):
@@ -775,8 +788,8 @@ class CombinedTest(unittest.TestCase):
             self.combo_test1_dir,
         ]
         comtst.backup_restore_series(
-            None,
-            None,
+            TEST_REMOTE1_DIR,
+            TEST_REMOTE2_DIR,
             dirlist,
             compare_eas=1,
             compare_acls=1,

@@ -1,6 +1,9 @@
 # write the hook file which will make sure that coverage is loaded
 # also for sub-processes, like for "client/server" rdiff-backup
 
+# Don't forget to also define the environment variable like
+# COVERAGE_PROCESS_START=$PWD/tox.ini or COVERAGE_PROCESS_START = {toxinidir}/tox.ini
+
 import os
 import site
 import sys

@@ -12,7 +12,7 @@ import commontest as comtst
 from rdiff_backup import rpath, metadata
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class ResourceForkTest(unittest.TestCase):
@@ -96,7 +96,7 @@ class ResourceForkTest(unittest.TestCase):
             "testfiles/resource_fork_test2",
             "testfiles/resource_fork_test1",
         ]
-        comtst.backup_restore_series(1, 1, dirlist, test_base_dir=TEST_BASE_DIR)
+        comtst.backup_restore_series(None, None, dirlist, test_base_dir=TEST_BASE_DIR)
 
     def testSeriesRemote(self):
         """Test backing up and restoring directories with ACLs locally"""
@@ -107,7 +107,7 @@ class ResourceForkTest(unittest.TestCase):
             "testfiles/empty",
             "testfiles/resource_fork_test1",
         ]
-        comtst.backup_restore_series(1, 1, dirlist, test_base_dir=TEST_BASE_DIR)
+        comtst.backup_restore_series(None, None, dirlist, test_base_dir=TEST_BASE_DIR)
 
 
 if __name__ == "__main__":

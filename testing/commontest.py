@@ -10,6 +10,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import typing
 
 from rdiff_backup import (
     hash,
@@ -51,8 +52,13 @@ if sys.platform.startswith("win"):
 else:
     CMD_SEP = b" ; "
 
+# Typing anything looking like a path
+BytesPath: typing.TypeAlias = typing.Union[os.PathLike[bytes], bytes]
+StrPath: typing.TypeAlias = typing.Union[os.PathLike[str], str]
+AnyPath: typing.TypeAlias = typing.Union[BytesPath, StrPath]
 
-def remove_dir(dirstring):
+
+def remove_dir(dirstring: AnyPath):
     """Run myrm on given directory string"""
     root_rp = rpath.RPath(specifics.local_connection, dirstring)
     for rp in selection.Select(root_rp).get_select_iter():
@@ -77,7 +83,7 @@ def re_init_rpath_dir(rp, uid=-1, gid=-1):
         rp.chown(uid, gid)
 
 
-def re_init_subdir(maindir, *subdirs):
+def re_init_subdir(maindir: BytesPath, *subdirs: BytesPath) -> BytesPath:
     """Remove a sub-directory, or more, and return its name joined
     to the main directory as an empty directory"""
     directory = os.path.join(maindir, *subdirs)
@@ -86,12 +92,21 @@ def re_init_subdir(maindir, *subdirs):
     return directory
 
 
-# two temporary directories to simulate remote actions
-abs_remote1_dir = re_init_subdir(abs_test_dir, b"remote1")
-abs_remote2_dir = re_init_subdir(abs_test_dir, b"remote2")
+def init_test_dirs(base_name: AnyPath) -> typing.Tuple[BytesPath, BytesPath, BytesPath]:
+    """
+    Return a base directory and two remote directories in it to simulate remote actions
+    """
+
+    test_base_dir = get_test_base_dir(base_name)
+
+    return (
+        test_base_dir,
+        re_init_subdir(test_base_dir, b"remote1"),
+        re_init_subdir(test_base_dir, b"remote2"),
+    )
 
 
-def get_test_base_dir(module_file):
+def get_test_base_dir(module_file: AnyPath) -> BytesPath:
     """
     Create a subdirectory out of the given potentially absolute path.
     The function is meant to be used with the '__file__' variable of a module,
@@ -102,8 +117,8 @@ def get_test_base_dir(module_file):
 
 
 def rdiff_backup(
-    source_local,
-    dest_local,
+    source_remote,
+    dest_remote,
     src_dir,
     dest_dir,
     current_time=None,
@@ -113,8 +128,8 @@ def rdiff_backup(
 ):
     """Run rdiff-backup with the given options
 
-    source_local and dest_local are boolean values.  If either is
-    false, then rdiff-backup will be run pretending that src_dir and
+    source_remote and dest_remote are optional path values.  If either
+    is set, then rdiff-backup will be run pretending that src_dir and
     dest_dir, respectively, are remote.  The server process will be
     run in directories remote1 and remote2 respectively.
 
@@ -130,13 +145,13 @@ def rdiff_backup(
     """
     remote_exec = CMD_SEP.join([b"cd %s", b"%s server::%s"])
 
-    if not source_local:
-        src_dir = remote_exec % (abs_remote1_dir, RBBin, src_dir)
-    if dest_dir and not dest_local:
-        dest_dir = remote_exec % (abs_remote2_dir, RBBin, dest_dir)
+    if source_remote:
+        src_dir = remote_exec % (source_remote, RBBin, src_dir)
+    if dest_dir and dest_remote:
+        dest_dir = remote_exec % (dest_remote, RBBin, dest_dir)
 
     cmdargs = [RBBin]
-    if not (source_local and dest_local):
+    if source_remote or dest_remote:
         cmdargs.extend((b"--remote-schema", b"{h}"))
 
     if current_time:
@@ -162,8 +177,8 @@ def rdiff_backup(
 
 
 def rdiff_backup_action(
-    source_local,
-    dest_local,
+    source_remote,
+    dest_remote,
     src_dir,
     dest_dir,
     generic_opts,
@@ -176,8 +191,8 @@ def rdiff_backup_action(
     """
     Run rdiff-backup with the given action and options, faking remote locations
 
-    source_local and dest_local are boolean values.  If either is
-    false, then rdiff-backup will be run pretending that src_dir and
+    source_remote and dest_remote are optional path values.  If either
+    is set, then rdiff-backup will be run pretending that src_dir and
     dest_dir, respectively, are remote.  The server process will be
     run in directories remote1 and remote2 respectively.
 
@@ -192,11 +207,11 @@ def rdiff_backup_action(
     remote_exec = CMD_SEP.join([b"cd %s", b"%s server::%s"])
 
     is_remote = False
-    if src_dir and not source_local:
-        src_dir = remote_exec % (abs_remote1_dir, RBBin, src_dir)
+    if src_dir and source_remote:
+        src_dir = remote_exec % (source_remote, RBBin, src_dir)
         is_remote = True
-    if dest_dir and not dest_local:
-        dest_dir = remote_exec % (abs_remote2_dir, RBBin, dest_dir)
+    if dest_dir and dest_remote:
+        dest_dir = remote_exec % (dest_remote, RBBin, dest_dir)
         is_remote = True
 
     if is_remote:
@@ -232,7 +247,7 @@ def rdiff_backup_action(
     return ret_val
 
 
-def _get_locations(src_local, dest_local, src_dir, dest_dir):
+def _get_locations(src_remote, dest_remote, src_dir, dest_dir):
     """
     Return a tuple of remote or local source and destination locations
     """
@@ -241,17 +256,17 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
     else:
         remote_location = "cd {rdir}; {tdir}/server.py::{dir}"
 
-    if not src_local:
+    if src_remote:
         src_dir = remote_location.format(
-            rdir=os.fsdecode(abs_remote1_dir),
+            rdir=os.fsdecode(src_remote),
             tdir=os.fsdecode(abs_testing_dir),
             dir=os.fsdecode(src_dir),
         )
     else:
         src_dir = os.fsdecode(src_dir)
-    if not dest_local:
+    if dest_remote:
         dest_dir = remote_location.format(
-            rdir=os.fsdecode(abs_remote2_dir),
+            rdir=os.fsdecode(dest_remote),
             tdir=os.fsdecode(abs_testing_dir),
             dir=os.fsdecode(dest_dir),
         )
@@ -261,8 +276,8 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
 
 
 def InternalBackup(
-    source_local,
-    dest_local,
+    source_remote,
+    dest_remote,
     src_dir,
     dest_dir,
     current_time=None,
@@ -282,7 +297,7 @@ def InternalBackup(
     if current_time is not None:
         args.append("--current-time")
         args.append(str(current_time))
-    if not (source_local and dest_local):
+    if source_remote or dest_remote:
         args.append("--remote-schema")
         args.append("{h}")
     if force:
@@ -297,13 +312,13 @@ def InternalBackup(
     else:
         args.append("--no-acls")
 
-    args.extend(_get_locations(source_local, dest_local, src_dir, dest_dir))
+    args.extend(_get_locations(source_remote, dest_remote, src_dir, dest_dir))
 
     run.main_run(args, security_override=True)
     reset_connections()
 
 
-def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
+def InternalMirror(source_remote, dest_remote, src_dir, dest_dir, force=False):
     """
     Mirror src to dest internally
 
@@ -315,7 +330,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
     dest_root = rpath.RPath(specifics.local_connection, dest_dir)
     dest_rbdir = dest_root.append("rdiff-backup-data")
 
-    InternalBackup(source_local, dest_local, src_dir, dest_dir, force=force)
+    InternalBackup(source_remote, dest_remote, src_dir, dest_dir, force=force)
     dest_root.setdata()
     remove_dir(dest_rbdir.path)
     # Restore old attributes
@@ -323,7 +338,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
 
 
 def InternalRestore(
-    mirror_local, dest_local, mirror_dir, dest_dir, time, eas=None, acls=None
+    mirror_remote, dest_remote, mirror_dir, dest_dir, time, eas=None, acls=None
 ):
     """
     Restore mirror_dir to dest_dir at given time
@@ -334,7 +349,7 @@ def InternalRestore(
     """
     args = []
     args.append("--force")
-    if not (mirror_local and dest_local):
+    if mirror_remote or dest_remote:
         args.append("--remote-schema")
         args.append("{h}")
     args.append("restore")
@@ -350,7 +365,7 @@ def InternalRestore(
         args.append("--at")
         args.append(str(time))
 
-    args.extend(_get_locations(mirror_local, dest_local, mirror_dir, dest_dir))
+    args.extend(_get_locations(mirror_remote, dest_remote, mirror_dir, dest_dir))
 
     run.main_run(args, security_override=True)
     reset_connections()
@@ -622,8 +637,8 @@ def reset_hardlink_dicts():
 
 
 def backup_restore_series(
-    source_local,
-    dest_local,
+    source_remote,
+    dest_remote,
     list_of_dirnames,
     compare_hardlinks=1,
     test_base_dir=abs_test_dir,
@@ -654,8 +669,8 @@ def backup_restore_series(
         reset_connections()
 
         InternalBackup(
-            source_local,
-            dest_local,
+            source_remote,
+            dest_remote,
             dirname,
             backup_dir,
             time,
@@ -678,8 +693,8 @@ def backup_restore_series(
         reset_hardlink_dicts()
         remove_dir(restore_dir)
         InternalRestore(
-            dest_local,
-            source_local,
+            dest_remote,
+            source_remote,
             backup_dir,
             restore_dir,
             time,

@@ -14,7 +14,7 @@ from rdiffbackup.locations import increment
 from rdiffbackup.meta import stdattr
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class HashTest(unittest.TestCase):
@@ -102,7 +102,7 @@ class HashTest(unittest.TestCase):
         in_rp1, hashlist1, in_rp2, hashlist2 = self.make_dirs()
         comtst.remove_dir(self.out_dir)
 
-        comtst.rdiff_backup(1, 1, in_rp1.path, self.out_dir, 10000)
+        comtst.rdiff_backup(None, None, in_rp1.path, self.out_dir, 10000)
         meta_prefix = increment.StoredRPath(
             specifics.local_connection,
             os.path.join(self.out_dir, b"rdiff-backup-data", b"mirror_metadata"),
@@ -113,7 +113,7 @@ class HashTest(unittest.TestCase):
         hashlist = self.extract_hashs(metadata_rp)
         self.assertEqual(hashlist, hashlist1)
 
-        comtst.rdiff_backup(1, 1, in_rp2.path, self.out_dir, 20000)
+        comtst.rdiff_backup(None, None, in_rp2.path, self.out_dir, 20000)
         incs = meta_prefix.get_incfiles_list()
         self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == "snapshot":
