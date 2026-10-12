@@ -10,7 +10,7 @@ import fileset
 
 from rdiffbackup.singletons import consts
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, _ = comtst.init_test_dirs(__file__)
 
 
 class ActionRemoveTest(unittest.TestCase):
@@ -78,8 +78,8 @@ class ActionRemoveTest(unittest.TestCase):
         self.success = False
         # we backup to the same backup repository at different times
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from1_path,
             self.bak_path,
             ("--current-time", "10000"),
@@ -87,8 +87,8 @@ class ActionRemoveTest(unittest.TestCase):
             (),
         )
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from2_path,
             self.bak_path,
             ("--current-time", "20000"),
@@ -96,8 +96,8 @@ class ActionRemoveTest(unittest.TestCase):
             (),
         )
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from3_path,
             self.bak_path,
             ("--current-time", "30000"),
@@ -105,8 +105,8 @@ class ActionRemoveTest(unittest.TestCase):
             (),
         )
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from4_path,
             self.bak_path,
             ("--current-time", "40000"),
@@ -136,7 +136,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # Removing fails cleanly if the date can't be parsed
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -149,7 +149,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # removing multiple increments fails without --force
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -162,7 +162,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # you can't remove a partial increment
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"whatever"),
                 None,
@@ -174,7 +174,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -187,11 +187,11 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # then check that only one increment and mirror remain
         self.assertRegex(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                ("--parsable",),
+                ("--parsable", "--verbosity", "1"),
                 b"list",
                 ("increments",),
                 return_stdout=True,
@@ -211,7 +211,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # check that nothing happens if no increment is old enough issue #616
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -223,11 +223,11 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         )
         self.assertRegex(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                ("--parsable",),
+                ("--parsable", "--verbosity", "1"),
                 b"list",
                 ("increments",),
                 return_stdout=True,
@@ -246,7 +246,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # then remove the last increment
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -259,11 +259,11 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # and check that only the mirror is left
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                ("--parsable",),
+                ("--parsable", "--verbosity", "1"),
                 b"list",
                 ("increments",),
                 return_stdout=True,
@@ -279,7 +279,7 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # then try to remove the mirror
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -292,11 +292,11 @@ class ActionRemoveIncsTest(ActionRemoveTest):
         # and check that it is still there
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                ("--parsable",),
+                ("--parsable", "--verbosity", "1"),
                 b"list",
                 ("increments",),
                 return_stdout=True,
@@ -325,7 +325,7 @@ class ActionRemoveFileTest(ActionRemoveTest):
         """test removing files never or always present"""
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"file-does-not-exist"),
                 None,
@@ -338,7 +338,7 @@ class ActionRemoveFileTest(ActionRemoveTest):
         # you can't remove the whole backup repository
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
@@ -351,7 +351,7 @@ class ActionRemoveFileTest(ActionRemoveTest):
         # you can't remove rdiff-backup-data
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"rdiff-backup-data", b"file.d"),
                 None,
@@ -363,7 +363,7 @@ class ActionRemoveFileTest(ActionRemoveTest):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"file"),
                 None,
@@ -375,11 +375,11 @@ class ActionRemoveFileTest(ActionRemoveTest):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files",),
                 return_stdout=True,
@@ -394,11 +394,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files", "--at", "10000"),
                 return_stdout=True,
@@ -413,11 +413,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files", "--at", "20000"),
                 return_stdout=True,
@@ -433,7 +433,7 @@ fileUnchanged
         for at_time in ("100000", "200000", "30000", "40000"):
             self.assertEqual(
                 comtst.rdiff_backup_action(
-                    True,
+                    None,
                     None,
                     self.bak_path,
                     None,
@@ -451,7 +451,7 @@ fileUnchanged
         """test removing directory"""
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"file.d"),
                 None,
@@ -463,11 +463,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files",),
                 return_stdout=True,
@@ -481,11 +481,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files", "--at", "10000"),
                 return_stdout=True,
@@ -499,11 +499,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files", "--at", "20000"),
                 return_stdout=True,
@@ -518,7 +518,7 @@ fileUnchanged
         for at_time in ("100000", "200000", "30000", "40000"):
             self.assertEqual(
                 comtst.rdiff_backup_action(
-                    True,
+                    None,
                     None,
                     self.bak_path,
                     None,
@@ -536,7 +536,7 @@ fileUnchanged
         """test removing file only present partially"""
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"fileNew"),
                 None,
@@ -548,7 +548,7 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"fileOld"),
                 None,
@@ -562,11 +562,11 @@ fileUnchanged
         for at_time in ("10000", "20000"):
             self.assertEqual(
                 comtst.rdiff_backup_action(
-                    False,
+                    TEST_REMOTE1_DIR,
                     None,
                     self.bak_path,
                     None,
-                    (),
+                    ("--verbosity", "1"),
                     b"list",
                     ("files", "--at", at_time),
                     return_stdout=True,
@@ -582,7 +582,7 @@ fileUnchanged
         for at_time in ("10000", "20000", "30000", "40000"):
             self.assertEqual(
                 comtst.rdiff_backup_action(
-                    True,
+                    None,
                     None,
                     self.bak_path,
                     None,
@@ -600,7 +600,7 @@ fileUnchanged
         """test not really removing files"""
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"file-does-not-exist"),
                 None,
@@ -612,7 +612,7 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 os.path.join(self.bak_path, b"file"),
                 None,
@@ -624,11 +624,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files",),
                 return_stdout=True,
@@ -644,11 +644,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files", "--at", "10000"),
                 return_stdout=True,
@@ -664,11 +664,11 @@ fileUnchanged
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
+                TEST_REMOTE1_DIR,
                 None,
                 self.bak_path,
                 None,
-                (),
+                ("--verbosity", "1"),
                 b"list",
                 ("files", "--at", "20000"),
                 return_stdout=True,
@@ -685,7 +685,7 @@ fileUnchanged
         for at_time in ("100000", "200000", "30000", "40000"):
             self.assertEqual(
                 comtst.rdiff_backup_action(
-                    True,
+                    None,
                     None,
                     self.bak_path,
                     None,

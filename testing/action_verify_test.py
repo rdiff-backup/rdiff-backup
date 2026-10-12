@@ -8,7 +8,7 @@ import unittest
 import commontest as comtst
 import fileset
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, _ = comtst.init_test_dirs(__file__)
 
 
 class ActionVerifyTest(unittest.TestCase):
@@ -45,8 +45,8 @@ class ActionVerifyTest(unittest.TestCase):
         self.success = False
         # we backup to the same backup repository at different times
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from1_path,
             self.bak_path,
             ("--current-time", "10000"),
@@ -54,8 +54,8 @@ class ActionVerifyTest(unittest.TestCase):
             (),
         )
         comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.from2_path,
             self.bak_path,
             ("--current-time", "20000"),
@@ -68,13 +68,13 @@ class ActionVerifyTest(unittest.TestCase):
         # removing multiple increments fails without --force
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False, None, self.bak_path, None, (), b"verify", ()
+                TEST_REMOTE1_DIR, None, self.bak_path, None, (), b"verify", ()
             ),
             0,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
+                None,
                 None,
                 self.bak_path,
                 None,
@@ -90,7 +90,13 @@ class ActionVerifyTest(unittest.TestCase):
             fd.write("corrupt data")
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False, None, self.bak_path, None, (), b"verify", ("--at", "now")
+                TEST_REMOTE1_DIR,
+                None,
+                self.bak_path,
+                None,
+                (),
+                b"verify",
+                ("--at", "now"),
             ),
             0,
         )

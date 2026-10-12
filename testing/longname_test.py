@@ -12,7 +12,7 @@ import commontest as comtst
 from rdiff_backup import rpath, Time
 from rdiffbackup.singletons import specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 if sys.platform.startswith("win"):
     NAME_MAX_LEN = 255
@@ -89,7 +89,7 @@ class LongNameTest(unittest.TestCase):
         rp21 = rp2.append("C" * NAME_MAX_LEN)
         self.assertTrue(rp21.isreg())
 
-    def generic_test(self, inlocal, outlocal, extra_args, compare_back):
+    def generic_test(self, inremote, outremote, extra_args, compare_back):
         """Used for some of the tests below"""
         in1, in2 = self.make_input_dirs()
         comtst.remove_dir(self.out_rp.path)
@@ -97,8 +97,8 @@ class LongNameTest(unittest.TestCase):
 
         # Test backing up
         comtst.rdiff_backup(
-            inlocal,
-            outlocal,
+            inremote,
+            outremote,
             in1.path,
             self.out_rp.path,
             10000,
@@ -107,8 +107,8 @@ class LongNameTest(unittest.TestCase):
         if compare_back:
             self.check_dir1(self.out_rp)
         comtst.rdiff_backup(
-            inlocal,
-            outlocal,
+            inremote,
+            outremote,
             in2.path,
             self.out_rp.path,
             20000,
@@ -120,8 +120,8 @@ class LongNameTest(unittest.TestCase):
         # Now try restoring
         comtst.remove_dir(restore_dir.path)
         comtst.rdiff_backup(
-            inlocal,
-            outlocal,
+            inremote,
+            outremote,
             self.out_rp.path,
             restore_dir.path,
             30000,
@@ -130,8 +130,8 @@ class LongNameTest(unittest.TestCase):
         self.check_dir2(restore_dir)
         comtst.remove_dir(restore_dir.path)
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             self.out_rp.path,
             restore_dir.path,
             30000,
@@ -141,11 +141,11 @@ class LongNameTest(unittest.TestCase):
 
     def test_basic_local(self):
         """Test backup session when increment would be too long"""
-        self.generic_test(1, 1, (), 1)
+        self.generic_test(None, None, (), 1)
 
     def test_quoting_local(self):
         """Test backup session with quoting, so reg files also too long"""
-        self.generic_test(1, 1, (b"--chars-to-quote", b"A-Z"), 0)
+        self.generic_test(None, None, (b"--chars-to-quote", b"A-Z"), 0)
 
     def test_regress_basic(self):
         """Test regressing when increments would be too long"""
@@ -155,15 +155,15 @@ class LongNameTest(unittest.TestCase):
         comtst.remove_dir(restore_dir.path)
 
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             in1.path,
             self.out_rp.path,
             10000,
         )
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             in2.path,
             self.out_rp.path,
             20000,
@@ -171,12 +171,12 @@ class LongNameTest(unittest.TestCase):
 
         # Regress repository back to in1 condition
         self.add_current_mirror(self.out_rp, 10000)
-        comtst.rdiff_backup_action(True, True, self.out_rp, None, (), b"regress", ())
+        comtst.rdiff_backup_action(None, None, self.out_rp, None, (), b"regress", ())
 
         # Restore in1 and compare
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             self.out_rp.path,
             restore_dir.path,
             30000,
@@ -203,10 +203,10 @@ class LongNameTest(unittest.TestCase):
         restore_dir = os.path.join(TEST_BASE_DIR, b"restoresme" * 10)
         comtst.remove_dir(restore_dir)
         # backup and restore the input directory with socket, then compare
-        comtst.rdiff_backup(True, True, input_dir, output_dir)
+        comtst.rdiff_backup(None, None, input_dir, output_dir)
         comtst.rdiff_backup(
-            True,
-            True,
+            None,
+            None,
             output_dir,
             restore_dir,
             extra_options=(b"restore", b"--at", b"0"),

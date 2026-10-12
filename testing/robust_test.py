@@ -10,7 +10,7 @@ import commontest as comtst
 
 from rdiff_backup import robust
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class RobustTest(unittest.TestCase):
@@ -46,7 +46,7 @@ class RobustTest(unittest.TestCase):
         target_dir = os.path.join(base_dir, b"bak")
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True, True, src_dir, target_dir, (), b"backup", ()
+                None, None, src_dir, target_dir, (), b"backup", ()
             ),
             0,
         )

@@ -9,8 +9,6 @@ import commontest as comtst
 
 from rdiffbackup.singletons import consts
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
-
 
 class ActionCompleteTest(unittest.TestCase):
     """
@@ -22,13 +20,13 @@ class ActionCompleteTest(unittest.TestCase):
 
         # test the error cases
         self.assertEqual(
-            comtst.rdiff_backup_action(True, True, None, None, (), b"complete", ()),
+            comtst.rdiff_backup_action(None, None, None, None, (), b"complete", ()),
             consts.RET_CODE_ERR,
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 None,
                 None,
                 (),
@@ -41,11 +39,11 @@ class ActionCompleteTest(unittest.TestCase):
         # then try different combinations of verbosity
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
                 None,
                 None,
-                (),
+                None,
+                None,
+                ("--verbosity", "1"),
                 b"complete",
                 ("--cword", "1", "--", "rdiff-backup", "--verb"),
                 return_stdout=True,
@@ -55,11 +53,11 @@ class ActionCompleteTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
                 None,
                 None,
-                (),
+                None,
+                None,
+                ("--verbosity", "1"),
                 b"complete",
                 ("--cword", "2", "--", "rdiff-backup", "--verbosity", ""),
                 return_stdout=True,
@@ -68,11 +66,11 @@ class ActionCompleteTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
                 None,
                 None,
-                (),
+                None,
+                None,
+                ("--verbosity", "1"),
                 b"complete",
                 ("--cword", "1", "--", "rdiff-backup", "--verbosity", "5"),
                 return_stdout=True,
@@ -84,11 +82,11 @@ class ActionCompleteTest(unittest.TestCase):
         # then check what happens with files
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
                 None,
                 None,
-                (),
+                None,
+                None,
+                ("--verbosity", "1"),
                 b"complete",
                 ("--cword", "2", "--", "rdiff-backup", "backup", "D"),
                 return_stdout=True,
@@ -97,11 +95,11 @@ class ActionCompleteTest(unittest.TestCase):
 """,
         )
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
             None,
             None,
-            (),
+            None,
+            None,
+            ("--verbosity", "1"),
             b"complete",
             ("--cword", "2", "--", "rdiff-backup", "backup", ""),
             return_stdout=True,
@@ -110,11 +108,11 @@ class ActionCompleteTest(unittest.TestCase):
         self.assertTrue(full_output.endswith(b"::file::\n"))
         # try with a command accepting a variable number of files
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
             None,
             None,
-            (),
+            None,
+            None,
+            ("--verbosity", "1"),
             b"complete",
             ("--cword", "2", "--", "rdiff-backup", "test", ""),
             return_stdout=True,
@@ -123,11 +121,11 @@ class ActionCompleteTest(unittest.TestCase):
         self.assertTrue(full_output.endswith(b"::file::\n"))
 
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
             None,
             None,
-            (),
+            None,
+            None,
+            ("--verbosity", "1"),
             b"complete",
             ("--cword", "1", "--", "rdiff-backup", ""),
             return_stdout=True,
@@ -139,11 +137,11 @@ class ActionCompleteTest(unittest.TestCase):
 
         # if the action is already given, none should be listed again
         full_output = comtst.rdiff_backup_action(
-            True,
-            True,
             None,
             None,
-            (),
+            None,
+            None,
+            ("--verbosity", "1"),
             b"complete",
             ("--cword", "1", "--", "rdiff-backup", "", "complete"),
             return_stdout=True,
@@ -155,11 +153,11 @@ class ActionCompleteTest(unittest.TestCase):
 
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
                 None,
                 None,
-                (),
+                None,
+                None,
+                ("--verbosity", "1"),
                 b"complete",
                 (
                     "--cword",
