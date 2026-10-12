@@ -3,7 +3,6 @@ Tests of Remote paths
 """
 
 import os
-import pickle
 import sys
 import time
 import unittest
@@ -12,9 +11,9 @@ import errno
 import unittest.mock
 import commontest as comtst
 import fileset
-
 from rdiff_backup import rpath
-from rdiffbackup.singletons import specifics
+from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.utils import pickle
 
 TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
 
@@ -35,7 +34,7 @@ class RORPStateTest(RPathTest):
         rorp = rpath.RPath(self.lc, self.prefix, ("regular_file",)).getRORPath()
         rorp.file = sys.stdin  # try to confuse pickler
         self.assertTrue(rorp.isreg())
-        rorp2 = pickle.loads(pickle.dumps(rorp, 1))
+        rorp2 = pickle.loads(pickle.dumps(rorp, consts.PICKLE_PROTOCOL))
         self.assertTrue(rorp2.isreg())
         self.assertEqual(rorp2.data, rorp.data)
         self.assertEqual(rorp2.index, rorp.index)
