@@ -17,7 +17,6 @@ tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 class MetadataTest(unittest.TestCase):
     def make_temp(self):
         """Make temp directory testfiles/output"""
-        global tempdir
         if tempdir.lstat():
             tempdir.delete()
         tempdir.mkdir()
@@ -73,7 +72,6 @@ class MetadataTest(unittest.TestCase):
 
     def write_metadata_to_temp(self, compress):
         """If necessary, write metadata of bigdir to file metadata.gz"""
-        global tempdir
         meta_file_name = "mirror_metadata.2005-11-03T14:51:06-06:00.snapshot"
         if compress:
             meta_file_name += ".gz"
@@ -173,7 +171,6 @@ class MetadataTest(unittest.TestCase):
         return self.helper_iterate_restricted(compress=False)
 
     def helper_write(self, compress):
-        global tempdir
         meta_file_name = "mirror_metadata.2005-11-03T12:51:06-06:00.snapshot"
         if compress:
             meta_file_name += ".gz"
