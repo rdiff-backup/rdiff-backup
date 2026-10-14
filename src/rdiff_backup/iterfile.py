@@ -18,9 +18,9 @@
 # 02110-1301, USA
 """Convert an iterator to a file object and vice-versa"""
 
-import pickle
 import array
 from . import Globals, robust, rpath
+from rdiffbackup.utils import pickle
 
 
 class IterFileException(Exception):

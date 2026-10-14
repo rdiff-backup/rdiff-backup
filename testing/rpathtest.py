@@ -1,5 +1,4 @@
 import os
-import pickle
 import sys
 import unittest
 import time
@@ -10,6 +9,7 @@ from commontest import (
 import commontest as comtst
 import fileset
 from rdiff_backup import Globals, rpath
+from rdiffbackup.utils import pickle
 
 
 class RPathTest(unittest.TestCase):
@@ -27,7 +27,7 @@ class RORPStateTest(RPathTest):
         rorp = rpath.RPath(self.lc, self.prefix, ("regular_file", )).getRORPath()
         rorp.file = sys.stdin  # try to confuse pickler
         self.assertTrue(rorp.isreg())
-        rorp2 = pickle.loads(pickle.dumps(rorp, 1))
+        rorp2 = pickle.loads(pickle.dumps(rorp, 4))
         self.assertTrue(rorp2.isreg())
         self.assertEqual(rorp2.data, rorp.data)
         self.assertEqual(rorp2.index, rorp.index)
