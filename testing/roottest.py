@@ -359,7 +359,6 @@ class NonRoot(BaseRootTest):
         return rp, sp
 
     def backup(self, input_rp, output_rp, time):
-        global user
         backup_cmd = (b"%s --no-compare-inode --current-time %i %b %b" % (
                       RBBin, time, input_rp.path, output_rp.path))
         self._run_cmd(b"su %s -c '%s'" % (user.encode(), backup_cmd))

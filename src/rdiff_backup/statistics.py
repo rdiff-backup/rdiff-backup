@@ -452,7 +452,6 @@ def write_active_statfileobj(end_time=None):
 
 def print_active_stats(end_time=None):
     """Print statistics of active statobj to stdout and log"""
-    global _active_statfileobj
     assert _active_statfileobj, "Stats object must be set before printing."
     _active_statfileobj.finish(end_time)
     statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
