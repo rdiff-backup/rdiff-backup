@@ -15,9 +15,9 @@
 
 #--- mandatory ---
 
-setuptools
+setuptools<70
 # also listed in setup.py!
-setuptools-scm
+setuptools-scm==7.1.0
 importlib-metadata ; python_version < "3.8"
 PyYAML  # for rdiff-backup >= 2.1
 
