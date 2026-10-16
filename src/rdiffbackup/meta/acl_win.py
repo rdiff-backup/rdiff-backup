@@ -100,7 +100,16 @@ class ACL:
                 # traverse the ACL in reverse, so the indices stay correct
                 while n:
                     n -= 1
-                    ace_flags = acl.GetAce(n)[0][1]
+                    try:
+                        ace_flags = acl.GetAce(n)[0][1]
+                    except NotImplementedError:
+                        log.Log(
+                            "Unable to read ACE {idx} of DACL from path {pa}, "
+                            "ACE type not supported, "
+                            "skipping it".format(idx=n, pa=rp),
+                            log.INFO,
+                        )
+                        continue
                     if ace_flags & INHERIT_ONLY_ACE:
                         acl.DeleteAce(n)
             sd.SetSecurityDescriptorDacl(1, acl, 0)
@@ -112,7 +121,16 @@ class ACL:
                     # traverse the ACL in reverse, so the indices stay correct
                     while n:
                         n -= 1
-                        ace_flags = acl.GetAce(n)[0][1]
+                        try:
+                            ace_flags = acl.GetAce(n)[0][1]
+                        except NotImplementedError:
+                            log.Log(
+                                "Unable to read ACE {idx} of SACL from path "
+                                "{pa}, ACE type not supported, "
+                                "skipping it".format(idx=n, pa=rp),
+                                log.INFO,
+                            )
+                            continue
                         if ace_flags & INHERIT_ONLY_ACE:
                             acl.DeleteAce(n)
                     sd.SetSecurityDescriptorSacl(1, acl, 0)
@@ -121,7 +139,6 @@ class ACL:
             sd.SetSecurityDescriptorDacl(0, None, 0)
         if (ACL.flags & SACL_SECURITY_INFORMATION) and not sd.GetSecurityDescriptorSacl():
             sd.SetSecurityDescriptorSacl(0, None, 0)
-
         try:
             self.__acl = ConvertSecurityDescriptorToStringSecurityDescriptor(
                 sd, SDDL_REVISION_1, ACL.flags)
