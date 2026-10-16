@@ -30,6 +30,7 @@ import tempfile  # noqa: F401
 import types  # noqa: F401
 import time
 import subprocess
+import errno
 
 from rdiffbackup.utils import pickle
 
@@ -431,7 +432,12 @@ class PipeConnection(LowLevelPipeConnection):
             self._put(arg, req_num)
         result = self._get_response(req_num)
         self.unused_request_numbers.add(req_num)
-        if isinstance(result, Exception):
+        if isinstance(result, OSError) and getattr(result, "errno_str", False):
+            # OSError code are specific to each platform.
+            # Let convert the errno to current platform.
+            result.errno = getattr(errno, result.errno_str, -result.errno)
+            raise result
+        elif isinstance(result, Exception):
             raise result
         elif isinstance(result, SystemExit):
             raise result
@@ -523,7 +529,12 @@ class PipeConnection(LowLevelPipeConnection):
                         ex=sys.exc_info()[1], ty=sys.exc_info()[0],
                         tb="".join(traceback.format_tb(sys.exc_info()[2]))),
                     log.INFO)
-        return sys.exc_info()[1]
+        result = sys.exc_info()[1]
+        # OSError code are specific to the platform. Send back code as string.
+        if isinstance(result, OSError) and result.errno:
+            result.errno_str = errno.errorcode.get(result.errno, "EUNKWN")
+            result.strerror = f'[original: Errno {result.errno} {result.errno_str}] {result.strerror}'
+        return result
 
     def _get_new_req_num(self):
         """Allot a new request number and return it"""
