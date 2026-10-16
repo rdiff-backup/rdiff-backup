@@ -32,7 +32,7 @@ _robust_errno_list = [errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
                       errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
                       errno.ENOTEMPTY, errno.EIO, errno.ETXTBSY,
                       errno.ESRCH, errno.EINVAL, errno.EDEADLK,
-                      errno.EOPNOTSUPP, errno.ETIMEDOUT]
+                      errno.EOPNOTSUPP, errno.ETIMEDOUT, errno.EXDEV]
 # Skip on resource deadlock only if the error is defined (_not_ on MacOSX)
 if hasattr(errno, 'EDEADLOCK'):
     _robust_errno_list.append(errno.EDEADLOCK)
