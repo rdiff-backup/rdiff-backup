@@ -76,7 +76,7 @@ class ExtendedAttributes:
         except OSError as exc:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
-            if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
+            if exc.errno in (errno.EIO, errno.EACCES, errno.ENOENT, errno.ELOOP):
                 log.Log("Listing extended attributes of path {pa} produced "
                         "exception '{ex}', ignored".format(pa=rp, ex=exc),
                         log.INFO)
