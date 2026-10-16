@@ -18,6 +18,7 @@
 # 02110-1301, USA
 """Convert an iterator to a file object and vice-versa"""
 
+import errno
 import array
 from . import Globals, robust, rpath
 from rdiffbackup.utils import pickle
@@ -272,6 +273,10 @@ class FileWrappingIter:
 
     def _read_error_handler(self, exc, blocksize):
         """Log error when reading from file"""
+        # OSError code are specific to the platform. Send back code as string.
+        if isinstance(exc, OSError) and exc.errno:
+            exc.errno_str = errno.errorcode.get(exc.errno, "EUNKWN")
+            exc.strerror = f'[original: Errno {exc.errno} {exc.errno_str}] {exc.strerror}'
         self.last_exception = exc
         return None
 
@@ -489,6 +494,10 @@ class ErrorFile:
 
     def __init__(self, exc):
         """Initialize new ErrorFile.  exc is the exception to raise on read"""
+        if isinstance(exc, OSError) and getattr(exc, "errno_str", False):
+            # OSError code are specific to each platform.
+            # Let convert the errno to current platform.
+            exc.errno = getattr(errno, exc.errno_str, -exc.errno)
         self.exc = exc
 
     def read(self, lines=-1):

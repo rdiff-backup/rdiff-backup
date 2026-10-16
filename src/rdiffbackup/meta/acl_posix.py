@@ -363,6 +363,10 @@ def get_acl_lists_from_rp(rp):
     except OSError as exc:
         if exc.errno == errno.EOPNOTSUPP:
             acl = None
+        elif exc.errno == errno.EIO:
+            log.Log("Unable to read default ACL from path {pa} due to "
+                    "exception '{ex}'".format(pa=rp, ex=exc), log.NOTE)
+            acl = None
         else:
             raise
     if rp.isdir():
