@@ -11,7 +11,7 @@ import commontest as comtst
 from rdiff_backup import rpath, Security, SetConnections
 from rdiffbackup.singletons import consts, specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class SecurityTest(unittest.TestCase):
@@ -80,7 +80,7 @@ class SecurityTest(unittest.TestCase):
         self,
         in_dir,
         out_dir,
-        in_local,
+        out_remote,
         restrict_args,
         extra_args=(b"backup",),
         expected_ret_code=0,
@@ -90,7 +90,7 @@ class SecurityTest(unittest.TestCase):
         if not current_time:
             current_time = int(time.time())
 
-        if in_local:
+        if out_remote:
             out_dir = b"%b server %b::%b" % (comtst.RBBin, restrict_args, out_dir)
         else:
             in_dir = b"%b server %b::%b" % (comtst.RBBin, restrict_args, in_dir)
@@ -121,7 +121,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            1,
+            True,
             b"--restrict-path %b" % self.out_dir,
             current_time=10000,
         )
@@ -129,7 +129,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            1,
+            True,
             b"--restrict-path %b/" % self.out_dir,
         )
 
@@ -137,7 +137,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
-            1,
+            True,
             b"--restrict-path %b" % self.restore_dir,
             extra_args=(b"restore", b"--at", b"now"),
         )
@@ -151,7 +151,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             output2_dir,
-            1,
+            True,
             b"--restrict-path %b" % self.out_dir,
             expected_ret_code=consts.RET_CODE_ERR,
         )
@@ -159,11 +159,11 @@ class SecurityTest(unittest.TestCase):
         # Restore to wrong directory
         comtst.remove_dir(self.out_dir)
         comtst.remove_dir(self.restore_dir)
-        comtst.rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
+        comtst.rdiff_backup(None, None, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
-            1,
+            True,
             b"--restrict-path %b" % output2_dir,
             extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=consts.RET_CODE_ERR,
@@ -175,7 +175,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            0,
+            False,
             b"--restrict-path %b" % wrong_files_dir,
             expected_ret_code=consts.RET_CODE_ERR,
         )
@@ -189,7 +189,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            0,
+            False,
             b"--restrict-path %b "
             b"--restrict-mode read-only" % self.various_files_dir,
         )
@@ -197,7 +197,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
-            0,
+            False,
             b"--restrict-path %b --restrict-mode read-only" % self.out_dir,
             extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=consts.RET_CODE_OK,
@@ -210,7 +210,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            1,
+            True,
             b"--restrict-path %b --restrict-mode read-only" % self.out_dir,
             expected_ret_code=consts.RET_CODE_ERR,
         )
@@ -218,11 +218,11 @@ class SecurityTest(unittest.TestCase):
         # Restore to restricted directory
         comtst.remove_dir(self.out_dir)
         comtst.remove_dir(self.restore_dir)
-        comtst.rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
+        comtst.rdiff_backup(None, None, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
-            1,
+            True,
             b"--restrict-path %b --restrict-mode read-only" % self.restore_dir,
             extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=consts.RET_CODE_ERR,
@@ -232,12 +232,12 @@ class SecurityTest(unittest.TestCase):
         """Test that --restrict-mode update-only allows intended use"""
         comtst.remove_dir(self.out_dir)
         comtst.rdiff_backup(
-            1, 1, self.various_files_dir, self.out_dir, current_time=10000
+            None, None, self.various_files_dir, self.out_dir, current_time=10000
         )
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            1,
+            True,
             b"--restrict-path %b --restrict-mode update-only" % self.out_dir,
         )
 
@@ -247,7 +247,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            1,
+            True,
             b"--restrict-path %b --restrict-mode update-only" % self.out_dir,
             expected_ret_code=consts.RET_CODE_OK,
             # FIXME following was the correct value under old versions
@@ -257,11 +257,11 @@ class SecurityTest(unittest.TestCase):
 
         comtst.remove_dir(self.out_dir)
         comtst.remove_dir(self.restore_dir)
-        comtst.rdiff_backup(1, 1, self.various_files_dir, self.out_dir)
+        comtst.rdiff_backup(None, None, self.various_files_dir, self.out_dir)
         self.secure_rdiff_backup(
             self.out_dir,
             self.restore_dir,
-            1,
+            True,
             b"--restrict-path %b --restrict-mode update-only" % self.restore_dir,
             extra_args=(b"restore", b"--at", b"now"),
             expected_ret_code=consts.RET_CODE_ERR,
@@ -273,7 +273,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            1,
+            True,
             b"--restrict-path foobar",
             expected_ret_code=consts.RET_CODE_ERR,
         )
@@ -286,7 +286,7 @@ class SecurityTest(unittest.TestCase):
         self.secure_rdiff_backup(
             self.various_files_dir,
             self.out_dir,
-            1,
+            True,
             b"",
             extra_args=(b"--chars-to-quote", b"e", b"backup"),
         )

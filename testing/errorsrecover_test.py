@@ -11,7 +11,7 @@ import commontest as comtst
 from rdiff_backup import rpath
 from rdiffbackup.singletons import consts, specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class BrokenRepoTest(unittest.TestCase):
@@ -42,8 +42,8 @@ class BrokenRepoTest(unittest.TestCase):
         for suffix in range(1, 15):
             source_rp.append("file%02d" % suffix).touch()
             comtst.rdiff_backup(
-                1,
-                1,
+                None,
+                None,
                 source_rp.__fspath__(),
                 target_rp.__fspath__(),
                 current_time=suffix * 10000,
@@ -63,13 +63,13 @@ class BrokenRepoTest(unittest.TestCase):
 
         # this succeeds
         comtst.rdiff_backup(
-            1, 1, target_rp.__fspath__(), None, extra_options=b"regress"
+            None, None, target_rp.__fspath__(), None, extra_options=b"regress"
         )
         # now this should fail
         source_rp.append("file15").touch()
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             source_rp.__fspath__(),
             target_rp.__fspath__(),
             current_time=15 * 10000,
@@ -77,8 +77,8 @@ class BrokenRepoTest(unittest.TestCase):
         )
         # and this should also fail
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             target_rp.__fspath__(),
             None,
             expected_ret_code=consts.RET_CODE_ERR,
@@ -86,8 +86,8 @@ class BrokenRepoTest(unittest.TestCase):
         )
         # but this should succeed (with a warning)
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             target_rp.__fspath__(),
             None,
             extra_options=(b"regress", b"--allow-duplicate-timestamps"),
@@ -97,8 +97,8 @@ class BrokenRepoTest(unittest.TestCase):
         # NOTE: we could have cleaned-up even without checking/fixing the
         #       directory but this shouldn't be the recommended practice.
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             target_rp.__fspath__(),
             None,
             extra_options=(
@@ -112,8 +112,8 @@ class BrokenRepoTest(unittest.TestCase):
         # and this should at last succeed
         source_rp.append("file16").touch()
         comtst.rdiff_backup(
-            1,
-            1,
+            None,
+            None,
             source_rp.__fspath__(),
             target_rp.__fspath__(),
             current_time=16 * 10000,

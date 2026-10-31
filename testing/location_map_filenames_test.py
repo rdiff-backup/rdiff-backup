@@ -11,7 +11,7 @@ import fileset
 
 from rdiffbackup.singletons import consts, generics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
 class LocationMapFilenamesTest(unittest.TestCase):
@@ -78,8 +78,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 (
@@ -95,8 +95,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 (
@@ -114,8 +114,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # then we restore the increment and the last mirror to two directories
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                False,
+                None,
+                TEST_REMOTE2_DIR,
                 self.bak_path,
                 self.to1_path,
                 (),
@@ -126,7 +126,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True, True, self.bak_path, self.to2_path, (), b"restore", ()
+                None, None, self.bak_path, self.to2_path, (), b"restore", ()
             ),
             0,
         )
@@ -145,8 +145,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000", "--chars-to-quote", "A-P:"),
@@ -157,8 +157,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "11000", "--chars-to-quote", "A-P:"),
@@ -170,8 +170,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # we try the 2nd time to change the chars-to-quote, which fails
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "15000", "--chars-to-quote", "H-Z:"),
@@ -182,8 +182,8 @@ class LocationMapFilenamesTest(unittest.TestCase):
         )
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 (
@@ -202,7 +202,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # then we restore the last mirror to a directory without issue
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True, True, self.bak_path, self.to2_path, (), b"restore", ()
+                None, None, self.bak_path, self.to2_path, (), b"restore", ()
             ),
             0,
         )
@@ -211,7 +211,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # then we run a --force regress
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True, True, self.bak_path, None, ("--force",), b"regress", ()
+                None, None, self.bak_path, None, ("--force",), b"regress", ()
             ),
             0,
         )
@@ -219,7 +219,7 @@ class LocationMapFilenamesTest(unittest.TestCase):
         # then we restore the last mirror to a directory without issue
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True, True, self.bak_path, self.to1_path, (), b"restore", ()
+                None, None, self.bak_path, self.to1_path, (), b"restore", ()
             ),
             0,
         )
