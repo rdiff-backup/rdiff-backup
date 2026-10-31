@@ -525,6 +525,9 @@ class CornerCasesTest(unittest.TestCase):
         """make sure rdiff-backup spits out warning when backing up to subdir"""
         self.base_dir = os.path.join(TEST_BASE_DIR, b"action_backup_to_subdir")
         self.bak_path = comtst.re_init_subdir(self.base_dir, b"bak")
+        excluded_path = os.fsdecode(self.bak_path)
+        if os.path.altsep == "/":  # typically under Windows
+            excluded_path = excluded_path.replace(os.path.sep, os.path.altsep)
         self.assertEqual(
             comtst.rdiff_backup_action(
                 None,
@@ -533,7 +536,7 @@ class CornerCasesTest(unittest.TestCase):
                 self.bak_path,
                 (),
                 b"backup",
-                ("--exclude", self.bak_path.decode()),
+                ("--exclude", excluded_path),
             ),
             consts.RET_CODE_WARN,
         )
