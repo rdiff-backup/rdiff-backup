@@ -62,10 +62,6 @@ class RestrictedUnpickler(_pickle.Unpickler):
         "rdiff_backup.SetConnections.SetConnectionsException",
         "rdiff_backup.rpath.SkipFileException",
         "rdiff_backup.iterfile.IterFileException",
-        # Required for test.
-        "__main__.ITRBadder",
-        "__main__.ITRBadder2",
-        "rdiff_backup.rorpiter.IterTreeReducer",
     }
 
     def find_class(self, module, name):

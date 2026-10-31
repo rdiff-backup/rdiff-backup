@@ -7,6 +7,8 @@ import os
 import sys
 import unittest
 
+from rdiffbackup.singletons import consts
+
 import commontest as comtst
 import fileset
 
@@ -499,13 +501,13 @@ class PreQuotingTest(unittest.TestCase):
             fileset.remove_fileset(self.base_dir, {"to2": {"type": "dir"}})
 
 
-class ConnectionHandlingTest(unittest.TestCase):
+class CornerCasesTest(unittest.TestCase):
     """
-    Test handling of wrong connection
+    Test handling some corner cases
     """
 
     def test_wrong_connection(self):
-        # we backup using a non existing destination location
+        """we backup using a non existing destination location"""
         self.assertNotEqual(
             comtst.rdiff_backup_action(
                 None,
@@ -517,6 +519,23 @@ class ConnectionHandlingTest(unittest.TestCase):
                 (),
             ),
             0,
+        )
+
+    def test_backup_to_subdir(self):
+        """make sure rdiff-backup spits out warning when backing up to subdir"""
+        self.base_dir = os.path.join(TEST_BASE_DIR, b"action_backup_to_subdir")
+        self.bak_path = comtst.re_init_subdir(self.base_dir, b"bak")
+        self.assertEqual(
+            comtst.rdiff_backup_action(
+                None,
+                None,
+                self.base_dir,
+                self.bak_path,
+                (),
+                b"backup",
+                ("--exclude", self.bak_path.decode()),
+            ),
+            consts.RET_CODE_WARN,
         )
 
 
