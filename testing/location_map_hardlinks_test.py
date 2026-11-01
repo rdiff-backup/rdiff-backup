@@ -5,8 +5,8 @@ Test the handling of hardlinks
 import os
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 

@@ -6,8 +6,8 @@ import os
 import sys
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 from rdiffbackup.singletons import consts, generics
 

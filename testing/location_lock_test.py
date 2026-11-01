@@ -6,7 +6,7 @@ import os
 import shutil
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath
 from rdiffbackup.locations import _repo_shadow

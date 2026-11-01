@@ -8,7 +8,7 @@ import subprocess
 import sys
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiffbackup import arguments, actions_mgr
 from rdiffbackup.singletons import consts
