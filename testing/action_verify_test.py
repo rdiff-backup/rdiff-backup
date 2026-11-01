@@ -5,8 +5,8 @@ Test the verify action
 import os
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 TEST_BASE_DIR, TEST_REMOTE1_DIR, _ = comtst.init_test_dirs(__file__)
 

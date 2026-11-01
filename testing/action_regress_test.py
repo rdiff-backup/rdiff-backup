@@ -5,8 +5,8 @@ Test the regress action
 import os
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 from rdiff_backup import rpath
 from rdiffbackup.locations import _repo_shadow

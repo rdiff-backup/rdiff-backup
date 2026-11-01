@@ -6,7 +6,7 @@ import os
 import sys
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath, Time, Rdiff
 from rdiffbackup import actions
