@@ -7,7 +7,7 @@ import subprocess
 import unittest
 import yaml
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiffbackup import actions
 from rdiffbackup.singletons import specifics

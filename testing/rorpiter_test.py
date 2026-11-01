@@ -6,7 +6,8 @@ import functools
 import os
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
+
 from rdiff_backup import rpath, rorpiter
 from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils import pickle

@@ -22,6 +22,7 @@ import unittest
 import inspect
 import importlib
 import pkgutil
+
 from rdiffbackup.utils import pickle
 
 

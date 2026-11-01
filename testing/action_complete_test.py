@@ -5,7 +5,7 @@ Test the complete action
 import os
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiffbackup.singletons import consts
 
