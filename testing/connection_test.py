@@ -8,7 +8,7 @@ import sys
 import unittest
 import errno
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import connection, rpath, Security, SetConnections
 from rdiffbackup.locations.map import filenames as map_filenames
@@ -109,7 +109,7 @@ class PipeConnectionTest(unittest.TestCase):
 
     def setUp(self):
         """Must start a server for this"""
-        pipe_cmd = (sys.executable, "testing/server.py", SourceDir)
+        pipe_cmd = (sys.executable, "testing/testutils/server.py", SourceDir)
         self.p = subprocess.Popen(
             pipe_cmd,
             stdin=subprocess.PIPE,
@@ -206,10 +206,10 @@ class RedirectedConnectionTest(unittest.TestCase):
     def setUp(self):
         """Must start two servers for this"""
         self.conna = SetConnections._init_connection(
-            "%s testing/server.py %s" % (sys.executable, SourceDir)
+            "%s testing/testutils/server.py %s" % (sys.executable, SourceDir)
         )
         self.connb = SetConnections._init_connection(
-            "%s testing/server.py %s" % (sys.executable, SourceDir)
+            "%s testing/testutils/server.py %s" % (sys.executable, SourceDir)
         )
 
     def testBasic(self):
@@ -244,7 +244,7 @@ class LengthyConnectionTest(unittest.TestCase):
 
     def test_killing_server_process(self):
         """Make the server process take longer"""
-        pipe_cmd = "%s testing/server.py %s" % (sys.executable, SourceDir)
+        pipe_cmd = "%s testing/testutils/server.py %s" % (sys.executable, SourceDir)
         pipe_cmd += "; sleep 10"
         self.p = subprocess.Popen(
             pipe_cmd,

@@ -8,8 +8,8 @@ import subprocess
 import sys
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 from rdiff_backup import rpath, selection
 from rdiffbackup.singletons import consts, generics, specifics

@@ -2,15 +2,16 @@
 Tests of Remote paths
 """
 
+import errno
 import os
 import sys
 import time
 import unittest
-import errno
-
 import unittest.mock
-import commontest as comtst
-import fileset
+
+from testutils import commontest as comtst
+from testutils import fileset
+
 from rdiff_backup import rpath
 from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils import pickle

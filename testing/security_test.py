@@ -6,7 +6,7 @@ import os
 import time
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath, Security, SetConnections
 from rdiffbackup.singletons import consts, specifics

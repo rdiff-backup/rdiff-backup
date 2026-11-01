@@ -8,7 +8,7 @@ import os
 import pwd
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath
 from rdiffbackup import meta_mgr

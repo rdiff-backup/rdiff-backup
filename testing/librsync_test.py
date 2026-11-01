@@ -7,7 +7,7 @@ import random
 import subprocess
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import librsync, rpath
 from rdiffbackup.singletons import specifics
