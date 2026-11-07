@@ -12,7 +12,7 @@ from rdiffbackup.singletons import consts
 import commontest as comtst
 import fileset
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
 class ActionCalculateTest(unittest.TestCase):
@@ -73,8 +73,8 @@ class ActionCalculateTest(unittest.TestCase):
         # we backup twice to the same backup repository at different times
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                False,
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000", "--use-compatible-timestamps"),
@@ -85,8 +85,8 @@ class ActionCalculateTest(unittest.TestCase):
         )
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False,
-                True,
+                TEST_REMOTE1_DIR,
+                None,
                 self.from2_path,
                 self.bak_path,
                 ("--current-time", "20000", "--use-compatible-timestamps"),
@@ -101,10 +101,10 @@ class ActionCalculateTest(unittest.TestCase):
             os.path.join(self.bak_path, b"rdiff-backup-data", b"session_statistics.*")
         )
         output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             *session_stats,
-            (),
+            ("--verbosity", "1"),
             b"calculate",
             ("average",),
             return_stdout=True,
@@ -113,11 +113,11 @@ class ActionCalculateTest(unittest.TestCase):
         self.assertRegex(output, rb"Errors 0")
 
         output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.bak_path,
             None,
-            (),
+            ("--verbosity", "1"),
             b"calculate",
             ("statistics",),
             return_stdout=True,
@@ -128,8 +128,8 @@ class ActionCalculateTest(unittest.TestCase):
 
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 None,
                 (),
@@ -141,8 +141,8 @@ class ActionCalculateTest(unittest.TestCase):
 
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.bak_path,
                 None,
                 (),
@@ -153,11 +153,11 @@ class ActionCalculateTest(unittest.TestCase):
         )
 
         output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.bak_path,
             None,
-            (),
+            ("--verbosity", "1"),
             b"calculate",
             ("statistics", "--begin", "10000", "--end", "20000"),
             return_stdout=True,
@@ -167,11 +167,11 @@ class ActionCalculateTest(unittest.TestCase):
         self.assertEqual(output.count(b"Top directories by"), 3)
 
         output = comtst.rdiff_backup_action(
-            True,
-            True,
+            None,
+            None,
             self.bak_path,
             None,
-            (),
+            ("--verbosity", "2"),
             b"calculate",
             ("statistics", "--begin", "11000", "--end", "19000"),
             return_stderr=True,

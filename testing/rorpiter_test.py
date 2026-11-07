@@ -11,7 +11,19 @@ from rdiff_backup import rpath, rorpiter
 from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils import pickle
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
+
+# We must patch the restricted unpickler
+# The double entries are due to different behaviors of unittest and pytest
+pickle.RestrictedUnpickler.ALLOWED_CLASSES.update(
+    {
+        "__main__.ITRBadder",
+        "__main__.ITRBadder2",
+        "rorpiter_test.ITRBadder",
+        "rorpiter_test.ITRBadder2",
+        "rdiff_backup.rorpiter.IterTreeReducer",
+    }
+)
 
 
 class index:

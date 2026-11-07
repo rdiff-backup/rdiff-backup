@@ -8,7 +8,7 @@ import unittest
 import commontest as comtst
 import fileset
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
 class LocationMapHardlinksTest(unittest.TestCase):
@@ -43,8 +43,8 @@ class LocationMapHardlinksTest(unittest.TestCase):
         # backup a 1st time
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "10000"),
@@ -64,8 +64,8 @@ class LocationMapHardlinksTest(unittest.TestCase):
         # backup a 2nd time
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True,
-                True,
+                None,
+                None,
                 self.from1_path,
                 self.bak_path,
                 ("--current-time", "20000"),
@@ -88,7 +88,7 @@ class LocationMapHardlinksTest(unittest.TestCase):
         # restore the hardlinked files
         self.assertEqual(
             comtst.rdiff_backup_action(
-                True, True, self.bak_path, self.to1_path, (), b"restore", ()
+                None, None, self.bak_path, self.to1_path, (), b"restore", ()
             ),
             0,
         )

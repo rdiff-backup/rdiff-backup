@@ -14,7 +14,7 @@ import commontest as comtst
 from rdiff_backup import rpath
 from rdiffbackup.singletons import consts, generics, specifics
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 assert os.getuid() == 0, "Run this test as root!"
 
@@ -53,17 +53,21 @@ class RootTest(BaseRootTest):
 
     def testLocal1(self):
         comtst.backup_restore_series(
-            1, 1, self.dirlist1, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+            None, None, self.dirlist1, compare_ownership=1, test_base_dir=TEST_BASE_DIR
         )
 
     def testLocal2(self):
         comtst.backup_restore_series(
-            1, 1, self.dirlist2, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+            None, None, self.dirlist2, compare_ownership=1, test_base_dir=TEST_BASE_DIR
         )
 
     def testRemote(self):
         comtst.backup_restore_series(
-            None, None, self.dirlist1, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+            TEST_REMOTE1_DIR,
+            TEST_REMOTE2_DIR,
+            self.dirlist1,
+            compare_ownership=1,
+            test_base_dir=TEST_BASE_DIR,
         )
 
     def test_ownership(self):
@@ -105,7 +109,7 @@ class RootTest(BaseRootTest):
             os.path.join(TEST_BASE_DIR, b"root_owner"),
         ]
         comtst.backup_restore_series(
-            1, 1, dirlist, compare_ownership=1, test_base_dir=TEST_BASE_DIR
+            None, None, dirlist, compare_ownership=1, test_base_dir=TEST_BASE_DIR
         )
         # this works only because we know that backup_restore_series creates
         # the backup in the 'output' sub-directory
@@ -156,8 +160,8 @@ class RootTest(BaseRootTest):
         self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
 
         comtst.rdiff_backup(
-            1,
-            0,
+            None,
+            TEST_REMOTE2_DIR,
             in_rp.path,
             out_rp.path,
             extra_options=(
@@ -206,8 +210,8 @@ class RootTest(BaseRootTest):
         self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
 
         comtst.rdiff_backup(
-            1,
-            0,
+            None,
+            TEST_REMOTE2_DIR,
             in_rp.path,
             out_rp.path,
             extra_options=(b"backup", b"--preserve-numerical-ids"),

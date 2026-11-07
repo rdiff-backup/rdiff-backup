@@ -7,7 +7,7 @@ import unittest
 
 import commontest as comtst
 
-TEST_BASE_DIR = comtst.get_test_base_dir(__file__)
+TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
 class ActionTestTest(unittest.TestCase):
@@ -26,24 +26,32 @@ class ActionTestTest(unittest.TestCase):
         # the test action works with one or two locations (or more)
         self.assertEqual(
             comtst.rdiff_backup_action(
-                False, False, self.dir1, self.dir2, (), b"test", ()
+                TEST_REMOTE1_DIR,
+                TEST_REMOTE2_DIR,
+                self.dir1,
+                self.dir2,
+                (),
+                b"test",
+                (),
             ),
             0,
         )
         self.assertEqual(
-            comtst.rdiff_backup_action(False, True, self.dir1, None, (), b"test", ()),
+            comtst.rdiff_backup_action(
+                TEST_REMOTE1_DIR, None, self.dir1, None, (), b"test", ()
+            ),
             0,
         )
         # but it doesn't work with a local one
         self.assertNotEqual(
             comtst.rdiff_backup_action(
-                False, True, self.dir1, self.dir2, (), b"test", ()
+                TEST_REMOTE1_DIR, None, self.dir1, self.dir2, (), b"test", ()
             ),
             0,
         )
         # and it doesn't work without any location
         self.assertNotEqual(
-            comtst.rdiff_backup_action(True, True, None, None, (), b"test", ()),
+            comtst.rdiff_backup_action(None, None, None, None, (), b"test", ()),
             0,
         )
 

@@ -83,6 +83,7 @@ skips = ["B301", "B101"]
 files = [
 	"src/rdiffbackup/singletons/",
 	"src/rdiffbackup/utils/",
+	"testing/commontest.py",
 ]
 ignore_missing_imports = true
 ignore_errors = true
