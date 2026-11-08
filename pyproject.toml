@@ -94,3 +94,7 @@ module = [
 	"rdiffbackup.utils.*",
 ]
 ignore_errors = false
+
+[tool.pytest]
+testpaths = ["testing"]
+norecursedirs = ["testing/tools", "testing/testutils"]
