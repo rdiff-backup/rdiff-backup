@@ -3,7 +3,5 @@ BASEDIR="$(dirname $0)"
 BASEDIR="${BASEDIR%/testutils}"
 export RDIFF_BACKUP_VERBOSITY=${1}
 shift
-for script in ${BASEDIR}/action_*_test.py
-do
-	coverage run ${script} "${@}"
-done
+pytest --cov-append --cov=rdiff_backup --cov=rdiffbackup \
+	${BASEDIR}/action_*_test.py
