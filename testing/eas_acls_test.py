@@ -2,12 +2,14 @@
 Test Extended Attributes and Access Control Lists
 """
 
-import grp
 import io
 import os
-import pwd
 import sys
 import unittest
+
+if not sys.platform.startswith("win"):
+    import grp
+    import pwd
 
 from testutils import commontest as comtst
 
@@ -24,9 +26,6 @@ map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
 
 
-@unittest.skipIf(
-    sys.platform.startswith("win"), "FIXME fails under Windows: no module named pwd"
-)
 class EATest(unittest.TestCase):
     """Test extended attributes"""
 
@@ -302,13 +301,18 @@ user.empty
 
 
 @unittest.skipIf(
-    sys.platform.startswith("win"), "FIXME fails under Windows: no module named pwd"
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: no module named pwd or grp",
 )
 class ACLTest(unittest.TestCase):
     """Test access control lists"""
 
-    current_user = os.getenv("RDIFF_TEST_USER", pwd.getpwuid(os.getuid()).pw_name)
-    current_group = os.getenv("RDIFF_TEST_GROUP", grp.getgrgid(os.getgid()).gr_name)
+    if sys.platform.startswith("win"):  # Just to keep pytest happy
+        current_user = "UnknownUser"
+        current_group = "UnknownGroup"
+    else:
+        current_user = os.getenv("RDIFF_TEST_USER", pwd.getpwuid(os.getuid()).pw_name)
+        current_group = os.getenv("RDIFF_TEST_GROUP", grp.getgrgid(os.getgid()).gr_name)
 
     sample_acl = acl_posix.AccessControlLists(
         (),
@@ -720,9 +724,6 @@ other::---""",
         self.assertFalse(incdir.listdir())
 
 
-@unittest.skipIf(
-    sys.platform.startswith("win"), "FIXME fails under Windows: no module named pwd"
-)
 class CombinedTest(unittest.TestCase):
     """Test backing up and restoring directories with both EAs and ACLs"""
 
