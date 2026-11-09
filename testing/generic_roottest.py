@@ -311,6 +311,7 @@ class HalfRoot(BaseRootTest):
 
     def test_backup(self):
         """Test back up, simple restores"""
+        old_umask = os.umask(0o022)
         in_rp1, in_rp2 = self.make_dirs()
         outrp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(outrp, userid)
@@ -389,6 +390,7 @@ class HalfRoot(BaseRootTest):
             user.encode(),
         )
         self._run_cmd(cmd5, consts.RET_CODE_WARN)
+        os.umask(old_umask)
 
 
 @unittest.skipIf(
@@ -467,6 +469,7 @@ class NonRoot(BaseRootTest):
 
     def test_non_root(self):
         """Main non-root -> root test"""
+        old_umask = os.umask(0o022)
         input_rp1, input_rp2 = self.make_root_dirs()
         generics.change_ownership = 1
         output_rp = rpath.RPath(specifics.local_connection, self.out_dir)
@@ -503,6 +506,7 @@ class NonRoot(BaseRootTest):
         self.assertTrue(
             comtst.compare_recursive(input_rp2, restore_rp, compare_ownership=1)
         )
+        os.umask(old_umask)
 
 
 if __name__ == "__main__":
