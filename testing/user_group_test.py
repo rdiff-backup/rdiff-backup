@@ -6,12 +6,16 @@ import code
 import getpass
 import os
 import pwd
+import sys
 import unittest
 
 from rdiffbackup.utils import usrgrp
 from rdiffbackup.locations.map import owners as map_owners
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"), "FIXME fails under Windows: no module pwd"
+)
 class UserGroupTest(unittest.TestCase):
     """Test user and group functionality"""
 

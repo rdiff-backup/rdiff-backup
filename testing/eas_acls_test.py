@@ -6,6 +6,7 @@ import grp
 import io
 import os
 import pwd
+import sys
 import unittest
 
 from testutils import commontest as comtst
@@ -23,6 +24,9 @@ map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"), "FIXME fails under Windows: no module named pwd"
+)
 class EATest(unittest.TestCase):
     """Test extended attributes"""
 
@@ -297,6 +301,9 @@ user.empty
         self.assertIsNone(ea_big.write_to_rp(ea_big_rpath))
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"), "FIXME fails under Windows: no module named pwd"
+)
 class ACLTest(unittest.TestCase):
     """Test access control lists"""
 
@@ -713,6 +720,9 @@ other::---""",
         self.assertFalse(incdir.listdir())
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"), "FIXME fails under Windows: no module named pwd"
+)
 class CombinedTest(unittest.TestCase):
     """Test backing up and restoring directories with both EAs and ACLs"""
 

@@ -5,6 +5,7 @@ Test the librsync functionality
 import os
 import random
 import subprocess
+import sys
 import unittest
 
 from testutils import commontest as comtst
@@ -23,6 +24,9 @@ def MakeRandomFile(path, length=None):
         fp.write(os.urandom(length))
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"), "FIXME fails under Windows: rdiff binary is missing"
+)
 class LibrsyncTest(unittest.TestCase):
     """Test various librsync wrapper functions"""
 

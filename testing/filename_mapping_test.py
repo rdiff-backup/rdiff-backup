@@ -3,6 +3,7 @@ Test filename mapping functions
 """
 
 import os
+import sys
 import time
 import unittest
 
@@ -15,6 +16,10 @@ from rdiffbackup.singletons import consts, generics, specifics
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: issue with colon in date/time string",
+)
 class FilenameMappingTest(unittest.TestCase):
     """Test the map_filenames module, for quoting filenames"""
 

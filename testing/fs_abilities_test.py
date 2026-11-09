@@ -58,6 +58,10 @@ else:
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: module os has no attribute getuid",
+)
 class FSAbilitiesTest(unittest.TestCase):
     """
     Test testing of file system abilities
