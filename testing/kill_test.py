@@ -154,6 +154,10 @@ class ProcessFuncs(unittest.TestCase):
             )
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: cannot create symbolic link",
+)
 class KillTest(ProcessFuncs):
     """Test rdiff-backup by killing it, recovering, and then comparing"""
 
