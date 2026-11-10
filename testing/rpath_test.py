@@ -181,7 +181,7 @@ class CheckDir(RPathTest):
 
     def testCreation(self):
         """Test directory creation and deletion"""
-        d = self.rp_prefix.append("tempdir")
+        d = rpath.RPath(self.lc, self.write_dir, ("tempdir",))
         self.assertFalse(d.lstat())
         d.mkdir()
         self.assertTrue(d.isdir())
@@ -190,7 +190,7 @@ class CheckDir(RPathTest):
 
     def testExceptions(self):
         """Should raise os.errors when no files"""
-        d = rpath.RPath(self.lc, self.prefix, ("suthosutho",))
+        d = rpath.RPath(self.lc, self.write_dir, ("suthosutho",))
         self.assertRaises(os.error, d.rmdir)
         d.mkdir()
         self.assertRaises(os.error, d.mkdir)

@@ -26,6 +26,7 @@ map_owners.init_users_mapping()
 map_owners.init_groups_mapping()
 
 
+@unittest.skipIf(sys.platform.startswith("win"), "No module named xattr under Windows")
 class EATest(unittest.TestCase):
     """Test extended attributes"""
 
@@ -724,6 +725,7 @@ other::---""",
         self.assertFalse(incdir.listdir())
 
 
+@unittest.skipIf(sys.platform.startswith("win"), "No module named xattr under Windows")
 class CombinedTest(unittest.TestCase):
     """Test backing up and restoring directories with both EAs and ACLs"""
 
