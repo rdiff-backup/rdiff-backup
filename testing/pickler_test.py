@@ -64,7 +64,7 @@ class PickleTest(unittest.TestCase):
         exceptions = _collect_exceptions("rdiff_backup", "rdiffbackup")
         print(exceptions)
         for e in exceptions:
-            self.assertIn(e, pickle.RestrictedUnpickler.ALLOWED_CLASSES)
+            self.assertIn(e, pickle.ALLOWED_CLASSES)
 
     def test_not_allowed_class(self):
         with self.assertRaises(pickle._pickle.UnpicklingError):
