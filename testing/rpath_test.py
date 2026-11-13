@@ -4,6 +4,7 @@ Tests of Remote paths
 
 import errno
 import os
+import pytest
 import sys
 import time
 import unittest
@@ -31,6 +32,7 @@ class RPathTest(unittest.TestCase):
 class RORPStateTest(RPathTest):
     """Test Pickling of RORPaths"""
 
+    @pytest.mark.oldtestfiles
     def testPickle(self):
         rorp = rpath.RPath(self.lc, self.prefix, ("regular_file",)).getRORPath()
         rorp.file = sys.stdin  # try to confuse pickler
@@ -41,6 +43,7 @@ class RORPStateTest(RPathTest):
         self.assertEqual(rorp2.index, rorp.index)
 
 
+@pytest.mark.oldtestfiles
 class CheckTypes(RPathTest):
     """Check to see if file types are identified correctly"""
 
@@ -104,6 +107,7 @@ class CheckTypes(RPathTest):
 
 
 @unittest.skipIf(sys.platform.startswith("win"), "Windows doesn't handle well rights")
+@pytest.mark.oldtestfiles
 class CheckPerms(RPathTest):
     """Check to see if permissions are reported and set accurately"""
 
@@ -141,6 +145,7 @@ class CheckPerms(RPathTest):
         )
 
 
+@pytest.mark.oldtestfiles
 class CheckTimes(RPathTest):
     """Check to see if times are reported and set accurately"""
 
@@ -196,6 +201,7 @@ class CheckDir(RPathTest):
         self.assertRaises(os.error, d.mkdir)
         d.rmdir()
 
+    @pytest.mark.oldtestfiles
     def testListdir(self):
         """Checking dir listings"""
         dirlist = rpath.RPath(self.lc, self.mainprefix, ("sampledir",)).listdir()
@@ -207,6 +213,7 @@ class CheckDir(RPathTest):
 class CheckSyms(RPathTest):
     """Check symlinking and reading"""
 
+    @pytest.mark.oldtestfiles
     def testRead(self):
         """symlink read"""
         self.assertEqual(
@@ -276,6 +283,7 @@ class TouchDelete(RPathTest):
 class MiscFileInfo(RPathTest):
     """Check Miscellaneous file information"""
 
+    @pytest.mark.oldtestfiles
     def testFileLength(self):
         """File length = getsize()"""
         self.assertEqual(
@@ -346,11 +354,13 @@ class FilenameOps(RPathTest):
 class FileIO(RPathTest):
     """Test file input and output"""
 
+    @pytest.mark.oldtestfiles
     def testRead(self):
         """File reading"""
         with rpath.RPath(self.lc, self.prefix, ("executable",)).open("r") as fp:
             self.assertEqual(fp.read(6), "#!/bin")
 
+    @pytest.mark.oldtestfiles
     def testWrite(self):
         """File writing"""
         rp = rpath.RPath(self.lc, self.mainprefix, ("testfile",))
@@ -438,6 +448,7 @@ class FileBasis(RPathTest):
         self.assertFalse(self.dest.lstat())
 
 
+@pytest.mark.oldtestfiles
 class FileCopying(FileBasis):
     """Test file copying and comparison"""
 
@@ -546,6 +557,7 @@ class FileCopying(FileBasis):
         self.assertFalse(rp2.lstat())
 
 
+@pytest.mark.oldtestfiles
 class FileAttributes(FileBasis):
     """Test file attribute operations"""
 

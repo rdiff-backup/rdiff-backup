@@ -7,6 +7,7 @@ or the explicit definition of RDIFF_TEST_UID and RDIFF_TEST_USER.
 """
 
 import os
+import pytest
 import unittest
 
 from testutils import commontest as comtst
@@ -38,6 +39,7 @@ class BaseRootTest(unittest.TestCase):
 @unittest.skipIf(
     os.getuid() != 0 or not (userid and user), "Must run as root with known normal user"
 )
+@pytest.mark.oldtestfiles
 class RootTest(BaseRootTest):
     dirlist1 = [
         os.path.join(comtst.old_test_dir, b"root"),
@@ -221,6 +223,7 @@ class RootTest(BaseRootTest):
 @unittest.skipIf(
     os.getuid() != 0 or not (userid and user), "Must run as root with known normal user"
 )
+@pytest.mark.oldtestfiles
 class HalfRoot(BaseRootTest):
     """Backing up files where origin is root and destination is non-root"""
 
@@ -396,6 +399,7 @@ class HalfRoot(BaseRootTest):
 @unittest.skipIf(
     os.getuid() != 0 or not (userid and user), "Must run as root with known normal user"
 )
+@pytest.mark.oldtestfiles
 class NonRoot(BaseRootTest):
     """Test backing up as non-root user
 

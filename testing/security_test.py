@@ -3,6 +3,7 @@ Test the security functionality of rdiff-backup
 """
 
 import os
+import pytest
 import sys
 import time
 import unittest
@@ -19,6 +20,7 @@ TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
     sys.platform.startswith("win"),
     "FIXME fails under Windows: no os.getuid + backslash in path handling server",
 )
+@pytest.mark.oldtestfiles
 class SecurityTest(unittest.TestCase):
     various_files_dir = os.path.join(comtst.old_test_dir, b"various_file_types")
     out_dir = os.path.join(TEST_BASE_DIR, b"output")

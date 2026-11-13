@@ -3,6 +3,7 @@ Test consistency by killing rdiff-backup as it is backing up
 """
 
 import os
+import pytest
 import random
 import signal
 import subprocess
@@ -158,6 +159,7 @@ class ProcessFuncs(unittest.TestCase):
     sys.platform.startswith("win"),
     "FIXME fails under Windows: cannot create symbolic link",
 )
+@pytest.mark.oldtestfiles
 class KillTest(ProcessFuncs):
     """Test rdiff-backup by killing it, recovering, and then comparing"""
 
