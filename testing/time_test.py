@@ -5,8 +5,8 @@ Test the time functionality of rdiff-backup
 import time
 import unittest
 
-import commontest as comtst
-from commontest import *  # noqa: F403, F401 some side effect or test fails
+from testutils import commontest as comtst
+from testutils.commontest import *  # noqa: F403, F401 some side effect or test fails
 
 from rdiff_backup import Time
 from rdiffbackup.singletons import generics

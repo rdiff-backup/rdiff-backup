@@ -3,10 +3,11 @@ Test making the code robust against specific exceptions
 """
 
 import os
+import pytest
 import sys
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import robust
 
@@ -37,6 +38,7 @@ class RobustTest(unittest.TestCase):
     @unittest.skipIf(
         sys.platform.startswith("win"), "Test is meaningless under Windows"
     )
+    @pytest.mark.oldtestfiles
     def test_check_failed_errorlog(self):
         """
         Validate that one unreadable file doesn't fail the whole backup

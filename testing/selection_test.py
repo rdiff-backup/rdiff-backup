@@ -3,13 +3,14 @@ Test selection aspects of rdiff-backup
 """
 
 import os
+import pytest
 import re
 import subprocess
 import sys
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 from rdiff_backup import rpath, selection
 from rdiffbackup.singletons import consts, generics, specifics
@@ -17,6 +18,7 @@ from rdiffbackup.singletons import consts, generics, specifics
 TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
 
+@pytest.mark.oldtestfiles
 class MatchingTest(unittest.TestCase):
     """Test matching of file names against various selection functions"""
 
@@ -386,10 +388,16 @@ rdiff-backup_testfiles/select/1/1
                 )
 
 
+@pytest.mark.oldtestfiles
 class ParseSelectionArgsTest(unittest.TestCase):
     """Test argument parsing as well as filelist globbing"""
 
     root = None
+
+    def setUp(self):
+        # we need to change directory to be able to work with relative paths
+        os.chdir(comtst.old_test_dir)
+        os.chdir(os.pardir)  # chdir one level up
 
     def ParseTest(self, tuplelist, indices):
         """No error if running select on tuple goes over indices"""

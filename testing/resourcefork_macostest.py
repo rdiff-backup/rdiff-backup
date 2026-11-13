@@ -5,16 +5,19 @@ None of these tests should work unless your system supports resource
 forks. So basically these tests should only be run on Mac OS X.
 """
 
+import sys
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
-from rdiff_backup import rpath, metadata
+from rdiff_backup import rpath
+from rdiffbackup.meta import stdattr
 from rdiffbackup.singletons import specifics
 
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
+@unittest.skipIf(sys.platform != "darwin", "Tests only relevant for MacOS/Darwin")
 class ResourceForkTest(unittest.TestCase):
     """Test dealing with Mac OS X style resource forks"""
 
@@ -54,8 +57,8 @@ class ResourceForkTest(unittest.TestCase):
         rp.touch()
         rp.set_resource_fork("hello")
 
-        record = metadata.RORP2Record(rp)
-        rorp_out = metadata.Record2RORP(record)
+        record = stdattr.AttrFile._object_to_record(rp)
+        rorp_out = stdattr.AttrExtractor._record_to_object(record)
         self.assertEqual(rorp_out, rp)
         self.assertEqual(rorp_out.get_resource_fork(), "hello")
 

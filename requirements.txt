@@ -43,4 +43,6 @@ black
 bandit
 coverage
 mypy
+pytest
+pytest-cov
 rpdb

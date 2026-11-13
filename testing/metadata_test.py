@@ -4,11 +4,13 @@ Test handling of metadata
 
 import io
 import os
+import pytest
+import sys
 import time
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 from rdiff_backup import rpath, selection
 from rdiffbackup import meta_mgr
@@ -20,6 +22,11 @@ from rdiffbackup.utils import quoting
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: issue with colon in date/time string",
+)
+@pytest.mark.oldtestfiles
 class MetadataTest(unittest.TestCase):
     out_dir = os.path.join(TEST_BASE_DIR, b"output")
     out_rp = increment.StoredRPath(specifics.local_connection, out_dir)

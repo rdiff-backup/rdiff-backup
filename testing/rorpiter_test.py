@@ -6,7 +6,8 @@ import functools
 import os
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
+
 from rdiff_backup import rpath, rorpiter
 from rdiffbackup.singletons import consts, specifics
 from rdiffbackup.utils import pickle
@@ -38,15 +39,6 @@ class RORPIterTest(unittest.TestCase):
 
     def setUp(self):
         self.lc = specifics.local_connection
-        self.inc0rp = rpath.RPath(
-            self.lc, os.path.join(comtst.old_test_dir, b"empty"), ()
-        )
-        self.inc1rp = rpath.RPath(
-            self.lc, os.path.join(comtst.old_test_dir, b"inc-reg-perms1"), ()
-        )
-        self.inc2rp = rpath.RPath(
-            self.lc, os.path.join(comtst.old_test_dir, b"inc-reg-perms2"), ()
-        )
         self.output = rpath.RPath(self.lc, self.out_dir, ())
 
     def testCollateIterators(self):
