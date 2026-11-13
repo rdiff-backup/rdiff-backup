@@ -3,6 +3,7 @@ Test filename mapping functions
 """
 
 import os
+import pytest
 import sys
 import time
 import unittest
@@ -60,6 +61,7 @@ class FilenameMappingTest(unittest.TestCase):
             qrp.index[0], b"mirror_metadata.1969-12-31T21:33:20-07:00.data.gz"
         )
 
+    @pytest.mark.oldtestfiles
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
         outrp = rpath.RPath(specifics.local_connection, self.out_dir)

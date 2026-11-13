@@ -4,6 +4,7 @@ Test handling of long names
 
 import errno
 import os
+import pytest
 import sys
 import unittest
 
@@ -196,6 +197,7 @@ class LongNameTest(unittest.TestCase):
         )
         cur_mirror_rp.touch()
 
+    @pytest.mark.oldtestfiles
     def test_long_socket_name(self):
         """Test when socket name is saved to a backup directory with a long name
         It addresses an issue where socket wasn't created with mknod but

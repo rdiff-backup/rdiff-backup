@@ -3,6 +3,7 @@ Test the statistics function of rdiff-backup
 """
 
 import os
+import pytest
 import io
 import time
 import unittest
@@ -230,6 +231,7 @@ class IncStatTest(unittest.TestCase):
         self.assertEqual(s.DeletedFileSize, 0)
         self.assertEqual(s.IncrementFileSize, 0)
 
+    @pytest.mark.oldtestfiles
     def test_statistics(self):
         """
         Test the writing of statistics

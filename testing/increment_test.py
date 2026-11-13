@@ -3,6 +3,7 @@ Test increment functions
 """
 
 import os
+import pytest
 import sys
 import unittest
 
@@ -44,6 +45,7 @@ else:
 t_diff = os.path.join(TEST_BASE_DIR, b"out.%s.diff" % prevtimestr)
 
 
+@pytest.mark.oldtestfiles
 class IncrementTest(unittest.TestCase):
     """Test the incrementRP function"""
 

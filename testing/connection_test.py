@@ -3,6 +3,7 @@ Test the connection functionality of rdiff-backup
 """
 
 import os
+import pytest
 import subprocess
 import sys
 import unittest
@@ -78,6 +79,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
                 self.assertEqual(gotten, (3, obj))
         os.unlink(self.filename)
 
+    @pytest.mark.oldtestfiles
     def testBuf(self):
         """Try moving a buffer"""
         with open(self.filename, "wb") as outpipe:
@@ -126,6 +128,7 @@ class PipeConnectionTest(unittest.TestCase):
         self.assertEqual(self.conn.pow(2, 3), 8)
         self.assertEqual(self.conn.reval("ord", "a"), 97)
 
+    @pytest.mark.oldtestfiles
     def testModules(self):
         """Test module emulation"""
         self.assertIsInstance(self.conn.os.getcwd(), str)
@@ -133,6 +136,7 @@ class PipeConnectionTest(unittest.TestCase):
         rp1 = rpath.RPath(self.conn, regfilename)
         self.assertTrue(rp1.isreg())
 
+    @pytest.mark.oldtestfiles
     def testVirtualFiles(self):
         """Testing virtual files"""
         # generate file name for temporary file
@@ -169,6 +173,7 @@ class PipeConnectionTest(unittest.TestCase):
         )
         self.assertEqual(self.conn.reval("max", i), 15)
 
+    @pytest.mark.oldtestfiles
     def testRPaths(self):
         """Test transmission of rpaths"""
         rp = rpath.RPath(self.conn, regfilename)
@@ -177,6 +182,7 @@ class PipeConnectionTest(unittest.TestCase):
             self.conn.reval("getattr", rp, "conn"), specifics.local_connection
         )
 
+    @pytest.mark.oldtestfiles
     def testQuotedRPaths(self):
         """Test transmission of quoted rpaths"""
         qrp = map_filenames.QuotedRPath(self.conn, regfilename)

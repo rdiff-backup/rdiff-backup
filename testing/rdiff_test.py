@@ -3,6 +3,7 @@ Compare results with call to rdiff utility
 """
 
 import os
+import pytest
 import random
 import sys
 import unittest
@@ -36,6 +37,7 @@ class RdiffTest(unittest.TestCase):
     delta = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"delta"))
     signature = rpath.RPath(lc, os.path.join(TEST_BASE_DIR, b"signature"))
 
+    @pytest.mark.oldtestfiles
     def testRdiffSig(self):
         """Test making rdiff signatures"""
         sig = rpath.RPath(
