@@ -28,7 +28,7 @@ to use it.
 """
 
 import argparse
-import io
+import pathlib
 import sys
 
 # === WORKAROUND ===
@@ -70,8 +70,19 @@ def parse(args, version_string, generic_parsers, actions_dict=None):
     parsed_args = parse_args(parser, args)
     parsed_values = vars(parsed_args)  # make a dictionary out of a Namespace
     for key, value in parsed_values.items():
-        if isinstance(value, io.IOBase) and value.readable():
-            parsed_values[key] = value.read()
+        if isinstance(value, pathlib.Path):
+            if value.exists():
+                try:
+                    parsed_values[key] = value.read_text()
+                except OSError as exc:
+                    sys.exit(
+                        "File argument {ak} '{av}' couldn't be read "
+                        "due to exception '{ex}'".format(ak=key, av=value, ex=exc)
+                    )
+            else:
+                sys.exit(
+                    "File argument {ak} '{av}' must exist".format(ak=key, av=value)
+                )
     return parsed_values
 
 
