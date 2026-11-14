@@ -25,6 +25,7 @@ plugins can inheritate default behaviors.
 
 import argparse
 import os
+import pathlib
 import platform
 import sys
 import tempfile
@@ -354,7 +355,7 @@ USER_GROUP_PARSER = argparse.ArgumentParser(
 )
 USER_GROUP_PARSER.add_argument(
     "--group-mapping-file",
-    type=argparse.FileType("r"),
+    type=pathlib.Path,
     metavar="MAP_FILE",
     help="[sub] map groups according to file",
 )
@@ -365,7 +366,7 @@ USER_GROUP_PARSER.add_argument(
 )
 USER_GROUP_PARSER.add_argument(
     "--user-mapping-file",
-    type=argparse.FileType("r"),
+    type=pathlib.Path,
     metavar="MAP_FILE",
     help="[sub] map users according to file",
 )
