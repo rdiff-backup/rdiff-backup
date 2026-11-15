@@ -55,13 +55,13 @@ class RORPEquality(RPathTest):
 
     def _get_source_rorp(self, **changes):
         """Return a rorpath as sent by the source, with resolved names"""
-        data = dict(self.mirror_rp.data)
+        data = self.mirror_rp.data.copy()
         data["uname"] = "someone@ldap.example.com"
         data["gname"] = "somegroup@ldap.example.com"
         data.update(changes)
         return rpath.RORPath(self.mirror_rp.index, data)
 
-    def testUnresolvedName(self):
+    def test_unresolved_name(self):
         """Test names unknown on one side are ignored, whichever side"""
         src_rorp = self._get_source_rorp()
         testpairs = [
@@ -79,7 +79,7 @@ class RORPEquality(RPathTest):
         self.assertTrue(src_rorp == self.mirror_rp)
         self.assertTrue(self.mirror_rp == src_rorp)
 
-    def testResolvedNames(self):
+    def test_resolved_names(self):
         """Test names known on both sides are compared"""
         self.mirror_rp.data["uname"] = "root"
         self.mirror_rp.data["gname"] = "root"
@@ -90,7 +90,7 @@ class RORPEquality(RPathTest):
         self.assertTrue(src_rorp == self.mirror_rp)
         self.assertTrue(self.mirror_rp == src_rorp)
 
-    def testOtherAttribs(self):
+    def test_other_attribs(self):
         """Test ignoring names doesn't hide other differences"""
         other_uid = self.mirror_rp.getuidgid()[0] + 1
         other_perms = 0o640 if self.mirror_rp.getperms() == 0o600 else 0o600
