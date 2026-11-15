@@ -163,8 +163,16 @@ class RORPath:
         for key in frozenset(self.data.keys()) - ignored_keys:
             if key == "uname" or key == "gname":
                 # here for legacy reasons - 0.12.x didn't store u/gnames
+                # names are only compared if both sides can resolve them.
                 other_name = other.data.get(key, None)
-                if other_name and other_name != "None" and other_name != self.data[key]:
+                self_name = self.data[key]
+                if (
+                    other_name
+                    and other_name != "None"
+                    and self_name
+                    and self_name != "None"
+                    and other_name != self_name
+                ):
                     return False
             elif key not in other.data or self.data[key] != other.data[key]:
                 return False
