@@ -71,17 +71,12 @@ def parse(args, version_string, generic_parsers, actions_dict=None):
     parsed_values = vars(parsed_args)  # make a dictionary out of a Namespace
     for key, value in parsed_values.items():
         if isinstance(value, pathlib.Path):
-            if value.exists():
-                try:
-                    parsed_values[key] = value.read_text()
-                except OSError as exc:
-                    sys.exit(
-                        "File argument {ak} '{av}' couldn't be read "
-                        "due to exception '{ex}'".format(ak=key, av=value, ex=exc)
-                    )
-            else:
+            try:
+                parsed_values[key] = value.read_text()
+            except OSError as exc:
                 sys.exit(
-                    "File argument {ak} '{av}' must exist".format(ak=key, av=value)
+                    "File argument {ak} '{av}' couldn't be read "
+                    "due to exception '{ex}'".format(ak=key, av=value, ex=exc)
                 )
     return parsed_values
 
