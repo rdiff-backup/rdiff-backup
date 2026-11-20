@@ -3,10 +3,12 @@ Test filename mapping functions
 """
 
 import os
+import pytest
+import sys
 import time
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath
 from rdiffbackup.locations.map import filenames as map_filenames
@@ -15,6 +17,10 @@ from rdiffbackup.singletons import consts, generics, specifics
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: issue with colon in date/time string",
+)
 class FilenameMappingTest(unittest.TestCase):
     """Test the map_filenames module, for quoting filenames"""
 
@@ -55,6 +61,7 @@ class FilenameMappingTest(unittest.TestCase):
             qrp.index[0], b"mirror_metadata.1969-12-31T21:33:20-07:00.data.gz"
         )
 
+    @pytest.mark.oldtestfiles
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
         outrp = rpath.RPath(specifics.local_connection, self.out_dir)

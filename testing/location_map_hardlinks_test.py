@@ -3,14 +3,18 @@ Test the handling of hardlinks
 """
 
 import os
+import sys
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"), "FIXME fails under Windows: hardlinks not supported"
+)
 class LocationMapHardlinksTest(unittest.TestCase):
     """
     Test that rdiff-backup properly handles hardlinks

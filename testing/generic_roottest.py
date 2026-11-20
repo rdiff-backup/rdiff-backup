@@ -7,24 +7,21 @@ or the explicit definition of RDIFF_TEST_UID and RDIFF_TEST_USER.
 """
 
 import os
+import pytest
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath
 from rdiffbackup.singletons import consts, generics, specifics
 
 TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
-assert os.getuid() == 0, "Run this test as root!"
-
 # we need a normal user for our test, we use environment variables to use
 # the right one, either through SUDO_* variables set by sudo, or set
 # explicitly by the tester.
-userid = int(os.getenv("RDIFF_TEST_UID", os.getenv("SUDO_UID")))
+userid = int(os.getenv("RDIFF_TEST_UID", os.getenv("SUDO_UID", 0)))
 user = os.getenv("RDIFF_TEST_USER", os.getenv("SUDO_USER"))
-assert userid, "Unable to assess ID of non-root user to be used for tests"
-assert user, "Unable to assess name of non-root user to be used for tests"
 
 
 class BaseRootTest(unittest.TestCase):
@@ -39,6 +36,10 @@ class BaseRootTest(unittest.TestCase):
         )
 
 
+@unittest.skipIf(
+    os.getuid() != 0 or not (userid and user), "Must run as root with known normal user"
+)
+@pytest.mark.oldtestfiles
 class RootTest(BaseRootTest):
     dirlist1 = [
         os.path.join(comtst.old_test_dir, b"root"),
@@ -219,6 +220,10 @@ class RootTest(BaseRootTest):
         self.assertEqual(get_ownership(out_rp), ((0, 0), (userid, 1)))
 
 
+@unittest.skipIf(
+    os.getuid() != 0 or not (userid and user), "Must run as root with known normal user"
+)
+@pytest.mark.oldtestfiles
 class HalfRoot(BaseRootTest):
     """Backing up files where origin is root and destination is non-root"""
 
@@ -309,6 +314,7 @@ class HalfRoot(BaseRootTest):
 
     def test_backup(self):
         """Test back up, simple restores"""
+        old_umask = os.umask(0o022)
         in_rp1, in_rp2 = self.make_dirs()
         outrp = rpath.RPath(specifics.local_connection, self.out_dir)
         comtst.re_init_rpath_dir(outrp, userid)
@@ -387,8 +393,13 @@ class HalfRoot(BaseRootTest):
             user.encode(),
         )
         self._run_cmd(cmd5, consts.RET_CODE_WARN)
+        os.umask(old_umask)
 
 
+@unittest.skipIf(
+    os.getuid() != 0 or not (userid and user), "Must run as root with known normal user"
+)
+@pytest.mark.oldtestfiles
 class NonRoot(BaseRootTest):
     """Test backing up as non-root user
 
@@ -462,6 +473,7 @@ class NonRoot(BaseRootTest):
 
     def test_non_root(self):
         """Main non-root -> root test"""
+        old_umask = os.umask(0o022)
         input_rp1, input_rp2 = self.make_root_dirs()
         generics.change_ownership = 1
         output_rp = rpath.RPath(specifics.local_connection, self.out_dir)
@@ -498,6 +510,7 @@ class NonRoot(BaseRootTest):
         self.assertTrue(
             comtst.compare_recursive(input_rp2, restore_rp, compare_ownership=1)
         )
+        os.umask(old_umask)
 
 
 if __name__ == "__main__":

@@ -5,8 +5,8 @@ Test the ability to regress/remove read-only paths
 import os
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 
 from rdiff_backup import rpath
 from rdiffbackup.singletons import specifics

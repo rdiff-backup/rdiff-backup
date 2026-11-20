@@ -3,10 +3,11 @@ Test increment functions
 """
 
 import os
+import pytest
 import sys
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath, Time, Rdiff
 from rdiffbackup import actions
@@ -44,6 +45,7 @@ else:
 t_diff = os.path.join(TEST_BASE_DIR, b"out.%s.diff" % prevtimestr)
 
 
+@pytest.mark.oldtestfiles
 class IncrementTest(unittest.TestCase):
     """Test the incrementRP function"""
 

@@ -366,7 +366,7 @@ All these files are placed under the `testing` directory.
 
 NOTE: the interest of `pytest` would be to parallelize tests, but this is currently difficult due to the usage of global variables.
 
-TIP: check the files `commontest.py` and `fileset.py` for reusable functions.
+TIP: check the files `commontest.py` and `fileset.py` in `testing/testutils` for reusable functions.
 
 == DEBUGGING
 

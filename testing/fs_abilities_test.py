@@ -7,7 +7,7 @@ import sys
 import time
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath
 from rdiffbackup.locations import fs_abilities
@@ -58,6 +58,10 @@ else:
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: module os has no attribute getuid",
+)
 class FSAbilitiesTest(unittest.TestCase):
     """
     Test testing of file system abilities

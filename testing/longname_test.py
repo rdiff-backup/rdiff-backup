@@ -4,10 +4,11 @@ Test handling of long names
 
 import errno
 import os
+import pytest
 import sys
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import rpath, Time
 from rdiffbackup.singletons import specifics
@@ -20,6 +21,10 @@ else:
     NAME_MAX_LEN = os.pathconf(TEST_BASE_DIR, "PC_NAME_MAX")
 
 
+@unittest.skipIf(
+    sys.platform.startswith("win"),
+    "FIXME fails under Windows: handling of long filenames too different",
+)
 class LongNameTest(unittest.TestCase):
     """Test the longname module"""
 
@@ -192,6 +197,7 @@ class LongNameTest(unittest.TestCase):
         )
         cur_mirror_rp.touch()
 
+    @pytest.mark.oldtestfiles
     def test_long_socket_name(self):
         """Test when socket name is saved to a backup directory with a long name
         It addresses an issue where socket wasn't created with mknod but

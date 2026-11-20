@@ -3,12 +3,13 @@ Test the connection functionality of rdiff-backup
 """
 
 import os
+import pytest
 import subprocess
 import sys
 import unittest
 import errno
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 from rdiff_backup import connection, rpath, Security, SetConnections
 from rdiffbackup.locations.map import filenames as map_filenames
@@ -78,6 +79,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
                 self.assertEqual(gotten, (3, obj))
         os.unlink(self.filename)
 
+    @pytest.mark.oldtestfiles
     def testBuf(self):
         """Try moving a buffer"""
         with open(self.filename, "wb") as outpipe:
@@ -109,7 +111,7 @@ class PipeConnectionTest(unittest.TestCase):
 
     def setUp(self):
         """Must start a server for this"""
-        pipe_cmd = (sys.executable, "testing/server.py", SourceDir)
+        pipe_cmd = (sys.executable, "testing/testutils/server.py", SourceDir)
         self.p = subprocess.Popen(
             pipe_cmd,
             stdin=subprocess.PIPE,
@@ -126,6 +128,7 @@ class PipeConnectionTest(unittest.TestCase):
         self.assertEqual(self.conn.pow(2, 3), 8)
         self.assertEqual(self.conn.reval("ord", "a"), 97)
 
+    @pytest.mark.oldtestfiles
     def testModules(self):
         """Test module emulation"""
         self.assertIsInstance(self.conn.os.getcwd(), str)
@@ -133,6 +136,7 @@ class PipeConnectionTest(unittest.TestCase):
         rp1 = rpath.RPath(self.conn, regfilename)
         self.assertTrue(rp1.isreg())
 
+    @pytest.mark.oldtestfiles
     def testVirtualFiles(self):
         """Testing virtual files"""
         # generate file name for temporary file
@@ -169,6 +173,7 @@ class PipeConnectionTest(unittest.TestCase):
         )
         self.assertEqual(self.conn.reval("max", i), 15)
 
+    @pytest.mark.oldtestfiles
     def testRPaths(self):
         """Test transmission of rpaths"""
         rp = rpath.RPath(self.conn, regfilename)
@@ -177,6 +182,7 @@ class PipeConnectionTest(unittest.TestCase):
             self.conn.reval("getattr", rp, "conn"), specifics.local_connection
         )
 
+    @pytest.mark.oldtestfiles
     def testQuotedRPaths(self):
         """Test transmission of quoted rpaths"""
         qrp = map_filenames.QuotedRPath(self.conn, regfilename)
@@ -206,10 +212,10 @@ class RedirectedConnectionTest(unittest.TestCase):
     def setUp(self):
         """Must start two servers for this"""
         self.conna = SetConnections._init_connection(
-            "%s testing/server.py %s" % (sys.executable, SourceDir)
+            "%s testing/testutils/server.py %s" % (sys.executable, SourceDir)
         )
         self.connb = SetConnections._init_connection(
-            "%s testing/server.py %s" % (sys.executable, SourceDir)
+            "%s testing/testutils/server.py %s" % (sys.executable, SourceDir)
         )
 
     def testBasic(self):
@@ -244,7 +250,7 @@ class LengthyConnectionTest(unittest.TestCase):
 
     def test_killing_server_process(self):
         """Make the server process take longer"""
-        pipe_cmd = "%s testing/server.py %s" % (sys.executable, SourceDir)
+        pipe_cmd = "%s testing/testutils/server.py %s" % (sys.executable, SourceDir)
         pipe_cmd += "; sleep 10"
         self.p = subprocess.Popen(
             pipe_cmd,

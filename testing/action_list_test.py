@@ -5,8 +5,8 @@ Test the list action
 import os
 import unittest
 
-import commontest as comtst
-import fileset
+from testutils import commontest as comtst
+from testutils import fileset
 from rdiffbackup.singletons import consts
 
 TEST_BASE_DIR, TEST_REMOTE1_DIR, _ = comtst.init_test_dirs(__file__)

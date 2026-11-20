@@ -5,7 +5,7 @@ Test the "test" action
 import sys
 import unittest
 
-import commontest as comtst
+from testutils import commontest as comtst
 
 TEST_BASE_DIR, TEST_REMOTE1_DIR, TEST_REMOTE2_DIR = comtst.init_test_dirs(__file__)
 
