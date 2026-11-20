@@ -23,6 +23,7 @@ so that they can be used for e.g. bash completion
 """
 
 import argparse
+import pathlib
 
 from rdiffbackup import actions, actions_mgr, arguments
 from rdiffbackup.singletons import consts, log, specifics
@@ -206,7 +207,7 @@ class CompleteAction(actions.BaseAction):
             ):
                 if hasattr(prev_option, "choices") and prev_option.choices:
                     return prev_option.choices
-                elif isinstance(prev_option.type, argparse.FileType) or (
+                elif issubclass(prev_option.type, pathlib.Path) or (
                     prev_option.type == str
                     and isinstance(prev_option.metavar, str)
                     and prev_option.metavar.endswith("_FILE")
