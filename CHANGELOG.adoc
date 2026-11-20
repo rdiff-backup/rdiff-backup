@@ -9,6 +9,29 @@ The prefixes are to be understood as follows, in roughly decreasing order of imp
 * *NEW* features and bug-**FIX**es are of course of interest as well.
 * **DOC**umentation (and website) changes are marked as such.
 
+== New in v2.2.8 (2026-11-19)
+
+=== Changes
+
+* CHG: ignore I/O errors (EIO) on ACL or Extended Attributes and 
+       continue backup, Closes #1088
+* FIX: Ignore NotImplementedError as raised by acl_win
+* FIX: add restricted unpickler to whitelist allowed classes, closes 
+       GHSA-gjr5-qwxg-p845 [backport]
+* FIX: backward compatibility with v2.0.5 clients
+* FIX: copy file when Cross-Device link error is wrongly raised during 
+       move/rename e.g. on ZFS, closes #1024
+* FIX: include/exclude with UNC-style path
+* FIX: issue with OSError.errno discrepancies when the source and 
+       destination are on different platforms, closes #1027
+* NEW: rdiff-backup uses metadata like the checksum to validate the 
+       need for a regression, greatly improving speed of regression.
+
+=== Authors
+
+* Eric L.
+* Patrik Dufresne
+
 == New in v2.2.7 (2026-10-20)
 
 === Changes
