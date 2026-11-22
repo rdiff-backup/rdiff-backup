@@ -310,6 +310,11 @@ USB/1394 devices may come up at different device numbers each remount (but would
 and there are filesystems which don't even have the same inode numbers from use to use.
 Without the option rdiff-backup may generate unnecessary numbers of tiny diff files.
 
+--compare-device, --no-compare-device::
+This option prevents rdiff-backup from flagging a hardlinked file as changed when only its device number changes, while still comparing its inode.
+It is meant for filesystems with stable inode numbers whose device number can differ between boots or mounts, for example partitions with dynamically allocated device numbers.
+Unlike *--no-compare-inode*, it still notices hard-linked files which have been replaced or whose links have been rearranged without a change of size or modification time.
+
 --never-drop-acls::
 Exit with error instead of dropping ACLs or ACL entries.
 Normally this may happen (with a warning) because the destination does not support them or because the relevant user/group names do not exist on the destination side.

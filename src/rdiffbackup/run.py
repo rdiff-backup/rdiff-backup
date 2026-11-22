@@ -172,6 +172,7 @@ def _system_setup(arglist):
 
     # if action in ("backup", "restore"):
     generics.set("compare_inode", arglist.get("compare_inode"))
+    generics.set("compare_device", arglist.get("compare_device"))
     generics.set("never_drop_acls", arglist.get("never_drop_acls"))
     # if action in ("backup", "regress", "restore"):
     generics.set("compression", arglist.get("compression"))

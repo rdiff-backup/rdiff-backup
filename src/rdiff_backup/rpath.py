@@ -147,6 +147,8 @@ class RORPath:
         ):
             ignored_keys.add("inode")
             ignored_keys.add("devloc")
+        elif not generics.compare_device:
+            ignored_keys.add("devloc")
         # self specific additions
         if not self.isreg():
             ignored_keys.add("size")
