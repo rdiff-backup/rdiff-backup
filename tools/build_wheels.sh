@@ -11,6 +11,7 @@ dist_dir=${basedir}/dist
 requs_dir=${basedir}/requs
 
 # Install a system package required by our library
+sed -i 's|vault.centos.org/centos/|archive.kernel.org/centos-vault/|g' /etc/yum.repos.d/CentOS-Base.repo
 if ! yum install -y librsync-devel rubygems
 then  # re-try with EPEL
 	yum install -y epel-release
