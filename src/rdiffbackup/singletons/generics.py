@@ -108,6 +108,11 @@ null_separator: bool = False
 # the man page under --no-compare-inode for more information.
 compare_inode: bool = True
 
+# If unset, a hard-linked file isn't marked as changed just because the device
+# number of its filesystem changed; its inode is still compared.  See the man
+# page under --no-compare-device for more information.
+compare_device: bool = True
+
 # If set, directories can be fsync'd just like normal files, to
 # guarantee that any changes have been comitted to disk.
 # It should be a variable specific to a file system, but it's made generic for

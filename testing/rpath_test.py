@@ -12,7 +12,7 @@ import unittest.mock
 import commontest as comtst
 import fileset
 from rdiff_backup import rpath
-from rdiffbackup.singletons import consts, specifics
+from rdiffbackup.singletons import consts, generics, specifics
 from rdiffbackup.utils import pickle
 
 TEST_BASE_DIR, _, _ = comtst.init_test_dirs(__file__)
@@ -103,6 +103,20 @@ class RORPEquality(RPathTest):
         for a, b in testpairs:
             self.assertFalse(a == b)
             self.assertFalse(b == a)
+
+    def test_compare_device(self):
+        """Test a hard-linked file's device number can be ignored, not its inode"""
+        self.mirror_rp.data["nlink"] = 2
+        other_device = self._get_source_rorp(devloc=self.mirror_rp.getdevloc() + 1)
+        other_inode = self._get_source_rorp(
+            devloc=self.mirror_rp.getdevloc() + 1, inode=self.mirror_rp.getinode() + 1
+        )
+        self.assertFalse(other_device == self.mirror_rp)
+        with unittest.mock.patch.object(generics, "compare_device", False):
+            self.assertTrue(other_device == self.mirror_rp)
+            self.assertTrue(self.mirror_rp == other_device)
+            self.assertFalse(other_inode == self.mirror_rp)
+            self.assertFalse(self.mirror_rp == other_inode)
 
 
 class CheckTypes(RPathTest):

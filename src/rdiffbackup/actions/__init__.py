@@ -258,6 +258,12 @@ FILESYSTEM_PARSER.add_argument(
     help="[sub] compare (or not) inodes to decide if hard-linked files have changed",
 )
 FILESYSTEM_PARSER.add_argument(
+    "--compare-device",
+    default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[sub] compare (or not) device numbers to decide if hard-linked files have changed",
+)
+FILESYSTEM_PARSER.add_argument(
     "--eas",
     default=True,
     action=argparse.BooleanOptionalAction,

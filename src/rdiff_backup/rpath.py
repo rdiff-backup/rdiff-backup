@@ -139,13 +139,16 @@ class RORPath:
         # add the keys to be globally ignored
         ignored_keys.update(self._global_ignored_keys())
         # global and self specific additions
-        if (
+        # inode and devloc only matter to tell if a hard-linked file changed
+        ignore_hardlink_ids = (
             not self.isreg()
             or self.getnumlinks() == 1
             or not generics.compare_inode
             or not generics.preserve_hardlinks
-        ):
+        )
+        if ignore_hardlink_ids:
             ignored_keys.add("inode")
+        if ignore_hardlink_ids or not generics.compare_device:
             ignored_keys.add("devloc")
         # self specific additions
         if not self.isreg():
